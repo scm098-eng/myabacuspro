@@ -1,0 +1,26 @@
+{
+  "hosting": {
+    "source": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "frameworksBackend": {
+      "region": "us-central1"
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "functions": {
+    "predeploy": [],
+    "secrets": [
+      "RAZORPAY_WEBHOOK_SECRET",
+      "RAZORPAY_KEY_SECRET"
+    ]
+  }
+}

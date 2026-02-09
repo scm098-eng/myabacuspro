@@ -1,0 +1,16 @@
+{
+  "node": {
+    "40e105b088951a73c5c090d9008c45acca3f19ece8": {
+      "workers": {
+        "app/tests/beads-value/page": {
+          "moduleId": "[project]/.next-internal/server/app/tests/beads-value/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/ai/flows/chatFlow.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/tests/beads-value/page": "action-browser"
+      }
+    }
+  },
+  "edge": {}
+}

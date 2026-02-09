@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 207, "column": 0}, "map": {"version":3,"sources":["file:///home/user/studio/src/ai/genkit.ts"],"sourcesContent":["import {genkit} from 'genkit';\nimport {googleAI} from '@genkit-ai/googleai';\n\nexport const ai = genkit({\n  plugins: [googleAI()],\n  model: 'googleai/gemini-2.0-flash',\n});\n"],"names":[],"mappings":";;;AAAA;AAAA;AACA;AAAA;;;AAEO,MAAM,KAAK,CAAA,GAAA,uIAAA,CAAA,SAAM,AAAD,EAAE;IACvB,SAAS;QAAC,CAAA,GAAA,2KAAA,CAAA,WAAQ,AAAD;KAAI;IACrB,OAAO;AACT","debugId":null}}]
+}

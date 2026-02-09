@@ -1,0 +1,20 @@
+{
+  "homeHero": {
+    "src": "https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/abacus_hero.jpg?alt=media&token=b791329b-9e45-404c-ac96-fb78fbd24595",
+    "width": 1200,
+    "height": 600,
+    "hint": "abacus education"
+  },
+  "aboutStory": {
+    "src": "https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/student_learning.jpg?alt=media&token=b1d2de9d-db75-4e10-9667-26befc8211fb",
+    "width": 600,
+    "height": 400,
+    "hint": "student learning"
+  },
+  "contactHero": {
+    "src": "https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/customer_support.jpg?alt=media&token=651855df-5fca-474d-ad7e-6aaf28defa38",
+    "width": 600,
+    "height": 400,
+    "hint": "support contact"
+  }
+}

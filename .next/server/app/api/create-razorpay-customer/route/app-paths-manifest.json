@@ -1,0 +1,3 @@
+{
+  "/api/create-razorpay-customer/route": "app/api/create-razorpay-customer/route.js"
+}
