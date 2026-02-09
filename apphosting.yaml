@@ -12,3 +12,4 @@ runConfig:
     secret: RAZORPAY_KEY_ID
   - variable: RAZORPAY_KEY_SECRET
     secret: RAZORPAY_KEY_SECRET
+# Force refresh
