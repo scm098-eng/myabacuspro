@@ -189,7 +189,7 @@ var _s = __turbopack_context__.k.signature(), _s1 = __turbopack_context__.k.sign
 ;
 // --- CONFIGURATION ---
 const RAZORPAY_PLAN_ID = 'plan_S89FukHU9XcnKu'; // Monthly Recurring
-const RAZORPAY_KEY_ID = ("TURBOPACK compile-time value", "rzp_live_S88R4vc04AHiot");
+const RAZORPAY_KEY_ID = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 const PLANS = [
     {
         id: 'monthly',
@@ -248,8 +248,9 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, onSuccess, onE
             onError("Authentication failed. Please log in.");
             return;
         }
-        if ("TURBOPACK compile-time falsy", 0) {
-            "TURBOPACK unreachable";
+        if (!RAZORPAY_KEY_ID) {
+            onError("Razorpay Key ID is not configured.");
+            return;
         }
         setIsProcessing(true);
         try {
