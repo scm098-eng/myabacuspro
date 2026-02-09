@@ -52,7 +52,8 @@ export function Header() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/about', label: 'About' },
-    { href: '/tests', label: 'Practice Tests' },
+    { href: '/tests/practice', label: 'Practice' },
+    { href: '/tests', label: 'Tests' },
     { href: '/pricing', label: 'Pricing' },
     { href: '/contact', label: 'Contact' },
     { href: '/tool-preview', label: 'Tool Preview' },
