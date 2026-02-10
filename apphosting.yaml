@@ -10,6 +10,10 @@ runConfig:
   # more instances in response to increased traffic.
   maxInstances: 1
 
+env:
+  - variable: NEXT_PUBLIC_RAZORPAY_KEY_ID
+    value: "rzp_live_S88R4vc04AHiot"
+
 # NO SPACES BEFORE 'secrets'
 secrets:
   - variable: NEXT_PUBLIC_RAZORPAY_KEY_ID
