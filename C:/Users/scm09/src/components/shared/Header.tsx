@@ -161,7 +161,7 @@ export function Header() {
                 <SheetHeader className="sr-only">
                   <SheetTitle>Mobile Navigation Menu</SheetTitle>
                 </SheetHeader>
-                <div className="flex flex-col gap-4 py-8">
+                <div className="flex flex-col gap-4 py-8 overflow-y-auto">
                       <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2 mb-4 px-4">
                         <Brain className="h-8 w-8 text-primary" />
                         <div>

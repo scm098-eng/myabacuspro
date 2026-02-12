@@ -194,6 +194,8 @@ export default function PricingPage() {
     const { toast } = useToast();
 
     useEffect(() => {
+        console.log("Debug - Razorpay Key present:", !!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID);
+        console.log("Debug - Key Value (first 5 chars):", process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID?.substring(0, 5));
         if (!isLoading && !user) router.push('/login');
     }, [isLoading, user, router]);
 
