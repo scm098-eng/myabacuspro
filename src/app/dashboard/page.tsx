@@ -5,12 +5,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Check, Trophy, Baby, ChevronRight, Zap, Crown, User } from 'lucide-react';
+import { Check, Trophy, Zap, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { getFirestore, collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { getFirestore, collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ProfileData } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -42,12 +42,13 @@ export default function StudentDashboardPage() {
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const data = snapshot.docs.map(doc => {
           const userData = doc.data() as ProfileData;
+          const title = getStudentTitle(userData.totalDaysPracticed || 0);
           return {
             uid: doc.id,
             name: `${userData.firstName} ${userData.surname}`,
             photo: userData.profilePhoto,
             days: userData.totalDaysPracticed || 0,
-            title: getStudentTitle(userData.totalDaysPracticed || 0)
+            title: title
           };
         });
         setLeaderboard(data);
@@ -78,7 +79,7 @@ export default function StudentDashboardPage() {
 
   return (
     <div className="max-w-4xl mx-auto bg-[#f4f7f9] min-h-screen pb-32 -m-4 sm:-m-6 lg:-m-8 relative font-sans">
-      {/* Centered Desktop Wrapper */}
+      {/* Centered Wrapper */}
       <div className="max-w-[450px] mx-auto min-h-screen flex flex-col">
         {/* Header Card */}
         <div className="relative h-[240px] rounded-b-[35px] overflow-hidden shadow-xl shadow-blue-900/10 flex-shrink-0">
@@ -154,7 +155,6 @@ export default function StudentDashboardPage() {
                         </div>
                       );
                     })}
-                    {/* Trophy */}
                     <div className="flex items-center justify-center pl-2">
                       <div className={cn(
                         "p-2 rounded-xl border-2 border-dashed flex-shrink-0",
@@ -206,7 +206,7 @@ export default function StudentDashboardPage() {
                       <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
                         <AvatarImage src={student.photo} />
                         <AvatarFallback className="bg-blue-100 text-blue-600 font-bold">
-                          {student.name.charAt(0)}
+                          {student.name ? student.name.charAt(0) : '?'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
