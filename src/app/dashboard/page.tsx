@@ -1,25 +1,30 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Check, Trophy, Zap, ChevronRight } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Check, Trophy, Zap, ChevronRight, Bell, BellOff, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { getFirestore, collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ProfileData } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getMessaging, getToken } from 'firebase/messaging';
+import { useToast } from '@/hooks/use-toast';
 
 export default function StudentDashboardPage() {
   usePageBackground('');
   const { profile, user, isLoading, getStudentTitle } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [isRequestingNotifications, setIsRequestingNotifications] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -56,6 +61,47 @@ export default function StudentDashboardPage() {
       return () => unsubscribe();
     }
   }, [mounted, getStudentTitle]);
+
+  const handleEnableNotifications = async () => {
+    if (!user) return;
+    setIsRequestingNotifications(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        const messaging = getMessaging(firebaseApp);
+        const token = await getToken(messaging, { 
+          vapidKey: 'BM_placeholder_vapid_key_setup_via_console' // USER MUST REPLACE THIS IN PRODUCTION
+        });
+        
+        if (token) {
+          const db = getFirestore(firebaseApp);
+          const userRef = doc(db, "users", user.uid);
+          await updateDoc(userRef, { fcmToken: token });
+          toast({
+            title: "Notifications Enabled!",
+            description: "You'll receive daily practice reminders at 7 PM IST. 🔥",
+          });
+        } else {
+          throw new Error("No registration token available. Request permission to generate one.");
+        }
+      } else {
+        toast({
+          title: "Permission Denied",
+          description: "You won't receive practice reminders. You can enable them in browser settings.",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error("FCM Error:", error);
+      toast({
+        title: "Setup Failed",
+        description: "Could not enable reminders. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRequestingNotifications(false);
+    }
+  };
 
   if (isLoading || !mounted) {
     return (
@@ -167,6 +213,39 @@ export default function StudentDashboardPage() {
               </div>
             );
           })}
+        </div>
+
+        {/* Reminders Toggle */}
+        <div className="px-4 mt-6">
+          <Card className="rounded-[25px] border-none shadow-xl shadow-blue-900/5 bg-blue-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-black text-blue-800 flex items-center gap-2">
+                <Bell className="w-5 h-5" /> Daily Reminders
+              </CardTitle>
+              <CardDescription className="text-xs text-blue-600 font-medium">
+                Get a motivational nudge every evening at 7 PM.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={handleEnableNotifications}
+                disabled={isRequestingNotifications || !!profile.fcmToken}
+                variant={profile.fcmToken ? "ghost" : "default"}
+                className={cn(
+                  "w-full rounded-xl h-12 font-bold",
+                  profile.fcmToken ? "text-green-600 cursor-default hover:bg-transparent" : "bg-blue-600"
+                )}
+              >
+                {isRequestingNotifications ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : profile.fcmToken ? (
+                  <><Check className="w-4 h-4 mr-2" /> Reminders Active</>
+                ) : (
+                  "Enable Notifications"
+                )}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Activity Grid */}

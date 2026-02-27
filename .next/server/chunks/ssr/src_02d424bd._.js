@@ -11317,7 +11317,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts
 ;
 function TestPageClient({ testId, difficulty, settings }) {
     const router = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRouter"])();
-    const { user } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$useAuth$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
+    const { user, recordDailyPractice } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$useAuth$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
     const [questions, setQuestions] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(0);
     const [userAnswers, setUserAnswers] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
@@ -11374,6 +11374,8 @@ function TestPageClient({ testId, difficulty, settings }) {
             };
             try {
                 await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["addDoc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["collection"])(db, 'testResults'), resultData);
+                // Record daily practice progress
+                await recordDailyPractice(user.uid);
             } catch (error) {
                 console.error("Error saving test results: ", error);
             }
@@ -11391,7 +11393,8 @@ function TestPageClient({ testId, difficulty, settings }) {
         testId,
         difficulty,
         settings.timeLimit,
-        isFinished
+        isFinished,
+        recordDailyPractice
     ]);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (questions.length === 0 || !startTime) return;
@@ -11454,7 +11457,7 @@ function TestPageClient({ testId, difficulty, settings }) {
                     className: "h-12 w-12 animate-spin text-primary"
                 }, void 0, false, {
                     fileName: "[project]/src/components/TestPageClient.tsx",
-                    lineNumber: 159,
+                    lineNumber: 160,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -11462,13 +11465,13 @@ function TestPageClient({ testId, difficulty, settings }) {
                     children: "Generating your test..."
                 }, void 0, false, {
                     fileName: "[project]/src/components/TestPageClient.tsx",
-                    lineNumber: 160,
+                    lineNumber: 161,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/components/TestPageClient.tsx",
-            lineNumber: 158,
+            lineNumber: 159,
             columnNumber: 7
         }, this);
     }
@@ -11488,7 +11491,7 @@ function TestPageClient({ testId, difficulty, settings }) {
                                         children: settings.title
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/TestPageClient.tsx",
-                                        lineNumber: 170,
+                                        lineNumber: 171,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -11498,7 +11501,7 @@ function TestPageClient({ testId, difficulty, settings }) {
                                                 className: "h-6 w-6"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/TestPageClient.tsx",
-                                                lineNumber: 172,
+                                                lineNumber: 173,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -11509,19 +11512,19 @@ function TestPageClient({ testId, difficulty, settings }) {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/TestPageClient.tsx",
-                                                lineNumber: 173,
+                                                lineNumber: 174,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/TestPageClient.tsx",
-                                        lineNumber: 171,
+                                        lineNumber: 172,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/TestPageClient.tsx",
-                                lineNumber: 169,
+                                lineNumber: 170,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardDescription"], {
@@ -11533,7 +11536,7 @@ function TestPageClient({ testId, difficulty, settings }) {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/TestPageClient.tsx",
-                                lineNumber: 176,
+                                lineNumber: 177,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$progress$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Progress"], {
@@ -11541,13 +11544,13 @@ function TestPageClient({ testId, difficulty, settings }) {
                                 className: "w-full mt-2"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/TestPageClient.tsx",
-                                lineNumber: 177,
+                                lineNumber: 178,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/TestPageClient.tsx",
-                        lineNumber: 168,
+                        lineNumber: 169,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -11568,25 +11571,25 @@ function TestPageClient({ testId, difficulty, settings }) {
                                                 children: index + 1
                                             }, index, false, {
                                                 fileName: "[project]/src/components/TestPageClient.tsx",
-                                                lineNumber: 183,
+                                                lineNumber: 184,
                                                 columnNumber: 21
                                             }, this))
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/TestPageClient.tsx",
-                                        lineNumber: 181,
+                                        lineNumber: 182,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["ScrollBar"], {
                                         orientation: "horizontal"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/TestPageClient.tsx",
-                                        lineNumber: 194,
+                                        lineNumber: 195,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/TestPageClient.tsx",
-                                lineNumber: 180,
+                                lineNumber: 181,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -11597,7 +11600,7 @@ function TestPageClient({ testId, difficulty, settings }) {
                                         children: currentQuestion.text
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/TestPageClient.tsx",
-                                        lineNumber: 198,
+                                        lineNumber: 199,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -11605,13 +11608,13 @@ function TestPageClient({ testId, difficulty, settings }) {
                                         children: "= ?"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/TestPageClient.tsx",
-                                        lineNumber: 201,
+                                        lineNumber: 202,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, currentQuestionIndex, true, {
                                 fileName: "[project]/src/components/TestPageClient.tsx",
-                                lineNumber: 197,
+                                lineNumber: 198,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -11627,25 +11630,25 @@ function TestPageClient({ testId, difficulty, settings }) {
                                         children: option
                                     }, index, false, {
                                         fileName: "[project]/src/components/TestPageClient.tsx",
-                                        lineNumber: 211,
+                                        lineNumber: 212,
                                         columnNumber: 17
                                     }, this);
                                 })
                             }, void 0, false, {
                                 fileName: "[project]/src/components/TestPageClient.tsx",
-                                lineNumber: 205,
+                                lineNumber: 206,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/TestPageClient.tsx",
-                        lineNumber: 179,
+                        lineNumber: 180,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/TestPageClient.tsx",
-                lineNumber: 167,
+                lineNumber: 168,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -11661,19 +11664,19 @@ function TestPageClient({ testId, difficulty, settings }) {
                                         className: "mr-2 h-4 w-4"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/TestPageClient.tsx",
-                                        lineNumber: 233,
+                                        lineNumber: 234,
                                         columnNumber: 17
                                     }, this),
                                     "End Test"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/TestPageClient.tsx",
-                                lineNumber: 232,
+                                lineNumber: 233,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/TestPageClient.tsx",
-                            lineNumber: 231,
+                            lineNumber: 232,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogContent"], {
@@ -11684,20 +11687,20 @@ function TestPageClient({ testId, difficulty, settings }) {
                                             children: "Are you sure you want to end the test?"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/TestPageClient.tsx",
-                                            lineNumber: 239,
+                                            lineNumber: 240,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
                                             children: "Your progress will be saved and you will be taken to the results page. You cannot undo this action."
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/TestPageClient.tsx",
-                                            lineNumber: 240,
+                                            lineNumber: 241,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/TestPageClient.tsx",
-                                    lineNumber: 238,
+                                    lineNumber: 239,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
@@ -11706,7 +11709,7 @@ function TestPageClient({ testId, difficulty, settings }) {
                                             children: "Cancel"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/TestPageClient.tsx",
-                                            lineNumber: 245,
+                                            lineNumber: 246,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogAction"], {
@@ -11714,36 +11717,36 @@ function TestPageClient({ testId, difficulty, settings }) {
                                             children: "Yes, end test"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/TestPageClient.tsx",
-                                            lineNumber: 246,
+                                            lineNumber: 247,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/TestPageClient.tsx",
-                                    lineNumber: 244,
+                                    lineNumber: 245,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/TestPageClient.tsx",
-                            lineNumber: 237,
+                            lineNumber: 238,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/TestPageClient.tsx",
-                    lineNumber: 230,
+                    lineNumber: 231,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/TestPageClient.tsx",
-                lineNumber: 229,
+                lineNumber: 230,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/TestPageClient.tsx",
-        lineNumber: 166,
+        lineNumber: 167,
         columnNumber: 5
     }, this);
 }
@@ -12127,7 +12130,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$i
 ;
 function BeadsTestPageClient({ testId, difficulty, settings }) {
     const router = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRouter"])();
-    const { user } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$useAuth$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
+    const { user, recordDailyPractice } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$useAuth$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
     const [questions, setQuestions] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(0);
     const [userAnswers, setUserAnswers] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
@@ -12198,6 +12201,8 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
             };
             try {
                 await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["addDoc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["collection"])(db, 'testResults'), resultData);
+                // Record daily practice progress
+                await recordDailyPractice(user.uid);
             } catch (error) {
                 console.error("Error saving test results: ", error);
             }
@@ -12212,7 +12217,8 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
         user,
         testId,
         difficulty,
-        isFinished
+        isFinished,
+        recordDailyPractice
     ]);
     const goToNextQuestion = (updatedAnswers)=>{
         if (currentQuestionIndex < questions.length - 1) {
@@ -12259,7 +12265,7 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                     className: "h-12 w-12 animate-spin text-primary"
                 }, void 0, false, {
                     fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                    lineNumber: 160,
+                    lineNumber: 161,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -12267,13 +12273,13 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                     children: "Generating your practice questions..."
                 }, void 0, false, {
                     fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                    lineNumber: 161,
+                    lineNumber: 162,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-            lineNumber: 159,
+            lineNumber: 160,
             columnNumber: 7
         }, this);
     }
@@ -12287,14 +12293,14 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                         children: "What is the value shown?"
                     }, void 0, false, {
                         fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                        lineNumber: 170,
+                        lineNumber: 171,
                         columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$BeadDisplay$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
                         value: currentQuestion.answer
                     }, void 0, false, {
                         fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                        lineNumber: 171,
+                        lineNumber: 172,
                         columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -12307,13 +12313,13 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                         className: "mt-6 w-48 text-center text-xl h-12"
                     }, void 0, false, {
                         fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                        lineNumber: 172,
+                        lineNumber: 173,
                         columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                lineNumber: 169,
+                lineNumber: 170,
                 columnNumber: 9
             }, this);
         }
@@ -12326,7 +12332,7 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                         children: "Set this value on the abacus:"
                     }, void 0, false, {
                         fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                        lineNumber: 187,
+                        lineNumber: 188,
                         columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -12334,7 +12340,7 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                         children: currentQuestion.answer
                     }, void 0, false, {
                         fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                        lineNumber: 188,
+                        lineNumber: 189,
                         columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$BeadDisplay$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
@@ -12342,13 +12348,13 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                         onChange: setAbacusValue
                     }, void 0, false, {
                         fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                        lineNumber: 189,
+                        lineNumber: 190,
                         columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                lineNumber: 186,
+                lineNumber: 187,
                 columnNumber: 9
             }, this);
         }
@@ -12369,12 +12375,12 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                                     children: settings.title
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                    lineNumber: 201,
+                                    lineNumber: 202,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                lineNumber: 200,
+                                lineNumber: 201,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardDescription"], {
@@ -12386,7 +12392,7 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                lineNumber: 203,
+                                lineNumber: 204,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$progress$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Progress"], {
@@ -12394,13 +12400,13 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                                 className: "w-full mt-2"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                lineNumber: 204,
+                                lineNumber: 205,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                        lineNumber: 199,
+                        lineNumber: 200,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -12419,25 +12425,25 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                                                 children: index + 1
                                             }, index, false, {
                                                 fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                                lineNumber: 210,
+                                                lineNumber: 211,
                                                 columnNumber: 21
                                             }, this))
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                        lineNumber: 208,
+                                        lineNumber: 209,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["ScrollBar"], {
                                         orientation: "horizontal"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                        lineNumber: 221,
+                                        lineNumber: 222,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                lineNumber: 207,
+                                lineNumber: 208,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -12445,7 +12451,7 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                                 children: renderQuestion()
                             }, currentQuestionIndex, false, {
                                 fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                lineNumber: 224,
+                                lineNumber: 225,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -12458,31 +12464,31 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                                             className: "mr-2 h-5 w-5"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                            lineNumber: 230,
+                                            lineNumber: 231,
                                             columnNumber: 15
                                         }, this),
                                         "Submit and Next"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                    lineNumber: 229,
+                                    lineNumber: 230,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                lineNumber: 228,
+                                lineNumber: 229,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                        lineNumber: 206,
+                        lineNumber: 207,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                lineNumber: 198,
+                lineNumber: 199,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -12498,19 +12504,19 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                                         className: "mr-2 h-4 w-4"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                        lineNumber: 240,
+                                        lineNumber: 241,
                                         columnNumber: 17
                                     }, this),
                                     "End Practice"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                lineNumber: 239,
+                                lineNumber: 240,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                            lineNumber: 238,
+                            lineNumber: 239,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogContent"], {
@@ -12521,20 +12527,20 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                                             children: "Are you sure you want to end the practice session?"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                            lineNumber: 246,
+                                            lineNumber: 247,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
                                             children: "Your progress will be saved and you will be taken to the results page. You cannot undo this action."
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                            lineNumber: 247,
+                                            lineNumber: 248,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                    lineNumber: 245,
+                                    lineNumber: 246,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
@@ -12543,7 +12549,7 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                                             children: "Cancel"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                            lineNumber: 252,
+                                            lineNumber: 253,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogAction"], {
@@ -12551,36 +12557,36 @@ function BeadsTestPageClient({ testId, difficulty, settings }) {
                                             children: "Yes, end practice"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                            lineNumber: 253,
+                                            lineNumber: 254,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                                    lineNumber: 251,
+                                    lineNumber: 252,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                            lineNumber: 244,
+                            lineNumber: 245,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                    lineNumber: 237,
+                    lineNumber: 238,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-                lineNumber: 236,
+                lineNumber: 237,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/BeadsTestPageClient.tsx",
-        lineNumber: 197,
+        lineNumber: 198,
         columnNumber: 5
     }, this);
 }

@@ -233,6 +233,7 @@ export interface ProfileData {
   currentStreak?: number;
   totalDaysPracticed?: number;
   monthlyPoints?: number;
+  fcmToken?: string;
 }
 
 export type UpdateProfilePayload = {
@@ -261,6 +262,7 @@ export type UpdateProfilePayload = {
   instituteState?: string;
   institutePincode?: string;
   profilePhoto?: File;
+  fcmToken?: string;
 };
 
 
