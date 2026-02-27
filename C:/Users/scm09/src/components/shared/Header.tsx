@@ -52,11 +52,10 @@ export function Header() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/about', label: 'About' },
-    { href: '/tests/practice', label: 'Practice' },
-    { href: '/tests', label: 'Tests' },
+    { href: '/tests', label: 'Practice & Games' },
     { href: '/pricing', label: 'Pricing' },
-    { href: '/contact', label: 'Contact' },
-    { href: '/tool-preview', label: 'Tool Preview' },
+    { href: '/contact', label: 'Contact us' },
+    { href: '/tool-preview', label: 'Abacus Tool' },
   ];
   
   const displayName = profile?.firstName ? `${profile.firstName} ${profile.surname}` : user?.email?.split('@')[0] || 'User';
@@ -102,7 +101,12 @@ export function Header() {
             <DropdownMenuSeparator />
             {canSeeDashboard && (
               <DropdownMenuItem onClick={() => router.push('/admin')}>
-                Dashboard
+                Admin Dashboard
+              </DropdownMenuItem>
+            )}
+            {profile?.role === 'student' && (
+              <DropdownMenuItem onClick={() => router.push('/dashboard')}>
+                My Dashboard
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={() => router.push('/profile')}>
@@ -161,13 +165,15 @@ export function Header() {
                 <SheetHeader className="sr-only">
                   <SheetTitle>Mobile Navigation Menu</SheetTitle>
                 </SheetHeader>
-                <div className="flex flex-col gap-4 py-8 overflow-y-auto">
-                      <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2 mb-4 px-4">
-                        <Brain className="h-8 w-8 text-primary" />
-                        <div>
+                <div className="flex flex-col gap-4 py-8 overflow-y-auto max-h-full">
+                      <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex flex-col items-center mb-4 px-4">
+                        <div className="flex items-center gap-2">
+                          <Brain className="h-8 w-8 text-primary" />
                           <Logo />
-                          <p className="text-[0.6rem] text-muted-foreground tracking-widest -mt-1">LEARN • PRACTICE • SUCCEED</p>
                         </div>
+                        <p className="text-[0.55rem] text-muted-foreground tracking-widest -mt-1 flex items-center gap-1 justify-center">
+                          LEARN <span className="text-[0.7rem] leading-none pb-0.5">•</span> PRACTICE <span className="text-[0.7rem] leading-none pb-0.5">•</span> SUCCEED
+                        </p>
                       </Link>
                     {navLinks.map((link) => (
                         <button
@@ -197,7 +203,8 @@ export function Header() {
                                   )}
                               </div>
                             </div>
-                            {canSeeDashboard && <Button className="w-full" variant="outline" onClick={() => handleLinkClick('/admin')}>Dashboard</Button>}
+                            {canSeeDashboard && <Button className="w-full" variant="outline" onClick={() => handleLinkClick('/admin')}>Admin Dashboard</Button>}
+                            {profile?.role === 'student' && <Button className="w-full" variant="outline" onClick={() => handleLinkClick('/dashboard')}>My Dashboard</Button>}
                             <Button className="w-full" onClick={() => handleLinkClick('/profile')}>Profile</Button>
                             <Button className="w-full" variant="outline" onClick={() => handleLinkClick('/progress')}>Progress</Button>
                             {profile?.subscriptionStatus !== 'pro' && profile?.role === 'student' && (
@@ -225,12 +232,14 @@ export function Header() {
     <header className="bg-card/90 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <Brain className="h-8 w-8 text-primary" />
-            <div>
+          <Link href="/" className="flex flex-col items-center">
+            <div className="flex items-center gap-2">
+              <Brain className="h-8 w-8 text-primary" />
               <Logo />
-              <p className="text-[0.6rem] text-muted-foreground tracking-widest -mt-1">LEARN • PRACTICE • SUCCEED</p>
             </div>
+            <p className="text-[0.55rem] text-muted-foreground tracking-widest -mt-1 hidden sm:flex items-center gap-1 justify-center">
+              LEARN <span className="text-[0.7rem] leading-none pb-0.5">•</span> PRACTICE <span className="text-[0.7rem] leading-none pb-0.5">•</span> SUCCEED
+            </p>
           </Link>
           
           <>
