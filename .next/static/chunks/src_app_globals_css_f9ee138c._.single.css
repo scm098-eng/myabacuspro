@@ -2465,6 +2465,10 @@ body {
   padding-left: .5rem;
 }
 
+.pb-0\.5 {
+  padding-bottom: .125rem;
+}
+
 .text-left {
   text-align: left;
 }
@@ -2487,6 +2491,10 @@ body {
 
 .font-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+}
+
+.font-sans {
+  font-family: ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
 }
 
 .text-2xl {
@@ -2549,6 +2557,14 @@ body {
 
 .text-\[10px\] {
   font-size: 10px;
+}
+
+.text-\[0\.55rem\] {
+  font-size: .55rem;
+}
+
+.text-\[0\.7rem\] {
+  font-size: .7rem;
 }
 
 .font-black {

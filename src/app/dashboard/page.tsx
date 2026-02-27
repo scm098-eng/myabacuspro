@@ -8,6 +8,7 @@ import { Check, Trophy, Baby, ChevronRight, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 export default function StudentDashboardPage() {
   usePageBackground('');
@@ -38,7 +39,7 @@ export default function StudentDashboardPage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-[450px] mx-auto bg-[#f4f7f9] min-h-screen pb-32 -m-4 sm:-m-6 lg:-m-8 relative">
+    <div className="max-w-[450px] mx-auto bg-[#f4f7f9] min-h-screen pb-32 -m-4 sm:-m-6 lg:-m-8 relative font-sans">
       {/* Header Card */}
       <div className="relative h-[240px] rounded-b-[35px] overflow-hidden shadow-xl shadow-blue-900/10">
         <div 
@@ -55,7 +56,7 @@ export default function StudentDashboardPage() {
 
           <div className="mt-auto">
             <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2.5 text-blue-100">
-              <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-yellow-400 fill-yellow-400" /> 15 Days left</span>
+              <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-yellow-400 fill-yellow-400" /> 15 Days left in Month</span>
               <span>18% to next Badge</span>
             </div>
             <div className="h-3 w-full bg-white/20 rounded-full p-0.5 backdrop-blur-sm">
@@ -81,6 +82,7 @@ export default function StudentDashboardPage() {
           </div>
 
           <div className="flex items-center justify-between relative h-12">
+            {/* Background Line */}
             <div className="absolute top-1/2 left-4 right-12 h-1 bg-slate-100 -translate-y-1/2 z-0 rounded-full overflow-hidden">
                <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: '80%' }} />
             </div>
@@ -91,12 +93,15 @@ export default function StudentDashboardPage() {
                   <Check className="w-4 h-4 stroke-[4px]" />
                 </div>
               ))}
+              {/* Current Day */}
               <div className="w-9 h-9 rounded-full border-[3px] border-blue-600 bg-white flex items-center justify-center text-blue-600 text-xs font-black shadow-lg shadow-blue-100 animate-pulse">
                 6
               </div>
+              {/* Next Day */}
               <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-black border-2 border-white">
                 7
               </div>
+              {/* Trophy */}
               <div className="flex items-center justify-center pl-2">
                 <div className="bg-slate-50 p-2 rounded-xl border-2 border-dashed border-slate-200 grayscale opacity-50">
                   <Trophy className="w-5 h-5 text-slate-400" />
@@ -119,7 +124,7 @@ export default function StudentDashboardPage() {
         </div>
       </div>
 
-      {/* Call to Action */}
+      {/* Detailed Report Link */}
       <div className="mt-8 px-4">
         <Button 
           onClick={() => router.push('/progress')}
@@ -135,7 +140,7 @@ export default function StudentDashboardPage() {
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-[450px] px-6 z-50">
         <Button 
           onClick={() => router.push('/tests')}
-          className="w-full h-18 py-8 rounded-full bg-blue-600 hover:bg-blue-700 text-2xl font-black shadow-[0_15px_30px_rgba(37,99,235,0.4)] uppercase tracking-widest flex items-center justify-center gap-3 group transition-all active:scale-95"
+          className="w-full h-18 py-8 rounded-full bg-blue-600 hover:bg-blue-700 text-2xl font-black shadow-[0_15px_30px_rgba(37,99,235,0.4)] uppercase tracking-widest flex items-center justify-center gap-3 group transition-all active:scale-95 text-white"
         >
           GO
           <div className="bg-white/20 p-1 rounded-full group-hover:translate-x-1 transition-transform">

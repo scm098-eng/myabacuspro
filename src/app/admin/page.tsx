@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -277,7 +276,7 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
                  <Table>
-                    <TableHeader><TableRow><TableHead>Teacher</TableHead><TableHead>Email</TableHead><TableHead>Status</TableHead><TableHead>Students</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                    <TableHeader><TableRow><TableHead>Teacher</TableHead><TableHead>Email</TableHead><TableHead>Status</TableHead><TableHead>Total Students</TableHead><TableHead>Pro Students</TableHead><TableHead>Free Students</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                     <TableBody>
                         {teachers.length > 0 ? teachers.map((teacher) => (
                             <TableRow key={teacher.uid}>
@@ -289,6 +288,8 @@ export default function AdminDashboardPage() {
                                     </Badge>
                                 </TableCell>
                                 <TableCell>{teacher.studentCounts.total}</TableCell>
+                                <TableCell>{teacher.studentCounts.pro}</TableCell>
+                                <TableCell>{teacher.studentCounts.free}</TableCell>
                                 <TableCell className="text-right">
                                     <Button asChild variant="outline" size="sm">
                                       <Link href={`/admin/user/${teacher.uid}`}>
@@ -298,7 +299,7 @@ export default function AdminDashboardPage() {
                                     </Button>
                                 </TableCell>
                             </TableRow>
-                        )) : <TableRow><TableCell colSpan={5} className="text-center">No teachers found.</TableCell></TableRow>}
+                        )) : <TableRow><TableCell colSpan={7} className="text-center">No teachers found.</TableCell></TableRow>}
                     </TableBody>
                 </Table>
             </CardContent>
