@@ -69,8 +69,9 @@ export default function StudentDashboardPage() {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
         const messaging = getMessaging(firebaseApp);
+        // Updated with the user provided VAPID Key
         const token = await getToken(messaging, { 
-          vapidKey: 'BM_placeholder_vapid_key_setup_via_console' // USER MUST REPLACE THIS IN PRODUCTION
+          vapidKey: 'BF27zRYbNBqLyR0w1XZVSCWK0YNgG7M9DymtcLAPr6A0gUoT0OlIn-q7fpPhgYgOwcj91lmXUL7KvTV4o0Yd7J8' 
         });
         
         if (token) {
