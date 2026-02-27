@@ -229,6 +229,10 @@ export interface ProfileData {
   instituteState?: string;
   institutePincode?: string;
   instituteAddress?: string;
+  lastPracticeDate?: string;
+  currentStreak?: number;
+  totalDaysPracticed?: number;
+  monthlyPoints?: number;
 }
 
 export type UpdateProfilePayload = {

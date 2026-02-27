@@ -838,7 +838,10 @@ function AuthProvider({ children }) {
                     values.instituteState,
                     values.institutePincode
                 ].filter(Boolean).join(', ')
-            }
+            },
+            currentStreak: 0,
+            totalDaysPracticed: 0,
+            monthlyPoints: 0
         };
         await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["setDoc"])(userDocRef, dataToSave).catch((serverError)=>{
             const permissionError = new __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$errors$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["FirestorePermissionError"]({
@@ -875,7 +878,10 @@ function AuthProvider({ children }) {
                 createdAt: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["serverTimestamp"])(),
                 subscriptionStatus: 'free',
                 role: isAdmin ? 'admin' : 'student',
-                teacherId: null
+                teacherId: null,
+                currentStreak: 0,
+                totalDaysPracticed: 0,
+                monthlyPoints: 0
             };
             await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["setDoc"])(userDocRef, dataToSave).catch((serverError)=>{
                 const permissionError = new __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$errors$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["FirestorePermissionError"]({
@@ -1113,6 +1119,69 @@ function AuthProvider({ children }) {
         user,
         firestore
     ]);
+    const recordDailyPractice = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async (userId)=>{
+        const userRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(firestore, "users", userId);
+        const userSnap = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDoc"])(userRef);
+        if (!userSnap.exists()) return;
+        const data = userSnap.data();
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const lastDate = data.lastPracticeDate || "";
+        if (lastDate === today) {
+            return;
+        }
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        let newStreak = 1;
+        if (lastDate === yesterdayStr) {
+            newStreak = (data.currentStreak || 0) + 1;
+        }
+        await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["updateDoc"])(userRef, {
+            lastPracticeDate: today,
+            currentStreak: newStreak,
+            totalDaysPracticed: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["increment"])(1),
+            monthlyPoints: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["increment"])(100),
+            updatedAt: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["serverTimestamp"])()
+        });
+        await fetchProfile({
+            uid: userId
+        });
+    }, [
+        firestore,
+        fetchProfile
+    ]);
+    const getStudentTitle = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])((totalDays)=>{
+        if (totalDays >= 365) return {
+            name: "Human Calculator",
+            icon: "👑",
+            color: "#FFD700"
+        };
+        if (totalDays >= 270) return {
+            name: "Grandmaster",
+            icon: "🔱",
+            color: "#E5E4E2"
+        };
+        if (totalDays >= 180) return {
+            name: "Math Ninja",
+            icon: "🥷",
+            color: "#C0C0C0"
+        };
+        if (totalDays >= 90) return {
+            name: "Speed Runner",
+            icon: "⚡",
+            color: "#CD7F32"
+        };
+        if (totalDays >= 30) return {
+            name: "Apprentice",
+            icon: "🛠️",
+            color: "#A52A2A"
+        };
+        return {
+            name: "Junior Calculator",
+            icon: "👶",
+            color: "#ADD8E6"
+        };
+    }, []);
     const value = {
         user,
         profile,
@@ -1131,14 +1200,16 @@ function AuthProvider({ children }) {
         approveTeacher,
         getCompletedGameLevels,
         saveCompletedGameLevel,
-        fetchProfile
+        fetchProfile,
+        recordDailyPractice,
+        getStudentTitle
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AuthContext.Provider, {
         value: value,
         children: children
     }, void 0, false, {
         fileName: "[project]/src/contexts/AuthContext.tsx",
-        lineNumber: 421,
+        lineNumber: 477,
         columnNumber: 5
     }, this);
 }

@@ -4,19 +4,22 @@ import Razorpay from 'razorpay';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
 
-const getRazorpay = () => {
-  // Check if keys exist (only true during Live Runtime, false during Build)
-  if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+// Build-safe initialization
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+
+const getRazorpayInstance = () => {
+  if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
     return new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: process.env.RAZORPAY_KEY_SECRET,
+      key_id: RAZORPAY_KEY_ID,
+      key_secret: RAZORPAY_KEY_SECRET,
     });
   }
   return null;
 };
 
 export async function POST(req: NextRequest) {
-  const razorpay = getRazorpay();
+  const razorpay = getRazorpayInstance();
 
   if (!razorpay) {
     console.error('Razorpay keys missing - this is expected during Build but an error in Production.');
@@ -25,6 +28,7 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+
   const adminApp = getFirebaseAdmin();
   const db = getFirestore(adminApp);
   

@@ -16,7 +16,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp, getFirestore, type Firestore, collection, getDocs, query, where, arrayUnion, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, getFirestore, type Firestore, collection, getDocs, query, where, arrayUnion, updateDoc, increment, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, getStorage, type FirebaseStorage, deleteObject } from 'firebase/storage';
 import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload } from '@/types';
 import { errorEmitter } from '@/lib/error-emitter';
@@ -43,6 +43,8 @@ interface AuthContextType {
   getCompletedGameLevels: () => Promise<number[]>;
   saveCompletedGameLevel: (levelId: number) => Promise<void>;
   fetchProfile: (user: User) => Promise<ProfileData | null>;
+  recordDailyPractice: (userId: string) => Promise<void>;
+  getStudentTitle: (totalDays: number) => { name: string, icon: string, color: string };
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -162,6 +164,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             status: 'pending',
             instituteAddress: [values.instituteAddressLine1, values.instituteCity, values.instituteTaluka, values.instituteDistrict, values.instituteState, values.institutePincode].filter(Boolean).join(', ')
           }),
+          currentStreak: 0,
+          totalDaysPracticed: 0,
+          monthlyPoints: 0,
       };
 
       await setDoc(userDocRef, dataToSave).catch(serverError => {
@@ -200,6 +205,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         subscriptionStatus: 'free',
         role: isAdmin ? 'admin' : 'student',
         teacherId: null,
+        currentStreak: 0,
+        totalDaysPracticed: 0,
+        monthlyPoints: 0,
       };
 
        await setDoc(userDocRef, dataToSave).catch(serverError => {
@@ -415,7 +423,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, [user, firestore]);
 
-  const value = { user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, sendPasswordReset, updateUserProfile, getAllUsers, getApprovedTeachers, getUserTestHistory, getUserProfile, approveTeacher, getCompletedGameLevels, saveCompletedGameLevel, fetchProfile };
+  const recordDailyPractice = useCallback(async (userId: string) => {
+    const userRef = doc(firestore, "users", userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (!userSnap.exists()) return;
+
+    const data = userSnap.data() as ProfileData;
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const lastDate = data.lastPracticeDate || "";
+
+    if (lastDate === today) {
+      return;
+    }
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    let newStreak = 1;
+    if (lastDate === yesterdayStr) {
+      newStreak = (data.currentStreak || 0) + 1;
+    }
+
+    await updateDoc(userRef, {
+      lastPracticeDate: today,
+      currentStreak: newStreak,
+      totalDaysPracticed: increment(1),
+      monthlyPoints: increment(100),
+      updatedAt: serverTimestamp(),
+    });
+    
+    await fetchProfile({ uid: userId } as User);
+  }, [firestore, fetchProfile]);
+
+  const getStudentTitle = useCallback((totalDays: number) => {
+    if (totalDays >= 365) return { name: "Human Calculator", icon: "👑", color: "#FFD700" };
+    if (totalDays >= 270) return { name: "Grandmaster", icon: "🔱", color: "#E5E4E2" };
+    if (totalDays >= 180) return { name: "Math Ninja", icon: "🥷", color: "#C0C0C0" };
+    if (totalDays >= 90)  return { name: "Speed Runner", icon: "⚡", color: "#CD7F32" };
+    if (totalDays >= 30)  return { name: "Apprentice", icon: "🛠️", color: "#A52A2A" };
+    return { name: "Junior Calculator", icon: "👶", color: "#ADD8E6" };
+  }, []);
+
+  const value = { 
+    user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
+    sendPasswordReset, updateUserProfile, getAllUsers, getApprovedTeachers, 
+    getUserTestHistory, getUserProfile, approveTeacher, getCompletedGameLevels, 
+    saveCompletedGameLevel, fetchProfile, recordDailyPractice, getStudentTitle 
+  };
 
   return (
     <AuthContext.Provider value={value}>
