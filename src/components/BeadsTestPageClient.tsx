@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -30,7 +29,7 @@ import { Input } from './ui/input';
 
 export default function BeadsTestPageClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, recordDailyPractice } = useAuth();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>([]);
@@ -96,6 +95,8 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
       
       try {
         await addDoc(collection(db, 'testResults'), resultData);
+        // Record daily practice progress
+        await recordDailyPractice(user.uid);
       } catch (error) {
         console.error("Error saving test results: ", error);
       }
@@ -110,7 +111,7 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
     }
 
     router.replace(`/results?score=${score}&total=${questions.length}&time=${timeLeft}`);
-  }, [questions, router, user, testId, difficulty, isFinished]);
+  }, [questions, router, user, testId, difficulty, isFinished, recordDailyPractice]);
 
   const goToNextQuestion = (updatedAnswers: (number | null)[]) => {
     if (currentQuestionIndex < questions.length - 1) {

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -78,9 +77,9 @@ export default function StudentDashboardPage() {
   const progressToNextBadge = Math.min(100, Math.floor(((profile.totalDaysPracticed || 0) % 30) / 30 * 100));
 
   return (
-    <div className="max-w-4xl mx-auto bg-[#f4f7f9] min-h-screen pb-32 -m-4 sm:-m-6 lg:-m-8 relative font-sans">
+    <div className="flex justify-center w-full bg-[#f4f7f9] -m-4 sm:-m-6 lg:-m-8 pb-32 relative font-sans rounded-2xl overflow-hidden min-h-screen">
       {/* Centered Wrapper */}
-      <div className="max-w-[450px] mx-auto min-h-screen flex flex-col">
+      <div className="w-full max-w-[450px] min-h-screen flex flex-col bg-white shadow-2xl">
         {/* Header Card */}
         <div className="relative h-[240px] rounded-b-[35px] overflow-hidden shadow-xl shadow-blue-900/10 flex-shrink-0">
           <div 
@@ -147,7 +146,7 @@ export default function StudentDashboardPage() {
                         <div 
                           key={dayOffset} 
                           className={cn(
-                            "w-9 h-9 rounded-full flex items-center justify-center border-2 border-white shadow-lg flex-shrink-0 aspect-square",
+                            "w-9 h-9 min-w-[36px] min-h-[36px] rounded-full flex items-center justify-center border-2 border-white shadow-lg flex-shrink-0 aspect-square",
                             isCompleted ? "bg-blue-600 text-white shadow-blue-200" : isCurrent ? "border-blue-600 bg-white text-blue-600 animate-pulse" : "bg-slate-100 text-slate-400"
                           )}
                         >

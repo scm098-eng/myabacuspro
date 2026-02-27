@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -60,7 +59,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const [gameState, setGameState] = useState<'playing' | 'levelComplete' | 'gameOver'>('playing');
 
   const questionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const { user, saveCompletedGameLevel } = useAuth();
+  const { user, saveCompletedGameLevel, recordDailyPractice } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -73,6 +72,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
       const finalScorePercentage = (score / (questions.length * 10)) * 100;
       if (finalScorePercentage >= MIN_SCORE_TO_PASS && user) {
         saveCompletedGameLevel(levelId);
+        recordDailyPractice(user.uid);
         setGameState('levelComplete');
       } else {
         setGameState('gameOver');
@@ -80,7 +80,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     } else {
       setCurrentQuestionIndex(i => i + 1);
     }
-  }, [currentQuestionIndex, questions.length, score, user, saveCompletedGameLevel, levelId]);
+  }, [currentQuestionIndex, questions.length, score, user, saveCompletedGameLevel, levelId, recordDailyPractice]);
 
 
   const generateBubbles = useCallback(() => {

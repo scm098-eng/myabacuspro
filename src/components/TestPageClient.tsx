@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -28,7 +27,7 @@ import { firebaseApp } from '@/lib/firebase';
 
 export default function TestPageClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, recordDailyPractice } = useAuth();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>([]);
@@ -88,6 +87,8 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       
       try {
         await addDoc(collection(db, 'testResults'), resultData);
+        // Record daily practice progress
+        await recordDailyPractice(user.uid);
       } catch (error) {
         console.error("Error saving test results: ", error);
       }
@@ -102,7 +103,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     }
 
     router.replace(`/results?score=${score}&total=${questions.length}&time=${timeLeft}`);
-  }, [userAnswers, questions, router, timeLeft, user, testId, difficulty, settings.timeLimit, isFinished]);
+  }, [userAnswers, questions, router, timeLeft, user, testId, difficulty, settings.timeLimit, isFinished, recordDailyPractice]);
 
   useEffect(() => {
     if (questions.length === 0 || !startTime) return;

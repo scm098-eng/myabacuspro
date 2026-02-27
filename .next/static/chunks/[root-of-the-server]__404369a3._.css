@@ -1118,6 +1118,10 @@ body {
   min-height: 100svh;
 }
 
+.min-h-\[36px\] {
+  min-height: 36px;
+}
+
 .w-0 {
   width: 0;
 }
@@ -1292,6 +1296,10 @@ body {
 
 .min-w-\[var\(--radix-select-trigger-width\)\] {
   min-width: var(--radix-select-trigger-width);
+}
+
+.min-w-\[36px\] {
+  min-width: 36px;
 }
 
 .max-w-2xl {
