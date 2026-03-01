@@ -14,7 +14,7 @@ const Bead = ({
   return (
     <div
       onClick={onClick}
-      className="w-16 h-10 transition-transform duration-300 ease-in-out relative group cursor-pointer"
+      className="w-12 h-8 sm:w-16 sm:h-10 transition-all duration-300 ease-in-out relative group cursor-pointer shrink-0"
     >
       <div
         className={cn(
@@ -32,84 +32,95 @@ const AbacusRod = ({
   digit,
   isUnitRod,
   onBeadClick,
+  isActive,
 }: {
   digit: number;
   isUnitRod: boolean;
   onBeadClick: (value: number) => void;
+  isActive?: boolean;
 }) => {
   const upperBeadActive = digit >= 5;
   const lowerBeadsValue = digit % 5;
-  const rodHeight = 280;
+  const rodHeight = 300;
 
   return (
-    <div className="relative w-20 flex flex-col items-center" style={{ height: `${rodHeight}px` }}>
+    <div className={cn(
+      "relative w-14 sm:w-20 flex flex-col items-center transition-all duration-200 rounded-lg",
+      isActive && "bg-red-500/10 ring-2 ring-red-500 shadow-md scale-105 z-30"
+    )} style={{ height: `${rodHeight}px` }}>
       {/* Rod */}
-      <div className="absolute h-full w-1.5 bg-[#4d2b1e] top-0 z-0 rounded-full" />
+      <div className="absolute h-full w-1 bg-[#4d2b1e] top-0 z-0 rounded-full" />
       
       {/* Separator Bar */}
-       <div className="absolute top-[29%] left-[-8px] right-[-8px] h-4 bg-gradient-to-b from-[#e7c9a8] to-[#d4b48f] -translate-y-1/2 z-10 shadow-lg flex items-center justify-center border-y-2 border-black/50">
-         {isUnitRod && <div className="h-2 w-2 bg-white rounded-full shadow-md border border-gray-400"></div>}
+       <div className="absolute top-[30%] left-[-4px] right-[-4px] h-3 sm:h-4 bg-gradient-to-b from-[#e7c9a8] to-[#d4b48f] -translate-y-1/2 z-10 shadow-lg flex items-center justify-center border-y-2 border-black/50">
+         {isUnitRod && <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 bg-black rounded-full shadow-md border border-gray-900"></div>}
       </div>
 
       {/* Upper Bead Section */}
-      <div className="w-full h-[29%] flex flex-col items-center justify-start z-20">
-         <div className={cn("transition-transform duration-300 ease-in-out", upperBeadActive ? 'translate-y-8' : 'translate-y-0')}>
-            <Bead isUpper={true} onClick={() => onBeadClick(5)} />
-         </div>
+      <div className="w-full h-[30%] flex flex-col items-center z-20 pb-1 pt-1">
+         {upperBeadActive && <div className="flex-grow" />}
+         <Bead isUpper={true} onClick={() => onBeadClick(5)} />
+         {!upperBeadActive && <div className="flex-grow" />}
       </div>
 
        {/* Lower Beads Section */}
-      <div className="w-full flex-grow flex flex-col items-center justify-end z-20">
-            {[...Array(4)].map((_, i) => {
-              // i is 0 for top bead, 3 for bottom bead
-              const beadIsActive = (i + 1) <= lowerBeadsValue;
-              
-              return (
-                 <div key={i} className={cn("transition-transform duration-300 ease-in-out", beadIsActive ? '-translate-y-8' : 'translate-y-0')}>
-                    <Bead isUpper={false} onClick={() => onBeadClick(i + 1)} />
-                 </div>
-              )
-            })}
+      <div className="w-full flex-grow flex flex-col items-center z-20 pt-1 pb-1">
+            {/* Active lower beads (at the bar) */}
+            {Array.from({ length: lowerBeadsValue }).map((_, i) => (
+                <Bead key={`active-${i}`} isUpper={false} onClick={() => onBeadClick(i + 1)} />
+            ))}
+            
+            <div className="flex-grow" />
+            
+            {/* Inactive lower beads (at the bottom) */}
+            {Array.from({ length: 4 - lowerBeadsValue }).map((_, i) => (
+                <Bead key={`inactive-${i}`} isUpper={false} onClick={() => onBeadClick(lowerBeadsValue + i + 1)} />
+            ))}
       </div>
     </div>
   );
 };
 
-export default function BeadDisplay({ value, onChange }: { value: number, onChange?: (newValue: number) => void }) {
-  const getDigits = (num: number) => num.toString().padStart(3, '0').split('').map(Number);
+export default function BeadDisplay({ 
+  value, 
+  onChange, 
+  rodCount = 3,
+  activeRodIndex = -1 
+}: { 
+  value: number, 
+  onChange?: (newValue: number) => void,
+  rodCount?: number,
+  activeRodIndex?: number
+}) {
+  const getDigits = (num: number) => {
+    return num.toString().padStart(rodCount, '0').split('').slice(-rodCount).map(Number);
+  };
+  
   const digits = getDigits(value);
 
   const handleBeadClick = (rodIndex: number, beadValue: number) => {
     if (!onChange) return;
     
-    const power = 2 - rodIndex;
+    const power = (rodCount - 1) - rodIndex;
     const placeValue = Math.pow(10, power);
     const currentDigits = getDigits(value);
     let currentDigitOnRod = currentDigits[rodIndex];
     let newDigitOnRod;
 
-    if (beadValue === 5) { // Upper bead clicked
-      if (currentDigitOnRod >= 5) { // Deactivate upper bead
-        newDigitOnRod = currentDigitOnRod - 5;
-      } else { // Activate upper bead
-        newDigitOnRod = currentDigitOnRod + 5;
-      }
-    } else { // Lower bead clicked (beadValue is 1, 2, 3, or 4)
+    if (beadValue === 5) {
+      newDigitOnRod = currentDigitOnRod >= 5 ? currentDigitOnRod - 5 : currentDigitOnRod + 5;
+    } else {
       const currentLowerValue = currentDigitOnRod % 5;
       const isUpperActive = currentDigitOnRod >= 5;
 
-      // Group move logic
-      if (currentLowerValue === 0 && beadValue === 4) { // all inactive, click bottom one
+      if (currentLowerValue === 0 && beadValue === 4) {
         newDigitOnRod = isUpperActive ? 9 : 4;
-      } else if (currentLowerValue === 4 && beadValue === 1) { // all active, click top one
+      } else if (currentLowerValue === 4 && beadValue === 1) {
         newDigitOnRod = isUpperActive ? 5 : 0;
       } else {
-        // Sequential move logic (top-down)
         if (beadValue > currentLowerValue) {
-          // Activating this bead and all above it
           newDigitOnRod = (currentDigitOnRod - currentLowerValue) + beadValue;
         } else {
-          // Deactivating this bead and all below it
           newDigitOnRod = (currentDigitOnRod - currentLowerValue) + (beadValue - 1);
         }
       }
@@ -123,14 +134,15 @@ export default function BeadDisplay({ value, onChange }: { value: number, onChan
   };
 
   return (
-    <div className="flex justify-center items-center p-4 rounded-lg border-4 border-[#a16207] shadow-2xl bg-[#c6a47f]" style={{boxShadow: 'inset 0 0 10px #78350f, 0 8px 15px rgba(0,0,0,0.5)'}}>
-      <div className="flex flex-row bg-[#a6866a] p-2 rounded-md shadow-inner gap-x-2">
+    <div className="flex justify-center items-center p-4 rounded-xl border-4 border-[#a16207] shadow-2xl bg-[#c6a47f]" style={{boxShadow: 'inset 0 0 10px #78350f, 0 8px 15px rgba(0,0,0,0.5)'}}>
+      <div className="flex flex-row bg-[#a6866a] p-2 rounded-md shadow-inner gap-x-1 sm:gap-x-2">
         {digits.map((digit, index) => (
           <React.Fragment key={index}>
             <AbacusRod 
               digit={digit} 
-              isUnitRod={index === 2} // 0 is hundreds, 1 is tens, 2 is units
+              isUnitRod={index === rodCount - 1 || (rodCount > 3 && index === Math.floor(rodCount / 2))}
               onBeadClick={(beadValue) => handleBeadClick(index, beadValue)}
+              isActive={activeRodIndex === index}
             />
           </React.Fragment>
         ))}

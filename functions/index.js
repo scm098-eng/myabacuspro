@@ -4,148 +4,290 @@
  * filename: functions/index.js
  */
 
-// --- CORE V2 IMPORTS ---
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
-// --- ADMIN SDK INITIALIZATION (REQUIRED) ---
 const admin = require('firebase-admin');
 if (admin.apps.length === 0) {
     admin.initializeApp();
 }
 
-// --- GLOBAL OPTIONS ---
 setGlobalOptions({ maxInstances: 10 });
 const db = admin.firestore();
 
-// --- Configuration Setup (Standard Environment Variables) ---
+// --- Configuration ---
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID; 
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET;
 
-// 31 Unique Motivational Messages
-const DAILY_MESSAGES = [
-  { title: "New Start 🚀", body: "Day 1: New month, new goals! Let’s start with 15 mins. / नवीन महिना, नवीन ध्येय! १५ मिनिटे सराव करूया." },
-  { title: "Brain Power 🧠", body: "Day 2: Feed your brain with some numbers today! / आज तुमच्या मेंदूला गणिताचे खाद्य द्या!" },
-  { title: "Streak Alert 🔥", body: "Day 3: Don't let your streak break! Log in now. / तुमची सरावाची लिंक तुटू देऊ नका! आताच लॉगिन करा." },
-  { title: "Speed Test ⚡", body: "Day 4: Can you beat your time from yesterday? Try now! / कालचा तुमचा रेकॉर्ड तुम्ही आज मोडू शकता का? प्रयत्न करा!" },
-  { title: "Consistency 🐢", body: "Day 5: Slow and steady wins the race. Keep practicing! / सातत्य ठेवल्यानेच यश मिळते. सराव चालू ठेवा!" },
-  { title: "Focus 🎯", body: "Day 6: Sharpen your focus with today's drill. / आजच्या सरावाने तुमची एकाग्रता वाढवा." },
-  { title: "Weekly Goal 🏆", body: "Day 7: Finish today to unlock your Weekly Trophy! / साप्ताहिक ट्रॉफी मिळवण्यासाठी आजचा सराव पूर्ण करा!" },
-  { title: "Level Up 🆙", body: "Day 8: One step closer to the next Rank! Let's go. / पुढच्या रँकच्या दिशेने आणखी एक पाऊल! चला सुरुवात करूया." },
-  { title: "Logic 🧩", body: "Day 9: Solve the puzzle of numbers today! / आज अंकांच्या कोड्यांचा सराव करा!" },
-  { title: "Accuracy ✅", body: "Day 10: Aim for 100% accuracy today. You can do it! / आज १००% अचूकतेचे लक्ष्य ठेवा. तुम्हाला हे नक्की जमेल!" },
-  { title: "Super-Brain 🦸", body: "Day 11: Power up your super-brain on MyAbacusPro! / MyAbacusPro वर तुमच्या सुपर-ब्रेनची शक्ती वाढवा!" },
-  { title: "Challenge 🥊", body: "Day 12: Challenge yourself with 20 sums today. / आज स्वतःला २० गणिते सोडवण्याचे चॅलेंज द्या." },
-  { title: "Mind Math ☁️", body: "Day 13: Imagine the beads. Visualize the success! / मणी डोळ्यासमोर आणा. यशाची कल्पना करा!" },
-  { title: "Fortnight ✌️", body: "Day 14: Two weeks of greatness! Keep it up. / दोन आठवड्यांचे सातत्य! असेच चालू ठेवा." },
-  { title: "Halfway 🌗", body: "Day 15: Halfway through the month! Stay strong. / अर्धा महिना पूर्ण झाला! तुमचा उत्साह कमी होऊ देऊ नका." },
-  { title: "Determination 💪", body: "Day 16: Success is built one day at a time. / यश हे दररोजच्या कष्टानेच मिळते." },
-  { title: "Growth 🌱", body: "Day 17: Watch your math skills grow today. / आज तुमची गणितातील प्रगती पहा." },
-  { title: "Ninja Mode 🥷", body: "Day 18: Time for Math Ninja practice! Log in now. / मॅथ निन्जा सरावाची वेळ झाली आहे!" },
-  { title: "Curiosity 🤔", body: "Day 19: What’s your new high score going to be? / तुमचा आजचा नवीन हाय-स्कोअर काय असेल?" },
-  { title: "Future Genius 🎓", body: "Day 20: A 'Human Calculator' practices even on busy days. / 'ह्युमन कॅल्क्युलेटर' कधीच सराव चुकवत नाहीत." },
-  { title: "Habit ✅", body: "Day 21: 21 Days! Your habit is officially formed. / २१ दिवस पूर्ण! आता सराव ही तुमची सवय झाली आहे." },
-  { title: "Excellence ⭐", body: "Day 22: Excellence is not an act, but a habit. / उत्कृष्टता ही कृती नसून ती एक सवय आहे." },
-  { title: "Quickness 🏎️", body: "Day 23: Faster fingers, sharper mind! Start now. / वेगवान बोटे, तल्लख बुद्धी! आताच सुरू करा." },
-  { title: "Dedication 🎖️", body: "Day 24: Your hard work will pay off in class! / तुमचे कष्ट क्लासमध्ये फळाला येतील!" },
-  { title: "Victory 🚩", body: "Day 25: Almost at the month-end goal! Push through. / महिन्याचे ध्येय जवळ आले आहे! जोमाने सराव करा." },
-  { title: "Discipline 📐", body: "Day 26: Discipline is the bridge to mastery. / शिस्त हाच प्रभुत्वाचा मार्ग आहे." },
-  { title: "Preparation 📝", body: "Day 27: Be ready for your next offline test! / तुमच्या पुढच्या ऑफलाइन परीक्षेसाठी तयार राहा!" },
-  { title: "Top Rank 🏅", body: "Day 28: Climb higher on the leaderboard today! / आज लीडरबोर्डवर आणखी वरच्या स्थानी पोहोचा!" },
-  { title: "Endurance 🏃", body: "Day 29: Keep running towards your goal! / तुमच्या ध्येयाकडे धावत राहा!" },
-  { title: "Celebration 🎉", body: "Day 30: One day left! Celebrate with a great drill. / एकच दिवस उरला आहे! उत्साहाने सराव करा." },
-  { title: "Mission Met 👑", body: "Day 31: Month Complete! You are an Abacus Hero. / महिना पूर्ण! तुम्ही 'ॲबॅकस हिरो' आहात." }
-];
+// GMAIL CONFIGURATION
+const GMAIL_USER = 'myabacuspro@gmail.com';
+const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
 
-// Scheduled Task: Daily at 7:00 PM IST (13:30 UTC)
-exports.sendDailyReminders = onSchedule("30 13 * * *", async (event) => {
-  logger.info("Starting Daily Reminder Dispatch...");
-  const today = new Date();
-  const dayOfMonth = today.getDate(); // 1-31
-  const todayStr = today.toISOString().split('T')[0];
-  const message = DAILY_MESSAGES[dayOfMonth - 1] || DAILY_MESSAGES[0];
-
-  // Find students who haven't practiced today and have an FCM token
-  const studentsRef = db.collection('users');
-  const query = studentsRef
-    .where('role', '==', 'student')
-    .where('lastPracticeDate', '!=', todayStr);
-
-  const snapshot = await query.get();
-  if (snapshot.empty) {
-    logger.info("No students found who need reminders today.");
-    return;
-  }
-
-  const tokens = [];
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    if (data.fcmToken) {
-      tokens.push(data.fcmToken);
-    }
-  });
-
-  if (tokens.length === 0) {
-    logger.info("No FCM tokens registered for targeted students.");
-    return;
-  }
-
-  const notification = {
-    notification: {
-      title: message.title,
-      body: message.body,
-    },
-    tokens: tokens,
-  };
-
-  try {
-    const response = await admin.messaging().sendEachForMulticast(notification);
-    logger.info(`Successfully sent ${response.successCount} reminders.`);
-    if (response.failureCount > 0) {
-      logger.warn(`${response.failureCount} reminders failed to send.`);
-    }
-  } catch (error) {
-    logger.error("Error sending multicast notification:", error);
-  }
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: GMAIL_USER,
+    pass: GMAIL_PASS,
+  },
 });
 
-// Helper to create the auth header safely
-function getRazorpayAuth() {
-    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-        logger.error("Missing Razorpay API Keys in environment variables.");
-        return ""; 
+// ----------------------------------------------------
+// --- AUTOMATION: MONTHLY PROGRESS REPORTS ---
+// ----------------------------------------------------
+
+// Runs on the 1st of every month at 10:00 AM IST
+exports.sendMonthlyProgressReports = onSchedule("30 4 1 * *", async (event) => {
+    logger.info("Starting Monthly Progress Reports...");
+    
+    const usersSnapshot = await db.collection('users')
+        .where('role', '==', 'student')
+        .get();
+
+    if (usersSnapshot.empty) return;
+
+    for (const userDoc of usersSnapshot.docs) {
+        const userData = userDoc.data();
+        const userId = userDoc.id;
+
+        const points = userData.monthlyPoints || 0;
+        const days = userData.totalDaysPracticed || 0;
+
+        const mailOptions = {
+            from: `"My Abacus Pro Reports" <${GMAIL_USER}>`,
+            to: userData.email,
+            subject: `Your Monthly Progress Report: ${new Date().toLocaleString('default', { month: 'long' })} 📊`,
+            html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+                    <h2 style="color: #2563eb; text-align: center;">Way to go, ${userData.firstName}!</h2>
+                    <p>Here is how you performed on My Abacus Pro last month:</p>
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+                        <div style="display: inline-block; margin: 0 20px;">
+                            <p style="font-size: 12px; color: #64748b; margin: 0;">Points Earned</p>
+                            <p style="font-size: 24px; font-weight: bold; margin: 5px 0;">${points.toLocaleString()}</p>
+                        </div>
+                        <div style="display: inline-block; margin: 0 20px;">
+                            <p style="font-size: 12px; color: #64748b; margin: 0;">Current Rank</p>
+                            <p style="font-size: 24px; font-weight: bold; margin: 5px 0;">${userData.lastAwardedRank || 'Junior'}</p>
+                        </div>
+                    </div>
+                    <p>Consistency is the secret to mental math mastery. Keep practicing every day to climb the Hall of Fame!</p>
+                    <p style="text-align: center; margin-top: 30px;">
+                        <a href="https://abacusace-mmnqw.web.app/dashboard" style="background: #2563eb; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Full Stats</a>
+                    </p>
+                </div>
+            `
+        };
+
+        try {
+            await transporter.sendMail(mailOptions);
+        } catch (e) {
+            logger.error(`Report failed for ${userData.email}:`, e);
+        }
     }
-    return Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
-}
+});
+
+// ----------------------------------------------------
+// --- AUTOMATION: WEEKLY LEADERBOARD UPDATES ---
+// ----------------------------------------------------
+
+// Runs every Sunday at 8:00 PM IST
+exports.sendWeeklyLeaderboardUpdates = onSchedule("30 14 * * 0", async (event) => {
+    const topPerformers = await db.collection('users')
+        .where('role', '==', 'student')
+        .orderBy('weeklyPoints', 'desc')
+        .limit(3)
+        .get();
+
+    if (topPerformers.empty) return;
+
+    const champions = topPerformers.docs.map((doc, i) => `${i+1}. ${doc.data().firstName} (${doc.data().weeklyPoints} pts)`).join('<br>');
+
+    const subscribers = await db.collection('users')
+        .where('role', '==', 'student')
+        .get();
+
+    for (const sub of subscribers.docs) {
+        const mailOptions = {
+            from: `"My Abacus Pro Hall of Fame" <${GMAIL_USER}>`,
+            to: sub.data().email,
+            subject: `The Week's Champions are here! 🏆`,
+            html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; text-align: center;">
+                    <h2 style="color: #fbbf24;">Weekly Hall of Fame</h2>
+                    <p>Meet this week's top performers:</p>
+                    <div style="background: #fffbeb; padding: 20px; border-radius: 15px; border: 2px solid #fde68a;">
+                        <p style="font-size: 18px; line-height: 1.6;">${champions}</p>
+                    </div>
+                    <p style="margin-top: 20px;">Ready to see your name here next week? Start your practice now!</p>
+                    <a href="https://abacusace-mmnqw.web.app/game" style="color: #2563eb; font-weight: bold;">Play Bubble Game 🫧</a>
+                </div>
+            `
+        };
+        await transporter.sendMail(mailOptions).catch(e => logger.error("Leaderboard mail fail", e));
+    }
+});
+
+// ----------------------------------------------------
+// --- ADMIN: CUSTOM PROMOTIONAL CAMPAIGNS ---
+// ----------------------------------------------------
+
+exports.sendCustomPromotionalEmail = onCall(async (request) => {
+    if (!request.auth || request.auth.token.role !== 'admin') {
+        throw new HttpsError('permission-denied', "Admin only.");
+    }
+
+    const { subject, message, isTest, testEmail } = request.data;
+
+    if (isTest && testEmail) {
+        await transporter.sendMail({
+            from: `"My Abacus Pro" <${GMAIL_USER}>`,
+            to: testEmail,
+            subject: `[TEST] ${subject}`,
+            html: `<div style="font-family: sans-serif;">${message}</div>`
+        });
+        return { status: "success", message: "Test sent." };
+    }
+
+    const targets = await db.collection('users')
+        .where('role', '==', 'student')
+        .get();
+
+    let count = 0;
+    for (const doc of targets.docs) {
+        try {
+            await transporter.sendMail({
+                from: `"My Abacus Pro" <${GMAIL_USER}>`,
+                to: doc.data().email,
+                subject: subject,
+                html: `<div style="font-family: sans-serif;">${message}</div>`
+            });
+            count++;
+        } catch (e) {
+            logger.error(`Promo failed for ${doc.data().email}`);
+        }
+    }
+
+    return { status: "success", recipients: count };
+});
+
+// ----------------------------------------------------
+// --- MARKETING: AUTOMATIC UPGRADE EMAILS ---
+// ----------------------------------------------------
+
+// Runs every Monday at 10:00 AM IST (04:30 UTC)
+exports.sendWeeklyMarketingEmails = onSchedule("30 4 * * 1", async (event) => {
+  logger.info("Starting Weekly Marketing Campaign...");
+  
+  const freeUsersSnapshot = await db.collection('users')
+    .where('role', '==', 'student')
+    .where('subscriptionStatus', '==', 'free')
+    .limit(100)
+    .get();
+
+  if (freeUsersSnapshot.empty) {
+    logger.info("No free users found for marketing.");
+    return;
+  }
+
+  let sentCount = 0;
+
+  for (const doc of freeUsersSnapshot.docs) {
+    const user = doc.data();
+    const userId = doc.id;
+
+    // Skip if emailed in the last 14 days
+    if (user.lastMarketingEmailSent) {
+        const lastSent = user.lastMarketingEmailSent.toDate();
+        const diffDays = (new Date() - lastSent) / (1000 * 60 * 60 * 24);
+        if (diffDays < 14) continue;
+    }
+
+    const trackingLink = `https://abacusace-mmnqw.web.app/api/track-click?userId=${userId}&campaign=pro_upgrade_v1`;
+
+    const mailOptions = {
+      from: `"My Abacus Pro" <${GMAIL_USER}>`,
+      to: user.email,
+      subject: `Unlock Your Full Math Potential, ${user.firstName}! 🚀`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+          <h2 style="color: #2563eb;">Ready to become a Math Whiz?</h2>
+          <p>Hi ${user.firstName},</p>
+          <p>You've been practicing hard on <strong>My Abacus Pro</strong>! Did you know that Pro members get 5x more practice material and climb the leaderboard 2x faster?</p>
+          <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0;">What you get with Pro:</h3>
+            <ul style="color: #475569;">
+              <li>Unlimited Practice Tests</li>
+              <li>Unlock All 50+ Game Levels</li>
+              <li>Advanced Performance Analytics</li>
+              <li>Ad-Free Experience</li>
+            </ul>
+          </div>
+          <p style="text-align: center;">
+            <a href="${trackingLink}" style="background: #2563eb; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">🚀 Upgrade to Pro Now</a>
+          </p>
+        </div>
+      `
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+      await doc.ref.update({
+        lastMarketingEmailSent: admin.firestore.FieldValue.serverTimestamp()
+      });
+      sentCount++;
+    } catch (error) {
+      logger.error(`Failed to send marketing email to ${user.email}:`, error);
+    }
+  }
+
+  await db.collection('stats').doc('marketing').set({
+    emailsSent: admin.firestore.FieldValue.increment(sentCount)
+  }, { merge: true });
+
+  logger.info(`Campaign finished. Emails sent: ${sentCount}`);
+});
+
+/**
+ * Manual test trigger for admin to verify email setup.
+ */
+exports.sendTestMarketingEmail = onCall(async (request) => {
+    if (!request.auth || request.auth.token.role !== 'admin') {
+        throw new HttpsError('permission-denied', "Only admins can trigger test emails.");
+    }
+
+    const testEmail = request.data.email || request.auth.token.email;
+    
+    const mailOptions = {
+        from: `"My Abacus Pro Test" <${GMAIL_USER}>`,
+        to: testEmail,
+        subject: "Marketing Campaign Test Email 🧪",
+        html: `<p>This is a test of the automatic upgrade email system. If you see this, your Gmail App Password is working correctly!</p>`
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        return { status: "success", message: `Test email sent to ${testEmail}` };
+    } catch (error) {
+        logger.error("Test email failed:", error);
+        throw new HttpsError('internal', error.message);
+    }
+});
 
 // ------------------------------------------
-// --- 1. RAZORPAY WEBHOOK (HTTP FUNCTION) ---
+// --- RAZORPAY WEBHOOK (ATTRIBUTION FIX) ---
 // ------------------------------------------
 exports.razorpaywebhook = onRequest(async (request, response) => {
-    logger.info("Razorpay Webhook Triggered!", { structuredData: true });
-
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET; 
     const signature = request.headers['x-razorpay-signature'];
-
-    if (!webhookSecret) {
-        logger.error("Configuration Error: RAZORPAY_WEBHOOK_SECRET is missing.");
-        return response.status(500).send("Configuration Error");
-    }
-
     const rawBodyBuffer = request.rawBody; 
-    if (!rawBodyBuffer) return response.status(400).send("Bad Request: Missing raw body");
-    
-    const rawBodyString = rawBodyBuffer;
-    const expectedSignature = crypto.createHmac('sha256', webhookSecret).update(rawBodyString).digest('hex');
+    const expectedSignature = crypto.createHmac('sha256', webhookSecret).update(rawBodyBuffer).digest('hex');
 
-    if (expectedSignature !== signature) {
-        logger.error("CRITICAL ERROR: Signature Mismatch!");
-        return response.status(200).send('Validation Failed'); 
-    }
+    if (expectedSignature !== signature) return response.status(200).send('Validation Failed'); 
 
     const payload = request.body;
     const eventType = payload.event;
@@ -153,115 +295,114 @@ exports.razorpaywebhook = onRequest(async (request, response) => {
 
     const eventRef = db.collection('processedWebhooks').doc(eventId);
     const eventDoc = await eventRef.get();
-
-    if (eventDoc.exists) {
-        logger.warn(`Duplicate event skipped: ${eventId}`);
-        return response.status(200).send('Already processed');
-    }
+    if (eventDoc.exists) return response.status(200).send('Already processed');
     
     try {
         const notes = payload.payload?.order?.entity?.notes || 
                       payload.payload?.subscription?.entity?.notes || 
-                      payload.payload?.payment?.entity?.notes || 
-                      payload.payload?.refund?.entity?.notes || {};
+                      payload.payload?.payment?.entity?.notes || {};
         
         let userId = notes.userId || 'UNKNOWN';
-        const subEntity = payload.payload?.subscription?.entity;
-        const subId = subEntity?.id || payload.payload?.payment?.entity?.subscription_id;
 
-        logger.info(`Processing ${eventType} for User: ${userId}`);
+        if (eventType === 'subscription.activated' || eventType === 'order.paid') {
+            if (userId !== 'UNKNOWN') {
+                const userRef = db.collection('users').doc(userId);
+                const userSnap = await userRef.get();
+                const userData = userSnap.data();
 
-        switch (eventType) {
-            case 'order.paid': {
-                if (notes.paymentType === "one_time" && userId !== 'UNKNOWN') {
-                    const monthsToAdd = parseInt(notes.planDuration) || 0;
-                    let planTier = "monthly"; 
-                    if (monthsToAdd === 6) planTier = "6months";
-                    if (monthsToAdd === 12) planTier = "annual";
-                    const expiryDate = new Date();
-                    expiryDate.setMonth(expiryDate.getMonth() + monthsToAdd);
-
-                    await db.collection('users').doc(userId).set({ 
-                        subscriptionStatus: 'pro',
-                        subscriptionType: 'one-time',
-                        activeTier: planTier,
-                        lastPaymentId: payload.payload?.payment?.entity?.id,
-                        expiresAt: admin.firestore.Timestamp.fromDate(expiryDate),
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                // Conversion Attribution Tracking
+                if (userData && userData.marketingCampaignClicked) {
+                    await db.collection('stats').doc('marketing').set({
+                        conversions: admin.FieldValue.increment(1)
                     }, { merge: true });
-
-                    await admin.auth().setCustomUserClaims(userId, { subscription: 'pro' });
-                    logger.info(`SUCCESS: One-time ${monthsToAdd}m activated for ${userId}`);
-                }
-                break;
-            }
-
-            case 'subscription.activated':
-            case 'subscription.charged': {
-                if (userId !== 'UNKNOWN') {
-                    await db.collection('users').doc(userId).set({ 
-                        subscriptionStatus: 'pro',
-                        subscriptionType: 'recurring',
-                        activeTier: 'monthly',
-                        subscriptionId: subId,
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-                    
-                    await admin.auth().setCustomUserClaims(userId, { subscription: 'pro' });
-                } 
-                break;
-            }
-
-            case 'refund.processed': {
-                const paymentId = payload.payload?.refund?.entity?.payment_id;
-                if (userId === 'UNKNOWN') {
-                    const userSnap = await db.collection('users').where('lastPaymentId', '==', paymentId).limit(1).get();
-                    if (!userSnap.empty) userId = userSnap.docs[0].id;
+                    await userRef.update({ marketingCampaignClicked: false });
                 }
 
-                if (userId !== 'UNKNOWN') {
-                    await db.collection('users').doc(userId).update({
-                        subscriptionStatus: 'free',
-                        subscriptionType: 'none',
-                        expiresAt: admin.firestore.FieldValue.delete(),
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                    });
-                    await admin.auth().setCustomUserClaims(userId, { subscription: null });
-                    logger.info(`REFUND SUCCESS: User ${userId} downgraded to free.`);
-                }
-                break;
-            }
-
-            case 'subscription.cancelled':
-            case 'subscription.expired': {
-                if (userId !== 'UNKNOWN') {
-                    await db.collection('users').doc(userId).update({ 
-                        subscriptionStatus: 'free',
-                        subscriptionId: admin.firestore.FieldValue.delete()
-                    });
-                    await admin.auth().setCustomUserClaims(userId, { subscription: null });
-                }
-                break;
-            }
+                await userRef.set({ 
+                    subscriptionStatus: 'pro',
+                    updatedAt: admin.FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                await admin.auth().setCustomUserClaims(userId, { subscription: 'pro' });
+            } 
         }
 
-        await eventRef.set({ timestamp: admin.firestore.FieldValue.serverTimestamp(), event: eventType, userId });
+        await eventRef.set({ timestamp: admin.FieldValue.serverTimestamp(), event: eventType, userId });
         return response.status(200).send("OK");
-
     } catch (error) {
         logger.error(`Fatal Error on ${eventType}:`, error);
         return response.status(200).send("Error logged"); 
     }
 });
 
-// ----------------------------------------------------
-// --- 2. CREATE RAZORPAY SUBSCRIPTION (ORDER FLOW FIX) ---
-// ----------------------------------------------------
+exports.sendDailyReminders = onSchedule("30 13 * * *", async (event) => {
+    const today = new Date().toISOString().split('T')[0];
+    const dayOfMonth = new Date().getDate();
+    
+    const messages = {
+        1: { en: "🚀 Day 1: New month, new goals! Let’s start with 15 mins.", mr: "नवीन महिना, नवीन ध्येय! १५ मिनिटे सराव करूया." },
+        2: { en: "🧠 Feed your brain with some numbers today!", mr: "आज तुमच्या मेंदूला गणिताचे खाद्य द्या!" },
+        3: { en: "🔥 Don't let your streak break! Log in now.", mr: "तुमची सरावाची लिंक तुटू देऊ नका! आताच लॉगिन करा." },
+        4: { en: "⚡ Can you beat your time from yesterday? Try now!", mr: "कालचा तुमचा रेकॉर्ड तुम्ही आज मोडू शकता का? प्रयत्न करा!" },
+        5: { en: "🐢 Slow and steady wins the race. Keep practicing!", mr: "सातत्य ठेवल्यानेच यश मिळते. सराव चालू ठेवा!" },
+        6: { en: "🎯 Sharpen your focus with today's drill.", mr: "आजच्या सरावाने तुमची एकाग्रता वाढवा." },
+        7: { en: "🏆 Finish today to unlock your Weekly Trophy!", mr: "साप्ताहिक ट्रॉफी मिळवण्यासाठी आजचा सराव पूर्ण करा!" },
+        8: { en: "🆙 One step closer to the next Rank! Let's go.", mr: "पुढच्या रँकच्या दिशेने आणखी एक पाऊल! चला सुरुवात करूया." },
+        9: { en: "🧩 Solve the puzzle of numbers today!", mr: "आज अंकांच्या कोड्यांचा सराव करा!" },
+        10: { en: "✅ Aim for 100% accuracy today. You can do it!", mr: "आज १००% अचूकतेचे लक्ष्य ठेवा. तुम्हाला हे नक्की जमेल!" },
+        11: { en: "🦸 Power up your super-brain on MyAbacusPro!", mr: "MyAbacusPro वर तुमच्या सुपर-ब्रेनची शक्ती वाढवा!" },
+        12: { en: "🥊 Challenge yourself with 20 sums today.", mr: "आज स्वतःला २० गणिते सोडवण्याचे चॅलेंज द्या." },
+        13: { en: "☁️ Imagine the beads. Visualize the success!", mr: "मणी डोळ्यासमोर आणा. यशाची कल्पना करा!" },
+        14: { en: "✌️ Two weeks of greatness! Keep it up.", mr: "दोन आठवड्यांचे सातत्य! असेच चालू ठेवा." },
+        15: { en: "🌗 Halfway through the month! Stay strong.", mr: "अर्धा महिना पूर्ण झाला! तुमचा उत्साह कमी होऊ देऊ नका." },
+        16: { en: "💪 Success is built one day at a time.", mr: "यश हे दररोजच्या कष्टानेच मिळते." },
+        17: { en: "🌱 Watch your math skills grow today.", mr: "आज तुमची गणितातील प्रगती पहा." },
+        18: { en: "🥷 Time for Math Ninja practice! Log in now.", mr: "मॅथ निन्जा सरावाची वेळ झाली आहे! आताच लॉगिन करा." },
+        19: { en: "🤔 What’s your new high score going to be?", mr: "तुमचा आजचा नवीन हाय-स्कोअर काय असेल?" },
+        20: { en: "🎓 A 'Human Calculator' practices even on busy days.", mr: "'ह्युमन कॅल्क्युलेटर' कधीच सराव चुकवत नाहीत." },
+        21: { en: "✅ 21 Days! Your habit is officially formed.", mr: "२१ दिवस पूर्ण! आता सराव ही तुमची सवय झाली आहे." },
+        22: { en: "⭐ Excellence is not an act, but a habit.", mr: "उत्कृष्टता ही कृती नसून ती एक सवय आहे." },
+        23: { en: "🏎️ Faster fingers, sharper mind! Start now.", mr: "वेगवान बोटे, तल्लख बुद्धी! आताच सुरू करा." },
+        24: { en: "🎖️ Your hard work will pay off in class!", mr: "तुमचे कष्ट क्लासमध्ये फळाला येतील!" },
+        25: { en: "🚩 Almost at the month-end goal! Push through.", mr: "महिन्याचे ध्येय जवळ आले आहे! जोमाने सराव करा." },
+        26: { en: "📐 Discipline is the bridge to mastery.", mr: "शिस्त हाच प्रभुत्वाचा मार्ग आहे." },
+        27: { en: "📝 Be ready for your next offline test!", mr: "तुमच्या पुढच्या ऑफलाइन परीक्षेसाठी तयार राहा!" },
+        28: { en: "🏅 Climb higher on the leaderboard today!", mr: "आज लीडरबोर्डवर आणखी वरच्या स्थानी पोहोचा!" },
+        29: { en: "🏃 Keep running towards your goal!", mr: "तुमच्या ध्येयाकडे धावत राहा!" },
+        30: { en: "🎉 One day left! Celebrate with a great drill.", mr: "एकच दिवस उरला आहे! उत्साहाने सराव करा." },
+        31: { en: "👑 Month Complete! You are an Abacus Hero.", mr: "महिना पूर्ण! तुम्ही 'ॲबॅकस हिरो' आहात." }
+    };
+
+    const currentMsg = messages[dayOfMonth] || messages[1];
+
+    const usersSnapshot = await db.collection('users')
+        .where('fcmToken', '!=', null)
+        .get();
+
+    const notifications = [];
+    usersSnapshot.forEach(doc => {
+        const user = doc.data();
+        if (user.lastPracticeDate !== today) {
+            notifications.push({
+                token: user.fcmToken,
+                notification: {
+                    title: "Time to Practice! 🧮",
+                    body: `${currentMsg.en} / ${currentMsg.mr}`
+                }
+            });
+        }
+    });
+
+    if (notifications.length > 0) {
+        await admin.messaging().sendEach(notifications);
+        logger.info(`Sent ${notifications.length} reminders.`);
+    }
+});
+
 exports.createRazorpaySubscription = onCall(async (request) => {
     if (!request.auth || !request.auth.uid) {
-        throw new HttpsError('unauthenticated', "User must be authenticated to create a subscription.");
+        throw new HttpsError('unauthenticated', "User must be authenticated.");
     }
-
     if (!request.data.planId || !request.data.amountInRupees) {
         throw new HttpsError('invalid-argument', "Missing plan ID or amount.");
     }
@@ -269,126 +410,56 @@ exports.createRazorpaySubscription = onCall(async (request) => {
     const userId = request.auth.uid;
     const planId = request.data.planId;
     const amountInPaise = request.data.amountInRupees * 100;
-    const authHeader = getRazorpayAuth(); 
     
-    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-        throw new HttpsError('internal', "Razorpay API keys are not configured correctly.");
-    }
+    const authHeader = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
     
     try {
-        const orderPayload = {
-            amount: amountInPaise, 
-            currency: "INR",
-            receipt: userId, 
-            notes: { userId: userId, purpose: "initial_subscription_payment" }
-        };
-
-        const createOrderResponse = await fetch('https://api.razorpay.com/v1/orders', {
+        const orderRes = await fetch('https://api.razorpay.com/v1/orders', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Basic ${authHeader}`
-            },
-            body: JSON.stringify(orderPayload)
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${authHeader}` },
+            body: JSON.stringify({ amount: amountInPaise, currency: "INR", receipt: userId, notes: { userId: userId } })
         });
+        const orderData = await orderRes.json();
 
-        const orderData = await createOrderResponse.json();
-
-        if (!createOrderResponse.ok) {
-            logger.error("Razorpay API Error on Order Create:", { data: orderData });
-            throw new HttpsError('unknown', `Razorpay Order API Error: ${orderData.error?.description || 'Unknown order error'}`);
-        }
-        const orderId = orderData.id;
-
-        const subPayload = {
-            plan_id: planId,
-            customer_notify: 1, 
-            total_count: 12, 
-            notes: { userId: userId }
-        };
-        
-        const createSubResponse = await fetch('https://api.razorpay.com/v1/subscriptions', {
+        const subRes = await fetch('https://api.razorpay.com/v1/subscriptions', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Basic ${authHeader}`
-            },
-            body: JSON.stringify(subPayload)
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${authHeader}` },
+            body: JSON.stringify({ plan_id: planId, customer_notify: 1, total_count: 12, notes: { userId: userId } })
         });
+        const subData = await subRes.json();
 
-        const subData = await createSubResponse.json();
-
-        if (!createSubResponse.ok) {
-             logger.error("Razorpay API Error on Subscription Create:", { data: subData });
-             throw new HttpsError('unknown', `Razorpay Subscription API Error: ${subData.error?.description || 'Unknown sub error'}`);
-        }
-        
-        const subscriptionId = subData.id;
-
-        return {
-            status: "success",
-            subscriptionId: subscriptionId,
-            orderId: orderId, 
-            amount: amountInPaise 
-        };
-
+        return { status: "success", subscriptionId: subData.id, orderId: orderData.id, amount: amountInPaise };
     } catch (error) {
-        if (error.code) throw error; 
-        throw new HttpsError('internal', `Internal server error: Could not process subscription. > ${error.message}`);
+        throw new HttpsError('internal', error.message);
     }
 });
 
 exports.createOneTimeOrder = onCall(async (request) => {
-    if (!request.auth || !request.auth.uid) {
-        throw new HttpsError('unauthenticated', "User must be authenticated.");
-    }
-
+    if (!request.auth || !request.auth.uid) throw new HttpsError('unauthenticated', "Auth required.");
     const { amountInRupees, planDuration } = request.data;
     const userId = request.auth.uid;
     const amountInPaise = amountInRupees * 100;
-    const authHeader = getRazorpayAuth();
+    const authHeader = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
 
     try {
-        const orderPayload = {
-            amount: amountInPaise,
-            currency: "INR",
-            receipt: `ot_${userId.substring(0, 8)}_${Date.now()}`, 
-            notes: { 
-                userId: userId, 
-                planDuration: planDuration.toString(),
-                paymentType: "one_time" 
-            }
-        };
-
         const response = await fetch('https://api.razorpay.com/v1/orders', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Basic ${authHeader}`
-            },
-            body: JSON.stringify(orderPayload)
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${authHeader}` },
+            body: JSON.stringify({
+                amount: amountInPaise,
+                currency: "INR",
+                receipt: `ot_${userId.substring(0, 8)}_${Date.now()}`, 
+                notes: { userId: userId, planDuration: planDuration.toString(), paymentType: "one_time" }
+            })
         });
-
         const orderData = await response.json();
-
-        if (!response.ok) {
-            throw new HttpsError('unknown', `Razorpay Order Error: ${orderData.error?.description}`);
-        }
-
-        return {
-            status: "success",
-            orderId: orderData.id,
-            amount: orderData.amount
-        };
-
+        return { status: "success", orderId: orderData.id, amount: orderData.amount };
     } catch (error) {
         throw new HttpsError('internal', error.message);
     }
 });
 
 exports.updateUserProfile = onCall(async (request) => {
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', "The user is not authenticated.");
-    }
-    return { status: "success", message: "Profile updated successfully." };
+    if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
+    return { status: "success", message: "Update permitted." };
 });

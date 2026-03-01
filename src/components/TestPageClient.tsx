@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -24,10 +25,11 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/useAuth';
 import { doc, collection, addDoc, serverTimestamp, getFirestore } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
+import { calculatePoints } from '@/lib/scoring';
 
 export default function TestPageClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
-  const { user, recordDailyPractice } = useAuth();
+  const { user, recordDailyPractice, addPoints } = useAuth();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>([]);
@@ -73,6 +75,17 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       const timeSpent = settings.timeLimit - timeLeft;
       const db = getFirestore(firebaseApp);
       
+      // Calculate complexity level for points
+      const difficultyLevel = difficulty === 'easy' ? 1 : (difficulty === 'medium' ? 2 : 3);
+      const { earnedPoints } = calculatePoints({
+        correct: score,
+        total: questions.length,
+        timeInSeconds: timeSpent,
+        targetTime: settings.timeLimit,
+        level: difficultyLevel,
+        isGame: false
+      });
+
       const resultData = {
         userId: user.uid,
         testId,
@@ -82,6 +95,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         accuracy,
         timeSpent,
         timeLeft,
+        earnedPoints,
         createdAt: serverTimestamp(),
       };
       
@@ -89,6 +103,8 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         await addDoc(collection(db, 'testResults'), resultData);
         // Record daily practice progress
         await recordDailyPractice(user.uid);
+        // Add mastery points
+        await addPoints(user.uid, earnedPoints);
       } catch (error) {
         console.error("Error saving test results: ", error);
       }
@@ -103,7 +119,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     }
 
     router.replace(`/results?score=${score}&total=${questions.length}&time=${timeLeft}`);
-  }, [userAnswers, questions, router, timeLeft, user, testId, difficulty, settings.timeLimit, isFinished, recordDailyPractice]);
+  }, [userAnswers, questions, router, timeLeft, user, testId, difficulty, settings.timeLimit, isFinished, recordDailyPractice, addPoints]);
 
   useEffect(() => {
     if (questions.length === 0 || !startTime) return;

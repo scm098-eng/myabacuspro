@@ -4,7 +4,6 @@ import Razorpay from 'razorpay';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// Build-safe initialization
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
@@ -48,8 +47,15 @@ export async function POST(req: NextRequest) {
     // 1. Create a customer in Razorpay if one doesn't exist
     let customer;
     if (userData?.razorpayCustomerId) {
-        customer = await razorpay.customers.fetch(userData.razorpayCustomerId);
-    } else {
+        try {
+            customer = await razorpay.customers.fetch(userData.razorpayCustomerId);
+        } catch (e) {
+            // If fetch fails, we'll try to create a new one
+            console.warn("Could not fetch existing customer, creating new one.");
+        }
+    }
+    
+    if (!customer) {
         const customerOptions = {
           name: userData?.displayName || `${userData?.firstName} ${userData?.surname}` || `User ${userId}`,
           email: userData?.email || `user_${userId}@example.com`,
@@ -64,9 +70,9 @@ export async function POST(req: NextRequest) {
       plan_id: planId,
       customer_id: customer.id,
       customer_notify: 1 as 0 | 1,
-      total_count: 12, // For a yearly plan, adjust as needed
+      total_count: 12,
       notes: {
-        user_id: userId, // Pass the Firebase UID here
+        user_id: userId,
       },
     };
 
@@ -75,7 +81,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       subscriptionId: subscription.id,
       customerId: customer.id,
-      key_id: process.env.RAZORPAY_KEY_ID,
+      key_id: RAZORPAY_KEY_ID,
     });
 
   } catch (error: any) {

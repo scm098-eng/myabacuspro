@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -11,6 +12,7 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { calculatePoints } from '@/lib/scoring';
 
 interface Bubble {
   id: number;
@@ -59,7 +61,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const [gameState, setGameState] = useState<'playing' | 'levelComplete' | 'gameOver'>('playing');
 
   const questionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const { user, saveCompletedGameLevel, recordDailyPractice } = useAuth();
+  const { user, saveCompletedGameLevel, recordDailyPractice, addPoints } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -70,17 +72,32 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const advanceQuestion = useCallback(() => {
     if (currentQuestionIndex + 1 >= questions.length) {
       const finalScorePercentage = (score / (questions.length * 10)) * 100;
-      if (finalScorePercentage >= MIN_SCORE_TO_PASS && user) {
-        saveCompletedGameLevel(levelId);
-        recordDailyPractice(user.uid);
-        setGameState('levelComplete');
-      } else {
-        setGameState('gameOver');
+      if (user) {
+        // Calculate dynamic points
+        const { earnedPoints } = calculatePoints({
+          correct: score / 10,
+          total: questions.length,
+          timeInSeconds: 0,
+          targetTime: 0,
+          level: levelId,
+          isGame: true
+        });
+
+        if (finalScorePercentage >= MIN_SCORE_TO_PASS) {
+          saveCompletedGameLevel(levelId);
+          recordDailyPractice(user.uid);
+          addPoints(user.uid, earnedPoints);
+          setGameState('levelComplete');
+        } else {
+          // Still add points for effort
+          addPoints(user.uid, Math.floor(earnedPoints * 0.5));
+          setGameState('gameOver');
+        }
       }
     } else {
       setCurrentQuestionIndex(i => i + 1);
     }
-  }, [currentQuestionIndex, questions.length, score, user, saveCompletedGameLevel, levelId, recordDailyPractice]);
+  }, [currentQuestionIndex, questions.length, score, user, saveCompletedGameLevel, levelId, recordDailyPractice, addPoints]);
 
 
   const generateBubbles = useCallback(() => {

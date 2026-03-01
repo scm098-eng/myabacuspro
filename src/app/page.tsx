@@ -11,17 +11,17 @@ import placeholderImages from '@/lib/placeholder-images.json';
 
 const features = [
   {
-    icon: <Zap className="h-8 w-8 text-primary" />,
+    icon: <Zap className="h-8 w-8 text-primary" aria-hidden="true" />,
     title: 'Timed Challenges',
     description: 'Test your speed and accuracy against the clock. Complete up to 150 questions in our hardest levels.',
   },
   {
-    icon: <CheckCircle className="h-8 w-8 text-primary" />,
+    icon: <CheckCircle className="h-8 w-8 text-primary" aria-hidden="true" />,
     title: 'Multiple Test Types',
     description: 'Practice Addition, Subtraction, Multiplication, and Division across various difficulty levels.',
   },
   {
-    icon: <Target className="h-8 w-8 text-primary" />,
+    icon: <Target className="h-8 w-8 text-primary" aria-hidden="true" />,
     title: 'Focus on Improvement',
     description: 'Track your progress with detailed reports and focus on honing your mental math skills.',
   },
@@ -32,9 +32,9 @@ export default function Home() {
 
   return (
     <div className="space-y-16">
-      <section>
+      <section aria-labelledby="hero-heading">
         <div className="space-y-6 text-center">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-foreground font-headline">
+          <h1 id="hero-heading" className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-foreground font-headline">
             Master Mental Math with <span className="text-primary">My Abacus Pro</span>
           </h1>
           <p className="max-w-xl mx-auto text-lg text-muted-foreground">
@@ -51,11 +51,11 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="w-full">
+      <section className="w-full" aria-label="Visual Preview">
          <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-lg overflow-hidden border-2 border-primary/20 shadow-lg">
              <Image 
                 src={placeholderImages.homeHero.src}
-                alt="A student happily using a laptop for learning"
+                alt="Student using My Abacus Pro for learning mental math"
                 fill
                 className="object-cover"
                 data-ai-hint={placeholderImages.homeHero.hint}
@@ -64,9 +64,9 @@ export default function Home() {
          </div>
       </section>
 
-      <section className="w-full">
+      <section className="w-full" aria-labelledby="features-heading">
         <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold font-headline">Why Choose <span className="text-primary">My Abacus Pro</span>?</h2>
+            <h2 id="features-heading" className="text-3xl font-bold font-headline">Why Choose <span className="text-primary">My Abacus Pro</span>?</h2>
             <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">An intuitive and motivating platform to turn the tedious task of practice into an engaging challenge.</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

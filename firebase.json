@@ -1,3 +1,4 @@
+
 {
   "hosting": {
     "source": ".",
@@ -20,7 +21,8 @@
     "predeploy": [],
     "secrets": [
       "RAZORPAY_WEBHOOK_SECRET",
-      "RAZORPAY_KEY_SECRET"
+      "RAZORPAY_KEY_SECRET",
+      "GMAIL_APP_PASSWORD"
     ]
   }
 }

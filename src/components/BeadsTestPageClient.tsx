@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -26,10 +27,11 @@ import { collection, addDoc, serverTimestamp, getFirestore } from 'firebase/fire
 import { firebaseApp } from '@/lib/firebase';
 import BeadDisplay from './BeadDisplay';
 import { Input } from './ui/input';
+import { calculatePoints } from '@/lib/scoring';
 
 export default function BeadsTestPageClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
-  const { user, recordDailyPractice } = useAuth();
+  const { user, recordDailyPractice, addPoints } = useAuth();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>([]);
@@ -80,16 +82,23 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
         return acc;
     }, 0);
 
-    const timeSpent = 0; // Not timed
-    const timeLeft = 0; // Not timed
-
     if (user) {
       const accuracy = questions.length > 0 ? (score / questions.length) * 100 : 0;
       const db = getFirestore(firebaseApp);
       
+      const { earnedPoints } = calculatePoints({
+        correct: score,
+        total: questions.length,
+        timeInSeconds: 0,
+        targetTime: 0,
+        level: 1, // Beads tests are usually easy/introductory
+        isGame: false
+      });
+
       const resultData = {
         userId: user.uid, testId, difficulty, score,
-        totalQuestions: questions.length, accuracy, timeSpent, timeLeft,
+        totalQuestions: questions.length, accuracy, timeSpent: 0, timeLeft: 0,
+        earnedPoints,
         createdAt: serverTimestamp(),
       };
       
@@ -97,6 +106,8 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
         await addDoc(collection(db, 'testResults'), resultData);
         // Record daily practice progress
         await recordDailyPractice(user.uid);
+        // Add points
+        await addPoints(user.uid, earnedPoints);
       } catch (error) {
         console.error("Error saving test results: ", error);
       }
@@ -110,8 +121,8 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
       sessionStorage.setItem('testResults', JSON.stringify(resultsToStore));
     }
 
-    router.replace(`/results?score=${score}&total=${questions.length}&time=${timeLeft}`);
-  }, [questions, router, user, testId, difficulty, isFinished, recordDailyPractice]);
+    router.replace(`/results?score=${score}&total=${questions.length}&time=0`);
+  }, [questions, router, user, testId, difficulty, isFinished, recordDailyPractice, addPoints]);
 
   const goToNextQuestion = (updatedAnswers: (number | null)[]) => {
     if (currentQuestionIndex < questions.length - 1) {
@@ -186,7 +197,7 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
       return (
         <div className="flex flex-col items-center">
             <p className="mb-4 text-lg font-semibold">Set this value on the abacus:</p>
-            <p className="text-4xl font-bold mb-4">{currentQuestion.answer}</p>
+            <p className="text-4xl font-bold mb-4 text-primary">{currentQuestion.answer}</p>
             <BeadDisplay value={abacusValue} onChange={setAbacusValue} />
         </div>
       );

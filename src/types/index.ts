@@ -198,7 +198,7 @@ export interface ProfileData {
   firstName: string;
   middleName?: string;
   surname: string;
-  dob: string; // Stored as ISO string
+  dob: string; 
   subscriptionType?: 'recurring' | 'one-time' | 'none';
   activeTier?: 'monthly' | '6months' | '12months' | 'annual';
   lastPaymentId?: string;
@@ -213,13 +213,13 @@ export interface ProfileData {
   grade?: string;
   mobileNo?: string;
   whatsappNo?: string;
-  profilePhoto?: string; // Stored as URL
+  profilePhoto?: string; 
   createdAt?: any;
   subscriptionStatus?: SubscriptionStatus;
   role: UserRole;
   teacherId?: string | null;
-  status?: TeacherStatus; // For teachers
-  isAdmin?: boolean; // Main admin
+  status?: TeacherStatus; 
+  isAdmin?: boolean; 
   instituteName?: string;
   instituteCountry?: string;
   instituteAddressLine1?: string;
@@ -233,7 +233,17 @@ export interface ProfileData {
   currentStreak?: number;
   totalDaysPracticed?: number;
   monthlyPoints?: number;
+  weeklyPoints?: number;
+  totalPoints?: number;
+  lastWeeklyReset?: string;
+  lastMonthlyReset?: string;
   fcmToken?: string;
+  lastAwardedRank?: string;
+  isSuspended?: boolean;
+  // Marketing fields
+  lastMarketingEmailSent?: any;
+  marketingCampaignClicked?: boolean;
+  lastCampaignClicked?: string;
 }
 
 export type UpdateProfilePayload = {
@@ -263,6 +273,8 @@ export type UpdateProfilePayload = {
   institutePincode?: string;
   profilePhoto?: File;
   fcmToken?: string;
+  lastAwardedRank?: string;
+  isSuspended?: boolean;
 };
 
 
@@ -274,10 +286,10 @@ export interface TestResult {
   score: number;
   totalQuestions: number;
   accuracy: number;
-  timeSpent: number; // in seconds
-  timeLeft: number; // in seconds
+  timeSpent: number; 
+  timeLeft: number; 
   createdAt: Date;
-  // Optional detailed data for review
+  earnedPoints?: number;
   questions?: Question[];
   userAnswers?: (number | null)[];
 }

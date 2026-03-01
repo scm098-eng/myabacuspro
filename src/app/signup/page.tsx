@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2, Camera } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Camera, Globe } from 'lucide-react';
 import type { SignupData, ProfileData, UserRole } from '@/types';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,12 +29,17 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 const indianStates = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"];
 const grades = Array.from({ length: 12 }, (_, i) => `${i + 1}${['st', 'nd', 'rd'][i] || 'th'}`);
 
+const majorCountries = [
+  "India", "United States", "United Kingdom", "United Arab Emirates", "Australia", 
+  "Canada", "Singapore", "Malaysia", "Japan", "Germany", "France", "Other"
+];
+
 const formSchema = z.object({
   firstName: z.string().min(1, { message: "First name is required." }),
   middleName: z.string().optional(),
   surname: z.string().min(1, { message: "Surname is required." }),
   dob: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "A valid date of birth is required." }),
-  country: z.string().optional(),
+  country: z.string().min(1, { message: "Country is required." }),
   addressLine1: z.string().optional(),
   city: z.string().optional(),
   taluka: z.string().optional(),
@@ -196,6 +201,9 @@ export default function SignupPage() {
   const { watch } = form;
   const dob = watch('dob');
   const age = calculateAge(dob);
+  const selectedRole = watch('role');
+  const selectedCountry = watch('country');
+  const selectedInstCountry = watch('instituteCountry');
   
   const handleRedirect = (profile: ProfileData | null) => {
     if (profile && profile.firstName) {
@@ -257,8 +265,6 @@ export default function SignupPage() {
         setIsSubmitting(false);
     }
   }
-  
-  const selectedRole = form.watch('role');
 
   const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -463,30 +469,56 @@ export default function SignupPage() {
                   <>
                     <FormField control={form.control} name="instituteName" render={({ field }) => (<FormItem><FormLabel>Name of Institute</FormLabel><FormControl><Input placeholder="Institute Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
                      <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
-                      <FormField control={form.control} name="instituteCountry" render={({ field }) => ( <FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a country" /></SelectTrigger></FormControl><SelectContent><SelectItem value="India">India</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                      <FormField control={form.control} name="instituteState" render={({ field }) => ( <FormItem><FormLabel>State</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a state" /></SelectTrigger></FormControl><SelectContent>{indianStates.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="instituteCountry" render={({ field }) => ( <FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a country" /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="instituteState" render={({ field }) => ( 
+                        <FormItem>
+                          <FormLabel>State / Province / Region</FormLabel>
+                          {selectedInstCountry === 'India' ? (
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl><SelectTrigger><SelectValue placeholder="Select a state" /></SelectTrigger></FormControl>
+                              <SelectContent>{indianStates.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}</SelectContent>
+                            </Select>
+                          ) : (
+                            <FormControl><Input placeholder="Enter state/province" {...field} /></FormControl>
+                          )}
+                          <FormMessage />
+                        </FormItem> 
+                      )} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField control={form.control} name="instituteDistrict" render={({ field }) => (<FormItem><FormLabel>District</FormLabel><FormControl><Input placeholder="District" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="instituteTaluka" render={({ field }) => (<FormItem><FormLabel>Taluka / Tehsil</FormLabel><FormControl><Input placeholder="Taluka" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="instituteDistrict" render={({ field }) => (<FormItem><FormLabel>District / Region</FormLabel><FormControl><Input placeholder="District" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="instituteTaluka" render={({ field }) => (<FormItem><FormLabel>Area / Taluka</FormLabel><FormControl><Input placeholder="Taluka" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField control={form.control} name="instituteCity" render={({ field }) => (<FormItem><FormLabel>City / Town</FormLabel><FormControl><Input placeholder="City" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="institutePincode" render={({ field }) => (<FormItem><FormLabel>Pincode</FormLabel><FormControl><Input placeholder="Pincode" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="institutePincode" render={({ field }) => (<FormItem><FormLabel>Pincode / Zip Code</FormLabel><FormControl><Input placeholder="Pincode" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
                      <FormField control={form.control} name="instituteAddressLine1" render={({ field }) => (<FormItem><FormLabel>Address Line 1</FormLabel><FormControl><Input placeholder="House No, Street, Area" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   </>
                 )}
                 
                 <h3 className="text-lg font-medium pt-4 border-b">Residential Address</h3>
-                <FormField control={form.control} name="country" render={({ field }) => ( <FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a country" /></SelectTrigger></FormControl><SelectContent><SelectItem value="India">India</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                <FormField control={form.control} name="state" render={({ field }) => ( <FormItem><FormLabel>State</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a state" /></SelectTrigger></FormControl><SelectContent>{indianStates.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="country" render={({ field }) => ( <FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a country" /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="state" render={({ field }) => ( 
+                  <FormItem>
+                    <FormLabel>State / Province / Region</FormLabel>
+                    {selectedCountry === 'India' ? (
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select a state" /></SelectTrigger></FormControl>
+                        <SelectContent>{indianStates.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}</SelectContent>
+                      </Select>
+                    ) : (
+                      <FormControl><Input placeholder="Enter state/province" {...field} /></FormControl>
+                    )}
+                    <FormMessage />
+                  </FormItem> 
+                )} />
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField control={form.control} name="district" render={({ field }) => (<FormItem><FormLabel>District</FormLabel><FormControl><Input placeholder="District" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="taluka" render={({ field }) => (<FormItem><FormLabel>Taluka / Tehsil</FormLabel><FormControl><Input placeholder="Taluka" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="district" render={({ field }) => (<FormItem><FormLabel>District / Region</FormLabel><FormControl><Input placeholder="District" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="taluka" render={({ field }) => (<FormItem><FormLabel>Area / Taluka</FormLabel><FormControl><Input placeholder="Taluka" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City / Town</FormLabel><FormControl><Input placeholder="City" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="pincode" render={({ field }) => (<FormItem><FormLabel>Pincode</FormLabel><FormControl><Input placeholder="Pincode" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="pincode" render={({ field }) => (<FormItem><FormLabel>Pincode / Zip Code</FormLabel><FormControl><Input placeholder="Pincode" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                 <FormField control={form.control} name="addressLine1" render={({ field }) => (<FormItem><FormLabel>Address Line 1</FormLabel><FormControl><Input placeholder="House No, Street, Area" {...field} /></FormControl><FormMessage /></FormItem>)} />
 
@@ -517,8 +549,8 @@ export default function SignupPage() {
                         name="mobileNo"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Mobile No.</FormLabel>
-                                <FormControl><Input placeholder="Mobile Number" {...field} /></FormControl>
+                                <FormLabel>Mobile No. (with country code)</FormLabel>
+                                <FormControl><Input placeholder="+1 234 567 890" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -529,7 +561,7 @@ export default function SignupPage() {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>WhatsApp No. (Optional)</FormLabel>
-                                <FormControl><Input placeholder="WhatsApp Number" {...field} /></FormControl>
+                                <FormControl><Input placeholder="+1 234 567 890" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}

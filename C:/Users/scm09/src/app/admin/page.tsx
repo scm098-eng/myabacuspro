@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -11,10 +12,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Users, Briefcase, Crown, User, CheckCircle, Cake } from 'lucide-react';
+import { Eye, UserCheck, Users, Briefcase, Crown, User, CheckCircle, Cake, Trophy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { isWithinInterval, add, parseISO, getDay, getMonth } from 'date-fns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getFirestore, collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { firebaseApp } from '@/lib/firebase';
 
 const StatCard = ({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) => (
     <Card>
@@ -33,12 +37,7 @@ const isBirthdaySoon = (dob: string) => {
     const today = new Date();
     const birthday = parseISO(dob);
     const nextBirthday = new Date(today.getFullYear(), getMonth(birthday), getDay(birthday));
-    
-    // If birthday has already passed this year, check for next year
-    if (nextBirthday < today) {
-        nextBirthday.setFullYear(today.getFullYear() + 1);
-    }
-    
+    if (nextBirthday < today) nextBirthday.setFullYear(today.getFullYear() + 1);
     return isWithinInterval(nextBirthday, { start: today, end: add(today, { days: 7 }) });
 };
 
@@ -51,12 +50,14 @@ const isBirthdayToday = (dob: string) => {
 
 export default function AdminDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media&token=c4d5e6f7-g8h9-i0j1-k2l3-m4n5o6p7q8r9');
-  const { user, profile, getAllUsers, approveTeacher, isLoading: authLoading } = useAuth();
+  const { user, profile, getAllUsers, approveTeacher, isLoading: authLoading, getStudentTitle } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
   const [allUsers, setAllUsers] = useState<ProfileData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -86,21 +87,42 @@ export default function AdminDashboardPage() {
     }
   }, [authLoading, profile, router, fetchData]);
 
+  // Leaderboard Listener for Admin/Teacher
+  useEffect(() => {
+    if (profile?.role === 'admin' || profile?.role === 'teacher') {
+      const db = getFirestore(firebaseApp);
+      const q = query(
+        collection(db, "users"),
+        where("role", "==", "student"),
+        orderBy(leaderboardTab, "desc"),
+        limit(10)
+      );
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const data = snapshot.docs.map(doc => {
+          const userData = doc.data() as ProfileData;
+          const title = getStudentTitle(userData.totalDaysPracticed || 0, userData.totalPoints || 0);
+          return {
+            uid: doc.id,
+            name: `${userData.firstName} ${userData.surname}`,
+            photo: userData.profilePhoto,
+            points: userData[leaderboardTab as keyof ProfileData] || 0,
+            title: title
+          };
+        });
+        setLeaderboard(data);
+      });
+      return () => unsubscribe();
+    }
+  }, [profile, leaderboardTab, getStudentTitle]);
+
   const handleApproveTeacher = async (teacherId: string) => {
     try {
       await approveTeacher(teacherId);
-      toast({
-        title: 'Teacher Approved',
-        description: 'The teacher can now log in and see their students. The list will update on refresh.',
-      });
-      // After approval, refetch the data to update the UI
+      toast({ title: 'Teacher Approved', description: 'Access granted. List will refresh.' });
       fetchData();
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Could not approve teacher. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Could not approve teacher.', variant: 'destructive' });
     }
   };
 
@@ -108,26 +130,19 @@ export default function AdminDashboardPage() {
     const allTeachers = allUsers.filter(u => u.role === 'teacher');
     const allStudents = allUsers.filter(u => u.role === 'student');
     const birthdays = allUsers.filter(u => isBirthdaySoon(u.dob)).sort((a,b) => (parseISO(a.dob).getMonth()*31 + parseISO(a.dob).getDate()) - (parseISO(b.dob).getMonth()*31 + parseISO(b.dob).getDate()));
-
     const pending = allTeachers.filter(t => t.status === 'pending');
     
     let dashboardStudents: ProfileData[];
     if(profile?.role === 'admin') {
       dashboardStudents = allStudents;
-    } else { // teacher
+    } else {
       dashboardStudents = allUsers.filter(u => u.teacherId === user?.uid);
     }
     
     const teacherStudentMap = allStudents.reduce((acc, student) => {
         if(student.teacherId) {
-            if(!acc[student.teacherId]) {
-                acc[student.teacherId] = { pro: 0, free: 0, total: 0 };
-            }
-            if(student.subscriptionStatus === 'pro') {
-                acc[student.teacherId].pro++;
-            } else {
-                acc[student.teacherId].free++;
-            }
+            if(!acc[student.teacherId]) acc[student.teacherId] = { pro: 0, free: 0, total: 0 };
+            if(student.subscriptionStatus === 'pro') acc[student.teacherId].pro++; else acc[student.teacherId].free++;
             acc[student.teacherId].total++;
         }
         return acc;
@@ -140,10 +155,7 @@ export default function AdminDashboardPage() {
     
     const studentsWithTeacherNames = dashboardStudents.map(student => {
         const teacher = allTeachers.find(t => t.uid === student.teacherId);
-        return {
-            ...student,
-            teacherName: teacher ? `${teacher.firstName} ${teacher.surname}` : 'N/A'
-        }
+        return { ...student, teacherName: teacher ? `${teacher.firstName} ${teacher.surname}` : 'N/A' }
     });
 
     const stats = {
@@ -153,45 +165,20 @@ export default function AdminDashboardPage() {
         freeUsers: allStudents.filter(s => s.subscriptionStatus !== 'pro').length,
     }
 
-    return { 
-        teachers: teachersWithCounts, 
-        students: studentsWithTeacherNames, 
-        pendingTeachers: pending, 
-        summaryStats: stats,
-        upcomingBirthdays: birthdays
-    };
+    return { teachers: teachersWithCounts, students: studentsWithTeacherNames, pendingTeachers: pending, summaryStats: stats, upcomingBirthdays: birthdays };
   }, [allUsers, profile, user]);
 
 
   if (isLoading || authLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Admin Dashboard</CardTitle>
-          <CardDescription>Loading user data...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <div className="space-y-4"><Skeleton className="h-12 w-full" /><Skeleton className="h-[400px] w-full" /></div>;
   }
 
   return (
     <div className="space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle>{profile?.role === 'admin' ? 'Admin' : 'Teacher'} Dashboard</CardTitle>
-          <CardDescription>
-            {profile?.role === 'admin' 
-              ? 'An overview of all users in the system.' 
-              : 'A list of your registered students.'}
-          </CardDescription>
+          <CardTitle className="font-headline">{profile?.role === 'admin' ? 'Admin' : 'Teacher'} Dashboard</CardTitle>
+          <CardDescription>{profile?.role === 'admin' ? 'System-wide overview.' : 'Your registered students.'}</CardDescription>
         </CardHeader>
         {profile?.role === 'admin' && (
             <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -203,167 +190,123 @@ export default function AdminDashboardPage() {
         )}
       </Card>
 
-      {profile?.role === 'admin' && upcomingBirthdays.length > 0 && (
-          <Card>
-              <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                      <Cake className="text-pink-500"/> Upcoming Birthdays
-                  </CardTitle>
-                  <CardDescription>Users with birthdays in the next 7 days.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                  <Table>
-                      <TableHeader>
-                          <TableRow>
-                              <TableHead>User</TableHead>
-                              <TableHead>Role</TableHead>
-                              <TableHead>Birthday</TableHead>
-                          </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                          {upcomingBirthdays.map((u) => (
-                              <TableRow key={u.uid}>
-                                  <TableCell>{u.firstName} {u.surname}</TableCell>
-                                  <TableCell className="capitalize">{u.role}</TableCell>
-                                  <TableCell>
-                                      {isBirthdayToday(u.dob) ? (
-                                        <Badge className="bg-pink-500/20 text-pink-700 border-pink-400">Today!</Badge>
-                                      ) : (
-                                        new Date(u.dob).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
-                                      )}
-                                  </TableCell>
-                              </TableRow>
-                          ))}
-                      </TableBody>
-                  </Table>
-              </CardContent>
-          </Card>
-      )}
-      
-      {profile?.role === 'admin' && pendingTeachers.length > 0 && (
-         <Card>
-            <CardHeader>
-              <CardTitle>Pending Teacher Approvals</CardTitle>
-              <CardDescription>These teachers are waiting for approval to access their dashboard.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Email</TableHead><TableHead>Teacher ID</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {pendingTeachers.map((teacher) => (
-                    <TableRow key={teacher.uid}>
-                      <TableCell><div className="font-medium">{`${teacher.firstName} ${teacher.surname}`}</div></TableCell>
-                      <TableCell>{teacher.email}</TableCell>
-                      <TableCell><div className="font-mono text-xs">{teacher.uid}</div></TableCell>
-                      <TableCell className="text-right">
-                        <Button onClick={() => handleApproveTeacher(teacher.uid)} size="sm">
-                          <UserCheck className="mr-2 h-4 w-4" /> Approve
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-        </Card>
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+            {profile?.role === 'admin' && upcomingBirthdays.length > 0 && (
+                <Card>
+                    <CardHeader><CardTitle className="flex items-center gap-2 font-headline"><Cake className="text-pink-500"/> Upcoming Birthdays</CardTitle></CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Role</TableHead><TableHead>Birthday</TableHead></TableRow></TableHeader>
+                            <TableBody>
+                                {upcomingBirthdays.map((u) => (
+                                    <TableRow key={u.uid}>
+                                        <TableCell>{u.firstName} {u.surname}</TableCell>
+                                        <TableCell className="capitalize">{u.role}</TableCell>
+                                        <TableCell>{isBirthdayToday(u.dob) ? <Badge className="bg-pink-500/20 text-pink-700 border-pink-400">Today!</Badge> : new Date(u.dob).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            )}
+            
+            {profile?.role === 'admin' && pendingTeachers.length > 0 && (
+                <Card>
+                    <CardHeader><CardTitle className="font-headline">Pending Teacher Approvals</CardTitle></CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Email</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                            <TableBody>
+                                {pendingTeachers.map((teacher) => (
+                                    <TableRow key={teacher.uid}>
+                                        <TableCell><div className="font-medium">{`${teacher.firstName} ${teacher.surname}`}</div></TableCell>
+                                        <TableCell>{teacher.email}</TableCell>
+                                        <TableCell className="text-right"><Button onClick={() => handleApproveTeacher(teacher.uid)} size="sm"><UserCheck className="mr-2 h-4 w-4" /> Approve</Button></TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            )}
 
-      {profile?.role === 'admin' && (
-          <Card>
-            <CardHeader>
-                <CardTitle>Teachers</CardTitle>
-                <CardDescription>List of all approved and pending teachers.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <Table>
-                    <TableHeader><TableRow><TableHead>Teacher</TableHead><TableHead>Email</TableHead><TableHead>Status</TableHead><TableHead>Total Students</TableHead><TableHead>Pro Students</TableHead><TableHead>Free Students</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                    <TableBody>
-                        {teachers.length > 0 ? teachers.map((teacher) => (
-                            <TableRow key={teacher.uid}>
-                                <TableCell><div className="font-medium">{teacher.firstName} {teacher.surname}</div></TableCell>
-                                <TableCell>{teacher.email}</TableCell>
-                                <TableCell>
-                                     <Badge variant={teacher.status === 'approved' ? 'default' : 'secondary'} className={teacher.status === 'approved' ? 'bg-green-500/20 text-green-700 border-green-400' : ''}>
-                                      {teacher.status}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>{teacher.studentCounts.total}</TableCell>
-                                <TableCell>{teacher.studentCounts.pro}</TableCell>
-                                <TableCell>{teacher.studentCounts.free}</TableCell>
-                                <TableCell className="text-right">
-                                    <Button asChild variant="outline" size="sm">
-                                      <Link href={`/admin/user/${teacher.uid}`}>
-                                        <Eye className="mr-2 h-4 w-4" />
-                                        View Details
-                                      </Link>
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        )) : <TableRow><TableCell colSpan={7} className="text-center">No teachers found.</TableCell></TableRow>}
-                    </TableBody>
-                </Table>
-            </CardContent>
-          </Card>
-      )}
+            {profile?.role === 'admin' && (
+                <Card>
+                    <CardHeader><CardTitle className="font-headline">Teachers</CardTitle></CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader><TableRow><TableHead>Teacher</TableHead><TableHead>Status</TableHead><TableHead>Students</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                            <TableBody>
+                                {teachers.map((t) => (
+                                    <TableRow key={t.uid}>
+                                        <TableCell><div className="font-medium">{t.firstName} {t.surname}</div><div className="text-xs text-muted-foreground">{t.email}</div></TableCell>
+                                        <TableCell><Badge variant={t.status === 'approved' ? 'default' : 'secondary'} className={t.status === 'approved' ? 'bg-green-500/20 text-green-700 border-green-400' : ''}>{t.status}</Badge></TableCell>
+                                        <TableCell>{t.studentCounts.total}</TableCell>
+                                        <TableCell className="text-right"><Button asChild variant="outline" size="sm"><Link href={`/admin/user/${t.uid}`}><Eye className="mr-2 h-4 w-4" /> View</Link></Button></TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Students</CardTitle>
-           <CardDescription>
-            {profile?.role === 'admin' ? 'A list of all registered students in the system.' : 'A list of your students.'}
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Email</TableHead>
-                {profile?.role === 'admin' && <TableHead>Assigned Teacher</TableHead>}
-                <TableHead className="hidden md:table-cell">Subscription</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {students.length > 0 ? students.map((student) => (
-                <TableRow key={student.uid}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={student.profilePhoto} />
-                        <AvatarFallback>{student.firstName?.[0]}{student.surname?.[0]}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{`${student.firstName} ${student.surname}`}</p>
-                      </div>
+            <Card>
+                <CardHeader><CardTitle className="font-headline">Students</CardTitle></CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader><TableRow><TableHead>Student</TableHead><TableHead>Subscription</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                            {students.map((s) => (
+                                <TableRow key={s.uid}>
+                                    <TableCell><div className="flex items-center gap-3"><Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto} /><AvatarFallback>{s.firstName?.[0]}</AvatarFallback></Avatar><div><p className="font-medium">{s.firstName} {s.surname}</p><p className="text-xs text-muted-foreground">{s.email}</p></div></div></TableCell>
+                                    <TableCell><Badge variant={s.subscriptionStatus === 'pro' ? 'default' : 'secondary'} className={s.subscriptionStatus === 'pro' ? 'bg-green-500/20 text-green-700 border-green-400' : ''}>{s.subscriptionStatus || 'free'}</Badge></TableCell>
+                                    <TableCell className="text-right"><Button asChild variant="outline" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="mr-2 h-4 w-4" /> View</Link></Button></TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
+
+        <div className="space-y-8">
+            <Card className="border-border/50 shadow-sm overflow-hidden rounded-xl">
+                <CardHeader className="bg-muted/30 border-b border-border/50 pb-0">
+                    <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2 font-headline uppercase tracking-tight mb-4"><Trophy className="text-yellow-500 w-6 h-6" /> Hall of Fame</CardTitle>
+                    <Tabs defaultValue="totalPoints" onValueChange={setLeaderboardTab} className="w-full">
+                        <TabsList className="grid w-full grid-cols-3 bg-slate-200/50">
+                            <TabsTrigger value="weeklyPoints" className="text-[10px] font-bold uppercase py-2">Weekly</TabsTrigger>
+                            <TabsTrigger value="monthlyPoints" className="text-[10px] font-bold uppercase py-2">Monthly</TabsTrigger>
+                            <TabsTrigger value="totalPoints" className="text-[10px] font-bold uppercase py-2">Global</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <div className="divide-y divide-border/50">
+                        {leaderboard.length > 0 ? leaderboard.map((student, idx) => (
+                            <div key={student.uid} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-all">
+                                <div className="flex items-center gap-4">
+                                    <span className={cn("w-6 text-sm font-bold", idx === 0 ? "text-yellow-500" : idx === 1 ? "text-slate-400" : idx === 2 ? "text-amber-600" : "text-muted-foreground")}>#{idx + 1}</span>
+                                    <Avatar className="h-10 w-10 border-2 border-white shadow-sm"><AvatarImage src={student.photo} /><AvatarFallback className="bg-muted font-bold text-xs">{student.name?.charAt(0)}</AvatarFallback></Avatar>
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-sm font-bold text-foreground truncate">{student.name}</span>
+                                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tight w-fit" style={{ backgroundColor: student.title.color + '20', color: student.title.color }}>{student.title.icon} {student.title.name}</span>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-sm font-bold text-primary block">{student.points.toLocaleString()}</span>
+                                    <span className="text-[8px] font-bold text-muted-foreground uppercase">Points</span>
+                                </div>
+                            </div>
+                        )) : <div className="py-12 text-center text-muted-foreground text-xs font-bold uppercase tracking-widest">Loading Top Performers...</div>}
                     </div>
-                  </TableCell>
-                  <TableCell>{student.email}</TableCell>
-                  {profile?.role === 'admin' && <TableCell>{student.teacherName}</TableCell>}
-                  <TableCell className="hidden md:table-cell">
-                    <Badge variant={student.subscriptionStatus === 'pro' ? 'default' : 'secondary'} className={student.subscriptionStatus === 'pro' ? 'bg-green-500/20 text-green-700 border-green-400' : ''}>
-                      {student.subscriptionStatus === 'pro' && <CheckCircle className="mr-1 h-3 w-3" />}
-                      {student.subscriptionStatus || 'free'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/admin/user/${student.uid}`}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Details
-                      </Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              )) : (
-                <TableRow>
-                  <TableCell colSpan={profile?.role === 'admin' ? 5 : 4} className="text-center">No students found.</TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                </CardContent>
+            </Card>
+        </div>
+      </div>
     </div>
   );
 }

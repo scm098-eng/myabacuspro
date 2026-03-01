@@ -5,9 +5,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, Zap, ChevronRight, Bell, BellOff, Loader2 } from 'lucide-react';
+import { Check, Trophy, Zap, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, Info, ShieldAlert, MailCheck, TrendingUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, doc, updateDoc } from 'firebase/firestore';
@@ -16,15 +16,26 @@ import type { ProfileData } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMessaging, getToken } from 'firebase/messaging';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import AchievementModal from '@/components/AchievementModal';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { RANK_CRITERIA } from '@/lib/constants';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 export default function StudentDashboardPage() {
   usePageBackground('');
-  const { profile, user, isLoading, getStudentTitle } = useAuth();
+  const { profile, user, isLoading, getStudentTitle, updateUserProfile, sendVerificationEmail } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
   const [isRequestingNotifications, setIsRequestingNotifications] = useState(false);
+  const [isSendingVerification, setIsSendingVerification] = useState(false);
+  const [showAchievement, setShowAchievement] = useState(false);
+  const [achievementData, setAchievementData] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -34,33 +45,55 @@ export default function StudentDashboardPage() {
   }, [isLoading, user, router]);
 
   useEffect(() => {
-    if (mounted) {
+    if (mounted && user) {
       const db = getFirestore(firebaseApp);
       const q = query(
         collection(db, "users"),
         where("role", "==", "student"),
-        orderBy("totalDaysPracticed", "desc"),
+        orderBy(leaderboardTab, "desc"),
         limit(10)
       );
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const data = snapshot.docs.map(doc => {
           const userData = doc.data() as ProfileData;
-          const title = getStudentTitle(userData.totalDaysPracticed || 0);
+          const title = getStudentTitle(userData.totalDaysPracticed || 0, userData.totalPoints || 0);
           return {
             uid: doc.id,
             name: `${userData.firstName} ${userData.surname}`,
             photo: userData.profilePhoto,
             days: userData.totalDaysPracticed || 0,
+            points: userData[leaderboardTab as keyof ProfileData] || 0,
             title: title
           };
         });
         setLeaderboard(data);
+      }, async (error) => {
+          const permissionError = new FirestorePermissionError({
+            path: '/users',
+            operation: 'list',
+          });
+          errorEmitter.emit('permission-error', permissionError);
       });
 
       return () => unsubscribe();
     }
-  }, [mounted, getStudentTitle]);
+  }, [mounted, user, getStudentTitle, leaderboardTab]);
+
+  useEffect(() => {
+    if (mounted && profile && profile.role === 'student' && !isLoading) {
+      const currentPoints = profile.totalPoints || 0;
+      const currentDays = profile.totalDaysPracticed || 0;
+      const calculatedRank = getStudentTitle(currentDays, currentPoints);
+
+      if (calculatedRank.name !== profile.lastAwardedRank) {
+        setAchievementData(calculatedRank);
+        setShowAchievement(true);
+        updateUserProfile(user!.uid, { lastAwardedRank: calculatedRank.name } as any)
+          .catch(e => console.error("Failed to update awarded rank", e));
+      }
+    }
+  }, [mounted, profile, getStudentTitle, user, updateUserProfile, isLoading]);
 
   const handleEnableNotifications = async () => {
     if (!user) return;
@@ -69,7 +102,6 @@ export default function StudentDashboardPage() {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
         const messaging = getMessaging(firebaseApp);
-        // Updated with the user provided VAPID Key
         const token = await getToken(messaging, { 
           vapidKey: 'BF27zRYbNBqLyR0w1XZVSCWK0YNgG7M9DymtcLAPr6A0gUoT0OlIn-q7fpPhgYgOwcj91lmXUL7KvTV4o0Yd7J8' 
         });
@@ -78,261 +110,238 @@ export default function StudentDashboardPage() {
           const db = getFirestore(firebaseApp);
           const userRef = doc(db, "users", user.uid);
           await updateDoc(userRef, { fcmToken: token });
-          toast({
-            title: "Notifications Enabled!",
-            description: "You'll receive daily practice reminders at 7 PM IST. 🔥",
-          });
-        } else {
-          throw new Error("No registration token available. Request permission to generate one.");
+          toast({ title: "Notifications Enabled!", description: "You'll receive daily reminders at 7 PM IST. 🔥" });
         }
-      } else {
-        toast({
-          title: "Permission Denied",
-          description: "You won't receive practice reminders. You can enable them in browser settings.",
-          variant: "destructive"
-        });
       }
     } catch (error: any) {
-      console.error("FCM Error:", error);
-      toast({
-        title: "Setup Failed",
-        description: "Could not enable reminders. Please try again later.",
-        variant: "destructive"
-      });
+      toast({ title: "Setup Failed", description: "Could not enable reminders.", variant: "destructive" });
     } finally {
       setIsRequestingNotifications(false);
     }
   };
 
+  const handleResendVerification = async () => {
+    setIsSendingVerification(true);
+    try {
+      await sendVerificationEmail();
+      toast({ title: "Verification Sent", description: "Please check your inbox (and spam folder)." });
+    } catch (error: any) {
+      toast({ title: "Failed to send", description: error.message, variant: "destructive" });
+    } finally {
+      setIsSendingVerification(false);
+    }
+  };
+
+  const currentPoints = profile?.totalPoints || 0;
+  const currentDays = profile?.totalDaysPracticed || 0;
+  const currentRank = getStudentTitle(currentDays, currentPoints);
+  
+  const { nextRank, daysRemaining, pointsRemaining, totalProg } = useMemo(() => {
+    const next = RANK_CRITERIA.slice().reverse().find(r => currentDays < r.daysReq || currentPoints < r.pointsReq);
+    if (!next) return { nextRank: null, daysRemaining: 0, pointsRemaining: 0, totalProg: 100 };
+
+    const dRem = Math.max(0, next.daysReq - currentDays);
+    const pRem = Math.max(0, next.pointsReq - currentPoints);
+    
+    const dProg = Math.min(100, (currentDays / (next.daysReq || 1)) * 100);
+    const pProg = Math.min(100, (currentPoints / (next.pointsReq || 1)) * 100);
+    const combinedProg = (dProg + pProg) / 2;
+
+    return { nextRank: next, daysRemaining: dRem, pointsRemaining: pRem, totalProg: combinedProg };
+  }, [currentDays, currentPoints]);
+
   if (isLoading || !mounted) {
     return (
-      <div className="max-w-4xl mx-auto p-4 space-y-6">
-        <Skeleton className="h-[220px] w-full rounded-b-[30px]" />
-        <Skeleton className="h-[150px] w-full rounded-[20px]" />
-        <div className="grid grid-cols-2 gap-4">
-          <Skeleton className="h-24 w-full rounded-[20px]" />
-          <Skeleton className="h-24 w-full rounded-[20px]" />
-        </div>
+      <div className="space-y-8 max-w-6xl mx-auto">
+        <Skeleton className="h-[200px] w-full rounded-xl" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6"><Skeleton className="h-[120px] rounded-xl" /><Skeleton className="h-[120px] rounded-xl" /><Skeleton className="h-[120px] rounded-xl" /></div>
       </div>
     );
   }
 
   if (!user || !profile) return null;
 
-  const currentRank = getStudentTitle(profile.totalDaysPracticed || 0);
   const daysInMonthLeft = 30 - new Date().getDate();
-  const progressToNextBadge = Math.min(100, Math.floor(((profile.totalDaysPracticed || 0) % 30) / 30 * 100));
+  
+  // Allow testuser, tempuser, and Maitreya Satish Mane to bypass verification
+  const isTestAccount = /testuser|tempuser/i.test(user.email || '');
+  const isMaitreya = (profile?.firstName?.toLowerCase() === 'maitreya' || profile?.firstName?.toLowerCase() === 'maitreya satish') && profile?.surname?.toLowerCase() === 'mane';
+  const isBypassedAccount = isTestAccount || isMaitreya;
+  const isEmailVerified = user.emailVerified || isBypassedAccount;
 
   return (
-    <div className="flex justify-center w-full bg-[#f4f7f9] -m-4 sm:-m-6 lg:-m-8 pb-32 relative font-sans rounded-2xl overflow-hidden min-h-screen">
-      {/* Centered Wrapper */}
-      <div className="w-full max-w-[450px] min-h-screen flex flex-col bg-white shadow-2xl">
-        {/* Header Card */}
-        <div className="relative h-[240px] rounded-b-[35px] overflow-hidden shadow-xl shadow-blue-900/10 flex-shrink-0">
-          <div 
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-[10000ms] hover:scale-110"
-            style={{ backgroundImage: "url('https://picsum.photos/seed/math/800/600')" }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-transparent p-8 flex flex-col justify-start text-white">
-            <h2 className="text-3xl font-black tracking-tighter mb-2 uppercase italic drop-shadow-md">Road to Mastery</h2>
-            
-            <div 
-              className="flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-6 w-fit shadow-lg border border-white/20"
-              style={{ backgroundColor: currentRank.color, color: '#000' }}
-            >
-              <span>{currentRank.icon}</span>
-              <span>Current Rank: {currentRank.name}</span>
-            </div>
+    <div className="max-w-6xl mx-auto space-y-8 pb-12">
+      {showAchievement && achievementData && (
+        <AchievementModal 
+          studentName={`${profile.firstName} ${profile.surname}`}
+          title={achievementData.name}
+          icon={achievementData.icon}
+          color={achievementData.color}
+          totalPoints={currentPoints}
+          totalDays={currentDays}
+          onClose={() => setShowAchievement(false)}
+        />
+      )}
 
-            <div className="mt-auto">
-              <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2.5 text-blue-100">
-                <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-yellow-400 fill-yellow-400" /> {daysInMonthLeft} Days left in Month</span>
-                <span>{progressToNextBadge}% to next Badge</span>
-              </div>
-              <div className="h-3 w-full bg-white/20 rounded-full p-0.5 backdrop-blur-sm">
-                <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.5)] transition-all duration-1000" style={{ width: `${progressToNextBadge}%` }} />
-              </div>
+      {!isEmailVerified && (
+        <Alert variant="destructive" className="bg-orange-50 border-orange-200 text-orange-800">
+          <ShieldAlert className="h-4 w-4 text-orange-600" />
+          <AlertTitle className="font-bold">Verify Your Email</AlertTitle>
+          <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <span>Please verify your email address to unlock practice tests and games. Check your inbox for the link.</span>
+            <Button size="sm" onClick={handleResendVerification} disabled={isSendingVerification} variant="outline" className="border-orange-300 hover:bg-orange-100">
+              {isSendingVerification ? <Loader2 className="animate-spin h-4 w-4" /> : <MailCheck className="mr-2 h-4 w-4" />}
+              Resend Link
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Hero Header */}
+      <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 text-white min-h-[220px] flex flex-col justify-center rounded-2xl">
+        <div className="absolute inset-0 opacity-30 bg-cover bg-center" style={{ backgroundImage: "url('https://picsum.photos/seed/abacus/1200/400')" }} />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent" />
+        <CardContent className="relative z-10 p-8 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="space-y-4 text-center md:text-left max-w-xl">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight font-headline uppercase">Road to Mastery</h1>
+            <div className="flex flex-wrap justify-center md:justify-start gap-3">
+              <Badge className="bg-yellow-400 text-slate-900 font-bold px-4 py-1.5 rounded-full text-xs tracking-wide shadow-lg border-none">
+                {currentRank.icon} Current Rank: {currentRank.name}
+              </Badge>
+              {nextRank && (
+                <Badge variant="outline" className="text-white border-white/20 px-4 py-1.5 rounded-full text-xs tracking-wide font-bold">
+                  Next Goal: {nextRank.icon} {nextRank.name}
+                </Badge>
+              )}
             </div>
           </div>
-        </div>
-
-        {/* Roadmap Section - 4 Weeks */}
-        <div className="px-4 -mt-8 relative z-10 space-y-4">
-          {[1, 2, 3, 4].map((weekNum) => {
-            const startDay = (weekNum - 1) * 7;
-            const weekProgress = Math.max(0, Math.min(7, (profile.totalDaysPracticed || 0) - startDay));
-            
-            return (
-              <div key={weekNum} className="bg-white p-6 rounded-[25px] shadow-xl shadow-blue-900/5 border border-white">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-600 p-1.5 rounded-lg shadow-md shadow-blue-200">
-                      <Check className="w-4 h-4 text-white stroke-[4px]" />
-                    </div>
-                    <h3 className="text-lg font-black text-slate-800 tracking-tight">Week {weekNum}</h3>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-tighter">
-                      Progress: {weekProgress}/7 Days
-                    </span>
-                  </div>
+          
+          {nextRank && (
+            <div className="w-full md:w-80 space-y-4">
+              <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-300">
+                <span>Journey to {nextRank.name}</span>
+                <span>{Math.floor(totalProg)}% Complete</span>
+              </div>
+              <div className="h-4 w-full bg-white/10 rounded-full p-1 border border-white/10">
+                <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.6)] transition-all duration-1000" style={{ width: `${totalProg}%` }} />
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div className="bg-white/5 rounded-lg py-2">
+                  <p className="text-[14px] font-black text-white leading-none">{pointsRemaining.toLocaleString()}</p>
+                  <p className="text-[8px] text-slate-400 uppercase font-bold mt-1">Pts to go</p>
                 </div>
-
-                <div className="flex items-center justify-between relative h-12">
-                  <div className="absolute top-1/2 left-4 right-12 h-1 bg-slate-100 -translate-y-1/2 z-0 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${(weekProgress / 7) * 100}%` }} />
-                  </div>
-
-                  <div className="flex justify-between w-full relative z-10">
-                    {[1, 2, 3, 4, 5, 6, 7].map((dayOffset) => {
-                      const absoluteDay = startDay + dayOffset;
-                      const isCompleted = (profile.totalDaysPracticed || 0) >= absoluteDay;
-                      const isCurrent = (profile.totalDaysPracticed || 0) + 1 === absoluteDay;
-
-                      return (
-                        <div 
-                          key={dayOffset} 
-                          className={cn(
-                            "w-9 h-9 min-w-[36px] min-h-[36px] rounded-full flex items-center justify-center border-2 border-white shadow-lg flex-shrink-0 aspect-square",
-                            isCompleted ? "bg-blue-600 text-white shadow-blue-200" : isCurrent ? "border-blue-600 bg-white text-blue-600 animate-pulse" : "bg-slate-100 text-slate-400"
-                          )}
-                        >
-                          {isCompleted ? <Check className="w-4 h-4 stroke-[4px]" /> : <span className="text-[10px] font-black">{dayOffset}</span>}
-                        </div>
-                      );
-                    })}
-                    <div className="flex items-center justify-center pl-2">
-                      <div className={cn(
-                        "p-2 rounded-xl border-2 border-dashed flex-shrink-0",
-                        weekProgress === 7 ? "bg-yellow-50 border-yellow-400 text-yellow-600" : "bg-slate-50 border-slate-200 grayscale opacity-50"
-                      )}>
-                        <Trophy className="w-5 h-5" />
-                      </div>
-                    </div>
-                  </div>
+                <div className="bg-white/5 rounded-lg py-2">
+                  <p className="text-[14px] font-black text-white leading-none">{daysRemaining}</p>
+                  <p className="text-[8px] text-slate-400 uppercase font-bold mt-1">Days to go</p>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="hover:shadow-md transition-shadow bg-card/50 border-border/50">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="bg-orange-100 p-3 rounded-2xl"><Flame className="w-6 h-6 text-orange-600" /></div>
+            <div><p className="text-3xl font-bold text-foreground leading-none">{profile.currentStreak || 0}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Streak</p></div>
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-md transition-shadow bg-card/50 border-border/50">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="bg-blue-100 p-3 rounded-2xl"><CalendarDays className="w-6 h-6 text-blue-600" /></div>
+            <div><p className="text-3xl font-bold text-foreground leading-none">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Total Days</p></div>
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-md transition-shadow bg-card/50 border-border/50">
+          <CardContent className="p-6 flex items-center gap-4 relative">
+            <div className="bg-yellow-100 p-3 rounded-2xl"><Star className="w-6 h-6 text-yellow-600 fill-yellow-600" /></div>
+            <div><p className="text-3xl font-bold text-foreground leading-none">{currentPoints.toLocaleString()}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 flex items-center gap-1">Mastery Points</p></div>
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-md transition-shadow bg-purple-100/50 border-purple-200">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="bg-purple-100 p-3 rounded-2xl"><Trophy className="w-6 h-6 text-purple-600" /></div>
+            <div><p className="text-3xl font-bold text-purple-700 leading-none">#{leaderboard.findIndex(s => s.uid === profile.uid) + 1 || '--'}</p><p className="text-[10px] font-bold text-purple-600 uppercase tracking-widest mt-1">Position</p></div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-foreground font-headline flex items-center gap-3"><CalendarDays className="w-6 h-6 text-primary" /> 28 Day Challenge</h2>
+            <Button variant="link" onClick={() => router.push('/progress')} className="font-bold text-primary p-0 uppercase tracking-tight text-xs">History <ChevronRight className="w-4 h-4 ml-1" /></Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[1, 2, 3, 4].map((weekNum) => {
+              const startDay = (weekNum - 1) * 7;
+              const weekProgress = Math.max(0, Math.min(7, currentDays - startDay));
+              return (
+                <Card key={weekNum} className="overflow-hidden border-border/50 shadow-sm rounded-xl">
+                  <CardHeader className="bg-muted/30 border-b border-border/50 py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2"><div className="bg-primary text-primary-foreground p-1 rounded"><Check className="w-3 h-3 stroke-[3px]" /></div><span className="font-bold text-foreground uppercase tracking-tight text-sm">Week {weekNum}</span></div>
+                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase tracking-widest">{weekProgress}/7 Days</span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-center relative gap-2">
+                      {[1, 2, 3, 4, 5, 6, 7].map((dayOffset) => {
+                        const isCompleted = currentDays >= (startDay + dayOffset);
+                        const isCurrent = currentDays + 1 === (startDay + dayOffset);
+                        return <div key={dayOffset} className={cn("w-10 h-10 aspect-square rounded-full flex items-center justify-center border-2 shadow-sm transition-all", isCompleted ? "bg-primary border-primary text-primary-foreground scale-105" : isCurrent ? "border-primary bg-background text-primary animate-pulse ring-4 ring-primary/5" : "bg-muted/50 border-border text-muted-foreground")}>{isCompleted ? <Check className="w-5 h-5 stroke-[3px]" /> : <span className="text-xs font-bold">{dayOffset}</span>}</div>;
+                      })}
+                      <div className={cn("w-10 h-10 aspect-square rounded-xl border-2 border-dashed flex items-center justify-center transition-all", weekProgress === 7 ? "bg-yellow-50 border-yellow-400 text-yellow-600 scale-110 shadow-md" : "bg-muted/50 border-border/50 grayscale opacity-50")}><Trophy className="w-5 h-5" /></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          <Button 
+            onClick={() => router.push('/tests')} 
+            disabled={!isEmailVerified}
+            className="w-full h-20 bg-primary hover:bg-primary/90 text-2xl font-bold rounded-2xl shadow-xl uppercase tracking-widest group"
+          >
+            Start Practice {!isEmailVerified && <ShieldAlert className="ml-2 h-6 w-6" />}
+            <ChevronRight className="w-8 h-8 ml-4 stroke-[3px] group-hover:translate-x-2 transition-transform" />
+          </Button>
         </div>
 
-        {/* Reminders Toggle */}
-        <div className="px-4 mt-6">
-          <Card className="rounded-[25px] border-none shadow-xl shadow-blue-900/5 bg-blue-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-black text-blue-800 flex items-center gap-2">
-                <Bell className="w-5 h-5" /> Daily Reminders
-              </CardTitle>
-              <CardDescription className="text-xs text-blue-600 font-medium">
-                Get a motivational nudge every evening at 7 PM.
-              </CardDescription>
-            </CardHeader>
+        <div className="space-y-8">
+          <Card className="border-border/50 shadow-sm bg-primary/5">
+            <CardHeader className="pb-2"><CardTitle className="text-lg font-bold text-primary flex items-center gap-2 font-headline uppercase tracking-tight"><Bell className="w-5 h-5" /> Daily Reminders</CardTitle></CardHeader>
             <CardContent>
-              <Button 
-                onClick={handleEnableNotifications}
-                disabled={isRequestingNotifications || !!profile.fcmToken}
-                variant={profile.fcmToken ? "ghost" : "default"}
-                className={cn(
-                  "w-full rounded-xl h-12 font-bold",
-                  profile.fcmToken ? "text-green-600 cursor-default hover:bg-transparent" : "bg-blue-600"
-                )}
-              >
-                {isRequestingNotifications ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : profile.fcmToken ? (
-                  <><Check className="w-4 h-4 mr-2" /> Reminders Active</>
-                ) : (
-                  "Enable Notifications"
-                )}
-              </Button>
+              <Button onClick={handleEnableNotifications} disabled={isRequestingNotifications || !!profile.fcmToken} variant={profile.fcmToken ? "ghost" : "default"} className={cn("w-full rounded-xl h-12 font-bold transition-all uppercase text-xs", profile.fcmToken ? "text-green-600 bg-green-50/50 cursor-default" : "shadow-md")}>{isRequestingNotifications ? <Loader2 className="animate-spin h-4 w-4" /> : profile.fcmToken ? <><Check className="mr-2 h-4 w-4 stroke-[3px]" /> Active</> : "Enable Notifications"}</Button>
             </CardContent>
           </Card>
-        </div>
 
-        {/* Activity Grid */}
-        <div className="grid grid-cols-2 gap-4 px-4 mt-6">
-          <div className="bg-white p-5 rounded-[25px] shadow-sm border border-white flex flex-col items-center justify-center gap-1 group hover:shadow-md transition-shadow cursor-default">
-            <span className="text-3xl font-black text-blue-600 tracking-tighter group-hover:scale-110 transition-transform">
-              {profile.currentStreak || 0}
-            </span>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center leading-tight">Current<br/>Streak</span>
-          </div>
-          <div className="bg-white p-5 rounded-[25px] shadow-sm border border-white flex flex-col items-center justify-center gap-1 group hover:shadow-md transition-shadow cursor-default">
-            <span className="text-3xl font-black text-blue-600 tracking-tighter group-hover:scale-110 transition-transform">
-              {profile.totalDaysPracticed || 0}
-            </span>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center leading-tight">Total<br/>Days</span>
-          </div>
-        </div>
-
-        {/* Hall of Fame Leaderboard */}
-        <div className="px-4 mt-8 pb-12">
-          <Card className="rounded-[25px] border-none shadow-xl shadow-blue-900/5">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xl font-black text-slate-800 flex items-center gap-2">
-                <Trophy className="text-yellow-500 w-6 h-6" /> Hall of Fame
-              </CardTitle>
+          <Card className="border-border/50 shadow-sm overflow-hidden rounded-xl">
+            <CardHeader className="bg-muted/30 border-b border-border/50 pb-0">
+              <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2 font-headline uppercase tracking-tight mb-4"><Trophy className="text-yellow-500 w-6 h-6" /> Hall of Fame</CardTitle>
+              <Tabs defaultValue="totalPoints" onValueChange={setLeaderboardTab} className="w-full"><TabsList className="grid w-full grid-cols-3 bg-slate-200/50"><TabsTrigger value="weeklyPoints" className="text-[10px] font-bold uppercase py-2">Weekly</TabsTrigger><TabsTrigger value="monthlyPoints" className="text-[10px] font-bold uppercase py-2">Monthly</TabsTrigger><TabsTrigger value="totalPoints" className="text-[10px] font-bold uppercase py-2">Global</TabsTrigger></TabsList></Tabs>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="p-0">
+              <div className="divide-y divide-border/50 min-h-[400px]">
                 {leaderboard.length > 0 ? leaderboard.map((student, idx) => (
-                  <div key={student.uid} className={cn(
-                    "flex items-center justify-between p-3 rounded-2xl transition-all",
-                    student.uid === profile.uid ? "bg-blue-50 border border-blue-100" : "hover:bg-slate-50"
-                  )}>
-                    <div className="flex items-center gap-3">
-                      <span className="w-6 text-sm font-black text-slate-400">#{idx + 1}</span>
-                      <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
-                        <AvatarImage src={student.photo} />
-                        <AvatarFallback className="bg-blue-100 text-blue-600 font-bold">
-                          {student.name ? student.name.charAt(0) : '?'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-slate-800 truncate max-w-[120px]">{student.name}</span>
-                        <div className="flex items-center gap-1">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: student.title.color + '20', color: student.title.color }}>
-                            {student.title.icon} {student.title.name}
-                          </span>
-                        </div>
+                  <div key={student.uid} className={cn("flex items-center justify-between p-4", student.uid === profile.uid ? "bg-primary/5 ring-inset ring-1 ring-primary/10" : "hover:bg-muted/30")}>
+                    <div className="flex items-center gap-4">
+                      <span className={cn("w-6 text-sm font-bold", idx === 0 ? "text-yellow-500" : idx === 1 ? "text-slate-400" : idx === 2 ? "text-amber-600" : "text-muted-foreground")}>#{idx + 1}</span>
+                      <Avatar className="h-12 w-12 border-2 border-white shadow-sm"><AvatarImage src={student.photo} /><AvatarFallback className="bg-muted font-bold">{student.name?.charAt(0)}</AvatarFallback></Avatar>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-bold text-foreground truncate">{student.name}</span>
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tight w-fit" style={{ backgroundColor: student.title.color + '20', color: student.title.color }}>{student.title.icon} {student.title.name}</span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-sm font-black text-blue-600">{student.days}</span>
-                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Days</span>
-                    </div>
+                    <div className="text-right"><span className="text-base font-bold text-primary leading-none block">{student.points.toLocaleString()}</span><span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Points</span></div>
                   </div>
-                )) : (
-                  <p className="text-center text-slate-400 py-4 text-sm font-medium">Be the first to join the leaderboard!</p>
-                )}
+                )) : <div className="py-24 text-center text-muted-foreground"><p className="text-sm font-bold uppercase tracking-widest">Summoning Champions...</p></div>}
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Detailed Report Link */}
-        <div className="mt-4 px-4 pb-24">
-          <Button 
-            onClick={() => router.push('/progress')}
-            variant="outline"
-            className="w-full h-14 rounded-[20px] border-2 border-white bg-white/50 text-slate-600 font-bold hover:bg-white transition-all shadow-sm flex items-center justify-between px-6"
-          >
-            Detailed Progress Report
-            <ChevronRight className="w-5 h-5 opacity-50" />
-          </Button>
-        </div>
-
-        {/* Fixed Action Button */}
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-[450px] px-6 z-50">
-          <Button 
-            onClick={() => router.push('/tests')}
-            className="w-full h-18 py-8 rounded-full bg-blue-600 hover:bg-blue-700 text-2xl font-black shadow-[0_15px_30px_rgba(37,99,235,0.4)] uppercase tracking-widest flex items-center justify-center gap-3 group transition-all active:scale-95 text-white"
-          >
-            GO
-            <div className="bg-white/20 p-1 rounded-full group-hover:translate-x-1 transition-transform">
-              <ChevronRight className="w-6 h-6 text-white stroke-[4px]" />
-            </div>
-          </Button>
         </div>
       </div>
     </div>

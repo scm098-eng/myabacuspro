@@ -14,7 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, CalendarIcon, Camera } from 'lucide-react';
+import { Loader2, CalendarIcon, Camera, Edit, X, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import type { ProfileData, UpdateProfilePayload } from '@/types';
@@ -30,12 +30,17 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const indianStates = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"];
 
+const majorCountries = [
+  "India", "United States", "United Kingdom", "United Arab Emirates", "Australia", 
+  "Canada", "Singapore", "Malaysia", "Japan", "Germany", "France", "Other"
+];
+
 const profileSchema = z.object({
   firstName: z.string().min(1, { message: "First name is required." }),
   middleName: z.string().optional(),
   surname: z.string().min(1, { message: "Surname is required." }),
   dob: z.date({ required_error: "A date of birth is required." }),
-  country: z.string().optional(),
+  country: z.string().min(1, { message: "Country is required." }),
   addressLine1: z.string().optional(),
   city: z.string().optional(),
   taluka: z.string().optional(),
@@ -127,12 +132,24 @@ async function getCroppedImg(
   }
 }
 
+const ReadOnlyField = ({ label, value }: { label: string; value?: string | null }) => {
+  if (!value) return null;
+  return (
+    <div className="space-y-2">
+      <Label className="text-muted-foreground">{label}</Label>
+      <div className="p-2 border-b">{value}</div>
+    </div>
+  );
+};
+
+
 export default function ProfilePage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/profile_bg.jpg?alt=media&token=c4d5e6f7-g8h9-i0j1-k2l3-m4n5o6p7q8r9');
   const router = useRouter();
   const { user, profile, isLoading, getApprovedTeachers, fetchProfile, updateUserProfile } = useAuth();
   const { toast } = useToast();
   
+  const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [teachers, setTeachers] = useState<ProfileData[]>([]);
 
@@ -150,29 +167,42 @@ export default function ProfilePage() {
     defaultValues: {
       firstName: '', middleName: '', surname: '',
       country: 'India', addressLine1: '', city: '', taluka: '', district: '', state: '', pincode: '',
-      schoolName: '', mobileNo: '', whatsappNo: '', grade: '', teacherId: 'none',
+      schoolName: '', mobileNo: '', whatsappNo: '', grade: '', teacherId: '',
       instituteName: '', instituteCountry: 'India', instituteAddressLine1: '', instituteCity: '', instituteTaluka: '', instituteDistrict: '', instituteState: '', institutePincode: ''
     },
   });
 
   const fetchTeachers = useCallback(async () => {
-      if (profile?.role === 'student') {
+    if (profile?.role === 'student') {
+      try {
         const approvedTeachers = await getApprovedTeachers();
         setTeachers(approvedTeachers);
+      } catch (error) {
+        console.error("Failed to fetch teachers", error);
+        setTeachers([]);
       }
+    }
   }, [getApprovedTeachers, profile?.role]);
 
   useEffect(() => {
-    if (!isLoading && !user) router.push('/login');
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
   }, [isLoading, user, router]);
 
   useEffect(() => {
     if (profile) {
+      fetchTeachers();
+    }
+  }, [profile, fetchTeachers]);
+  
+  useEffect(() => {
+    if (profile && (teachers.length > 0 || profile.role !== 'student')) {
       form.reset({
         ...profile,
         dob: profile.dob ? new Date(profile.dob) : new Date(),
         grade: profile.grade || '',
-        teacherId: profile.teacherId || 'none',
+        teacherId: profile.teacherId || '',
         country: profile.country || 'India',
         state: profile.state || '',
         instituteCountry: profile.instituteCountry || 'India',
@@ -181,9 +211,8 @@ export default function ProfilePage() {
       if(profile.profilePhoto) {
         setAvatarPreview(profile.profilePhoto);
       }
-      fetchTeachers();
     }
-  }, [profile, form, fetchTeachers]);
+  }, [profile, teachers, form]);
   
   async function onSubmit(values: z.infer<typeof profileSchema>) {
     if (!user) {
@@ -203,10 +232,11 @@ export default function ProfilePage() {
       }
 
       await updateUserProfile(user.uid, payload);
+      
+      await fetchProfile(user); 
 
       toast({ title: "Profile Updated", description: "Your information has been saved successfully." });
-      await fetchProfile(user); // Re-fetch profile to update context
-      router.push('/');
+      setIsEditing(false);
     } catch (error: any) {
       console.error('Update failed:', error);
       toast({ title: "Update Failed", description: error.message || "Could not update your profile. Please check the console for details.", variant: "destructive" });
@@ -270,6 +300,22 @@ export default function ProfilePage() {
       fileInputRef.current.value = '';
     }
   };
+  
+  const handleCancelEdit = () => {
+      if (profile) {
+        form.reset({
+            ...profile,
+            dob: profile.dob ? new Date(profile.dob) : new Date(),
+            grade: profile.grade || '',
+            teacherId: profile.teacherId || '',
+            country: profile.country || 'India',
+            state: profile.state || '',
+            instituteCountry: profile.instituteCountry || 'India',
+            instituteState: profile.instituteState || ''
+        });
+      }
+      setIsEditing(false);
+  }
 
   useEffect(() => {
     return () => {
@@ -285,8 +331,13 @@ export default function ProfilePage() {
   const age = calculateAge(dob);
   const firstName = watch('firstName');
   const surname = watch('surname');
+  const selectedCountry = watch('country');
+  const selectedInstCountry = watch('instituteCountry');
 
-  if (isLoading || !user || !profile) {
+  const isStudentRole = profile?.role === 'student';
+  const isTeacherListLoading = isStudentRole && teachers.length === 0;
+
+  if (isLoading || !user || !profile || isTeacherListLoading) {
     return (
        <div className="max-w-4xl mx-auto">
         <Card className="shadow-lg">
@@ -323,18 +374,36 @@ export default function ProfilePage() {
     ? (firstName?.[0] || '') + (surname?.[0] || '') 
     : user.email?.charAt(0).toUpperCase() || 'U';
 
-  const isStudentWithoutTeacher = profile.role === 'student' && !profile.teacherId;
+  const isStudentWithoutTeacher = profile.role === 'student' && (!watch('teacherId') || watch('teacherId') === 'unassigned');
+  const disableTeacherSelect = profile.role === 'teacher' || profile.role === 'admin';
+  
+  const selectedTeacher = teachers.find(t => t.uid === watch('teacherId'));
+  const teacherName = selectedTeacher 
+    ? `${selectedTeacher.firstName} ${selectedTeacher.surname}` 
+    : (watch('teacherId') === 'unassigned' ? 'Not Applicable' : 'Not Assigned');
+
+  const fullResidentialAddress = [watch('addressLine1'), watch('city'), watch('taluka'), watch('district'), watch('state'), watch('pincode'), watch('country')].filter(Boolean).join(', ');
+  const fullInstituteAddress = [watch('instituteAddressLine1'), watch('instituteCity'), watch('instituteTaluka'), watch('instituteDistrict'), watch('instituteState'), watch('institutePincode'), watch('instituteCountry')].filter(Boolean).join(', ');
 
   return (
     <>
     <div className="max-w-4xl mx-auto">
       <Card className="shadow-lg">
         <CardHeader>
-            <CardTitle className="text-3xl font-headline">My Profile</CardTitle>
-            <CardDescription>View and edit your personal information.</CardDescription>
+            <div className="flex justify-between items-start">
+                <div>
+                    <CardTitle className="text-3xl font-headline">My Profile</CardTitle>
+                    <CardDescription>View and edit your personal information.</CardDescription>
+                </div>
+                {!isEditing && (
+                    <Button onClick={() => setIsEditing(true)}>
+                        <Edit className="mr-2 h-4 w-4" /> Edit Profile
+                    </Button>
+                )}
+            </div>
         </CardHeader>
         <CardContent>
-            {profile.role === 'student' && !watch('teacherId') && (
+            {isStudentWithoutTeacher && (
                 <Alert variant="destructive" className="mb-6">
                     <AlertTitle>Action Required</AlertTitle>
                     <AlertDescription>
@@ -350,100 +419,134 @@ export default function ProfilePage() {
                                 <AvatarImage src={avatarPreview || ''} alt={displayName} />
                                 <AvatarFallback className="text-3xl">{displayInitial}</AvatarFallback>
                             </Avatar>
-                             <input type="file" ref={fileInputRef} onChange={onFileSelect} accept="image/*" className="hidden" />
-                            <Button type="button" size="icon" variant="outline" className="absolute bottom-0 right-0 rounded-full" onClick={() => fileInputRef.current?.click()}>
-                                <Camera className="h-5 w-5"/>
-                            </Button>
+                            {isEditing && (
+                                <>
+                                    <input type="file" ref={fileInputRef} onChange={onFileSelect} accept="image/*" className="hidden" />
+                                    <Button type="button" size="icon" variant="outline" className="absolute bottom-0 right-0 rounded-full" onClick={() => fileInputRef.current?.click()}>
+                                        <Camera className="h-5 w-5"/>
+                                    </Button>
+                                </>
+                            )}
                         </div>
-                        <div className="text-center sm:text-left">
+                        <div className="text-center sm:text-left flex-grow">
                             <h2 className="text-2xl font-bold">{displayName}</h2>
                             <p className="text-muted-foreground">{user.email}</p>
                         </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem> <FormLabel>First Name *</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                        <FormField control={form.control} name="middleName" render={({ field }) => ( <FormItem> <FormLabel>Middle Name</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                        <FormField control={form.control} name="surname" render={({ field }) => ( <FormItem> <FormLabel>Surname *</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                    </div>
+                    {isEditing ? (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem> <FormLabel>First Name *</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                            <FormField control={form.control} name="middleName" render={({ field }) => ( <FormItem> <FormLabel>Middle Name</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                            <FormField control={form.control} name="surname" render={({ field }) => ( <FormItem> <FormLabel>Surname *</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           <FormField
+                              control={form.control}
+                              name="dob"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                  <FormLabel>Date of Birth *</FormLabel>
+                                    <Popover>
+                                      <PopoverTrigger asChild>
+                                        <Button
+                                          variant={"outline"}
+                                          className={cn( "w-full justify-start text-left font-normal", !field.value && "text-muted-foreground" )}
+                                        >
+                                           <div className="flex w-full items-center justify-between">
+                                            <span>
+                                              {field.value ? ( format(field.value, "PPP") ) : ( "Pick a date" )}
+                                            </span>
+                                            <CalendarIcon className="h-4 w-4 opacity-50" />
+                                           </div>
+                                        </Button>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-auto p-0" align="start">
+                                          <Calendar
+                                          mode="single"
+                                          captionLayout="dropdown-buttons"
+                                          fromYear={1950}
+                                          toYear={new Date().getFullYear()}
+                                          selected={field.value}
+                                          onSelect={field.onChange}
+                                          disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                                          initialFocus
+                                          />
+                                      </PopoverContent>
+                                    </Popover>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                             <div className="space-y-2">
+                                 <Label>Age</Label>
+                                 <Input value={age !== null ? `${age} years old` : 'Select DOB to calculate'} disabled />
+                             </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <ReadOnlyField label="First Name" value={watch('firstName')} />
+                            <ReadOnlyField label="Middle Name" value={watch('middleName')} />
+                            <ReadOnlyField label="Surname" value={watch('surname')} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <ReadOnlyField label="Date of Birth" value={dob ? format(dob, "PPP") : 'Not set'} />
+                            <ReadOnlyField label="Age" value={age !== null ? `${age} years old` : 'Not set'} />
+                        </div>
+                      </>
+                    )}
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       <FormField
-                          control={form.control}
-                          name="dob"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                              <FormLabel>Date of Birth *</FormLabel>
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button
-                                      variant={"outline"}
-                                      className={cn( "w-full justify-start text-left font-normal", !field.value && "text-muted-foreground" )}
-                                    >
-                                       <div className="flex w-full items-center justify-between">
-                                        <span>
-                                          {field.value ? ( format(field.value, "PPP") ) : ( "Pick a date" )}
-                                        </span>
-                                        <CalendarIcon className="h-4 w-4 opacity-50" />
-                                       </div>
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0" align="start">
-                                      <Calendar
-                                      mode="single"
-                                      captionLayout="dropdown-buttons"
-                                      fromYear={1950}
-                                      toYear={new Date().getFullYear()}
-                                      selected={field.value}
-                                      onSelect={field.onChange}
-                                      disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                                      initialFocus
-                                      />
-                                  </PopoverContent>
-                                </Popover>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                         <div className="space-y-2">
-                             <Label>Age</Label>
-                             <Input value={age !== null ? `${age} years old` : 'Select DOB to calculate'} disabled />
-                         </div>
-                    </div>
-                    
-                     <FormField
-                        control={form.control}
-                        name="teacherId"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Assigned Teacher *</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value || 'none'}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a teacher" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="none">Select a teacher</SelectItem>
-                                        {teachers.map((teacher) => (
-                                            <SelectItem key={teacher.uid} value={teacher.uid}>
-                                                {`${teacher.firstName} ${teacher.surname}`}
+                    {isEditing ? (
+                        <FormField
+                            control={form.control}
+                            name="teacherId"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Assigned Teacher *</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || ''} disabled={disableTeacherSelect}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a teacher" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="unassigned" disabled={profile.role === 'student'}>
+                                                {profile.role === 'student' ? 'Select a teacher' : 'Not Applicable'}
                                             </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
+                                            {teachers.map((teacher) => (
+                                                <SelectItem key={teacher.uid} value={teacher.uid}>
+                                                    {`${teacher.firstName} ${teacher.surname}`}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    ) : (
+                        <ReadOnlyField label="Assigned Teacher" value={teacherName} />
+                    )}
 
                     {profile.role === 'student' && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <FormField control={form.control} name="schoolName" render={({ field }) => ( <FormItem> <FormLabel>School Name</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                          <FormField control={form.control} name="grade" render={({ field }) => ( <FormItem> <FormLabel>Grade/Std.</FormLabel> <FormControl><Input placeholder="e.g. 5th" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                      </div>
+                        isEditing ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField control={form.control} name="schoolName" render={({ field }) => ( <FormItem> <FormLabel>School Name</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                                <FormField control={form.control} name="grade" render={({ field }) => ( <FormItem> <FormLabel>Grade/Std.</FormLabel> <FormControl><Input placeholder="e.g. 5th" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <ReadOnlyField label="School Name" value={watch('schoolName')} />
+                                <ReadOnlyField label="Grade/Std." value={watch('grade')} />
+                            </div>
+                        )
                     )}
                     {profile.role === 'teacher' && (
+                      isEditing ? (
                       <>
                         <FormField control={form.control} name="instituteName" render={({ field }) => (<FormItem><FormLabel>Name of Institute</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
@@ -460,108 +563,149 @@ export default function ProfilePage() {
                                     </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                    <SelectItem value="India">India</SelectItem>
+                                      {majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
                                 </FormItem>
                             )}
                         />
-                        <FormField
-                          control={form.control}
-                          name="instituteState"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>State</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value || ''}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a state" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {indianStates.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="instituteDistrict" render={({ field }) => (<FormItem><FormLabel>District</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name="instituteTaluka" render={({ field }) => (<FormItem><FormLabel>Taluka / Tehsil</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField
+                            control={form.control}
+                            name="instituteState"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>State / Province / Region</FormLabel>
+                                {selectedInstCountry === 'India' ? (
+                                  <Select onValueChange={field.onChange} value={field.value || ''}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select a state" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {indianStates.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  <FormControl>
+                                    <Input placeholder="Enter state/province" {...field} />
+                                  </FormControl>
+                                )}
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField control={form.control} name="instituteCity" render={({ field }) => (<FormItem><FormLabel>City / Town</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="instituteCity" render={({ field }) => (<FormItem><FormLabel>City / Town</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name="institutePincode" render={({ field }) => (<FormItem><FormLabel>Pincode</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="instituteDistrict" render={({ field }) => (<FormItem><FormLabel>District / Region</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="instituteTaluka" render={({ field }) => (<FormItem><FormLabel>Area / Taluka</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField control={form.control} name="institutePincode" render={({ field }) => (<FormItem><FormLabel>Pincode / Zip Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
                         <FormField control={form.control} name="instituteAddressLine1" render={({ field }) => (<FormItem><FormLabel>Address Line 1</FormLabel><FormControl><Input placeholder="House No, Street, Area" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </>
+                      ) : (
+                          <>
+                            <ReadOnlyField label="Name of Institute" value={watch('instituteName')} />
+                            <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
+                            <ReadOnlyField label="Address" value={fullInstituteAddress} />
+                          </>
+                      )
                     )}
 
                     <h3 className="text-lg font-medium pt-4 border-b">Residential Address</h3>
-                    <FormField
-                        control={form.control}
-                        name="country"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Country</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || 'India'}>
-                                <FormControl>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a country" />
-                                </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                <SelectItem value="India">India</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="state"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>State</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ''}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a state" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {indianStates.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField control={form.control} name="district" render={({ field }) => (<FormItem><FormLabel>District</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="taluka" render={({ field }) => (<FormItem><FormLabel>Taluka / Tehsil</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                         <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City / Town</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="pincode" render={({ field }) => (<FormItem><FormLabel>Pincode</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    </div>
-                    <FormField control={form.control} name="addressLine1" render={({ field }) => (<FormItem><FormLabel>Address Line 1</FormLabel><FormControl><Input placeholder="House No, Street, Area" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                     {isEditing ? (
+                        <>
+                            <FormField
+                                control={form.control}
+                                name="country"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Country</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || 'India'}>
+                                        <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a country" />
+                                        </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          {majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <FormField
+                                control={form.control}
+                                name="state"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>State / Province / Region</FormLabel>
+                                    {selectedCountry === 'India' ? (
+                                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                                        <FormControl>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Select a state" />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          {indianStates.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}
+                                        </SelectContent>
+                                      </Select>
+                                    ) : (
+                                      <FormControl>
+                                        <Input placeholder="Enter state/province" {...field} />
+                                      </FormControl>
+                                    )}
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City / Town</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField control={form.control} name="district" render={({ field }) => (<FormItem><FormLabel>District / Region</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="taluka" render={({ field }) => (<FormItem><FormLabel>Area / Taluka</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField control={form.control} name="pincode" render={({ field }) => (<FormItem><FormLabel>Pincode / Zip Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            </div>
+                            <FormField control={form.control} name="addressLine1" render={({ field }) => (<FormItem><FormLabel>Address Line 1</FormLabel><FormControl><Input placeholder="House No, Street, Area" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </>
+                     ) : (
+                        <ReadOnlyField label="Address" value={fullResidentialAddress} />
+                     )}
 
                     <h3 className="text-lg font-medium pt-4 border-b">Contact Details</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField control={form.control} name="mobileNo" render={({ field }) => ( <FormItem> <FormLabel>Mobile No.</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                        <FormField control={form.control} name="whatsappNo" render={({ field }) => ( <FormItem> <FormLabel>WhatsApp No. (Optional)</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                     </div>
+                     {isEditing ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField control={form.control} name="mobileNo" render={({ field }) => ( <FormItem> <FormLabel>Mobile No. (with country code)</FormLabel> <FormControl><Input placeholder="+1 234 567 890" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                            <FormField control={form.control} name="whatsappNo" render={({ field }) => ( <FormItem> <FormLabel>WhatsApp No. (Optional)</FormLabel> <FormControl><Input placeholder="+1 234 567 890" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                         </div>
+                     ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <ReadOnlyField label="Mobile No." value={watch('mobileNo')} />
+                            <ReadOnlyField label="WhatsApp No." value={watch('whatsappNo')} />
+                        </div>
+                     )}
 
-                    <div className="flex justify-end gap-4 pt-4">
-                        <Button type="submit" disabled={isSubmitting}>
-                           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                           Save Changes
-                        </Button>
-                    </div>
+                    {isEditing && (
+                        <div className="flex justify-end gap-4 pt-4">
+                            <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                               <X className="mr-2 h-4 w-4" /> Cancel
+                            </Button>
+                            <Button type="submit" disabled={isSubmitting}>
+                               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                               Save Changes
+                            </Button>
+                        </div>
+                    )}
                 </form>
             </Form>
         </CardContent>

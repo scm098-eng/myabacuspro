@@ -1,5 +1,5 @@
+
 import { NextRequest, NextResponse } from "next/server";
-// import { getFirestore } from "@/lib/firebaseAdmin";
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -15,7 +15,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const db = getFirestore();
+    const adminApp = getFirebaseAdmin();
+    const db = getFirestore(adminApp);
 
     await db.collection("subscriptions")
       .doc(subscriptionId)
@@ -25,10 +26,10 @@ export async function POST(req: NextRequest) {
       });
 
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch (err: any) {
     console.error("Error saving subscription:", err);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Internal Server Error", message: err.message },
       { status: 500 }
     );
   }

@@ -1,3 +1,4 @@
+
 export const TEST_NAME_MAP: Record<string, string> = {
     'addition-subtraction': 'Add/Subtract',
     'multiplication': 'Multiplication',
@@ -71,3 +72,12 @@ export const TEST_NAME_MAP: Record<string, string> = {
     'combination-minus-9': 'Combination: -9',
     'combination-minus-90': 'Combination: -90',
 };
+
+export const RANK_CRITERIA = [
+  { name: "Human Calculator", icon: "👑", color: "#FFD700", daysReq: 365, pointsReq: 100000, description: "Master of all formulas and infinite speed." },
+  { name: "Grandmaster", icon: "🔱", color: "#E5E4E2", daysReq: 270, pointsReq: 50000, description: "Elite status reserved for the most dedicated." },
+  { name: "Math Ninja", icon: "🥷", color: "#C0C0C0", daysReq: 180, pointsReq: 25000, description: "Lightning fast visualization and accuracy." },
+  { name: "Speed Runner", icon: "⚡", color: "#CD7F32", daysReq: 90, pointsReq: 10000, description: "Proven consistency and developing speed." },
+  { name: "Apprentice", icon: "🛠️", color: "#A52A2A", daysReq: 30, pointsReq: 2500, description: "Solid foundation in basic formulas." },
+  { name: "Junior Calculator", icon: "👶", color: "#ADD8E6", daysReq: 0, pointsReq: 0, description: "Starting the journey to mastery." }
+];

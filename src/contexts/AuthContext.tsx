@@ -12,17 +12,20 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  sendEmailVerification,
   updateProfile as updateFirebaseAuthProfile,
   type User,
 } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp, getFirestore, type Firestore, collection, getDocs, query, where, arrayUnion, updateDoc, increment, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, getFirestore, type Firestore, collection, getDocs, query, where, arrayUnion, updateDoc, increment, orderBy, limit, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, getStorage, type FirebaseStorage, deleteObject } from 'firebase/storage';
 import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload } from '@/types';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { useRouter, usePathname } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { format, startOfWeek, startOfMonth } from 'date-fns';
+import { RANK_CRITERIA } from '@/lib/constants';
 
 interface AuthContextType {
   user: User | null;
@@ -31,7 +34,10 @@ interface AuthContextType {
   signup: (values: SignupData) => Promise<void>;
   loginWithGoogle: () => Promise<ProfileData | null>;
   sendPasswordReset: (email: string) => Promise<void>;
+  sendVerificationEmail: () => Promise<void>;
   updateUserProfile: (uid: string, data: UpdateProfilePayload) => Promise<void>;
+  toggleUserSuspension: (uid: string, isSuspended: boolean) => Promise<void>;
+  deleteUserAccount: (uid: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   upgradeToPro: () => Promise<void>;
@@ -44,7 +50,8 @@ interface AuthContextType {
   saveCompletedGameLevel: (levelId: number) => Promise<void>;
   fetchProfile: (user: User) => Promise<ProfileData | null>;
   recordDailyPractice: (userId: string) => Promise<void>;
-  getStudentTitle: (totalDays: number) => { name: string, icon: string, color: string };
+  addPoints: (userId: string, points: number) => Promise<void>;
+  getStudentTitle: (totalDays: number, totalPoints: number) => typeof RANK_CRITERIA[0];
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -53,7 +60,9 @@ const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
+
 const ADMIN_EMAILS = ['scm098@gmail.com', 'pallavib202@gmail.com', 'myabacuspro@gmail.com'];
+const PRO_STUDENT_EMAILS = ['maitreya0312@example.com'];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -72,17 +81,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userDoc = await getDoc(userDocRef);
       if (userDoc.exists()) {
         const profileData = { ...userDoc.data(), uid: user.uid } as ProfileData;
-        const isAdminByEmail = ADMIN_EMAILS.includes(user.email || '');
+        
+        const userEmail = user.email?.toLowerCase() || '';
+        const isAdminByEmail = ADMIN_EMAILS.includes(userEmail);
+        const isProStudentByEmail = PRO_STUDENT_EMAILS.includes(userEmail);
         
         if (isAdminByEmail) {
             profileData.role = 'admin';
+            profileData.subscriptionStatus = 'pro';
+            if (profileData.status === 'pending') profileData.status = 'approved';
+        } else if (isProStudentByEmail) {
+            // Force student role and pro status for specific allowed email
+            profileData.role = 'student';
+            profileData.subscriptionStatus = 'pro';
         }
 
-        if (profileData.role === 'admin') {
-          profileData.subscriptionStatus = 'pro';
-        }
-        
         setProfile(profileData);
+
+        if (profileData.isSuspended && pathname !== '/suspended') {
+          router.push('/suspended');
+          return profileData;
+        }
         
         if (profileData.role === 'student' && !profileData.teacherId && pathname !== '/profile' && pathname !== '/signup' && pathname !== '/login') {
             toast({
@@ -133,6 +152,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
       
+      await sendEmailVerification(user);
+
       let photoURL = '';
       if (values.profilePhoto) {
         const file = values.profilePhoto;
@@ -147,26 +168,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const userDocRef = doc(firestore, 'users', user.uid);
-      const { password, confirmPassword, profilePhoto, ...rest } = values;
+      const { password, ...rest } = values;
       
-      const isAdmin = ADMIN_EMAILS.includes(user.email || '');
+      const userEmail = user.email?.toLowerCase() || '';
+      const isAdmin = ADMIN_EMAILS.includes(userEmail);
+      const isProStudent = PRO_STUDENT_EMAILS.includes(userEmail);
+      
       const role = isAdmin ? 'admin' : values.role;
+      const subStatus = (isAdmin || isProStudent) ? 'pro' : 'free';
 
       const dataToSave: Omit<ProfileData, 'uid'> & { createdAt: any } = {
           ...rest,
           email: user.email!,
           profilePhoto: photoURL || '',
           createdAt: serverTimestamp(),
-          subscriptionStatus: 'free',
+          subscriptionStatus: subStatus as any,
           role: role,
           teacherId: values.teacherId || null, 
+          isSuspended: false,
           ...(role === 'teacher' && { 
             status: 'pending',
             instituteAddress: [values.instituteAddressLine1, values.instituteCity, values.instituteTaluka, values.instituteDistrict, values.instituteState, values.institutePincode].filter(Boolean).join(', ')
           }),
+          ...(role === 'admin' && { status: 'approved' }),
           currentStreak: 0,
           totalDaysPracticed: 0,
           monthlyPoints: 0,
+          weeklyPoints: 0,
+          totalPoints: 0,
+          lastAwardedRank: 'Junior Calculator',
+          lastWeeklyReset: format(startOfWeek(new Date()), 'yyyy-ww'),
+          lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
       };
 
       await setDoc(userDocRef, dataToSave).catch(serverError => {
@@ -192,7 +224,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const [firstName, ...rest] = (user.displayName || '').split(' ');
       const surname = rest.pop() || '';
       const middleName = rest.join(' ');
-      const isAdmin = ADMIN_EMAILS.includes(user.email || '');
+      
+      const userEmail = user.email?.toLowerCase() || '';
+      const isAdmin = ADMIN_EMAILS.includes(userEmail);
+      const isProStudent = PRO_STUDENT_EMAILS.includes(userEmail);
       
        const dataToSave = {
         uid: user.uid,
@@ -202,12 +237,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         middleName: middleName,
         profilePhoto: user.photoURL || '',
         createdAt: serverTimestamp(),
-        subscriptionStatus: 'free',
+        subscriptionStatus: (isAdmin || isProStudent) ? 'pro' : 'free',
         role: isAdmin ? 'admin' : 'student',
         teacherId: null,
+        isSuspended: false,
+        status: isAdmin ? 'approved' : undefined,
         currentStreak: 0,
         totalDaysPracticed: 0,
         monthlyPoints: 0,
+        weeklyPoints: 0,
+        totalPoints: 0,
+        lastAwardedRank: 'Junior Calculator',
+        lastWeeklyReset: format(startOfWeek(new Date()), 'yyyy-ww'),
+        lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
       };
 
        await setDoc(userDocRef, dataToSave).catch(serverError => {
@@ -225,6 +267,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const sendPasswordReset = useCallback(async (email: string) => {
     await sendPasswordResetEmail(auth, email);
   }, [auth]);
+
+  const sendVerificationEmail = useCallback(async () => {
+    if (user) {
+      await sendEmailVerification(user);
+    }
+  }, [user]);
 
   const updateUserProfile = useCallback(async (uid: string, data: UpdateProfilePayload) => {
     const { profilePhoto, ...profileData } = data;
@@ -248,9 +296,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             requestResourceData: payload,
         });
         errorEmitter.emit('permission-error', permissionError);
-        throw serverError; // Re-throw to be caught by the calling function
+        throw serverError;
     });
 }, [firestore, storage]);
+
+  const toggleUserSuspension = useCallback(async (uid: string, isSuspended: boolean) => {
+    if (profile?.role !== 'admin') throw new Error("Unauthorized");
+    const userDocRef = doc(firestore, 'users', uid);
+    await updateDoc(userDocRef, { isSuspended, updatedAt: serverTimestamp() });
+  }, [profile, firestore]);
+
+  const deleteUserAccount = useCallback(async (uid: string) => {
+    if (profile?.role !== 'admin') throw new Error("Unauthorized");
+    const userDocRef = doc(firestore, 'users', uid);
+    await deleteDoc(userDocRef).catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw serverError;
+    });
+  }, [profile, firestore]);
 
 
   const upgradeToPro = useCallback(async () => {
@@ -292,10 +359,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const getApprovedTeachers = useCallback(async (): Promise<ProfileData[]> => {
     const usersCol = collection(firestore, 'users');
-    const q = query(usersCol, where("role", "==", "teacher"), where("status", "==", "approved"));
+    // Fetch admins and teachers. Filter by status in memory or using OR if supported (in).
+    const q = query(usersCol, where("role", "in", ["teacher", "admin"]));
      try {
         const userSnapshot = await getDocs(q);
-        const userList = userSnapshot.docs.map(doc => ({ ...doc.data(), uid: doc.id } as ProfileData));
+        const userList = userSnapshot.docs
+            .map(doc => ({ ...doc.data(), uid: doc.id } as ProfileData))
+            .filter(u => u.role === 'admin' || u.status === 'approved');
         return userList;
     } catch (error: any) {
         if (error.code === 'permission-denied') {
@@ -305,7 +375,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
             errorEmitter.emit('permission-error', permissionError);
         }
-        console.error("Failed to fetch users:", error);
+        console.error("Failed to fetch teachers:", error);
         return [];
     }
   }, [firestore]);
@@ -423,6 +493,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, [user, firestore]);
 
+  const addPoints = useCallback(async (userId: string, points: number) => {
+    const userRef = doc(firestore, "users", userId);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) return;
+
+    const data = userSnap.data() as ProfileData;
+    const now = new Date();
+    const currentWeekKey = format(startOfWeek(now), 'yyyy-ww');
+    const currentMonthKey = format(startOfMonth(now), 'yyyy-MM');
+
+    const updateData: any = {
+      totalPoints: increment(points),
+      updatedAt: serverTimestamp(),
+    };
+
+    // Handle Weekly Reset
+    if (data.lastWeeklyReset !== currentWeekKey) {
+      updateData.weeklyPoints = points;
+      updateData.lastWeeklyReset = currentWeekKey;
+    } else {
+      updateData.weeklyPoints = increment(points);
+    }
+
+    // Handle Monthly Reset
+    if (data.lastMonthlyReset !== currentMonthKey) {
+      updateData.monthlyPoints = points;
+      updateData.lastMonthlyReset = currentMonthKey;
+    } else {
+      updateData.monthlyPoints = increment(points);
+    }
+
+    await updateDoc(userRef, updateData).catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'update',
+            requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
+    
+    await fetchProfile({ uid: userId } as User);
+  }, [firestore, fetchProfile]);
+
   const recordDailyPractice = useCallback(async (userId: string) => {
     const userRef = doc(firestore, "users", userId);
     const userSnap = await getDoc(userRef);
@@ -450,27 +563,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       lastPracticeDate: today,
       currentStreak: newStreak,
       totalDaysPracticed: increment(1),
-      monthlyPoints: increment(100),
       updatedAt: serverTimestamp(),
     });
     
-    await fetchProfile({ uid: userId } as User);
-  }, [firestore, fetchProfile]);
+    // Add 100 consistency points
+    await addPoints(userId, 100);
+  }, [firestore, addPoints]);
 
-  const getStudentTitle = useCallback((totalDays: number) => {
-    if (totalDays >= 365) return { name: "Human Calculator", icon: "👑", color: "#FFD700" };
-    if (totalDays >= 270) return { name: "Grandmaster", icon: "🔱", color: "#E5E4E2" };
-    if (totalDays >= 180) return { name: "Math Ninja", icon: "🥷", color: "#C0C0C0" };
-    if (totalDays >= 90)  return { name: "Speed Runner", icon: "⚡", color: "#CD7F32" };
-    if (totalDays >= 30)  return { name: "Apprentice", icon: "🛠️", color: "#A52A2A" };
-    return { name: "Junior Calculator", icon: "👶", color: "#ADD8E6" };
+  const getStudentTitle = useCallback((totalDays: number, totalPoints: number) => {
+    return RANK_CRITERIA.find(t => totalDays >= t.daysReq && totalPoints >= t.pointsReq) || RANK_CRITERIA[RANK_CRITERIA.length - 1];
   }, []);
 
   const value = { 
     user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
-    sendPasswordReset, updateUserProfile, getAllUsers, getApprovedTeachers, 
+    sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, getAllUsers, getApprovedTeachers, 
     getUserTestHistory, getUserProfile, approveTeacher, getCompletedGameLevels, 
-    saveCompletedGameLevel, fetchProfile, recordDailyPractice, getStudentTitle 
+    saveCompletedGameLevel, fetchProfile, recordDailyPractice, addPoints, getStudentTitle 
   };
 
   return (

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -12,11 +13,23 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, differenceInYears } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { Building, Eye, TrendingUp, Activity, CheckCircle, Target, Clock, Star, UserCircle, School, Users, Home, Phone, MessageSquare, Calendar, UserCheck } from 'lucide-react';
+import { Building, Eye, TrendingUp, Activity, CheckCircle, Target, Clock, Star, UserCircle, School, Users, Home, Phone, MessageSquare, Calendar, UserCheck, Ban, ShieldCheck, Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { getTestSettings } from '@/lib/questions';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { TEST_NAME_MAP } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -36,13 +49,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function AdminUserDetailsPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_user_bg.jpg?alt=media&token=c4d5e6f7-g8h9-i0j1-k2l3-m4n5o6p7q8r9');
   const { userId } = useParams() as { userId: string };
-  const { profile: currentUserProfile, getUserProfile, getUserTestHistory, getAllUsers, isLoading: authLoading } = useAuth();
+  const { profile: currentUserProfile, getUserProfile, getUserTestHistory, getAllUsers, toggleUserSuspension, deleteUserAccount, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [userProfile, setUserProfile] = useState<ProfileData | null>(null);
   const [testHistory, setTestHistory] = useState<TestResult[]>([]);
   const [assignedStudents, setAssignedStudents] = useState<ProfileData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -81,6 +97,38 @@ export default function AdminUserDetailsPage() {
     }
   }, [authLoading, currentUserProfile, router, userId, getUserProfile, getUserTestHistory, getAllUsers]);
   
+  const handleToggleSuspension = async () => {
+    if (!userProfile) return;
+    setIsUpdatingStatus(true);
+    try {
+      const newStatus = !userProfile.isSuspended;
+      await toggleUserSuspension(userId, newStatus);
+      setUserProfile(prev => prev ? { ...prev, isSuspended: newStatus } : null);
+      toast({
+        title: newStatus ? "User Suspended" : "User Unsuspended",
+        description: `The account for ${userProfile.firstName} is now ${newStatus ? 'inactive' : 'active'}.`,
+        variant: newStatus ? "destructive" : "default"
+      });
+    } catch (e: any) {
+      toast({ title: "Operation Failed", description: e.message, variant: "destructive" });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteUserAccount(userId);
+      toast({ title: "User Deleted", description: "The account and data have been removed from Firestore." });
+      router.push('/admin');
+    } catch (e: any) {
+      toast({ title: "Deletion Failed", description: e.message, variant: "destructive" });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const chartData = useMemo(() => {
         if(userProfile?.role !== 'student') return [];
         return testHistory
@@ -121,7 +169,12 @@ export default function AdminUserDetailsPage() {
 
 
   if (isLoading || authLoading) {
-    return <div>Loading user details...</div>; // Replace with a skeleton loader
+    return (
+      <div className="space-y-8">
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-96 w-full" />
+      </div>
+    );
   }
 
   if (!userProfile) {
@@ -140,25 +193,28 @@ export default function AdminUserDetailsPage() {
 
   return (
     <div className="space-y-8">
-        <Card>
+        <Card className={userProfile.isSuspended ? "border-red-500 bg-red-50/10 grayscale" : ""}>
             <CardHeader className="flex flex-col md:flex-row items-start md:items-center gap-6">
                  <Avatar className="h-24 w-24 border-4 border-primary/20">
                     <AvatarImage src={userProfile.profilePhoto || ''} alt={displayName} />
                     <AvatarFallback className="text-3xl">{displayInitial}</AvatarFallback>
                 </Avatar>
-                <div className="space-y-1">
-                    <CardTitle className="text-3xl font-headline flex items-center gap-2">
-                        <UserCircle className="w-8 h-8 text-primary" />
-                        {displayName}
-                         <Badge className="capitalize">{userProfile.role}</Badge>
-                         {userProfile.role === 'teacher' && (
-                            <Badge variant={userProfile.status === 'approved' ? 'default' : 'secondary'} className={userProfile.status === 'approved' ? 'bg-green-500/20 text-green-700 border-green-400' : ''}>
-                                <UserCheck className="mr-2 h-3 w-3" />
-                                {userProfile.status}
-                            </Badge>
-                         )}
-                    </CardTitle>
-                    <CardDescription>{userProfile.email}</CardDescription>
+                <div className="flex-grow space-y-1">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <CardTitle className="text-3xl font-headline flex items-center gap-2">
+                          <UserCircle className="w-8 h-8 text-primary" />
+                          {displayName}
+                      </CardTitle>
+                      <Badge className="capitalize">{userProfile.role}</Badge>
+                      {userProfile.isSuspended && <Badge variant="destructive">SUSPENDED</Badge>}
+                      {userProfile.role === 'teacher' && (
+                          <Badge variant={userProfile.status === 'approved' ? 'default' : 'secondary'} className={userProfile.status === 'approved' ? 'bg-green-500/20 text-green-700 border-green-400' : ''}>
+                              <UserCheck className="mr-2 h-3 w-3" />
+                              {userProfile.status}
+                          </Badge>
+                      )}
+                    </div>
+                    <CardDescription className="text-lg">{userProfile.email}</CardDescription>
                     {userProfile.role === 'student' && userProfile.schoolName && (
                         <div className="flex items-center gap-2 pt-1">
                             <School className="w-4 h-4 text-muted-foreground" />
@@ -172,6 +228,43 @@ export default function AdminUserDetailsPage() {
                         </div>
                     )}
                 </div>
+                {currentUserProfile?.role === 'admin' && (
+                  <div className="flex flex-col gap-2 w-full md:w-auto">
+                    <Button 
+                      onClick={handleToggleSuspension} 
+                      variant={userProfile.isSuspended ? "default" : "destructive"}
+                      disabled={isUpdatingStatus || isDeleting}
+                      className="w-full"
+                    >
+                      {isUpdatingStatus ? <Loader2 className="animate-spin mr-2" /> : (userProfile.isSuspended ? <ShieldCheck className="mr-2 h-4 w-4" /> : <Ban className="mr-2 h-4 w-4" />)}
+                      {userProfile.isSuspended ? "Unsuspend User" : "Suspend Account"}
+                    </Button>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="text-red-600 hover:bg-red-50 w-full" disabled={isDeleting}>
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete Account
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="text-red-600" /> Critical Action</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently remove <strong>{displayName}</strong>'s data from Firestore. 
+                            <br/><br/>
+                            <em>Note: You must also remove them from the Firebase Auth console to prevent them from logging in again.</em>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDeleteUser} className="bg-red-600 hover:bg-red-700">
+                            {isDeleting ? <Loader2 className="animate-spin mr-2" /> : "Permanently Delete"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                )}
             </CardHeader>
         </Card>
 
@@ -180,7 +273,7 @@ export default function AdminUserDetailsPage() {
                 <CardHeader><CardTitle>Teacher Details</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                        <div className="flex items-start gap-3"><Calendar className="w-5 h-5 text-primary mt-1" /><div className="grid gap-0.5"><span className="text-muted-foreground">Date of Birth</span><span className="font-semibold">{format(new Date(userProfile.dob), 'PP')} ({age} years)</span></div></div>
+                        <div className="flex items-start gap-3"><Calendar className="w-5 h-5 text-primary mt-1" /><div className="grid gap-0.5"><span className="text-muted-foreground">Date of Birth</span><span className="font-semibold">{userProfile.dob ? format(new Date(userProfile.dob), 'PP') : 'N/A'} ({age} years)</span></div></div>
                         <div className="flex items-start gap-3"><Phone className="w-5 h-5 text-primary mt-1" /><div className="grid gap-0.5"><span className="text-muted-foreground">Mobile No.</span><span className="font-semibold">{userProfile.mobileNo || 'N/A'}</span></div></div>
                         <div className="flex items-start gap-3"><MessageSquare className="w-5 h-5 text-primary mt-1" /><div className="grid gap-0.5"><span className="text-muted-foreground">WhatsApp No.</span><span className="font-semibold">{userProfile.whatsappNo || 'N/A'}</span></div></div>
                     </div>

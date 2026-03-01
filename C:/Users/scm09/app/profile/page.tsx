@@ -367,9 +367,14 @@ export default function ProfilePage() {
     ? (firstName?.[0] || '') + (surname?.[0] || '') 
     : user.email?.charAt(0).toUpperCase() || 'U';
 
-  const isStudentWithoutTeacher = profile.role === 'student' && !watch('teacherId');
+  const isStudentWithoutTeacher = profile.role === 'student' && (!watch('teacherId') || watch('teacherId') === 'unassigned');
   const disableTeacherSelect = profile.role === 'teacher' || profile.role === 'admin';
-  const teacherName = teachers.find(t => t.uid === watch('teacherId'))?.firstName + ' ' + teachers.find(t => t.uid === watch('teacherId'))?.surname || 'Not Assigned';
+  
+  const selectedTeacher = teachers.find(t => t.uid === watch('teacherId'));
+  const teacherName = selectedTeacher 
+    ? `${selectedTeacher.firstName} ${selectedTeacher.surname}` 
+    : (watch('teacherId') === 'unassigned' ? 'Not Applicable' : 'Not Assigned');
+
   const fullResidentialAddress = [watch('addressLine1'), watch('city'), watch('taluka'), watch('district'), watch('state'), watch('pincode'), watch('country')].filter(Boolean).join(', ');
   const fullInstituteAddress = [watch('instituteAddressLine1'), watch('instituteCity'), watch('instituteTaluka'), watch('instituteDistrict'), watch('instituteState'), watch('institutePincode'), watch('instituteCountry')].filter(Boolean).join(', ');
 
@@ -416,7 +421,7 @@ export default function ProfilePage() {
                                 </>
                             )}
                         </div>
-                        <div className="text-center sm:text-left">
+                        <div className="text-center sm:text-left flex-grow">
                             <h2 className="text-2xl font-bold">{displayName}</h2>
                             <p className="text-muted-foreground">{user.email}</p>
                         </div>
@@ -502,7 +507,7 @@ export default function ProfilePage() {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="" disabled={profile.role === 'student'}>
+                                            <SelectItem value="unassigned" disabled={profile.role === 'student'}>
                                                 {profile.role === 'student' ? 'Select a teacher' : 'Not Applicable'}
                                             </SelectItem>
                                             {teachers.map((teacher) => (
@@ -571,7 +576,6 @@ export default function ProfilePage() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="">Select a state</SelectItem>
                                   {indianStates.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}
                                 </SelectContent>
                               </Select>
@@ -634,7 +638,6 @@ export default function ProfilePage() {
                                       </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                      <SelectItem value="">Select a state</SelectItem>
                                       {indianStates.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}
                                     </SelectContent>
                                   </Select>
@@ -706,5 +709,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    
