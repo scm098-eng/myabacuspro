@@ -283,7 +283,6 @@ function ProgressReportSkeleton() {
                     <Skeleton className="h-8 w-64" />
                     <Skeleton className="h-4 w-80" />
                 </CardHeader>
-            </Card>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Skeleton className="h-28 w-full" />
                 <Skeleton className="h-28 w-full" />

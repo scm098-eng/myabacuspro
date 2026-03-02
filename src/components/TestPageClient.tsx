@@ -26,6 +26,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { doc, collection, addDoc, serverTimestamp, getFirestore } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import { calculatePoints } from '@/lib/scoring';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 export default function TestPageClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
@@ -75,7 +77,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       const timeSpent = settings.timeLimit - timeLeft;
       const db = getFirestore(firebaseApp);
       
-      // Calculate complexity level for points
       const difficultyLevel = difficulty === 'easy' ? 1 : (difficulty === 'medium' ? 2 : 3);
       const { earnedPoints } = calculatePoints({
         correct: score,
@@ -99,15 +100,18 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         createdAt: serverTimestamp(),
       };
       
-      try {
-        await addDoc(collection(db, 'testResults'), resultData);
-        // Record daily practice progress
-        await recordDailyPractice(user.uid);
-        // Add mastery points
-        await addPoints(user.uid, earnedPoints);
-      } catch (error) {
-        console.error("Error saving test results: ", error);
-      }
+      addDoc(collection(db, 'testResults'), resultData).catch(async (serverError) => {
+          const permissionError = new FirestorePermissionError({
+              path: '/testResults',
+              operation: 'create',
+              requestResourceData: resultData,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+      });
+
+      // Daily practice and points
+      recordDailyPractice(user.uid);
+      addPoints(user.uid, earnedPoints);
     }
     
     if (typeof window !== 'undefined' && window.sessionStorage) {

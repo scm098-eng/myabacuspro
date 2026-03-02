@@ -28,6 +28,8 @@ import { firebaseApp } from '@/lib/firebase';
 import BeadDisplay from './BeadDisplay';
 import { Input } from './ui/input';
 import { calculatePoints } from '@/lib/scoring';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 export default function BeadsTestPageClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
@@ -91,7 +93,7 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
         total: questions.length,
         timeInSeconds: 0,
         targetTime: 0,
-        level: 1, // Beads tests are usually easy/introductory
+        level: 1, 
         isGame: false
       });
 
@@ -102,15 +104,18 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
         createdAt: serverTimestamp(),
       };
       
-      try {
-        await addDoc(collection(db, 'testResults'), resultData);
-        // Record daily practice progress
-        await recordDailyPractice(user.uid);
-        // Add points
-        await addPoints(user.uid, earnedPoints);
-      } catch (error) {
-        console.error("Error saving test results: ", error);
-      }
+      addDoc(collection(db, 'testResults'), resultData).catch(async (serverError) => {
+          const permissionError = new FirestorePermissionError({
+              path: '/testResults',
+              operation: 'create',
+              requestResourceData: resultData,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+      });
+
+      // Record daily practice and points
+      recordDailyPractice(user.uid);
+      addPoints(user.uid, earnedPoints);
     }
     
     if (typeof window !== 'undefined' && window.sessionStorage) {

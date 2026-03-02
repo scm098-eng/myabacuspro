@@ -78,7 +78,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback(async (user: User): Promise<ProfileData | null> => {
     try {
       const userDocRef = doc(firestore, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
+      const userDoc = await getDoc(userDocRef).catch(async (error) => {
+          if (error.code === 'permission-denied') {
+              const permissionError = new FirestorePermissionError({
+                  path: `/users/${user.uid}`,
+                  operation: 'get',
+              });
+              errorEmitter.emit('permission-error', permissionError);
+          }
+          throw error;
+      });
+
       if (userDoc.exists()) {
         const profileData = { ...userDoc.data(), uid: user.uid } as ProfileData;
         
@@ -91,7 +101,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             profileData.subscriptionStatus = 'pro';
             if (profileData.status === 'pending') profileData.status = 'approved';
         } else if (isProStudentByEmail) {
-            // Force student role and pro status for specific allowed email
             profileData.role = 'student';
             profileData.subscriptionStatus = 'pro';
         }
@@ -116,15 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return null;
     } catch (error: any) {
-        if (error.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-                path: `/users/${user.uid}`,
-                operation: 'get',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        } else {
-            console.error('Error fetching profile:', error);
-        }
+        console.error('Error fetching profile:', error);
         return null;
     }
   }, [firestore, pathname, router, toast]);
@@ -201,7 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
       };
 
-      await setDoc(userDocRef, dataToSave).catch(serverError => {
+      await setDoc(userDocRef, dataToSave).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
             operation: 'create',
@@ -252,7 +253,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
       };
 
-       await setDoc(userDocRef, dataToSave).catch(serverError => {
+       await setDoc(userDocRef, dataToSave).catch(async (serverError) => {
             const permissionError = new FirestorePermissionError({
                 path: userDocRef.path,
                 operation: 'create',
@@ -289,7 +290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         payload.profilePhoto = await getDownloadURL(storageRef);
     }
     
-    await updateDoc(userDocRef, payload).catch(serverError => {
+    await updateDoc(userDocRef, payload).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
             operation: 'update',
@@ -303,13 +304,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const toggleUserSuspension = useCallback(async (uid: string, isSuspended: boolean) => {
     if (profile?.role !== 'admin') throw new Error("Unauthorized");
     const userDocRef = doc(firestore, 'users', uid);
-    await updateDoc(userDocRef, { isSuspended, updatedAt: serverTimestamp() });
+    await updateDoc(userDocRef, { isSuspended, updatedAt: serverTimestamp() }).catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'update',
+            requestResourceData: { isSuspended },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
   }, [profile, firestore]);
 
   const deleteUserAccount = useCallback(async (uid: string) => {
     if (profile?.role !== 'admin') throw new Error("Unauthorized");
     const userDocRef = doc(firestore, 'users', uid);
-    await deleteDoc(userDocRef).catch(serverError => {
+    await deleteDoc(userDocRef).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
             operation: 'delete',
@@ -323,7 +331,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const upgradeToPro = useCallback(async () => {
     if (!user) throw new Error("User not logged in");
     const userDocRef = doc(firestore, 'users', user.uid);
-    await updateDoc(userDocRef, { subscriptionStatus: 'pro' });
+    await updateDoc(userDocRef, { subscriptionStatus: 'pro' }).catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'update',
+            requestResourceData: { subscriptionStatus: 'pro' },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
     await fetchProfile(user);
   }, [user, firestore, fetchProfile]);
 
@@ -359,7 +374,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const getApprovedTeachers = useCallback(async (): Promise<ProfileData[]> => {
     const usersCol = collection(firestore, 'users');
-    // Fetch admins and teachers. Filter by status in memory or using OR if supported (in).
     const q = query(usersCol, where("role", "in", ["teacher", "admin"]));
      try {
         const userSnapshot = await getDocs(q);
@@ -446,7 +460,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .then(() => {
             if(callback) callback();
         })
-        .catch(serverError => {
+        .catch(async (serverError) => {
             const permissionError = new FirestorePermissionError({
                 path: teacherRef.path,
                 operation: 'update',
@@ -481,13 +495,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const saveCompletedGameLevel = useCallback(async (levelId: number) => {
     if (!user) return;
     const docRef = doc(firestore, "gameProgress", user.uid);
-    await setDoc(docRef, {
-      completedLevels: arrayUnion(levelId)
-    }, { merge: true }).catch(serverError => {
+    const updateData = { completedLevels: arrayUnion(levelId) };
+    await setDoc(docRef, updateData, { merge: true }).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: docRef.path,
             operation: 'update',
-            requestResourceData: { completedLevels: arrayUnion(levelId) },
+            requestResourceData: updateData,
         });
         errorEmitter.emit('permission-error', permissionError);
     });
@@ -508,7 +521,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updatedAt: serverTimestamp(),
     };
 
-    // Handle Weekly Reset
     if (data.lastWeeklyReset !== currentWeekKey) {
       updateData.weeklyPoints = points;
       updateData.lastWeeklyReset = currentWeekKey;
@@ -516,7 +528,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateData.weeklyPoints = increment(points);
     }
 
-    // Handle Monthly Reset
     if (data.lastMonthlyReset !== currentMonthKey) {
       updateData.monthlyPoints = points;
       updateData.lastMonthlyReset = currentMonthKey;
@@ -524,7 +535,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateData.monthlyPoints = increment(points);
     }
 
-    await updateDoc(userRef, updateData).catch(serverError => {
+    await updateDoc(userRef, updateData).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: userRef.path,
             operation: 'update',
@@ -543,7 +554,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!userSnap.exists()) return;
 
     const data = userSnap.data() as ProfileData;
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const today = new Date().toISOString().split('T')[0];
     const lastDate = data.lastPracticeDate || "";
 
     if (lastDate === today) {
@@ -559,14 +570,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       newStreak = (data.currentStreak || 0) + 1;
     }
 
-    await updateDoc(userRef, {
+    const updateData = {
       lastPracticeDate: today,
       currentStreak: newStreak,
       totalDaysPracticed: increment(1),
       updatedAt: serverTimestamp(),
+    };
+
+    await updateDoc(userRef, updateData).catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'update',
+            requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
     });
     
-    // Add 100 consistency points
     await addPoints(userId, 100);
   }, [firestore, addPoints]);
 
