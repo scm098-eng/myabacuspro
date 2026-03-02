@@ -6,43 +6,28 @@ service cloud.firestore {
   
     // Helper function to check ownership
     function isOwner(userId) {
-      return request.auth.uid == userId;
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // Helper function to check for admin role by reading the user's document
+    // Helper function to check for admin role
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     // Helper function to check for teacher role
     function isTeacher() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
-    }
-
-    // Helper to check for suspended status
-    function isNotSuspended() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuspended != true;
+      return request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
     }
 
     match /users/{userId} {
-      // Allow any authenticated user to read any user's profile.
       allow read: if request.auth != null;
-      
-      // Allow users to create their own profile document.
       allow create: if isOwner(userId);
-
-      // Allow users to update their own profile, but NOT change their role, status, or subscription.
-      // Admins can update anything.
-      // Suspended users cannot update their profile.
-      allow update: if isAdmin() || (isOwner(userId) && isNotSuspended() && 
+      allow update: if isAdmin() || (isOwner(userId) && 
+        resource.data.isSuspended != true &&
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'subscriptionStatus', 'isSuspended']));
-
-      // Only admins can delete user documents.
       allow delete: if isAdmin();
-      
-      // Admins and teachers can list all users. 
-      // Everyone can list approved teachers for sign up.
-      // Everyone can list top performers for the leaderboard (limit 10).
       allow list: if request.auth != null && (
         isAdmin() || 
         isTeacher() || 
@@ -52,21 +37,20 @@ service cloud.firestore {
     }
     
     match /testResults/{resultId} {
-      // Suspended users cannot record new test results.
-      allow create: if request.auth != null && isNotSuspended() && request.resource.data.userId == request.auth.uid;
-      
+      allow create: if request.auth != null && 
+                      request.resource.data.userId == request.auth.uid &&
+                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuspended != true;
       allow read, list: if request.auth != null && 
                           (isOwner(resource.data.userId) || isAdmin() || isTeacher());
     }
     
     match /gameProgress/{userId} {
-      // Suspended users cannot update game progress.
       allow read: if isOwner(userId);
-      allow write: if isOwner(userId) && isNotSuspended();
+      allow write: if isOwner(userId) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuspended != true;
     }
 
     match /stats/{statId} {
-      allow read: if request.auth != null && isAdmin();
+      allow read: if request.auth != null && (isAdmin() || isTeacher());
       allow write: if false;
     }
 
