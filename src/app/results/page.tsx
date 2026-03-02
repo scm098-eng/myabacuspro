@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useEffect, useState, useMemo } from 'react';
@@ -6,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, XCircle, Clock, AlertTriangle, HelpCircle, GraduationCap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertTriangle, HelpCircle, GraduationCap, ChevronLeft, ChevronRight, Lightbulb } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import type { Question } from '@/types';
@@ -25,6 +24,8 @@ interface ResultsData {
 interface Step {
   operation: string;
   value: number;
+  explanation?: string;
+  atRodFromRight?: number;
 }
 
 function ResultsComponent() {
@@ -71,7 +72,7 @@ function ResultsComponent() {
   const handleOpenDialog = (question: Question) => {
     setModalQuestion(question);
     if (question.questionType === 'identify' || question.questionType === 'set') {
-        setCalculationSteps([{ operation: 'Final Answer', value: question.answer }]);
+        setCalculationSteps([{ operation: 'Final Answer', value: question.answer, explanation: 'The target value is shown on the abacus.' }]);
     } else {
         const steps = parseCalculationSteps(question.text);
         setCalculationSteps(steps);
@@ -80,7 +81,9 @@ function ResultsComponent() {
     setIsDialogOpen(true);
   };
 
-  const abacusValue = calculationSteps[currentStepIndex]?.value ?? 0;
+  const currentStep = calculationSteps[currentStepIndex];
+  const abacusValue = currentStep?.value ?? 0;
+  const activeRodIndex = currentStep?.atRodFromRight ? 7 - currentStep.atRodFromRight : -1;
 
   const questionCards = useMemo(() => {
     if (!resultsData) return null;
@@ -98,7 +101,7 @@ function ResultsComponent() {
       return (
         <div key={index} className="w-64">
            <Card className={cn(
-               "h-full flex flex-col",
+               "h-full flex flex-col transition-all hover:border-primary/50",
                isUnanswered && "border-yellow-500/50",
                !isUnanswered && !isCorrect && "border-destructive/50"
            )}>
@@ -107,25 +110,25 @@ function ResultsComponent() {
                   {statusIcon}
               </CardHeader>
               <CardContent className="flex-grow">
-                  <p className="text-xl font-bold">{q.text}</p>
+                  <p className="text-xl font-bold tracking-tight">{q.text || (q.questionType === 'set' ? `Set ${q.answer}` : 'Identify Beads')}</p>
                   <Separator className="my-3" />
                   <div className="space-y-2 text-sm">
-                      <p>Correct Answer: <span className="font-semibold text-primary">{q.answer}</span></p>
-                      <p>Your Answer: 
+                      <p className="flex justify-between">Correct: <span className="font-bold text-primary">{q.answer}</span></p>
+                      <p className="flex justify-between">Yours: 
                         <span className={cn(
-                          "font-semibold",
+                          "font-bold",
                           isUnanswered && "text-muted-foreground",
-                          !isUnanswered && isCorrect && "text-green-500",
+                          !isUnanswered && isCorrect && "text-green-600",
                           !isUnanswered && !isCorrect && "text-destructive"
                         )}>
-                          {isUnanswered ? 'Unanswered' : userAnswer}
+                          {isUnanswered ? 'Skipped' : userAnswer}
                         </span>
                       </p>
                   </div>
               </CardContent>
-               <CardFooter className="pt-4">
-                  <Button variant="link" size="sm" className="w-full" onClick={() => handleOpenDialog(q)}>
-                      <GraduationCap className="mr-2 h-4 w-4" /> Check Answer
+               <CardFooter className="pt-2">
+                  <Button variant="ghost" size="sm" className="w-full text-xs font-bold uppercase tracking-widest text-primary hover:bg-primary/5" onClick={() => handleOpenDialog(q)}>
+                      <Lightbulb className="mr-2 h-3 w-3" /> Solution
                   </Button>
                </CardFooter>
            </Card>
@@ -142,63 +145,65 @@ function ResultsComponent() {
   return (
     <>
       <div className="max-w-4xl mx-auto space-y-8">
-        <Card className="shadow-xl">
-          <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-headline">Test Complete!</CardTitle>
-            <CardDescription>{getPerformanceMessage()}</CardDescription>
+        <Card className="shadow-xl border-none bg-gradient-to-br from-card to-muted/20 overflow-hidden">
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-4xl font-headline font-black uppercase tracking-tighter">Test Complete!</CardTitle>
+            <CardDescription className="text-lg font-medium">{getPerformanceMessage()}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="text-center">
-              <p className="text-lg font-medium text-muted-foreground">Your Score</p>
-              <p className="text-6xl font-bold text-primary">{score}
-                <span className="text-3xl text-muted-foreground">/{total}</span>
+          <CardContent className="space-y-8 p-8">
+            <div className="text-center relative">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-2">Overall Performance</p>
+              <p className="text-7xl font-black text-primary drop-shadow-sm">{score}
+                <span className="text-3xl text-muted-foreground/50 font-bold">/{total}</span>
               </p>
-            </div>
-            
-            <div>
-              <p className="text-sm font-medium mb-2">Accuracy: {accuracy.toFixed(1)}%</p>
-              <Progress value={accuracy} className="w-full" />
+              <div className="max-w-md mx-auto mt-6">
+                <div className="flex justify-between text-xs font-bold uppercase mb-2">
+                    <span>Accuracy</span>
+                    <span>{accuracy.toFixed(1)}%</span>
+                </div>
+                <Progress value={accuracy} className="h-3 shadow-inner" />
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center">
-              <div className="p-4 bg-background rounded-lg border">
-                <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold">{score}</p>
-                <p className="text-sm text-muted-foreground">Correct</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="p-4 bg-background/50 rounded-2xl border-2 border-green-100 text-center">
+                <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-2" />
+                <p className="text-xl font-black leading-none">{score}</p>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-2">Correct</p>
               </div>
-              <div className="p-4 bg-background rounded-lg border">
-                <XCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
-                <p className="text-2xl font-bold">{incorrect}</p>
-                <p className="text-sm text-muted-foreground">Incorrect</p>
+              <div className="p-4 bg-background/50 rounded-2xl border-2 border-red-100 text-center">
+                <XCircle className="h-6 w-6 text-destructive mx-auto mb-2" />
+                <p className="text-xl font-black leading-none">{incorrect}</p>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-2">Incorrect</p>
               </div>
-               <div className="p-4 bg-background rounded-lg border">
-                <HelpCircle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold">{unanswered}</p>
-                <p className="text-sm text-muted-foreground">Unanswered</p>
+               <div className="p-4 bg-background/50 rounded-2xl border-2 border-yellow-100 text-center">
+                <HelpCircle className="h-6 w-6 text-yellow-500 mx-auto mb-2" />
+                <p className="text-xl font-black leading-none">{unanswered}</p>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-2">Skipped</p>
               </div>
-              <div className="p-4 bg-background rounded-lg border">
-                <Clock className="h-8 w-8 text-secondary mx-auto mb-2" />
-                <p className="text-2xl font-bold">{timeDisplay}</p>
-                <p className="text-sm text-muted-foreground">Time Left</p>
+              <div className="p-4 bg-background/50 rounded-2xl border-2 border-blue-100 text-center">
+                <Clock className="h-6 w-6 text-secondary mx-auto mb-2" />
+                <p className="text-xl font-black leading-none">{timeDisplay}</p>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-2">Time</p>
               </div>
             </div>
           </CardContent>
-           <CardFooter className="flex-col sm:flex-row gap-4 pt-4">
-              <Button onClick={() => router.push('/tests')} className="flex-1">Play Again</Button>
-              <Button onClick={() => router.push('/progress')} variant="secondary" className="flex-1">View Progress</Button>
-              <Button onClick={() => router.push('/')} variant="outline" className="flex-1">Back to Home</Button>
+           <CardFooter className="flex-col sm:flex-row gap-4 p-8 bg-muted/30 border-t">
+              <Button onClick={() => router.push('/tests')} className="flex-1 h-12 text-base font-bold">New Test</Button>
+              <Button onClick={() => router.push('/progress')} variant="secondary" className="flex-1 h-12 text-base font-bold">History</Button>
+              <Button onClick={() => router.push('/')} variant="outline" className="flex-1 h-12 text-base font-bold">Home</Button>
           </CardFooter>
         </Card>
         
         {resultsData && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Detailed Review</CardTitle>
-              <CardDescription>Review each question and your answer.</CardDescription>
+          <Card className="border-none shadow-lg">
+            <CardHeader className="bg-muted/30">
+              <CardTitle className="text-xl font-black uppercase tracking-tight">Step-by-Step Review</CardTitle>
+              <CardDescription>Click 'Solution' on any question to see the visual abacus breakdown.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <ScrollArea className="w-full whitespace-nowrap">
-                  <div className="flex w-max space-x-4 p-4">
+                  <div className="flex w-max space-x-4 p-6">
                     {questionCards}
                   </div>
                 <ScrollBar orientation="horizontal" />
@@ -206,57 +211,67 @@ function ResultsComponent() {
             </CardContent>
           </Card>
         )}
-
-        {!resultsData && !loading && (
-           <Card className="border-destructive/50">
-            <CardHeader className="flex flex-row items-center gap-4">
-              <AlertTriangle className="h-8 w-8 text-destructive" />
-              <div>
-                <CardTitle className="text-destructive">Review Not Available</CardTitle>
-                <CardDescription>Detailed results could not be loaded. This might happen if you refresh the page or are viewing a very old test.</CardDescription>
-              </div>
-            </CardHeader>
-          </Card>
-        )}
       </div>
+
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-       <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>How to solve: <span className="font-mono text-primary">{modalQuestion?.text}</span></DialogTitle>
-             <DialogDescription>
-              Step {currentStepIndex + 1} of {calculationSteps.length}: <span className="font-bold text-primary">{calculationSteps[currentStepIndex]?.operation}</span>
+       <DialogContent className="max-w-xl p-0 overflow-hidden border-none rounded-3xl shadow-2xl">
+          <DialogHeader className="p-6 bg-primary text-primary-foreground">
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter">
+                Solution Breakdown
+            </DialogTitle>
+             <DialogDescription className="text-primary-foreground/80 font-bold">
+              Question: <span className="text-white text-xl font-mono ml-2">{modalQuestion?.text || modalQuestion?.answer}</span>
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-center py-4">
-            <BeadDisplay value={abacusValue} rodCount={7} />
-          </div>
-          <div className="flex justify-between items-center">
-            <Button 
-                onClick={() => setCurrentStepIndex(prev => Math.max(0, prev - 1))}
-                disabled={currentStepIndex === 0}
-                variant="outline"
-                size="icon"
-            >
-                <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <div className="text-center">
-              <span className="text-sm text-muted-foreground">
-                  Step {currentStepIndex + 1} / {calculationSteps.length}
-              </span>
-              {currentStepIndex === calculationSteps.length - 1 && modalQuestion && (
-                <p className="font-bold text-lg mt-1">
-                  Final Answer: <span className="text-primary">{modalQuestion.answer}</span>
-                </p>
-              )}
+          
+          <div className="p-8 space-y-8 flex flex-col items-center">
+            <div className="w-full bg-muted/50 rounded-2xl p-4 border border-muted-foreground/10 text-center animate-in fade-in slide-in-from-top-2">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Step {currentStepIndex + 1} of {calculationSteps.length}</p>
+                <p className="text-xl font-black text-primary">{currentStep?.operation}</p>
+                {currentStep?.explanation && (
+                    <p className="text-sm text-muted-foreground mt-2 font-medium leading-relaxed italic">{currentStep.explanation}</p>
+                )}
             </div>
-             <Button 
-                onClick={() => setCurrentStepIndex(prev => Math.min(calculationSteps.length - 1, prev + 1))}
-                disabled={currentStepIndex === calculationSteps.length - 1}
-                variant="outline"
-                size="icon"
-            >
-                <ChevronRight className="h-4 w-4" />
-            </Button>
+
+            <div className="flex justify-center w-full py-4 overflow-x-auto scale-90 sm:scale-100">
+                <BeadDisplay 
+                    value={abacusValue} 
+                    rodCount={7} 
+                    activeRodIndex={activeRodIndex}
+                />
+            </div>
+
+            <div className="w-full flex justify-between items-center bg-muted/30 p-4 rounded-2xl border">
+                <Button 
+                    onClick={() => setCurrentStepIndex(prev => Math.max(0, prev - 1))}
+                    disabled={currentStepIndex === 0}
+                    variant="outline"
+                    className="h-12 w-12 rounded-xl shadow-sm"
+                >
+                    <ChevronLeft className="h-6 w-6" />
+                </Button>
+                
+                <div className="text-center px-4">
+                  {currentStepIndex === calculationSteps.length - 1 ? (
+                    <div className="bg-green-100 text-green-700 px-6 py-2 rounded-full font-black text-lg animate-in zoom-in-95">
+                      FINAL: {modalQuestion?.answer}
+                    </div>
+                  ) : (
+                    <span className="text-sm font-black text-muted-foreground uppercase tracking-widest">
+                        Continue to Next Step
+                    </span>
+                  )}
+                </div>
+
+                 <Button 
+                    onClick={() => setCurrentStepIndex(prev => Math.min(calculationSteps.length - 1, prev + 1))}
+                    disabled={currentStepIndex === calculationSteps.length - 1}
+                    variant="outline"
+                    className="h-12 w-12 rounded-xl shadow-sm"
+                >
+                    <ChevronRight className="h-6 w-6" />
+                </Button>
+            </div>
           </div>
       </DialogContent>
     </Dialog>

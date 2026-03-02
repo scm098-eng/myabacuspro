@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -39,7 +38,7 @@ const AbacusRod = ({
 }) => {
   const upperBeadActive = digit >= 5;
   const lowerBeadsValue = digit % 5;
-  const rodHeight = 320;
+  const rodHeight = 360; // Increased for better spacing
 
   return (
     <div className={cn(
@@ -47,22 +46,22 @@ const AbacusRod = ({
       isActive && "bg-red-500/10 ring-2 ring-red-500 shadow-md scale-105 z-30"
     )} style={{ height: `${rodHeight}px` }}>
       
-      {/* Rod Wire */}
-      <div className="absolute h-full w-1.5 bg-gradient-to-r from-[#3d241a] to-[#5d342a] top-0 z-0 rounded-full shadow-inner" />
+      {/* Rod Wire - Perfectly Centered */}
+      <div className="absolute h-full w-1.5 bg-gradient-to-r from-[#3d241a] to-[#5d342a] left-1/2 -translate-x-1/2 top-0 z-0 rounded-full shadow-inner" />
       
       {/* Separator Bar (Horizontal) */}
        <div className="absolute top-[30%] left-[-4px] right-[-4px] h-4 sm:h-5 bg-gradient-to-b from-[#e7c9a8] to-[#d4b48f] -translate-y-1/2 z-10 shadow-[0_2px_5px_rgba(0,0,0,0.4)] flex items-center justify-center border-y-2 border-black/40">
-         {isUnitRod && <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 bg-black rounded-full shadow-inner border border-gray-800"></div>}
+         {isUnitRod && <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 bg-[#111] rounded-full shadow-inner border border-black ring-1 ring-white/10"></div>}
       </div>
 
-      {/* Upper Section (Heavens) */}
-      <div className="w-full h-[30%] flex flex-col items-center justify-start z-20 pb-4">
-         {upperBeadActive && <div className="flex-grow min-h-[4px]" />}
+      {/* Upper Section (Heavens) - 30% of height */}
+      <div className="w-full h-[30%] flex flex-col items-center justify-between z-20 pb-4 pt-2">
+         {upperBeadActive && <div className="flex-grow" />}
          <Bead onClick={() => onBeadClick(5)} />
-         {!upperBeadActive && <div className="flex-grow min-h-[4px]" />}
+         {!upperBeadActive && <div className="flex-grow" />}
       </div>
 
-       {/* Lower Section (Earth) */}
+       {/* Lower Section (Earth) - 70% of height */}
       <div className="w-full h-[70%] flex flex-col items-center justify-start z-20 pt-4">
             {/* Active lower beads (touching the bar) */}
             <div className="flex flex-col items-center">
@@ -71,7 +70,7 @@ const AbacusRod = ({
                 ))}
             </div>
             
-            <div className="flex-grow min-h-[8px]" />
+            <div className="flex-grow min-h-[12px]" />
             
             {/* Inactive lower beads (resting at bottom) */}
             <div className="flex flex-col items-center">

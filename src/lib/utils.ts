@@ -8,6 +8,8 @@ export function cn(...inputs: ClassValue[]) {
 interface Step {
   operation: string;
   value: number;
+  explanation?: string;
+  atRodFromRight?: number;
 }
 
 export function parseCalculationSteps(questionText: string): Step[] {
@@ -32,7 +34,11 @@ export function parseCalculationSteps(questionText: string): Step[] {
   currentValue = parseInt(tokens[0], 10);
   if (isNaN(currentValue)) return [];
   
-  steps.push({ operation: `Set ${currentValue}`, value: currentValue });
+  steps.push({ 
+    operation: `Set ${currentValue}`, 
+    value: currentValue,
+    explanation: `Start by setting the first number ${currentValue} on the abacus.`
+  });
 
   for (let i = 1; i < tokens.length; i += 2) {
     const operator = tokens[i];
@@ -46,7 +52,11 @@ export function parseCalculationSteps(questionText: string): Step[] {
       currentValue -= number;
     }
     
-    steps.push({ operation: `${operator} ${number}`, value: currentValue });
+    steps.push({ 
+      operation: `${operator} ${number}`, 
+      value: currentValue,
+      explanation: `${operator === '+' ? 'Add' : 'Subtract'} ${number} from the current value.`
+    });
   }
 
   return steps;
@@ -86,13 +96,15 @@ export function generateMultiplicationSteps(m1: number, m2: number): Step[] {
 
       steps.push({
         operation: `${m2Digit} × ${m1Digit} = ${product.toString().padStart(2, '0')}`,
-        value: parseInt(rods.join(''), 10)
+        value: parseInt(rods.join(''), 10),
+        explanation: `Multiply ${m2Digit} by ${m1Digit}. Place ${product} starting from rod ${targetRodFromRight} (counting from the right).`,
+        atRodFromRight: targetRodFromRight
       });
     }
   }
   
   if (steps.length === 0) {
-    steps.push({ operation: 'Final Answer', value: m1 * m2 });
+    steps.push({ operation: 'Final Answer', value: m1 * m2, explanation: 'The final product is calculated.' });
   }
   
   return steps;
