@@ -145,9 +145,9 @@ export default function BeadDisplay({
   };
 
   return (
-    <div className="flex justify-center items-center p-3 sm:p-5 rounded-2xl border-[10px] sm:border-[12px] border-[#4a2c19] shadow-2xl bg-[#c6a47f]" 
-         style={{boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5), 0 10px 25px rgba(0,0,0,0.6)'}}>
-      <div className="flex flex-row bg-[#a6866a] p-2 sm:p-3 rounded-xl shadow-[inset_0_2px_8px_rgba(0,0,0,0.3)] gap-x-0.5 sm:gap-x-1.5 border-4 border-[#3d241a]/30">
+    <div className="flex justify-center items-center p-2 sm:p-4 rounded-xl border-[6px] sm:border-[8px] border-[#4a2c19] shadow-xl bg-[#c6a47f]" 
+         style={{boxShadow: 'inset 0 0 15px rgba(0,0,0,0.4), 0 8px 20px rgba(0,0,0,0.5)'}}>
+      <div className="flex flex-row bg-[#a6866a] p-1.5 sm:p-2.5 rounded-lg shadow-[inset_0_2px_6px_rgba(0,0,0,0.3)] gap-x-0.5 sm:gap-x-1 border-2 border-[#3d241a]/30">
         {digits.map((digit, index) => (
           <AbacusRod 
             key={index}

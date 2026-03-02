@@ -1,6 +1,8 @@
 
 'use client';
 
+import { useCallback } from 'react';
+
 const sounds = {
   correct: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3',
   wrong: 'https://assets.mixkit.co/active_storage/sfx/2955/2955-preview.mp3',
@@ -9,7 +11,7 @@ const sounds = {
 };
 
 export const useSound = () => {
-  const playSound = (type: keyof typeof sounds) => {
+  const playSound = useCallback((type: keyof typeof sounds) => {
     try {
       const audio = new Audio(sounds[type]);
       audio.volume = 0.5;
@@ -17,7 +19,7 @@ export const useSound = () => {
     } catch (e) {
       console.error('Audio initialization failed:', e);
     }
-  };
+  }, []);
 
   return { playSound };
 };

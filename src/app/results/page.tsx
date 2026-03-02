@@ -51,7 +51,11 @@ function ResultsComponent() {
   useEffect(() => {
     const data = sessionStorage.getItem('testResults');
     if (data) {
-      setResultsData(JSON.parse(data));
+      const parsed = JSON.parse(data);
+      setResultsData(prev => {
+        if (prev) return prev;
+        return parsed;
+      });
     }
     setLoading(false);
     playSound('success');
