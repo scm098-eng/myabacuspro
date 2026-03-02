@@ -183,9 +183,14 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
   const renderQuestion = () => {
     if (currentQuestion.questionType === 'identify') {
       return (
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center w-full">
             <p className="mb-4 text-lg font-semibold">What is the value shown?</p>
-            <BeadDisplay value={currentQuestion.answer} />
+            {/* Horizontal Scrollable Container */}
+            <div className="w-full overflow-x-auto py-4 custom-scrollbar">
+                <div className="flex justify-center min-w-max px-4">
+                    <BeadDisplay value={currentQuestion.answer} />
+                </div>
+            </div>
             <Input
                 ref={inputRef}
                 type="number"
@@ -200,10 +205,15 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
     }
     if (currentQuestion.questionType === 'set') {
       return (
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center w-full">
             <p className="mb-4 text-lg font-semibold">Set this value on the abacus:</p>
             <p className="text-4xl font-bold mb-4 text-primary">{currentQuestion.answer}</p>
-            <BeadDisplay value={abacusValue} onChange={setAbacusValue} />
+            {/* Horizontal Scrollable Container */}
+            <div className="w-full overflow-x-auto py-4 custom-scrollbar">
+                <div className="flex justify-center min-w-max px-4">
+                    <BeadDisplay value={abacusValue} onChange={setAbacusValue} />
+                </div>
+            </div>
         </div>
       );
     }
@@ -238,7 +248,7 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
         
-          <div className="text-center my-auto transition-opacity duration-300 grid grid-cols-1 gap-8 items-center" key={currentQuestionIndex}>
+          <div className="text-center my-auto transition-opacity duration-300 grid grid-cols-1 gap-8 items-center overflow-hidden" key={currentQuestionIndex}>
             {renderQuestion()}
           </div>
 

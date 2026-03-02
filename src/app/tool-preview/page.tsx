@@ -178,7 +178,13 @@ function ToolPreviewContent() {
                   </Button>
                 </div>
               </div>
-              <BeadDisplay value={value} onChange={setValue} rodCount={7} />
+              
+              {/* Horizontal Scrollable Container */}
+              <div className="w-full overflow-x-auto py-4 custom-scrollbar">
+                <div className="flex justify-center min-w-max px-4">
+                  <BeadDisplay value={value} onChange={setValue} rodCount={7} />
+                </div>
+              </div>
             </CardContent>
           </Card>
           <PlaceValueGuide />
@@ -254,12 +260,17 @@ function ToolPreviewContent() {
                     {currentLabValue.toLocaleString()}
                   </div>
                 </CardHeader>
-                <CardContent className="py-10 flex justify-center">
-                  <BeadDisplay 
-                    value={currentLabValue} 
-                    rodCount={7} 
-                    activeRodIndex={activeRodIndex}
-                  />
+                <CardContent className="py-10">
+                  {/* Horizontal Scrollable Container */}
+                  <div className="w-full overflow-x-auto custom-scrollbar">
+                    <div className="flex justify-center min-w-max px-4">
+                      <BeadDisplay 
+                        value={currentLabValue} 
+                        rodCount={7} 
+                        activeRodIndex={activeRodIndex}
+                      />
+                    </div>
+                  </div>
                 </CardContent>
                 <CardFooter className="bg-muted/30 border-t flex items-center justify-between p-6">
                   <Button 

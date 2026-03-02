@@ -223,15 +223,15 @@ function ResultsComponent() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
        <DialogContent className="max-w-2xl p-0 overflow-hidden border-none rounded-3xl shadow-2xl flex flex-col h-[90vh] sm:h-auto max-h-[90vh]">
           <DialogHeader className="p-6 bg-primary text-primary-foreground shrink-0">
-            <DialogTitle className="text-2xl font-black uppercase tracking-tighter">
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-center">
                 Solution Breakdown
             </DialogTitle>
-             <DialogDescription className="text-primary-foreground/80 font-bold">
-              Question: <span className="text-white text-xl font-mono ml-2">{modalQuestion?.text || modalQuestion?.answer}</span>
+             <DialogDescription className="text-primary-foreground/80 font-bold text-center">
+              Question: <span className="text-white text-2xl font-mono ml-2">{modalQuestion?.text || modalQuestion?.answer}</span>
             </DialogDescription>
           </DialogHeader>
           
-          <ScrollArea className="flex-1 overflow-y-auto">
+          <ScrollArea className="flex-1 overflow-y-auto overflow-x-hidden">
             <div className="p-6 sm:p-8 space-y-6 flex flex-col items-center pb-24">
               <div className="w-full bg-muted/50 rounded-2xl p-4 border border-muted-foreground/10 text-center animate-in fade-in slide-in-from-top-2">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Step {currentStepIndex + 1} of {calculationSteps.length}</p>
@@ -241,8 +241,9 @@ function ResultsComponent() {
                   )}
               </div>
 
-              <div className="w-full flex justify-center py-2 overflow-x-auto scrollbar-hide">
-                  <div className="min-w-[320px] flex justify-center">
+              {/* Horizontal Scrollable Abacus Container */}
+              <div className="w-full overflow-x-auto py-4 custom-scrollbar">
+                  <div className="flex justify-center min-w-max px-4">
                       <BeadDisplay 
                           value={abacusValue} 
                           rodCount={7} 
@@ -255,7 +256,7 @@ function ResultsComponent() {
           </ScrollArea>
 
           {/* Sticky Footer Navigation */}
-          <div className="shrink-0 p-4 sm:p-6 bg-muted/30 border-t flex justify-between items-center bg-background/95 backdrop-blur-sm">
+          <div className="shrink-0 p-4 sm:p-6 bg-muted/30 border-t flex justify-between items-center bg-background/95 backdrop-blur-sm mt-auto">
               <Button 
                   onClick={() => setCurrentStepIndex(prev => Math.max(0, prev - 1))}
                   disabled={currentStepIndex === 0}
