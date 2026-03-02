@@ -231,7 +231,7 @@ function ResultsComponent() {
             </DialogDescription>
           </DialogHeader>
           
-          <ScrollArea className="flex-1 overflow-y-auto overflow-x-hidden">
+          <ScrollArea className="flex-1 overflow-y-auto">
             <div className="p-6 sm:p-8 space-y-6 flex flex-col items-center pb-24">
               <div className="w-full bg-muted/50 rounded-2xl p-4 border border-muted-foreground/10 text-center animate-in fade-in slide-in-from-top-2">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Step {currentStepIndex + 1} of {calculationSteps.length}</p>
@@ -241,9 +241,9 @@ function ResultsComponent() {
                   )}
               </div>
 
-              {/* Horizontal Scrollable Abacus Container */}
-              <div className="w-full overflow-x-auto py-4 custom-scrollbar">
-                  <div className="flex justify-center min-w-max px-4">
+              {/* Horizontal Scrollable Abacus Container - Anchored to start on mobile */}
+              <div className="w-full overflow-x-auto py-4">
+                  <div className="flex justify-start sm:justify-center min-w-max px-4">
                       <BeadDisplay 
                           value={abacusValue} 
                           rodCount={7} 

@@ -185,9 +185,9 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
       return (
         <div className="flex flex-col items-center w-full">
             <p className="mb-4 text-lg font-semibold">What is the value shown?</p>
-            {/* Horizontal Scrollable Container */}
-            <div className="w-full overflow-x-auto py-4 custom-scrollbar">
-                <div className="flex justify-center min-w-max px-4">
+            {/* Horizontal Scrollable Container - Anchored to start on mobile */}
+            <div className="w-full overflow-x-auto py-4">
+                <div className="flex justify-start sm:justify-center min-w-max px-4">
                     <BeadDisplay value={currentQuestion.answer} />
                 </div>
             </div>
@@ -208,9 +208,9 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
         <div className="flex flex-col items-center w-full">
             <p className="mb-4 text-lg font-semibold">Set this value on the abacus:</p>
             <p className="text-4xl font-bold mb-4 text-primary">{currentQuestion.answer}</p>
-            {/* Horizontal Scrollable Container */}
-            <div className="w-full overflow-x-auto py-4 custom-scrollbar">
-                <div className="flex justify-center min-w-max px-4">
+            {/* Horizontal Scrollable Container - Anchored to start on mobile */}
+            <div className="w-full overflow-x-auto py-4">
+                <div className="flex justify-start sm:justify-center min-w-max px-4">
                     <BeadDisplay value={abacusValue} onChange={setAbacusValue} />
                 </div>
             </div>
