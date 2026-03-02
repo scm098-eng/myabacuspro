@@ -28,8 +28,11 @@ const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET;
 const GMAIL_USER = 'myabacuspro@gmail.com';
 const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
 
+// Enhanced Transporter with explicit host settings
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
     user: GMAIL_USER,
     pass: GMAIL_PASS,
