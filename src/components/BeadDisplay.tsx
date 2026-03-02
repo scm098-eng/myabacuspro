@@ -31,63 +31,73 @@ const AbacusRod = ({
   isUnitRod,
   onBeadClick,
   isActive,
+  label,
 }: {
   digit: number;
   isUnitRod: boolean;
   onBeadClick: (value: number) => void;
   isActive?: boolean;
+  label: string;
 }) => {
   const upperBeadActive = digit >= 5;
   const lowerBeadsValue = digit % 5;
-  const rodHeight = 280; // Optimized height for fitting in dialogs
+  const rodHeight = 260; // Slightly reduced for better fitting in dialogs
 
   return (
-    <div className={cn(
-      "relative w-12 sm:w-16 flex flex-col items-center transition-all duration-200 rounded-lg py-2",
-      isActive && "bg-red-500/10 ring-2 ring-red-500 shadow-md scale-105 z-30"
-    )} style={{ height: `${rodHeight}px` }}>
-      
-      {/* Rod Wire - Perfectly Centered */}
-      <div className="absolute h-full w-1 bg-gradient-to-r from-[#3d241a] to-[#5d342a] left-1/2 -translate-x-1/2 top-0 z-0 rounded-full shadow-inner" />
-      
-      {/* Separator Bar (Horizontal) */}
-       <div className="absolute top-[30%] left-[-4px] right-[-4px] h-3 sm:h-4 bg-gradient-to-b from-[#e7c9a8] to-[#d4b48f] -translate-y-1/2 z-10 shadow-[0_2px_5px_rgba(0,0,0,0.4)] flex items-center justify-center border-y-2 border-black/40">
-         {isUnitRod && <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 bg-[#000] rounded-full shadow-inner border border-black ring-1 ring-white/10"></div>}
-      </div>
+    <div className="flex flex-col items-center gap-2">
+      <div className={cn(
+        "relative w-12 sm:w-16 flex flex-col items-center transition-all duration-200 rounded-lg py-2",
+        isActive && "bg-red-500/10 ring-2 ring-red-500 shadow-md scale-105 z-30"
+      )} style={{ height: `${rodHeight}px` }}>
+        
+        {/* Rod Wire - Perfectly Centered */}
+        <div className="absolute h-full w-1 bg-gradient-to-r from-[#3d241a] to-[#5d342a] left-1/2 -translate-x-1/2 top-0 z-0 rounded-full shadow-inner" />
+        
+        {/* Separator Bar (Horizontal) */}
+         <div className="absolute top-[30%] left-[-4px] right-[-4px] h-3 sm:h-4 bg-gradient-to-b from-[#e7c9a8] to-[#d4b48f] -translate-y-1/2 z-10 shadow-[0_2px_5px_rgba(0,0,0,0.4)] flex items-center justify-center border-y-2 border-black/40">
+           {isUnitRod && <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 bg-black rounded-full shadow-inner border border-black ring-1 ring-white/20"></div>}
+        </div>
 
-      {/* Upper Section (Heavens) - 30% of height */}
-      <div className="w-full h-[30%] flex flex-col items-center justify-between z-20 pb-3 pt-1">
-         {upperBeadActive && <div className="flex-grow" />}
-         <Bead onClick={() => onBeadClick(5)} />
-         {!upperBeadActive && <div className="flex-grow" />}
-      </div>
+        {/* Upper Section (Heavens) - 30% of height */}
+        <div className="w-full h-[30%] flex flex-col items-center justify-between z-20 pb-3 pt-1">
+           {upperBeadActive && <div className="flex-grow" />}
+           <Bead onClick={() => onBeadClick(5)} />
+           {!upperBeadActive && <div className="flex-grow" />}
+        </div>
 
-       {/* Lower Section (Earth) - 70% of height */}
-      <div className="w-full h-[70%] flex flex-col items-center justify-start z-20 pt-3">
-            {/* Active lower beads (touching the bar) */}
-            <div className="flex flex-col items-center">
-                {Array.from({ length: lowerBeadsValue }).map((_, i) => (
-                    <Bead key={`active-${i}`} onClick={() => onBeadClick(i + 1)} />
-                ))}
-            </div>
-            
-            <div className="flex-grow min-h-[8px]" />
-            
-            {/* Inactive lower beads (resting at bottom) */}
-            <div className="flex flex-col items-center">
-                {Array.from({ length: 4 - lowerBeadsValue }).map((_, i) => (
-                    <Bead key={`inactive-${i}`} onClick={() => onBeadClick(lowerBeadsValue + i + 1)} />
-                ))}
-            </div>
+         {/* Lower Section (Earth) - 70% of height */}
+        <div className="w-full h-[70%] flex flex-col items-center justify-start z-20 pt-3">
+              {/* Active lower beads (touching the bar) */}
+              <div className="flex flex-col items-center">
+                  {Array.from({ length: lowerBeadsValue }).map((_, i) => (
+                      <Bead key={`active-${i}`} onClick={() => onBeadClick(i + 1)} />
+                  ))}
+              </div>
+              
+              <div className="flex-grow min-h-[8px]" />
+              
+              {/* Inactive lower beads (resting at bottom) */}
+              <div className="flex flex-col items-center">
+                  {Array.from({ length: 4 - lowerBeadsValue }).map((_, i) => (
+                      <Bead key={`inactive-${i}`} onClick={() => onBeadClick(lowerBeadsValue + i + 1)} />
+                  ))}
+              </div>
+        </div>
+      </div>
+      {/* Rod Place Value Label */}
+      <div className="bg-[#4a2c19] text-white text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-sm shadow-sm">
+        {label}
       </div>
     </div>
   );
 };
 
+const ROD_LABELS = ['T.L', 'L', 'T.Th', 'Th', 'H', 'T', 'U'];
+
 export default function BeadDisplay({ 
   value, 
   onChange, 
-  rodCount = 3,
+  rodCount = 7,
   activeRodIndex = -1 
 }: { 
   value: number, 
@@ -137,18 +147,18 @@ export default function BeadDisplay({
   };
 
   return (
-    <div className="flex justify-center items-center p-4 sm:p-6 rounded-2xl border-[10px] sm:border-[12px] border-[#4a2c19] shadow-2xl bg-[#c6a47f]" 
+    <div className="flex justify-center items-center p-3 sm:p-5 rounded-2xl border-[10px] sm:border-[12px] border-[#4a2c19] shadow-2xl bg-[#c6a47f]" 
          style={{boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5), 0 10px 25px rgba(0,0,0,0.6)'}}>
       <div className="flex flex-row bg-[#a6866a] p-2 sm:p-3 rounded-xl shadow-[inset_0_2px_8px_rgba(0,0,0,0.3)] gap-x-0.5 sm:gap-x-1.5 border-4 border-[#3d241a]/30">
         {digits.map((digit, index) => (
-          <React.Fragment key={index}>
-            <AbacusRod 
-              digit={digit} 
-              isUnitRod={index === rodCount - 1 || (rodCount > 3 && (index === Math.floor(rodCount / 2) || index === rodCount - 4))}
-              onBeadClick={(beadValue) => handleBeadClick(index, beadValue)}
-              isActive={activeRodIndex === index}
-            />
-          </React.Fragment>
+          <AbacusRod 
+            key={index}
+            digit={digit} 
+            isUnitRod={index === rodCount - 1 || (rodCount > 3 && (index === Math.floor(rodCount / 2) || index === rodCount - 4))}
+            onBeadClick={(beadValue) => handleBeadClick(index, beadValue)}
+            isActive={activeRodIndex === index}
+            label={ROD_LABELS[ROD_LABELS.length - rodCount + index]}
+          />
         ))}
       </div>
     </div>
