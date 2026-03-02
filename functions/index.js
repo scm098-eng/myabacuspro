@@ -27,11 +27,11 @@ const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET;
 // GMAIL CONFIGURATION
 const GMAIL_USER = 'myabacuspro@gmail.com';
 
-// Helper to get transporter lazily to ensure environment variables are fully loaded
+// Helper to get transporter lazily
 function getTransporter() {
     const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
     if (!GMAIL_PASS) {
-        logger.error("CRITICAL: GMAIL_APP_PASSWORD not found in environment secrets.");
+        logger.error("CRITICAL: GMAIL_APP_PASSWORD not found in environment.");
     }
     return nodemailer.createTransport({
         service: 'gmail',
@@ -46,8 +46,10 @@ function getTransporter() {
 // --- AUTOMATION: MONTHLY PROGRESS REPORTS ---
 // ----------------------------------------------------
 
-// Runs on the 1st of every month at 10:00 AM IST
-exports.sendMonthlyProgressReports = onSchedule("30 4 1 * *", async (event) => {
+exports.sendMonthlyProgressReports = onSchedule({
+    schedule: "30 4 1 * *",
+    secrets: ["GMAIL_APP_PASSWORD"]
+}, async (event) => {
     logger.info("Starting Monthly Progress Reports...");
     
     const usersSnapshot = await db.collection('users')
@@ -100,8 +102,10 @@ exports.sendMonthlyProgressReports = onSchedule("30 4 1 * *", async (event) => {
 // --- AUTOMATION: WEEKLY LEADERBOARD UPDATES ---
 // ----------------------------------------------------
 
-// Runs every Sunday at 8:00 PM IST
-exports.sendWeeklyLeaderboardUpdates = onSchedule("30 14 * * 0", async (event) => {
+exports.sendWeeklyLeaderboardUpdates = onSchedule({
+    schedule: "30 14 * * 0",
+    secrets: ["GMAIL_APP_PASSWORD"]
+}, async (event) => {
     const topPerformers = await db.collection('users')
         .where('role', '==', 'student')
         .orderBy('weeklyPoints', 'desc')
@@ -143,7 +147,9 @@ exports.sendWeeklyLeaderboardUpdates = onSchedule("30 14 * * 0", async (event) =
 // --- ADMIN: CUSTOM PROMOTIONAL CAMPAIGNS ---
 // ----------------------------------------------------
 
-exports.sendCustomPromotionalEmail = onCall(async (request) => {
+exports.sendCustomPromotionalEmail = onCall({
+    secrets: ["GMAIL_APP_PASSWORD"]
+}, async (request) => {
     if (!request.auth || request.auth.token.role !== 'admin') {
         throw new HttpsError('permission-denied', "Admin only.");
     }
@@ -187,8 +193,10 @@ exports.sendCustomPromotionalEmail = onCall(async (request) => {
 // --- MARKETING: AUTOMATIC UPGRADE EMAILS ---
 // ----------------------------------------------------
 
-// Runs every Monday at 10:00 AM IST (04:30 UTC)
-exports.sendWeeklyMarketingEmails = onSchedule("30 4 * * 1", async (event) => {
+exports.sendWeeklyMarketingEmails = onSchedule({
+    schedule: "30 4 * * 1",
+    secrets: ["GMAIL_APP_PASSWORD"]
+}, async (event) => {
   logger.info("Starting Weekly Marketing Campaign...");
   
   const freeUsersSnapshot = await db.collection('users')
@@ -260,10 +268,9 @@ exports.sendWeeklyMarketingEmails = onSchedule("30 4 * * 1", async (event) => {
   logger.info(`Campaign finished. Emails sent: ${sentCount}`);
 });
 
-/**
- * Manual test trigger for admin to verify email setup.
- */
-exports.sendTestMarketingEmail = onCall(async (request) => {
+exports.sendTestMarketingEmail = onCall({
+    secrets: ["GMAIL_APP_PASSWORD"]
+}, async (request) => {
     if (!request.auth || request.auth.token.role !== 'admin') {
         throw new HttpsError('permission-denied', "Only admins can trigger test emails.");
     }
@@ -319,7 +326,6 @@ exports.razorpaywebhook = onRequest(async (request, response) => {
                 const userSnap = await userRef.get();
                 const userData = userSnap.data();
 
-                // Conversion Attribution Tracking
                 if (userData && userData.marketingCampaignClicked) {
                     await db.collection('stats').doc('marketing').set({
                         conversions: admin.FieldValue.increment(1)

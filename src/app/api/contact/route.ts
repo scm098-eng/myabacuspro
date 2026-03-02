@@ -10,13 +10,13 @@ export async function POST(req: NextRequest) {
     const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
 
     if (!GMAIL_PASS) {
-      console.error("CRITICAL: GMAIL_APP_PASSWORD not configured in environment secrets.");
+      console.error("CRITICAL: GMAIL_APP_PASSWORD not configured in environment.");
       return NextResponse.json({ 
-        error: 'Server configuration error: Mail password missing. Please ensure GMAIL_APP_PASSWORD is set in Secret Manager.' 
+        error: 'Configuration Error',
+        details: 'The mail server password is missing from the environment. Please ensure GMAIL_APP_PASSWORD is set in Google Cloud Secret Manager and mapped in apphosting.yaml.' 
       }, { status: 500 });
     }
 
-    // Nodemailer's built-in 'gmail' service is the most reliable way to connect
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -51,16 +51,15 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('SMTP ERROR:', error);
     
-    // Check for common Gmail authentication errors
     if (error.code === 'EAUTH' || error.responseCode === 535) {
         return NextResponse.json({ 
-            error: 'Mail authentication failed. Please verify the GMAIL_APP_PASSWORD is correct and 2FA is enabled.',
-            details: error.message
+            error: 'Authentication failed',
+            details: 'Mail server rejected the App Password. Please verify the GMAIL_APP_PASSWORD is correct.'
         }, { status: 401 });
     }
 
     return NextResponse.json({ 
-      error: 'Failed to send message via mail server.',
+      error: 'Mail delivery failed',
       details: error.message
     }, { status: 500 });
   }
