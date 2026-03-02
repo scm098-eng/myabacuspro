@@ -1,4 +1,3 @@
-
 import Link from 'next/link';
 import { Brain } from 'lucide-react';
 import { Logo } from './Logo';
@@ -9,7 +8,7 @@ export function Footer() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="md:flex md:justify-between">
           <div className="mb-6 md:mb-0">
-             <Link href="/" className="flex items-center gap-2">
+             <Link href="/" className="flex items-end gap-2 pb-1">
                 <Brain className="h-8 w-8 text-primary" />
                 <Logo />
              </Link>
