@@ -48,7 +48,8 @@ export default function ContactPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send message.');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to send message.');
       }
 
       toast({
@@ -56,10 +57,10 @@ export default function ContactPage() {
         description: "Thanks for reaching out. We'll get back to you soon.",
       });
       form.reset();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Could not send message. Please try again later.',
+        description: error.message || 'Could not send message. Please try again later.',
         variant: 'destructive',
       });
     } finally {

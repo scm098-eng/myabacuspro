@@ -26,18 +26,21 @@ const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET;
 
 // GMAIL CONFIGURATION
 const GMAIL_USER = 'myabacuspro@gmail.com';
-const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
 
-// Enhanced Transporter with explicit host settings
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: GMAIL_USER,
-    pass: GMAIL_PASS,
-  },
-});
+// Helper to get transporter lazily to ensure environment variables are fully loaded
+function getTransporter() {
+    const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
+    if (!GMAIL_PASS) {
+        logger.error("CRITICAL: GMAIL_APP_PASSWORD not found in environment secrets.");
+    }
+    return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: GMAIL_USER,
+            pass: GMAIL_PASS,
+        },
+    });
+}
 
 // ----------------------------------------------------
 // --- AUTOMATION: MONTHLY PROGRESS REPORTS ---
@@ -53,12 +56,11 @@ exports.sendMonthlyProgressReports = onSchedule("30 4 1 * *", async (event) => {
 
     if (usersSnapshot.empty) return;
 
+    const transporter = getTransporter();
+
     for (const userDoc of usersSnapshot.docs) {
         const userData = userDoc.data();
-        const userId = userDoc.id;
-
         const points = userData.monthlyPoints || 0;
-        const days = userData.totalDaysPracticed || 0;
 
         const mailOptions = {
             from: `"My Abacus Pro Reports" <${GMAIL_USER}>`,
@@ -114,6 +116,8 @@ exports.sendWeeklyLeaderboardUpdates = onSchedule("30 14 * * 0", async (event) =
         .where('role', '==', 'student')
         .get();
 
+    const transporter = getTransporter();
+
     for (const sub of subscribers.docs) {
         const mailOptions = {
             from: `"My Abacus Pro Hall of Fame" <${GMAIL_USER}>`,
@@ -145,6 +149,7 @@ exports.sendCustomPromotionalEmail = onCall(async (request) => {
     }
 
     const { subject, message, isTest, testEmail } = request.data;
+    const transporter = getTransporter();
 
     if (isTest && testEmail) {
         await transporter.sendMail({
@@ -197,13 +202,13 @@ exports.sendWeeklyMarketingEmails = onSchedule("30 4 * * 1", async (event) => {
     return;
   }
 
+  const transporter = getTransporter();
   let sentCount = 0;
 
   for (const doc of freeUsersSnapshot.docs) {
     const user = doc.data();
     const userId = doc.id;
 
-    // Skip if emailed in the last 14 days
     if (user.lastMarketingEmailSent) {
         const lastSent = user.lastMarketingEmailSent.toDate();
         const diffDays = (new Date() - lastSent) / (1000 * 60 * 60 * 24);
@@ -264,6 +269,7 @@ exports.sendTestMarketingEmail = onCall(async (request) => {
     }
 
     const testEmail = request.data.email || request.auth.token.email;
+    const transporter = getTransporter();
     
     const mailOptions = {
         from: `"My Abacus Pro Test" <${GMAIL_USER}>`,

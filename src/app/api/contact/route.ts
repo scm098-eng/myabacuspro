@@ -11,22 +11,20 @@ export async function POST(req: NextRequest) {
 
     if (!GMAIL_PASS) {
       console.error("CRITICAL: GMAIL_APP_PASSWORD not configured in environment secrets.");
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Server configuration error: Mail password missing. Please ensure GMAIL_APP_PASSWORD is set in Secret Manager.' 
+      }, { status: 500 });
     }
 
-    // Using explicit host/port configuration which is often more reliable in serverless environments
+    // Nodemailer's built-in 'gmail' service is the most reliable way to connect
     const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, // Use SSL
+      service: 'gmail',
       auth: {
         user: GMAIL_USER,
         pass: GMAIL_PASS,
       },
     });
 
-    // Gmail SMTP requires the 'from' address to be the authenticated user or a verified alias.
-    // We put the user's name/email in the replyTo and the body.
     const mailOptions = {
       from: `"My Abacus Pro Contact" <${GMAIL_USER}>`,
       to: GMAIL_USER,
@@ -52,10 +50,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: 'ok' });
   } catch (error: any) {
     console.error('SMTP ERROR:', error);
-    // Provide a more descriptive error in development logs if possible
+    
+    // Check for common Gmail authentication errors
+    if (error.code === 'EAUTH' || error.responseCode === 535) {
+        return NextResponse.json({ 
+            error: 'Mail authentication failed. Please verify the GMAIL_APP_PASSWORD is correct and 2FA is enabled.',
+            details: error.message
+        }, { status: 401 });
+    }
+
     return NextResponse.json({ 
-      error: 'Failed to send message',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: 'Failed to send message via mail server.',
+      details: error.message
     }, { status: 500 });
   }
 }
