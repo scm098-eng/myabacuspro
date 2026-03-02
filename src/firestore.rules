@@ -4,58 +4,78 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    // Helper function to check ownership
+    // --- HELPER FUNCTIONS ---
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Helper function to check for admin role
     function isAdmin() {
       return request.auth != null && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'student') == 'admin';
     }
 
-    // Helper function to check for teacher role
     function isTeacher() {
       return request.auth != null && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'student') == 'teacher';
     }
 
+    // Hardened helper to check if user is suspended
+    // Uses data.get() to handle missing fields gracefully
+    function isNotSuspended() {
+      return request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isSuspended', false) != true;
+    }
+
+    // --- USER PROFILE RULES ---
     match /users/{userId} {
       allow read: if request.auth != null;
+      
       allow create: if isOwner(userId);
+
+      // Rule for Profile Updates:
+      // Owners can update points/streaks only if NOT suspended.
+      // Owners CANNOT change their role, status, or subscription.
       allow update: if isAdmin() || (isOwner(userId) && 
-        resource.data.isSuspended != true &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'subscriptionStatus', 'isSuspended']));
+        resource.data.get('isSuspended', false) != true &&
+        !request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['role', 'status', 'subscriptionStatus', 'isSuspended']));
+
       allow delete: if isAdmin();
+      
+      // --- LEADERBOARD & FILTERING ---
       allow list: if request.auth != null && (
         isAdmin() || 
         isTeacher() || 
-        (request.query.limit <= 10) ||
-        (request.query.where[0] == 'role' && request.query.where[1] == '==' && request.query.where[2] == 'teacher' && request.query.where[3] == 'status' && request.query.where[4] == '==' && request.query.where[5] == 'approved')
+        // Allow standard leaderboard queries
+        (request.query.limit <= 20) ||
+        // Allow teacher lookup during signup
+        (request.query.where.role == 'teacher' && request.query.where.status == 'approved')
       );
     }
     
+    // --- GAME & TEST PROGRESS ---
     match /testResults/{resultId} {
       allow create: if request.auth != null && 
-                      request.resource.data.userId == request.auth.uid &&
-                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuspended != true;
+                    isNotSuspended() &&
+                    request.resource.data.userId == request.auth.uid;
+      
       allow read, list: if request.auth != null && 
-                          (isOwner(resource.data.userId) || isAdmin() || isTeacher());
+                        (isOwner(resource.data.userId) || isAdmin() || isTeacher());
     }
     
     match /gameProgress/{userId} {
       allow read: if isOwner(userId);
-      allow write: if isOwner(userId) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuspended != true;
+      allow write: if isOwner(userId) && isNotSuspended();
     }
 
+    // --- ADMIN SYSTEM DATA ---
     match /stats/{statId} {
       allow read: if request.auth != null && (isAdmin() || isTeacher());
       allow write: if false;
     }
 
     match /processedWebhooks/{eventId} {
-      allow read: if request.auth != null && isAdmin();
+      allow read: if isAdmin();
       allow write: if false;
     }
   }

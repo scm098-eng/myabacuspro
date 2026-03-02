@@ -20,6 +20,39 @@ interface MultiplicationStep {
   explanation: string;
 }
 
+const PlaceValueGuide = () => (
+  <Card className="mt-8 border-primary/20 bg-muted/30">
+    <CardHeader className="pb-3">
+      <CardTitle className="text-lg font-bold flex items-center gap-2">
+        <Info className="w-5 h-5 text-primary" />
+        Place Value Guide
+      </CardTitle>
+      <CardDescription>
+        Understand the significance of each rod on the abacus.
+      </CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
+        {[
+          { short: 'T.L', long: 'Ten Lakhs', val: '10,00,000' },
+          { short: 'L', long: 'Lakhs', val: '1,00,000' },
+          { short: 'T.Th', long: 'Ten Thousands', val: '10,000' },
+          { short: 'Th', long: 'Thousands', val: '1,000' },
+          { short: 'H', long: 'Hundreds', val: '100' },
+          { short: 'T', long: 'Tens', val: '10' },
+          { short: 'U', long: 'Unit (Ones)', val: '1' },
+        ].map((item) => (
+          <div key={item.short} className="flex flex-col items-center text-center p-3 bg-background rounded-xl border-2 border-primary/10 shadow-sm transition-transform hover:scale-105">
+            <span className="text-xl font-black text-primary mb-1">{item.short}</span>
+            <span className="text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">{item.long}</span>
+            <span className="text-[9px] font-mono mt-1 opacity-60">x{item.val}</span>
+          </div>
+        ))}
+      </div>
+    </CardContent>
+  </Card>
+);
+
 function ToolPreviewContent() {
   const searchParams = useSearchParams();
   const initialValue = searchParams.get('value');
@@ -29,7 +62,6 @@ function ToolPreviewContent() {
   const [multiplicand, setMultiplicand] = useState(123);
   const [multiplier, setMultiplier] = useState(45);
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
-  const [labRods, setLabRods] = useState<number[]>(new Array(7).fill(0));
 
   useEffect(() => {
     if (initialValue !== null) {
@@ -76,7 +108,7 @@ function ToolPreviewContent() {
     for (let i = 0; i <= currentStepIndex; i++) {
       const step = multiplicationSteps[i];
       let valToAdd = step.add;
-      let rodIdx = 7 - step.atRodFromRight; // Convert from right-based to 0-indexed left-based
+      let rodIdx = 7 - step.atRodFromRight;
 
       // Add and handle carries
       rods[rodIdx] += valToAdd;
@@ -88,7 +120,7 @@ function ToolPreviewContent() {
         }
       }
     }
-    return parseInt(rods.join(''), 10);
+    return parseInt(rods.join(''), 10) || 0;
   }, [currentStepIndex, multiplicationSteps]);
 
   const activeRodIndex = useMemo(() => {
@@ -149,6 +181,7 @@ function ToolPreviewContent() {
               <BeadDisplay value={value} onChange={setValue} rodCount={7} />
             </CardContent>
           </Card>
+          <PlaceValueGuide />
         </TabsContent>
 
         <TabsContent value="lab" className="space-y-8">
@@ -251,18 +284,7 @@ function ToolPreviewContent() {
                   </Button>
                 </CardFooter>
               </Card>
-
-              <Card className="border-dashed">
-                <CardContent className="p-6 flex items-start gap-4">
-                  <Info className="w-6 h-6 text-blue-500 shrink-0 mt-1" />
-                  <div className="space-y-1">
-                    <p className="font-bold">Pro Tip: Moving the Product</p>
-                    <p className="text-sm text-muted-foreground">
-                      In the multiplication lab, we follow the "Product Placement" rule. If your multiplication gives a single digit (like $2 \times 3 = 6$), we treat it as $06$ and shift properly.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <PlaceValueGuide />
             </div>
           </div>
         </TabsContent>
