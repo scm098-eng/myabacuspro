@@ -10,11 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Send, Loader2 } from 'lucide-react';
+import { Mail, Send, Loader2, AlertCircle } from 'lucide-react';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import Image from 'next/image';
 import placeholderImages from '@/lib/placeholder-images.json';
 import { useState } from 'react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -26,6 +27,7 @@ export default function ContactPage() {
   usePageBackground('');
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -38,6 +40,7 @@ export default function ContactPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
+    setErrorDetails(null);
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
@@ -47,9 +50,10 @@ export default function ContactPage() {
         body: JSON.stringify(values),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to send message.');
+        throw new Error(data.details || data.error || 'Failed to send message.');
       }
 
       toast({
@@ -58,9 +62,10 @@ export default function ContactPage() {
       });
       form.reset();
     } catch (error: any) {
+      setErrorDetails(error.message);
       toast({
         title: 'Error',
-        description: error.message || 'Could not send message. Please try again later.',
+        description: 'Could not send message. See details on page.',
         variant: 'destructive',
       });
     } finally {
@@ -77,66 +82,80 @@ export default function ContactPage() {
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>Send us a message</CardTitle>
-            <CardDescription>Fill out the form and our team will get back to you.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Your Name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="your.email@example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="message"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Message</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Your message..." {...field} rows={5} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                   {isSubmitting ? 'Sending...' : 'Submit Message'}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          {errorDetails && (
+            <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-900">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle className="font-bold">Message Failed</AlertTitle>
+              <AlertDescription className="text-xs">
+                {errorDetails}
+                <div className="mt-2 p-2 bg-white/50 rounded border border-red-100 font-mono">
+                  Check Secret Manager: GMAIL_APP_PASSWORD
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle>Send us a message</CardTitle>
+              <CardDescription>Fill out the form and our team will get back to you.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Your Name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="your.email@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="message"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Message</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Your message..." {...field} rows={5} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full h-12 text-lg font-bold" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}
+                    {isSubmitting ? 'Sending...' : 'Submit Message'}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
         <div className="space-y-8">
             <div className="relative aspect-[3/2] w-full rounded-lg overflow-hidden border-2 border-primary/20 shadow-lg mb-8">
                 <Image
                     src={placeholderImages.contactHero.src}
-                    alt="Customer support representative helping a client"
+                    alt="Customer support"
                     fill
                     className="object-cover"
                     data-ai-hint={placeholderImages.contactHero.hint}

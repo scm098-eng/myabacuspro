@@ -127,7 +127,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   }, [userAnswers, questions, router, timeLeft, user, testId, difficulty, settings.timeLimit, isFinished, recordDailyPractice, addPoints]);
 
   useEffect(() => {
-    if (questions.length === 0 || !startTime) return;
+    if (questions.length === 0 || !startTime || isFinished) return;
     
     if (timeLeft <= 0) {
       finishTest();
@@ -135,11 +135,30 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     }
 
     const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
+      setTimeLeft((prev) => {
+        const nextTime = prev - 1;
+        
+        // 1. Minute indicated sound
+        if (nextTime > 60 && nextTime % 60 === 0) {
+          playSound('timerTick');
+        }
+        
+        // 2. Last minute warning
+        if (nextTime === 60) {
+          playSound('timerWarning');
+        }
+        
+        // 3. Urgent countdown (last 10 seconds)
+        if (nextTime <= 10 && nextTime > 0) {
+          playSound('timerUrgent');
+        }
+
+        return nextTime;
+      });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, finishTest, questions.length, startTime]);
+  }, [timeLeft, finishTest, questions.length, startTime, isFinished, playSound]);
 
    useEffect(() => {
     if (!isFinished && questions.length > 0 && userAnswers.length === questions.length && !userAnswers.includes(null)) {
@@ -197,7 +216,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         <CardHeader>
           <div className="flex justify-between items-center mb-4">
             <CardTitle className="text-2xl font-headline">{settings.title}</CardTitle>
-            <div className={cn("flex items-center gap-2 font-semibold text-lg p-2 rounded-md", timeLeft < 60 && 'text-destructive-foreground bg-destructive/80')}>
+            <div className={cn("flex items-center gap-2 font-semibold text-lg p-2 rounded-md transition-colors", timeLeft < 60 ? 'text-destructive-foreground bg-destructive animate-pulse' : 'text-foreground')}>
               <Timer className="h-6 w-6" />
               <span>{minutes}:{seconds.toString().padStart(2, '0')}</span>
             </div>
