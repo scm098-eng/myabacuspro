@@ -138,18 +138,12 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       setTimeLeft((prev) => {
         const nextTime = prev - 1;
         
-        // 1. Minute indicated sound
+        // Timer sound triggers
         if (nextTime > 60 && nextTime % 60 === 0) {
           playSound('timerTick');
-        }
-        
-        // 2. Last minute warning
-        if (nextTime === 60) {
+        } else if (nextTime === 60) {
           playSound('timerWarning');
-        }
-        
-        // 3. Urgent countdown (last 10 seconds)
-        if (nextTime <= 10 && nextTime > 0) {
+        } else if (nextTime <= 10 && nextTime > 0) {
           playSound('timerUrgent');
         }
 

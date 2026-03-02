@@ -73,7 +73,7 @@ export default function ProgressReportPage() {
                             createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
                         } as TestResult);
                     });
-                    setAllHistory(history);
+                    setTestHistory(history);
                 } catch (error: any) {
                      if (error.code === 'permission-denied') {
                         const permissionError = new FirestorePermissionError({
@@ -89,10 +89,6 @@ export default function ProgressReportPage() {
             fetchTestHistory();
         }
     }, [user]);
-
-    const setAllHistory = (history: TestResult[]) => {
-        setTestHistory(history);
-    }
 
     const chartData = useMemo(() => {
         return testHistory

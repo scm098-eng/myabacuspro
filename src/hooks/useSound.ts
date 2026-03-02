@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 
 const sounds = {
   correct: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3',
-  wrong: 'https://assets.mixkit.co/active_storage/sfx/2959/2959-preview.mp3',
+  wrong: 'https://assets.mixkit.co/active_storage/sfx/951/951-preview.mp3', // Clear buzzer sound
   success: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
   points: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3',
   timerTick: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
@@ -20,6 +20,7 @@ export const useSound = () => {
       // Adjust volumes based on sound type
       if (type === 'timerTick') audio.volume = 0.2;
       else if (type === 'timerUrgent') audio.volume = 0.4;
+      else if (type === 'wrong') audio.volume = 0.6;
       else audio.volume = 0.5;
       
       audio.play().catch(e => {
