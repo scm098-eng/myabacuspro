@@ -15,6 +15,14 @@ export function parseCalculationSteps(questionText: string): Step[] {
     return [];
   }
   
+  // Check if it's a multiplication question
+  if (questionText.includes('×')) {
+    const parts = questionText.split('×').map(p => parseInt(p.trim()));
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      return generateMultiplicationSteps(parts[0], parts[1]);
+    }
+  }
+
   const tokens = questionText.split(' ').filter(t => t !== '');
   const steps: Step[] = [];
   let currentValue = 0;
@@ -22,6 +30,8 @@ export function parseCalculationSteps(questionText: string): Step[] {
   if (tokens.length === 0) return [];
   
   currentValue = parseInt(tokens[0], 10);
+  if (isNaN(currentValue)) return [];
+  
   steps.push({ operation: `Set ${currentValue}`, value: currentValue });
 
   for (let i = 1; i < tokens.length; i += 2) {
@@ -39,5 +49,51 @@ export function parseCalculationSteps(questionText: string): Step[] {
     steps.push({ operation: `${operator} ${number}`, value: currentValue });
   }
 
+  return steps;
+}
+
+export function generateMultiplicationSteps(m1: number, m2: number): Step[] {
+  const steps: Step[] = [];
+  const m1Str = m1.toString();
+  const m2Str = m2.toString();
+  const rods = new Array(7).fill(0);
+
+  // Iterate through each digit of multiplier (right to left)
+  for (let i = 0; i < m2Str.length; i++) {
+    const m2Digit = parseInt(m2Str[i]);
+    const m2Power = m2Str.length - 1 - i;
+
+    // Iterate through each digit of multiplicand
+    for (let j = 0; j < m1Str.length; j++) {
+      const m1Digit = parseInt(m1Str[j]);
+      const m1Power = m1Str.length - 1 - j;
+      
+      const product = m1Digit * m2Digit;
+      const targetRodFromRight = m1Power + m2Power + 1;
+
+      // Logic to add product to rods
+      let rodIdx = 7 - targetRodFromRight;
+      rods[rodIdx] += product;
+      
+      // Handle carries across the abacus
+      for (let k = 6; k >= 0; k--) {
+        if (rods[k] >= 10) {
+          const carry = Math.floor(rods[k] / 10);
+          rods[k] %= 10;
+          if (k > 0) rods[k-1] += carry;
+        }
+      }
+
+      steps.push({
+        operation: `${m2Digit} × ${m1Digit} = ${product.toString().padStart(2, '0')}`,
+        value: parseInt(rods.join(''), 10)
+      });
+    }
+  }
+  
+  if (steps.length === 0) {
+    steps.push({ operation: 'Final Answer', value: m1 * m2 });
+  }
+  
   return steps;
 }

@@ -12,11 +12,10 @@ import { usePageBackground } from '@/hooks/usePageBackground';
 import type { Question } from '@/types';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
+import { cn, parseCalculationSteps } from '@/lib/utils';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import BeadDisplay from '@/components/BeadDisplay';
-import { parseCalculationSteps } from '@/lib/utils';
 
 interface ResultsData {
   questions: Question[];
@@ -124,13 +123,11 @@ function ResultsComponent() {
                       </p>
                   </div>
               </CardContent>
-               {!isCorrect && (
-                  <CardFooter className="pt-4">
-                      <Button variant="link" size="sm" className="w-full" onClick={() => handleOpenDialog(q)}>
-                          <GraduationCap className="mr-2 h-4 w-4" /> Check Answer
-                      </Button>
-                  </CardFooter>
-               )}
+               <CardFooter className="pt-4">
+                  <Button variant="link" size="sm" className="w-full" onClick={() => handleOpenDialog(q)}>
+                      <GraduationCap className="mr-2 h-4 w-4" /> Check Answer
+                  </Button>
+               </CardFooter>
            </Card>
         </div>
       );
@@ -231,7 +228,7 @@ function ResultsComponent() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-center py-4">
-            <BeadDisplay value={abacusValue} />
+            <BeadDisplay value={abacusValue} rodCount={7} />
           </div>
           <div className="flex justify-between items-center">
             <Button 

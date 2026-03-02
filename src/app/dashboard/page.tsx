@@ -5,9 +5,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, Zap, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, Info, ShieldAlert, MailCheck, TrendingUp } from 'lucide-react';
+import { Check, Trophy, Zap, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, Info, ShieldAlert, MailCheck, TrendingUp, ArrowUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, doc, updateDoc } from 'firebase/firestore';
@@ -24,6 +24,15 @@ import { RANK_CRITERIA } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 
+const PointsAnimation = ({ points }: { points: number }) => {
+  return (
+    <div className="absolute -top-8 left-1/2 -translate-x-1/2 animate-in fade-in slide-in-from-bottom-4 duration-1000 flex items-center gap-1 text-green-600 font-black text-xl drop-shadow-sm pointer-events-none">
+      <ArrowUp className="w-4 h-4" />
+      +{points}
+    </div>
+  );
+};
+
 export default function StudentDashboardPage() {
   usePageBackground('');
   const { profile, user, isLoading, getStudentTitle, updateUserProfile, sendVerificationEmail } = useAuth();
@@ -36,6 +45,10 @@ export default function StudentDashboardPage() {
   const [isSendingVerification, setIsSendingVerification] = useState(false);
   const [showAchievement, setShowAchievement] = useState(false);
   const [achievementData, setAchievementData] = useState<any>(null);
+  
+  // Points animation state
+  const [pointsEarned, setPointsEarned] = useState<number | null>(null);
+  const lastPointsRef = useRef<number>(0);
 
   useEffect(() => {
     setMounted(true);
@@ -43,6 +56,19 @@ export default function StudentDashboardPage() {
       router.push('/login');
     }
   }, [isLoading, user, router]);
+
+  // Track points change for animation
+  useEffect(() => {
+    if (profile && profile.totalPoints !== undefined) {
+      if (lastPointsRef.current !== 0 && profile.totalPoints > lastPointsRef.current) {
+        const diff = profile.totalPoints - lastPointsRef.current;
+        setPointsEarned(diff);
+        const timer = setTimeout(() => setPointsEarned(null), 2500);
+        return () => clearTimeout(timer);
+      }
+      lastPointsRef.current = profile.totalPoints;
+    }
+  }, [profile?.totalPoints]);
 
   useEffect(() => {
     if (mounted && user) {
@@ -162,12 +188,7 @@ export default function StudentDashboardPage() {
   if (!user || !profile) return null;
 
   const daysInMonthLeft = 30 - new Date().getDate();
-  
-  // Allow testuser, tempuser, and Maitreya Satish Mane to bypass verification
-  const isTestAccount = /testuser|tempuser/i.test(user.email || '');
-  const isMaitreya = (profile?.firstName?.toLowerCase() === 'maitreya' || profile?.firstName?.toLowerCase() === 'maitreya satish') && profile?.surname?.toLowerCase() === 'mane';
-  const isBypassedAccount = isTestAccount || isMaitreya;
-  const isEmailVerified = user.emailVerified || isBypassedAccount;
+  const isEmailVerified = user.emailVerified || /testuser|tempuser/i.test(user.email || '') || (profile?.firstName?.toLowerCase() === 'maitreya' && profile?.surname?.toLowerCase() === 'mane');
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
@@ -188,7 +209,7 @@ export default function StudentDashboardPage() {
           <ShieldAlert className="h-4 w-4 text-orange-600" />
           <AlertTitle className="font-bold">Verify Your Email</AlertTitle>
           <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <span>Please verify your email address to unlock practice tests and games. Check your inbox for the link.</span>
+            <span>Please verify your email address to unlock practice tests and games.</span>
             <Button size="sm" onClick={handleResendVerification} disabled={isSendingVerification} variant="outline" className="border-orange-300 hover:bg-orange-100">
               {isSendingVerification ? <Loader2 className="animate-spin h-4 w-4" /> : <MailCheck className="mr-2 h-4 w-4" />}
               Resend Link
@@ -197,7 +218,6 @@ export default function StudentDashboardPage() {
         </Alert>
       )}
 
-      {/* Hero Header */}
       <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 text-white min-h-[220px] flex flex-col justify-center rounded-2xl">
         <div className="absolute inset-0 opacity-30 bg-cover bg-center" style={{ backgroundImage: "url('https://picsum.photos/seed/abacus/1200/400')" }} />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent" />
@@ -206,11 +226,11 @@ export default function StudentDashboardPage() {
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight font-headline uppercase">Road to Mastery</h1>
             <div className="flex flex-wrap justify-center md:justify-start gap-3">
               <Badge className="bg-yellow-400 text-slate-900 font-bold px-4 py-1.5 rounded-full text-xs tracking-wide shadow-lg border-none">
-                {currentRank.icon} Current Rank: {currentRank.name}
+                {currentRank.icon} Rank: {currentRank.name}
               </Badge>
               {nextRank && (
                 <Badge variant="outline" className="text-white border-white/20 px-4 py-1.5 rounded-full text-xs tracking-wide font-bold">
-                  Next Goal: {nextRank.icon} {nextRank.name}
+                  Target: {nextRank.icon} {nextRank.name}
                 </Badge>
               )}
             </div>
@@ -253,10 +273,11 @@ export default function StudentDashboardPage() {
             <div><p className="text-3xl font-bold text-foreground leading-none">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Total Days</p></div>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-md transition-shadow bg-card/50 border-border/50">
+        <Card className={cn("hover:shadow-md transition-all bg-card/50 border-border/50 relative", pointsEarned && "ring-2 ring-green-500 shadow-lg scale-105")}>
           <CardContent className="p-6 flex items-center gap-4 relative">
+            {pointsEarned && <PointsAnimation points={pointsEarned} />}
             <div className="bg-yellow-100 p-3 rounded-2xl"><Star className="w-6 h-6 text-yellow-600 fill-yellow-600" /></div>
-            <div><p className="text-3xl font-bold text-foreground leading-none">{currentPoints.toLocaleString()}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 flex items-center gap-1">Mastery Points</p></div>
+            <div><p className="text-3xl font-bold text-foreground leading-none">{currentPoints.toLocaleString()}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Mastery Points</p></div>
           </CardContent>
         </Card>
         <Card className="hover:shadow-md transition-shadow bg-purple-100/50 border-purple-200">
@@ -301,13 +322,8 @@ export default function StudentDashboardPage() {
             })}
           </div>
 
-          <Button 
-            onClick={() => router.push('/tests')} 
-            disabled={!isEmailVerified}
-            className="w-full h-20 bg-primary hover:bg-primary/90 text-2xl font-bold rounded-2xl shadow-xl uppercase tracking-widest group"
-          >
-            Start Practice {!isEmailVerified && <ShieldAlert className="ml-2 h-6 w-6" />}
-            <ChevronRight className="w-8 h-8 ml-4 stroke-[3px] group-hover:translate-x-2 transition-transform" />
+          <Button onClick={() => router.push('/tests')} disabled={!isEmailVerified} className="w-full h-20 bg-primary hover:bg-primary/90 text-2xl font-bold rounded-2xl shadow-xl uppercase tracking-widest group">
+            Start Practice {!isEmailVerified && <ShieldAlert className="ml-2 h-6 w-6" />} <ChevronRight className="w-8 h-8 ml-4 stroke-[3px] group-hover:translate-x-2 transition-transform" />
           </Button>
         </div>
 
