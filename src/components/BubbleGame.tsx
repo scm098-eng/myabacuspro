@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { calculatePoints } from '@/lib/scoring';
+import { useSound } from '@/hooks/useSound';
 
 interface Bubble {
   id: number;
@@ -62,6 +63,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
   const questionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user, saveCompletedGameLevel, recordDailyPractice, addPoints } = useAuth();
+  const { playSound } = useSound();
   const router = useRouter();
 
   useEffect(() => {
@@ -73,7 +75,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     if (currentQuestionIndex + 1 >= questions.length) {
       const finalScorePercentage = (score / (questions.length * 10)) * 100;
       if (user) {
-        // Calculate dynamic points
         const { earnedPoints } = calculatePoints({
           correct: score / 10,
           total: questions.length,
@@ -87,9 +88,9 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
           saveCompletedGameLevel(levelId);
           recordDailyPractice(user.uid);
           addPoints(user.uid, earnedPoints);
+          playSound('success');
           setGameState('levelComplete');
         } else {
-          // Still add points for effort
           addPoints(user.uid, Math.floor(earnedPoints * 0.5));
           setGameState('gameOver');
         }
@@ -97,7 +98,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     } else {
       setCurrentQuestionIndex(i => i + 1);
     }
-  }, [currentQuestionIndex, questions.length, score, user, saveCompletedGameLevel, levelId, recordDailyPractice, addPoints]);
+  }, [currentQuestionIndex, questions.length, score, user, saveCompletedGameLevel, levelId, recordDailyPractice, addPoints, playSound]);
 
 
   const generateBubbles = useCallback(() => {
@@ -150,10 +151,11 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
     questionTimeoutRef.current = setTimeout(() => {
         setLives(l => l - 1);
+        playSound('wrong');
         advanceQuestion();
     }, (maxDuration + 1) * 1000);
 
-  }, [questions, currentQuestionIndex, lives, advanceQuestion]);
+  }, [questions, currentQuestionIndex, lives, advanceQuestion, playSound]);
 
   useEffect(() => {
     if (gameState === 'playing' && questions.length > 0) {
@@ -180,8 +182,10 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
     if (bubble.isCorrect) {
       setScore(s => s + 10);
+      playSound('correct');
     } else {
       setLives(l => l - 1);
+      playSound('wrong');
     }
     advanceQuestion();
   };

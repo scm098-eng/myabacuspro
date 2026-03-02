@@ -28,10 +28,12 @@ import { firebaseApp } from '@/lib/firebase';
 import { calculatePoints } from '@/lib/scoring';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
+import { useSound } from '@/hooks/useSound';
 
 export default function TestPageClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
   const { user, recordDailyPractice, addPoints } = useAuth();
+  const { playSound } = useSound();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>([]);
@@ -109,7 +111,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
           errorEmitter.emit('permission-error', permissionError);
       });
 
-      // Daily practice and points
       recordDailyPractice(user.uid);
       addPoints(user.uid, earnedPoints);
     }
@@ -161,6 +162,13 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     setIsAnswered(true);
     setSelectedOption(answer);
     setUserAnswers(newAnswers);
+
+    const isCorrect = answer === currentQuestion.answer;
+    if (isCorrect) {
+      playSound('correct');
+    } else {
+      playSound('wrong');
+    }
 
     setTimeout(() => {
       if (currentQuestionIndex < questions.length - 1) {
@@ -236,7 +244,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
                   className={cn(
                     "h-20 text-3xl font-bold transition-all duration-300 transform hover:scale-105",
                     isAnswered && isSelected && !isCorrect && "bg-destructive hover:bg-destructive/90",
-                    isAnswered && isCorrect && "bg-green-500 hover:bg-green-500/90",
+                    isAnswered && isCorrect && "bg-green-50 hover:bg-green-50 text-green-700 border-green-500 border-2",
                   )}
                   variant="outline"
                 >

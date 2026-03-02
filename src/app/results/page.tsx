@@ -16,6 +16,7 @@ import { cn, parseCalculationSteps } from '@/lib/utils';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import BeadDisplay from '@/components/BeadDisplay';
+import { useSound } from '@/hooks/useSound';
 
 interface ResultsData {
   questions: Question[];
@@ -33,12 +34,12 @@ function ResultsComponent() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/results_bg.jpg?alt=media');
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { playSound } = useSound();
 
   const [resultsData, setResultsData] = useState<ResultsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  // State for the dialog
   const [modalQuestion, setModalQuestion] = useState<Question | null>(null);
   const [calculationSteps, setCalculationSteps] = useState<Step[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -53,7 +54,8 @@ function ResultsComponent() {
       setResultsData(JSON.parse(data));
     }
     setLoading(false);
-  }, []);
+    playSound('success');
+  }, [playSound]);
 
   const accuracy = total > 0 ? (score / total) * 100 : 0;
   const minutes = Math.floor(time / 60);

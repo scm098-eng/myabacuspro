@@ -23,11 +23,12 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { RANK_CRITERIA } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
+import { useSound } from '@/hooks/useSound';
 
 const PointsAnimation = ({ points }: { points: number }) => {
   return (
-    <div className="absolute -top-8 left-1/2 -translate-x-1/2 animate-in fade-in slide-in-from-bottom-4 duration-1000 flex items-center gap-1 text-green-600 font-black text-xl drop-shadow-sm pointer-events-none">
-      <ArrowUp className="w-4 h-4" />
+    <div className="absolute -top-12 left-1/2 -translate-x-1/2 animate-in fade-in slide-in-from-bottom-10 duration-1000 flex items-center gap-1 text-green-600 font-black text-2xl drop-shadow-md pointer-events-none z-50">
+      <Star className="w-5 h-5 fill-yellow-400 stroke-yellow-600" />
       +{points}
     </div>
   );
@@ -38,6 +39,7 @@ export default function StudentDashboardPage() {
   const { profile, user, isLoading, getStudentTitle, updateUserProfile, sendVerificationEmail } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const { playSound } = useSound();
   const [mounted, setMounted] = useState(false);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
@@ -46,7 +48,6 @@ export default function StudentDashboardPage() {
   const [showAchievement, setShowAchievement] = useState(false);
   const [achievementData, setAchievementData] = useState<any>(null);
   
-  // Points animation state
   const [pointsEarned, setPointsEarned] = useState<number | null>(null);
   const lastPointsRef = useRef<number>(0);
 
@@ -57,18 +58,18 @@ export default function StudentDashboardPage() {
     }
   }, [isLoading, user, router]);
 
-  // Track points change for animation
   useEffect(() => {
     if (profile && profile.totalPoints !== undefined) {
       if (lastPointsRef.current !== 0 && profile.totalPoints > lastPointsRef.current) {
         const diff = profile.totalPoints - lastPointsRef.current;
         setPointsEarned(diff);
+        playSound('points');
         const timer = setTimeout(() => setPointsEarned(null), 2500);
         return () => clearTimeout(timer);
       }
       lastPointsRef.current = profile.totalPoints;
     }
-  }, [profile?.totalPoints]);
+  }, [profile?.totalPoints, playSound]);
 
   useEffect(() => {
     if (mounted && user) {
@@ -273,7 +274,7 @@ export default function StudentDashboardPage() {
             <div><p className="text-3xl font-bold text-foreground leading-none">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Total Days</p></div>
           </CardContent>
         </Card>
-        <Card className={cn("hover:shadow-md transition-all bg-card/50 border-border/50 relative", pointsEarned && "ring-2 ring-green-500 shadow-lg scale-105")}>
+        <Card className={cn("hover:shadow-md transition-all bg-card/50 border-border/50 relative", pointsEarned && "ring-2 ring-green-500 shadow-lg scale-105 bg-green-50/10")}>
           <CardContent className="p-6 flex items-center gap-4 relative">
             {pointsEarned && <PointsAnimation points={pointsEarned} />}
             <div className="bg-yellow-100 p-3 rounded-2xl"><Star className="w-6 h-6 text-yellow-600 fill-yellow-600" /></div>
