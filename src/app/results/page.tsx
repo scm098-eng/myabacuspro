@@ -51,11 +51,12 @@ function ResultsComponent() {
   useEffect(() => {
     const data = sessionStorage.getItem('testResults');
     if (data) {
-      const parsed = JSON.parse(data);
-      setResultsData(prev => {
-        if (prev) return prev;
-        return parsed;
-      });
+      try {
+        const parsed = JSON.parse(data);
+        setResultsData(parsed);
+      } catch (e) {
+        console.error("Failed to parse test results from session storage", e);
+      }
     }
     setLoading(false);
     playSound('success');
@@ -142,7 +143,6 @@ function ResultsComponent() {
         </div>
       );
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resultsData]);
 
   if (loading) {
@@ -221,8 +221,8 @@ function ResultsComponent() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-       <DialogContent className="max-w-2xl p-0 overflow-hidden border-none rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 bg-primary text-primary-foreground">
+       <DialogContent className="max-w-2xl p-0 overflow-hidden border-none rounded-3xl shadow-2xl flex flex-col">
+          <DialogHeader className="p-6 bg-primary text-primary-foreground shrink-0">
             <DialogTitle className="text-2xl font-black uppercase tracking-tighter">
                 Solution Breakdown
             </DialogTitle>
@@ -231,57 +231,60 @@ function ResultsComponent() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="p-6 sm:p-8 space-y-6 sm:space-y-8 flex flex-col items-center">
-            <div className="w-full bg-muted/50 rounded-2xl p-4 border border-muted-foreground/10 text-center animate-in fade-in slide-in-from-top-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Step {currentStepIndex + 1} of {calculationSteps.length}</p>
-                <p className="text-lg sm:text-xl font-black text-primary">{currentStep?.operation}</p>
-                {currentStep?.explanation && (
-                    <p className="text-xs sm:text-sm text-muted-foreground mt-2 font-medium leading-relaxed italic">{currentStep.explanation}</p>
-                )}
-            </div>
-
-            <div className="w-full flex justify-center py-2 sm:py-4 overflow-x-auto scrollbar-hide">
-                <div className="min-w-[320px] sm:min-w-[400px] flex justify-center">
-                    <BeadDisplay 
-                        value={abacusValue} 
-                        rodCount={7} 
-                        activeRodIndex={activeRodIndex}
-                    />
-                </div>
-            </div>
-
-            <div className="w-full flex justify-between items-center bg-muted/30 p-4 rounded-2xl border">
-                <Button 
-                    onClick={() => setCurrentStepIndex(prev => Math.max(0, prev - 1))}
-                    disabled={currentStepIndex === 0}
-                    variant="outline"
-                    className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl shadow-sm"
-                >
-                    <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-                </Button>
-                
-                <div className="text-center px-2">
-                  {currentStepIndex === calculationSteps.length - 1 ? (
-                    <div className="bg-green-100 text-green-700 px-4 sm:px-6 py-1.5 sm:py-2 rounded-full font-black text-base sm:text-lg animate-in zoom-in-95">
-                      FINAL: {modalQuestion?.answer}
-                    </div>
-                  ) : (
-                    <span className="text-[10px] sm:text-xs font-black text-muted-foreground uppercase tracking-widest">
-                        Press Next to Continue
-                    </span>
+          <ScrollArea className="flex-1 max-h-[70vh]">
+            <div className="p-6 sm:p-8 space-y-6 flex flex-col items-center">
+              <div className="w-full bg-muted/50 rounded-2xl p-4 border border-muted-foreground/10 text-center animate-in fade-in slide-in-from-top-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Step {currentStepIndex + 1} of {calculationSteps.length}</p>
+                  <p className="text-lg sm:text-xl font-black text-primary">{currentStep?.operation}</p>
+                  {currentStep?.explanation && (
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-2 font-medium leading-relaxed italic">{currentStep.explanation}</p>
                   )}
-                </div>
+              </div>
 
-                 <Button 
-                    onClick={() => setCurrentStepIndex(prev => Math.min(calculationSteps.length - 1, prev + 1))}
-                    disabled={currentStepIndex === calculationSteps.length - 1}
-                    variant="outline"
-                    className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl shadow-sm"
-                >
-                    <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                </Button>
+              <div className="w-full flex justify-center py-2 overflow-x-auto scrollbar-hide">
+                  <div className="min-w-[320px] flex justify-center">
+                      <BeadDisplay 
+                          value={abacusValue} 
+                          rodCount={7} 
+                          activeRodIndex={activeRodIndex}
+                      />
+                  </div>
+              </div>
+
+              <div className="w-full flex justify-between items-center bg-muted/30 p-4 rounded-2xl border mt-4">
+                  <Button 
+                      onClick={() => setCurrentStepIndex(prev => Math.max(0, prev - 1))}
+                      disabled={currentStepIndex === 0}
+                      variant="outline"
+                      className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl shadow-sm"
+                  >
+                      <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </Button>
+                  
+                  <div className="text-center px-2">
+                    {currentStepIndex === calculationSteps.length - 1 ? (
+                      <div className="bg-green-100 text-green-700 px-4 sm:px-6 py-1.5 sm:py-2 rounded-full font-black text-base animate-in zoom-in-95">
+                        FINAL: {modalQuestion?.answer}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] sm:text-xs font-black text-muted-foreground uppercase tracking-widest">
+                          Press Next to Continue
+                      </span>
+                    )}
+                  </div>
+
+                   <Button 
+                      onClick={() => setCurrentStepIndex(prev => Math.min(calculationSteps.length - 1, prev + 1))}
+                      disabled={currentStepIndex === calculationSteps.length - 1}
+                      variant="outline"
+                      className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl shadow-sm"
+                  >
+                      <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </Button>
+              </div>
             </div>
-          </div>
+            <ScrollBar orientation="vertical" />
+          </ScrollArea>
       </DialogContent>
     </Dialog>
     </>
@@ -291,7 +294,7 @@ function ResultsComponent() {
 
 function ResultsSkeleton() {
     return (
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto space-y-8">
             <Card className="shadow-xl">
                 <CardHeader className="text-center space-y-2">
                     <Skeleton className="h-8 w-48 mx-auto" />
@@ -302,21 +305,17 @@ function ResultsSkeleton() {
                         <Skeleton className="h-6 w-32 mx-auto" />
                         <Skeleton className="h-16 w-40 mx-auto" />
                     </div>
-                    <div>
-                        <Skeleton className="h-4 w-24 mb-2" />
-                        <Skeleton className="h-4 w-full" />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center">
-                        <Skeleton className="h-28 w-full rounded-lg" />
-                        <Skeleton className="h-28 w-full rounded-lg" />
-                        <Skeleton className="h-28 w-full rounded-lg" />
-                        <Skeleton className="h-28 w-full rounded-lg" />
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                        <Skeleton className="h-24 w-full rounded-lg" />
+                        <Skeleton className="h-24 w-full rounded-lg" />
+                        <Skeleton className="h-24 w-full rounded-lg" />
+                        <Skeleton className="h-24 w-full rounded-lg" />
                     </div>
                 </CardContent>
+                <CardFooter className="flex gap-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                </CardFooter>
             </Card>
         </div>
     );

@@ -73,7 +73,7 @@ export default function ProgressReportPage() {
                             createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
                         } as TestResult);
                     });
-                    setTestHistory(history);
+                    setAllHistory(history);
                 } catch (error: any) {
                      if (error.code === 'permission-denied') {
                         const permissionError = new FirestorePermissionError({
@@ -89,6 +89,10 @@ export default function ProgressReportPage() {
             fetchTestHistory();
         }
     }, [user]);
+
+    const setAllHistory = (history: TestResult[]) => {
+        setTestHistory(history);
+    }
 
     const chartData = useMemo(() => {
         return testHistory
@@ -285,10 +289,10 @@ function ProgressReportSkeleton() {
                 </CardHeader>
             </Card>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Skeleton className="h-28 w-full" />
-                <Skeleton className="h-28 w-full" />
-                <Skeleton className="h-28 w-full" />
-                <Skeleton className="h-28 w-full" />
+                <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+                <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+                <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+                <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
             </div>
             <Card>
                 <CardHeader>

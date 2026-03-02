@@ -9,12 +9,17 @@ export async function POST(req: NextRequest) {
     const GMAIL_USER = 'myabacuspro@gmail.com';
     const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
 
+    // Diagnostic check for environment variables
     if (!GMAIL_PASS) {
-      console.error("CRITICAL: GMAIL_APP_PASSWORD not configured in environment.");
+      console.error("CRITICAL: GMAIL_APP_PASSWORD is not present in the environment.");
       return NextResponse.json({ 
         error: 'Configuration Error',
-        details: 'The mail server password is missing from the environment. Please ensure GMAIL_APP_PASSWORD is set in Google Cloud Secret Manager and mapped in apphosting.yaml.' 
+        details: 'The mail server password (GMAIL_APP_PASSWORD) is missing from the server environment. Please check Secret Manager and apphosting.yaml mappings.' 
       }, { status: 500 });
+    }
+
+    if (GMAIL_PASS.length < 10) {
+       console.error("CRITICAL: GMAIL_APP_PASSWORD seems too short or malformed.");
     }
 
     const transporter = nodemailer.createTransport({
@@ -46,21 +51,24 @@ export async function POST(req: NextRequest) {
       `,
     };
 
+    // Attempt to send
     await transporter.sendMail(mailOptions);
     return NextResponse.json({ status: 'ok' });
+
   } catch (error: any) {
     console.error('SMTP ERROR:', error);
     
+    // Detailed error responses for the UI
     if (error.code === 'EAUTH' || error.responseCode === 535) {
         return NextResponse.json({ 
             error: 'Authentication failed',
-            details: 'Mail server rejected the App Password. Please verify the GMAIL_APP_PASSWORD is correct.'
+            details: 'The Gmail SMTP server rejected the App Password. Please verify that the GMAIL_APP_PASSWORD in Secret Manager matches your 16-character Google App Password.'
         }, { status: 401 });
     }
 
     return NextResponse.json({ 
       error: 'Mail delivery failed',
-      details: error.message
+      details: error.message || 'An unexpected error occurred while connecting to the mail server.'
     }, { status: 500 });
   }
 }
