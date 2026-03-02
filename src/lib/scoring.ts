@@ -13,21 +13,22 @@ export const calculatePoints = ({ correct, total, timeInSeconds, targetTime, lev
   const accuracy = total > 0 ? (correct / total) * 100 : 0;
   
   // 1. Completion Points (Only for full practice sets)
-  let points = isGame ? 0 : 50; 
+  // Reduced from 50 to 10 to slow down progression
+  let points = isGame ? 0 : 10; 
 
   // 2. Accuracy Points
-  // Bubble game: +10 per correct. Practice: +2 per correct.
-  points += isGame ? (correct * 10) : (correct * 2);
+  // Bubble game: +5 per correct (was 10). Practice: +1 per correct (was 2).
+  points += isGame ? (correct * 5) : (correct * 1);
 
   // 3. Time Bonus (Traffic Light System)
   if (!isGame && accuracy >= 80) {
-    if (timeInSeconds <= targetTime * 0.7) points += 20; // Green
-    else if (timeInSeconds <= targetTime) points += 10;   // Yellow
+    if (timeInSeconds <= targetTime * 0.7) points += 10; // Green (was 20)
+    else if (timeInSeconds <= targetTime) points += 5;   // Yellow (was 10)
   }
 
   // 4. Level Completion Bonus (Bubble Game 90% Accuracy)
   if (isGame && accuracy >= 90) {
-    points += 50;
+    points += 25; // Was 50
   }
 
   // 5. Complexity Multiplier

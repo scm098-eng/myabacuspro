@@ -44,6 +44,7 @@ interface AuthContextType {
   getAllUsers: (role?: UserRole) => Promise<ProfileData[]>;
   getApprovedTeachers: () => Promise<ProfileData[]>;
   getUserTestHistory: (userId: string) => Promise<TestResult[]>;
+  getUserTestHistoryByDateRange: (userId: string, start: Date, end: Date) => Promise<TestResult[]>;
   getUserProfile: (userId: string) => Promise<ProfileData | null>;
   approveTeacher: (teacherId: string, callback?: () => void) => Promise<void>;
   getCompletedGameLevels: () => Promise<number[]>;
@@ -425,6 +426,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
      return [];
   }, [profile, firestore]);
 
+  const getUserTestHistoryByDateRange = useCallback(async (userId: string, start: Date, end: Date): Promise<TestResult[]> => {
+    const testResultsCollection = collection(firestore, 'testResults');
+    const q = query(
+        testResultsCollection, 
+        where("userId", "==", userId),
+        where("createdAt", ">=", start),
+        where("createdAt", "<=", end)
+    );
+    try {
+        const querySnapshot = await getDocs(q); 
+        const history: TestResult[] = [];
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            history.push({
+                id: doc.id,
+                ...data,
+                createdAt: data.createdAt.toDate(),
+            } as TestResult);
+        });
+        return history;
+    } catch (error: any) {
+        return [];
+    }
+  }, [firestore]);
+
   const getUserProfile = useCallback(async (userId: string): Promise<ProfileData | null> => {
      if (profile?.role === 'admin' || profile?.role === 'teacher') {
         const userDocRef = doc(firestore, 'users', userId);
@@ -586,7 +612,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         errorEmitter.emit('permission-error', permissionError);
     });
     
-    await addPoints(userId, 100);
+    // Reduced from 100 to 25 to slow down progression
+    await addPoints(userId, 25);
   }, [firestore, addPoints]);
 
   const getStudentTitle = useCallback((totalDays: number, totalPoints: number) => {
@@ -596,7 +623,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = { 
     user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
     sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, getAllUsers, getApprovedTeachers, 
-    getUserTestHistory, getUserProfile, approveTeacher, getCompletedGameLevels, 
+    getUserTestHistory, getUserTestHistoryByDateRange, getUserProfile, approveTeacher, getCompletedGameLevels, 
     saveCompletedGameLevel, fetchProfile, recordDailyPractice, addPoints, getStudentTitle 
   };
 
