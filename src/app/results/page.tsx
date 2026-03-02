@@ -31,7 +31,7 @@ interface Step {
 }
 
 function ResultsComponent() {
-  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/results_bg.jpg?alt=media');
+  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/results_bg.jpg?alt=media&token=c4d5e6f7-g8h9-i0j1-k2l3-m4n5o6p7q8r9');
   const searchParams = useSearchParams();
   const router = useRouter();
   const { playSound } = useSound();
@@ -221,7 +221,7 @@ function ResultsComponent() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-       <DialogContent className="max-w-2xl p-0 overflow-hidden border-none rounded-3xl shadow-2xl flex flex-col">
+       <DialogContent className="max-w-2xl p-0 overflow-hidden border-none rounded-3xl shadow-2xl flex flex-col h-[90vh] sm:h-auto max-h-[90vh]">
           <DialogHeader className="p-6 bg-primary text-primary-foreground shrink-0">
             <DialogTitle className="text-2xl font-black uppercase tracking-tighter">
                 Solution Breakdown
@@ -231,8 +231,8 @@ function ResultsComponent() {
             </DialogDescription>
           </DialogHeader>
           
-          <ScrollArea className="flex-1 max-h-[70vh]">
-            <div className="p-6 sm:p-8 space-y-6 flex flex-col items-center">
+          <ScrollArea className="flex-1 overflow-y-auto">
+            <div className="p-6 sm:p-8 space-y-6 flex flex-col items-center pb-24">
               <div className="w-full bg-muted/50 rounded-2xl p-4 border border-muted-foreground/10 text-center animate-in fade-in slide-in-from-top-2">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Step {currentStepIndex + 1} of {calculationSteps.length}</p>
                   <p className="text-lg sm:text-xl font-black text-primary">{currentStep?.operation}</p>
@@ -250,41 +250,42 @@ function ResultsComponent() {
                       />
                   </div>
               </div>
-
-              <div className="w-full flex justify-between items-center bg-muted/30 p-4 rounded-2xl border mt-4">
-                  <Button 
-                      onClick={() => setCurrentStepIndex(prev => Math.max(0, prev - 1))}
-                      disabled={currentStepIndex === 0}
-                      variant="outline"
-                      className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl shadow-sm"
-                  >
-                      <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-                  </Button>
-                  
-                  <div className="text-center px-2">
-                    {currentStepIndex === calculationSteps.length - 1 ? (
-                      <div className="bg-green-100 text-green-700 px-4 sm:px-6 py-1.5 sm:py-2 rounded-full font-black text-base animate-in zoom-in-95">
-                        FINAL: {modalQuestion?.answer}
-                      </div>
-                    ) : (
-                      <span className="text-[10px] sm:text-xs font-black text-muted-foreground uppercase tracking-widest">
-                          Press Next to Continue
-                      </span>
-                    )}
-                  </div>
-
-                   <Button 
-                      onClick={() => setCurrentStepIndex(prev => Math.min(calculationSteps.length - 1, prev + 1))}
-                      disabled={currentStepIndex === calculationSteps.length - 1}
-                      variant="outline"
-                      className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl shadow-sm"
-                  >
-                      <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                  </Button>
-              </div>
             </div>
             <ScrollBar orientation="vertical" />
           </ScrollArea>
+
+          {/* Sticky Footer Navigation */}
+          <div className="shrink-0 p-4 sm:p-6 bg-muted/30 border-t flex justify-between items-center bg-background/95 backdrop-blur-sm">
+              <Button 
+                  onClick={() => setCurrentStepIndex(prev => Math.max(0, prev - 1))}
+                  disabled={currentStepIndex === 0}
+                  variant="outline"
+                  className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl shadow-sm"
+              >
+                  <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+              </Button>
+              
+              <div className="text-center px-2">
+                {currentStepIndex === calculationSteps.length - 1 ? (
+                  <div className="bg-green-100 text-green-700 px-4 sm:px-6 py-1.5 sm:py-2 rounded-full font-black text-base animate-in zoom-in-95">
+                    FINAL: {modalQuestion?.answer}
+                  </div>
+                ) : (
+                  <span className="text-[10px] sm:text-xs font-black text-muted-foreground uppercase tracking-widest">
+                      Press Next to Continue
+                  </span>
+                )}
+              </div>
+
+               <Button 
+                  onClick={() => setCurrentStepIndex(prev => Math.min(calculationSteps.length - 1, prev + 1))}
+                  disabled={currentStepIndex === calculationSteps.length - 1}
+                  variant="outline"
+                  className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl shadow-sm"
+              >
+                  <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+              </Button>
+          </div>
       </DialogContent>
     </Dialog>
     </>
