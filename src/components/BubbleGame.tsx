@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -38,26 +39,26 @@ const Seaweed = ({ className }: { className: string }) => (
 );
 
 const MouthBubbles = ({ className }: { className?: string }) => (
-  <div className={cn("absolute w-4 h-4 pointer-events-none", className)}>
-    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-white/40 rounded-full animate-[mouth-bubble_3s_ease-in_infinite]" />
-    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-white/30 rounded-full animate-[mouth-bubble_4s_ease-in_infinite_1s]" />
-    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white/20 rounded-full animate-[mouth-bubble_2.5s_ease-in_infinite_0.5s]" />
+  <div className={cn("absolute pointer-events-none", className)}>
+    <div className="absolute bottom-0 left-0 w-1 h-1 bg-white/60 rounded-full animate-[mouth-bubble_2s_ease-in_infinite]" />
+    <div className="absolute bottom-[-10px] left-2 w-1.5 h-1.5 bg-white/40 rounded-full animate-[mouth-bubble_2.5s_ease-in_infinite_0.5s]" />
+    <div className="absolute bottom-[-20px] left-[-5px] w-1 h-1 bg-white/30 rounded-full animate-[mouth-bubble_3s_ease-in_infinite_1s]" />
   </div>
 );
 
 const FishWithBubbles = ({ speed, delay, top, reverse }: { speed: number, delay: number, top: string, reverse?: boolean }) => (
   <div 
-    className="absolute w-24 h-24 pointer-events-none select-none z-0 opacity-60"
+    className="absolute w-24 h-24 pointer-events-none select-none z-0 opacity-70"
     style={{ 
         top,
-        [reverse ? 'right' : 'left']: '-250px',
+        [reverse ? 'right' : 'left']: '-300px',
         animation: `${reverse ? 'swimLeft' : 'swimRight'} ${speed}s linear infinite ${delay}s`
     }}
   >
-    {/* Wrapper for wiggle - separate from flip logic */}
+    {/* Inner wrapper handles the wiggle animation */}
     <div className="relative w-full h-full animate-[wiggle_2s_ease-in-out_infinite]">
-      {/* Wrapper for flip - avoids conflict with CSS animation transform */}
-      <div className={cn("w-full h-full", reverse && "transform -scale-x-100")}>
+      {/* Container handles the horizontal flip for orientation */}
+      <div className={cn("w-full h-full relative", reverse && "transform -scale-x-100")}>
         <Image 
           src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish.png?alt=media&token=a2ce6964-2653-489b-9e2e-7f6e1c36c00b" 
           alt="fish" 
@@ -65,7 +66,8 @@ const FishWithBubbles = ({ speed, delay, top, reverse }: { speed: number, delay:
           height={96} 
           className="object-contain" 
         />
-        <MouthBubbles className={cn("top-1/2", reverse ? "left-0" : "right-0")} />
+        {/* Mouth bubbles positioned relative to the fish face (right side of image) */}
+        <MouthBubbles className="top-[45%] right-0" />
       </div>
     </div>
   </div>
@@ -101,10 +103,10 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   
   const advanceQuestion = useCallback(() => {
     if (currentQuestionIndex + 1 >= questions.length) {
-      const accuracy = (score / (questions.length * 10)) * 100;
+      const accuracy = (score / (questions.length * 5)) * 100;
       if (user) {
         const { earnedPoints } = calculatePoints({
-          correct: score / 10,
+          correct: score / 5,
           total: questions.length,
           timeInSeconds: 0,
           targetTime: 0,
@@ -202,7 +204,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
      if (lives <= 0 && gameState === 'playing') {
       if (user) {
         const { earnedPoints } = calculatePoints({
-          correct: score / 10,
+          correct: score / 5,
           total: questions.length,
           timeInSeconds: 0,
           targetTime: 0,
@@ -228,7 +230,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     }
 
     if (bubble.isCorrect) {
-      setScore(s => s + 10);
+      setScore(s => s + 5);
       playSound('correct');
     } else {
       setLives(l => l - 1);
@@ -247,7 +249,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             <FishWithBubbles speed={30} delay={5} top="35%" reverse />
             <FishWithBubbles speed={20} delay={8} top="55%" />
             
-            {/* Lowered Sand Floor */}
             <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-yellow-300 to-yellow-200/80 opacity-80" style={{clipPath: 'polygon(0 60%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
             <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-yellow-200 to-yellow-100/60 opacity-90" style={{clipPath: 'polygon(0 70%, 100% 40%, 100% 100%, 0% 100%)'}}></div>
             
