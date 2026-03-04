@@ -29,11 +29,11 @@ const MAX_LIVES = 5;
 const MIN_SCORE_TO_PASS = 90;
 
 const Seaweed = ({ className }: { className: string }) => (
-    <div className={cn("absolute bottom-0 w-12 h-48 origin-bottom select-none pointer-events-none", className)}>
+    <div className={cn("absolute bottom-0 w-12 h-48 origin-bottom select-none pointer-events-none opacity-40", className)}>
         <div className="relative w-full h-full transform-gpu animate-[sway_8s_ease-in-out_infinite]">
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-full bg-green-600/40 rounded-t-full" />
-            <div className="absolute bottom-0 left-0 w-2 h-3/4 bg-green-500/40 rounded-t-full transform rotate-[-15deg] origin-bottom" />
-            <div className="absolute bottom-0 right-0 w-2 h-2/3 bg-green-700/40 rounded-t-full transform rotate-[15deg] origin-bottom" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-full bg-green-600 rounded-t-full" />
+            <div className="absolute bottom-0 left-0 w-2 h-3/4 bg-green-500 rounded-t-full transform rotate-[-15deg] origin-bottom" />
+            <div className="absolute bottom-0 right-0 w-2 h-2/3 bg-green-700 rounded-t-full transform rotate-[15deg] origin-bottom" />
         </div>
     </div>
 );
@@ -48,11 +48,11 @@ const MouthBubbles = ({ className }: { className?: string }) => (
 
 const FishWithBubbles = ({ speed, delay, top, reverse }: { speed: number, delay: number, top: string, reverse?: boolean }) => (
   <div 
-    className={cn(
-      "absolute w-24 h-24 pointer-events-none select-none z-0 opacity-60",
-      reverse ? `animate-[swimLeft_${speed}s_linear_infinite_${delay}s]` : `animate-[swimRight_${speed}s_linear_infinite_${delay}s]`
-    )}
-    style={{ top }}
+    className="absolute w-24 h-24 pointer-events-none select-none z-0 opacity-60"
+    style={{ 
+        top,
+        animation: `${reverse ? 'swimLeft' : 'swimRight'} ${speed}s linear infinite ${delay}s`
+    }}
   >
     <div className={cn("relative w-full h-full", reverse && "transform -scale-x-100")}>
       <Image 
@@ -243,14 +243,15 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             <FishWithBubbles speed={30} delay={5} top="35%" reverse />
             <FishWithBubbles speed={20} delay={8} top="55%" />
             
-            <div className="absolute bottom-0 left-0 w-full h-48 bg-yellow-200 opacity-80" style={{clipPath: 'polygon(0 20%, 100% 0, 100% 100%, 0% 100%)'}}></div>
-            <div className="absolute bottom-0 left-0 w-full h-32 bg-yellow-100 opacity-90" style={{clipPath: 'polygon(0 30%, 100% 10%, 100% 100%, 0% 100%)'}}></div>
+            {/* Layered Sand */}
+            <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-yellow-300 to-yellow-200 opacity-80" style={{clipPath: 'polygon(0 40%, 100% 0, 100% 100%, 0% 100%)'}}></div>
+            <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-yellow-200 to-yellow-100 opacity-90" style={{clipPath: 'polygon(0 50%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
             
-            <Seaweed className="left-[5%] bottom-[-20px] scale-125" />
-            <Seaweed className="left-[15%] scale-150" />
-            <Seaweed className="right-[10%] scale-125" />
-            <Seaweed className="right-[25%] bottom-[-30px] scale-110" />
-            <Seaweed className="left-[50%] -translate-x-1/2 bottom-[-40px] scale-90" />
+            <Seaweed className="left-[5%] bottom-[-10px] scale-110" />
+            <Seaweed className="left-[15%] bottom-[-20px] scale-125" />
+            <Seaweed className="right-[10%] bottom-[-15px] scale-110" />
+            <Seaweed className="right-[25%] bottom-[-25px] scale-90" />
+            <Seaweed className="left-[50%] -translate-x-1/2 bottom-[-30px] scale-75" />
         </div>
 
         {/* HUD */}
