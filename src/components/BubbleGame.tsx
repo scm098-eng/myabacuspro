@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -7,7 +6,7 @@ import type { GameLevel, Question } from '@/types';
 import { generateGameQuestions } from '@/lib/questions';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
-import { Heart, X, Check, Flame, Trophy } from 'lucide-react';
+import { Heart, X, Flame, Trophy, CheckCircle2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
@@ -31,25 +30,40 @@ const MIN_SCORE_TO_PASS = 90;
 const Seaweed = ({ className }: { className: string }) => (
     <div className={cn("absolute bottom-0 w-12 h-48 origin-bottom select-none pointer-events-none", className)}>
         <div className="relative w-full h-full transform-gpu animate-[sway_8s_ease-in-out_infinite]">
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-full bg-green-600/60 rounded-t-full" />
-            <div className="absolute bottom-0 left-0 w-2 h-3/4 bg-green-500/60 rounded-t-full transform rotate-[-15deg] origin-bottom" />
-            <div className="absolute bottom-0 right-0 w-2 h-2/3 bg-green-700/60 rounded-t-full transform rotate-[15deg] origin-bottom" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-full bg-green-600/40 rounded-t-full" />
+            <div className="absolute bottom-0 left-0 w-2 h-3/4 bg-green-500/40 rounded-t-full transform rotate-[-15deg] origin-bottom" />
+            <div className="absolute bottom-0 right-0 w-2 h-2/3 bg-green-700/40 rounded-t-full transform rotate-[15deg] origin-bottom" />
         </div>
     </div>
 );
 
-const FloatingFish = () => (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0 opacity-40">
-        <div className="absolute top-[20%] left-[-100px] w-20 h-20 animate-[swimRight_25s_linear_infinite_1s]">
-            <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish.png?alt=media&token=a2ce6964-2653-489b-9e2e-7f6e1c36c00b" alt="fish" width={80} height={80} className="object-contain" />
-        </div>
-        <div className="absolute top-[40%] right-[-100px] w-24 h-24 animate-[swimLeft_30s_linear_infinite_5s] transform -scale-x-100">
-            <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish.png?alt=media&token=a2ce6964-2653-489b-9e2e-7f6e1c36c00b" alt="fish" width={96} height={96} className="object-contain" />
-        </div>
-        <div className="absolute top-[70%] left-[-120px] w-16 h-16 animate-[swimRight_20s_linear_infinite_8s]">
-            <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish.png?alt=media&token=a2ce6964-2653-489b-9e2e-7f6e1c36c00b" alt="fish" width={64} height={64} className="object-contain" />
-        </div>
+const MouthBubbles = ({ className }: { className?: string }) => (
+  <div className={cn("absolute w-4 h-4 pointer-events-none", className)}>
+    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-white/40 rounded-full animate-[bubble_3s_ease-in_infinite]" />
+    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-white/30 rounded-full animate-[bubble_4s_ease-in_infinite_1s]" />
+    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white/20 rounded-full animate-[bubble_2.5s_ease-in_infinite_0.5s]" />
+  </div>
+);
+
+const FishWithBubbles = ({ speed, delay, top, reverse }: { speed: number, delay: number, top: string, reverse?: boolean }) => (
+  <div 
+    className={cn(
+      "absolute w-24 h-24 pointer-events-none select-none z-0 opacity-60",
+      reverse ? `animate-[swimLeft_${speed}s_linear_infinite_${delay}s]` : `animate-[swimRight_${speed}s_linear_infinite_${delay}s]`
+    )}
+    style={{ top }}
+  >
+    <div className={cn("relative w-full h-full", reverse && "transform -scale-x-100")}>
+      <Image 
+        src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish.png?alt=media&token=a2ce6964-2653-489b-9e2e-7f6e1c36c00b" 
+        alt="fish" 
+        width={96} 
+        height={96} 
+        className="object-contain" 
+      />
+      <MouthBubbles className={cn("top-1/2", reverse ? "left-0" : "right-0")} />
     </div>
+  </div>
 );
 
 export function BubbleGame({ levelId, level, levelName }: { levelId: number, level: GameLevel, levelName: string }) {
@@ -181,7 +195,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   
   useEffect(() => {
      if (lives <= 0 && gameState === 'playing') {
-      // Calculate penalty points for displaying on Game Over screen
       if (user) {
         const { earnedPoints } = calculatePoints({
           correct: score / 10,
@@ -219,16 +232,19 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     advanceQuestion();
   };
 
-  const currentQuestion = useMemo(() => questions[currentQuestionIndex], [questions, currentQuestionIndex]);
-
   if (!mounted) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-cyan-400 to-blue-600 flex flex-col items-center justify-center overflow-hidden touch-none">
+        {/* Background Decorations */}
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
-            <FloatingFish />
+            <FishWithBubbles speed={25} delay={1} top="15%" />
+            <FishWithBubbles speed={30} delay={5} top="35%" reverse />
+            <FishWithBubbles speed={20} delay={8} top="55%" />
+            
             <div className="absolute bottom-0 left-0 w-full h-48 bg-yellow-200 opacity-80" style={{clipPath: 'polygon(0 20%, 100% 0, 100% 100%, 0% 100%)'}}></div>
             <div className="absolute bottom-0 left-0 w-full h-32 bg-yellow-100 opacity-90" style={{clipPath: 'polygon(0 30%, 100% 10%, 100% 100%, 0% 100%)'}}></div>
+            
             <Seaweed className="left-[5%] bottom-[-20px] scale-125" />
             <Seaweed className="left-[15%] scale-150" />
             <Seaweed className="right-[10%] scale-125" />
@@ -236,6 +252,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             <Seaweed className="left-[50%] -translate-x-1/2 bottom-[-40px] scale-90" />
         </div>
 
+        {/* HUD */}
         <div className="absolute top-0 left-0 right-0 p-4 sm:p-6 bg-black/30 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50 animate-in slide-in-from-top duration-500">
             <div className="flex items-center gap-4 sm:gap-8">
                 <div className="text-white">
@@ -264,14 +281,15 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             </div>
         </div>
 
+        {/* Game Area */}
         <div className="relative w-full h-full max-w-7xl z-10 flex items-center justify-center">
-            {gameState === 'playing' && currentQuestion ? (
+            {gameState === 'playing' && (
                 <>
                     {bubbles.map(bubble => (
                         <div
                             key={bubble.id}
                             className={cn(
-                                "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-2xl transition-transform active:scale-90",
+                                "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-2xl transition-transform active:scale-95",
                                 bubble.isQuestion 
                                     ? 'w-64 h-24 sm:w-96 sm:h-36 bg-yellow-400 border-yellow-500 rounded-[2.5rem] ring-8 ring-yellow-400/20' 
                                     : 'w-24 h-24 sm:w-32 sm:h-32 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
@@ -285,33 +303,34 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                             onClick={() => handleBubbleClick(bubble)}
                         >
                             <span className="text-white text-3xl sm:text-5xl font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none text-center px-4">
-                                {bubble.isQuestion ? currentQuestion.text : bubble.value}
+                                {bubble.isQuestion ? (questions[currentQuestionIndex]?.text) : bubble.value}
                             </span>
                         </div>
                     ))}
                 </>
-            ) : null}
+            )}
 
+            {/* Modal Overlays */}
             {(gameState === 'levelComplete' || gameState === 'gameOver') && (
                 <div className="absolute inset-0 flex items-center justify-center p-4 z-50 animate-in fade-in zoom-in-95 duration-500">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-md" />
                     <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white/95 backdrop-blur-2xl rounded-[3rem] overflow-hidden relative z-10">
                         <CardHeader className={cn("text-center py-10", gameState === 'levelComplete' ? "bg-green-500" : "bg-destructive")}>
                             <div className="mx-auto bg-white/20 p-4 rounded-full w-fit mb-4">
-                                {gameState === 'levelComplete' ? <Trophy className="w-12 h-12 text-white" /> : <X className="w-12 h-12 text-white" />}
+                                {gameState === 'levelComplete' ? <CheckCircle2 className="w-12 h-12 text-white" /> : <AlertCircle className="w-12 h-12 text-white" />}
                             </div>
                             <CardTitle className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter">
                                 {gameState === 'levelComplete' ? 'Level Clear!' : 'Game Over'}
                             </CardTitle>
                             <CardDescription className="text-white/80 font-bold text-lg mt-2">
-                                {gameState === 'levelComplete' ? `Awesome job on ${levelName}` : 'Don\'t give up! Try again.'}
+                                {gameState === 'levelComplete' ? `Awesome job on ${levelName}` : 'Keep going! Practice makes perfect.'}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="p-10 text-center space-y-8">
                             <div className="space-y-2">
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Mastery Points Earned</p>
                                 <p className="text-7xl font-black text-primary drop-shadow-sm">{finalMasteryPoints}</p>
-                                {gameState === 'gameOver' && <p className="text-xs font-bold text-muted-foreground">Sessions that aren't completed earn 50% points.</p>}
+                                {gameState === 'gameOver' && <p className="text-xs font-bold text-muted-foreground">Tip: Complete the level to earn bonus points!</p>}
                             </div>
                             
                             <div className="grid gap-4">
@@ -351,6 +370,11 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             @keyframes swimLeft {
                 from { right: -150px; }
                 to { right: calc(100% + 150px); }
+            }
+            @keyframes bubble {
+              0% { transform: translateY(0) translateX(0); opacity: 0; }
+              10% { opacity: 1; }
+              100% { transform: translateY(-150px) translateX(calc(sin(10) * 20px)); opacity: 0; }
             }
         `}</style>
     </div>,
