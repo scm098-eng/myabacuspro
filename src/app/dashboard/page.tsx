@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -273,32 +274,26 @@ export default function StudentDashboardPage() {
             <div><p className="text-3xl font-bold text-foreground leading-none">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Total Days</p></div>
           </CardContent>
         </Card>
-        <Card className={cn("hover:shadow-md transition-all bg-card/50 border-border/50 relative", pointsEarned && "ring-2 ring-green-500 shadow-lg scale-105 bg-green-50/10")}>
-          <CardContent className="p-6 flex flex-col gap-4 relative">
+        <Card className={cn("hover:shadow-md transition-all bg-card/50 border-border/50 relative lg:col-span-2", pointsEarned && "ring-2 ring-green-500 shadow-lg scale-105 bg-green-50/10")}>
+          <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-around gap-6 relative">
             {pointsEarned && <PointsAnimation points={pointsEarned} />}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 border-r border-border/50 pr-8">
                 <div className="bg-yellow-100 p-3 rounded-2xl"><Star className="w-6 h-6 text-yellow-600 fill-yellow-600" /></div>
                 <div>
                     <p className="text-3xl font-bold text-foreground leading-none">{currentPoints.toLocaleString()}</p>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Total Points</p>
                 </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/50">
+            <div className="flex-1 grid grid-cols-2 gap-8 text-center">
                 <div>
-                    <p className="text-sm font-bold text-foreground">{(profile.weeklyPoints || 0).toLocaleString()}</p>
-                    <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">This Week</p>
+                    <p className="text-2xl font-bold text-foreground">{(profile.weeklyPoints || 0).toLocaleString()}</p>
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">This Week</p>
                 </div>
                 <div>
-                    <p className="text-sm font-bold text-foreground">{(profile.monthlyPoints || 0).toLocaleString()}</p>
-                    <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">This Month</p>
+                    <p className="text-2xl font-bold text-foreground">{(profile.monthlyPoints || 0).toLocaleString()}</p>
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">This Month</p>
                 </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow bg-purple-100/50 border-purple-200">
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="bg-purple-100 p-3 rounded-2xl"><Trophy className="w-6 h-6 text-purple-600" /></div>
-            <div><p className="text-3xl font-bold text-purple-700 leading-none">#{leaderboard.findIndex(s => s.uid === profile.uid) + 1 || '--'}</p><p className="text-[10px] font-bold text-purple-600 uppercase tracking-widest mt-1">Position</p></div>
           </CardContent>
         </Card>
       </div>

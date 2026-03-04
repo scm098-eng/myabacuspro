@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { GameLevel, Question } from '@/types';
 import { generateGameQuestions } from '@/lib/questions';
 import { Button } from './ui/button';
@@ -58,14 +59,15 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(MAX_LIVES);
   const [gameState, setGameState] = useState<'playing' | 'levelComplete' | 'gameOver'>('playing');
+  const [mounted, setMounted] = useState(false);
 
   const questionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user, saveCompletedGameLevel, recordDailyPractice, addPoints } = useAuth();
   const { playSound } = useSound();
   const router = useRouter();
 
-  // Lock body scroll when game is active
   useEffect(() => {
+    setMounted(true);
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = 'unset';
@@ -120,7 +122,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     const newBubbles: Bubble[] = [];
     let maxDuration = 0;
 
-    // The central question bubble
     newBubbles.push({
       id: Date.now(),
       value: -1, 
@@ -131,7 +132,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
       delay: 0,
     });
     
-    // Answer bubbles
     const numAnswerBubbles = currentQuestion.options.length;
     const bubbleSpacingPercent = 20;
     const totalBubbleWidth = numAnswerBubbles * bubbleSpacingPercent;
@@ -203,14 +203,14 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
   const currentQuestion = useMemo(() => questions[currentQuestionIndex], [questions, currentQuestionIndex]);
 
-  return (
-    <div className="fixed inset-0 z-[100] bg-gradient-to-b from-cyan-400 to-blue-600 flex flex-col items-center justify-center overflow-hidden touch-none">
-        {/* Immersive Background Layer */}
+  if (!mounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-cyan-400 to-blue-600 flex flex-col items-center justify-center overflow-hidden touch-none">
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
             <FloatingFish />
             <div className="absolute bottom-0 left-0 w-full h-48 bg-yellow-200 opacity-80" style={{clipPath: 'polygon(0 20%, 100% 0, 100% 100%, 0% 100%)'}}></div>
             <div className="absolute bottom-0 left-0 w-full h-32 bg-yellow-100 opacity-90" style={{clipPath: 'polygon(0 30%, 100% 10%, 100% 100%, 0% 100%)'}}></div>
-            
             <Seaweed className="left-[5%] bottom-[-20px] scale-125" />
             <Seaweed className="left-[15%] scale-150" />
             <Seaweed className="right-[10%] scale-125" />
@@ -218,18 +218,15 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             <Seaweed className="left-[50%] -translate-x-1/2 bottom-[-40px] scale-90" />
         </div>
 
-        {/* Global HUD (Heads-Up Display) */}
         <div className="absolute top-0 left-0 right-0 p-4 sm:p-6 bg-black/30 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50 animate-in slide-in-from-top duration-500">
             <div className="flex items-center gap-4 sm:gap-8">
                 <div className="text-white">
-                    <h2 className="text-xs sm:text-sm font-black uppercase tracking-widest text-sky-200">Level</h2>
-                    <p className="text-lg sm:text-xl font-black uppercase leading-none">{levelName}</p>
+                    <h2 className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-sky-200">Level</h2>
+                    <p className="text-base sm:text-xl font-black uppercase leading-none truncate max-w-[120px] sm:max-w-none">{levelName}</p>
                 </div>
-                
                 <div className="h-10 w-px bg-white/20 hidden sm:block" />
-
                 <div className="text-white">
-                    <h2 className="text-xs sm:text-sm font-black uppercase tracking-widest text-sky-200">Total Score</h2>
+                    <h2 className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-sky-200">Score</h2>
                     <div className="flex items-center gap-2">
                         <Flame className="w-4 h-4 text-orange-400 fill-orange-400" />
                         <p className="text-xl sm:text-2xl font-black leading-none">{score}</p>
@@ -238,9 +235,9 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             </div>
             
             <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5 px-4 py-2 bg-white/10 rounded-2xl shadow-inner border border-white/5">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-2xl border border-white/5">
                     {Array.from({length: MAX_LIVES}).map((_, i) => (
-                        <Heart key={i} className={cn("w-5 h-5 sm:w-7 sm:h-7 transition-all duration-300 drop-shadow-lg", i < lives ? "text-red-500 fill-red-500" : "text-white/10")} />
+                        <Heart key={i} className={cn("w-4 h-4 sm:w-6 sm:h-6 transition-all duration-300 drop-shadow-lg", i < lives ? "text-red-500 fill-red-500" : "text-white/10")} />
                     ))}
                 </div>
                 <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full h-10 w-10 sm:h-12 sm:w-12" onClick={() => router.push('/game')}>
@@ -249,7 +246,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             </div>
         </div>
 
-        {/* Dynamic Play Area */}
         <div className="relative w-full h-full max-w-7xl z-10 flex items-center justify-center">
             {gameState === 'playing' && currentQuestion ? (
                 <>
@@ -270,7 +266,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                             }}
                             onClick={() => handleBubbleClick(bubble)}
                         >
-                            <span className="text-white text-3xl sm:text-5xl font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none">
+                            <span className="text-white text-3xl sm:text-5xl font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none text-center px-4">
                                 {bubble.isQuestion ? currentQuestion.text : bubble.value}
                             </span>
                         </div>
@@ -278,7 +274,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                 </>
             ) : null}
 
-            {/* Overlays (Complete / Game Over) */}
             {(gameState === 'levelComplete' || gameState === 'gameOver') && (
                 <div className="absolute inset-0 flex items-center justify-center p-4 z-50 animate-in fade-in zoom-in-95 duration-500">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-md" />
@@ -338,6 +333,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                 to { right: calc(100% + 150px); }
             }
         `}</style>
-    </div>
+    </div>,
+    document.body
   );
 }
