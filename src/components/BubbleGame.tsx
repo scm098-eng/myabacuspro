@@ -100,11 +100,13 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   
   const advanceQuestion = useCallback(() => {
     if (currentQuestionIndex + 1 >= questions.length) {
-      // HUD score is 10 pts per correct answer
-      const accuracy = (score / (questions.length * 10)) * 100;
+      // Accuracy check: score is HUD based (10 per correct)
+      const correctAnswers = score / 10;
+      const accuracy = (correctAnswers / questions.length) * 100;
+      
       if (user) {
         const { earnedPoints } = calculatePoints({
-          correct: score / 10,
+          correct: correctAnswers,
           total: questions.length,
           timeInSeconds: 0,
           targetTime: 0,
@@ -120,9 +122,9 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
           playSound('success');
           setGameState('levelComplete');
         } else {
-          const penaltyPoints = Math.floor(earnedPoints * 0.5);
-          addPoints(user.uid, penaltyPoints);
-          setFinalMasteryPoints(penaltyPoints);
+          // Finished questions but didn't pass accuracy threshold
+          addPoints(user.uid, earnedPoints);
+          setFinalMasteryPoints(earnedPoints);
           setGameState('gameOver');
         }
       }
@@ -209,9 +211,9 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
           level: levelId,
           isGame: true
         });
-        const penaltyPoints = Math.floor(earnedPoints * 0.5);
-        setFinalMasteryPoints(penaltyPoints);
-        addPoints(user.uid, penaltyPoints);
+        // Remove 50% penalty - student keeps 5 points per right answer
+        setFinalMasteryPoints(earnedPoints);
+        addPoints(user.uid, earnedPoints);
       }
       setGameState('gameOver');
       if (questionTimeoutRef.current) {
@@ -228,7 +230,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     }
 
     if (bubble.isCorrect) {
-      setScore(s => s + 10); // Award 10 points in-game HUD
+      setScore(s => s + 10); // HUD score is 10 points per right answer
       playSound('correct');
     } else {
       setLives(l => l - 1);
