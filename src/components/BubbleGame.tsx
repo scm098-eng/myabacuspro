@@ -100,7 +100,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   
   const advanceQuestion = useCallback(() => {
     if (currentQuestionIndex + 1 >= questions.length) {
-      // Accuracy check: score is HUD based (10 per correct)
+      // Calculation: score is incremented by 10 per correct answer
       const correctAnswers = score / 10;
       const accuracy = (correctAnswers / questions.length) * 100;
       
@@ -228,7 +228,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     }
 
     if (bubble.isCorrect) {
-      setScore(s => s + 10);
+      setScore(s => s + 10); // 10 points for HUD
       playSound('correct');
     } else {
       setLives(l => l - 1);
@@ -257,7 +257,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             <Seaweed className="left-[50%] -translate-x-1/2 bottom-[-20px] scale-60" />
         </div>
 
-        {/* HUD */}
+        {/* HUD - z-50 to be above bubbles but below final overlay */}
         <div className="absolute top-0 left-0 right-0 p-4 sm:p-6 bg-black/30 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50 animate-in slide-in-from-top duration-500">
             <div className="flex items-center gap-4 sm:gap-8 text-white">
                 <div>
@@ -285,7 +285,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             </Button>
         </div>
 
-        {/* Game Stage */}
+        {/* Game Stage (Bubbles) - z-10 */}
         <div className="relative w-full h-full max-w-7xl z-10 flex items-center justify-center">
             {gameState === 'playing' && (
                 <>
@@ -313,53 +313,53 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                     ))}
                 </>
             )}
-
-            {/* Overlays - z-[100] to be above HUD stripe */}
-            {(gameState === 'levelComplete' || gameState === 'gameOver') && (
-                <div className="absolute inset-0 flex items-center justify-center p-4 z-[100] animate-in fade-in zoom-in-95 duration-500">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-md" />
-                    <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white/95 backdrop-blur-2xl rounded-[3rem] overflow-hidden relative z-[101]">
-                        <CardHeader className={cn("text-center py-10", gameState === 'levelComplete' ? "bg-green-500" : "bg-destructive")}>
-                            <div className="mx-auto bg-white/20 p-4 rounded-full w-fit mb-4">
-                                {gameState === 'levelComplete' ? <CheckCircle2 className="w-12 h-12 text-white" /> : <AlertCircle className="w-12 h-12 text-white" />}
-                            </div>
-                            <CardTitle className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter">
-                                {gameState === 'levelComplete' ? 'Level Clear!' : 'Game Over'}
-                            </CardTitle>
-                            <CardDescription className="text-white/80 font-bold text-lg mt-2">
-                                {gameState === 'levelComplete' ? `Awesome job on ${levelName}` : 'Keep going! Practice makes perfect.'}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-10 text-center space-y-8">
-                            <div className="space-y-2">
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Mastery Points Earned</p>
-                                <p className="text-7xl font-black text-primary drop-shadow-sm">{finalMasteryPoints}</p>
-                            </div>
-                            
-                            <div className="grid gap-4">
-                                {gameState === 'levelComplete' && levelId < 50 ? (
-                                    <Button onClick={() => router.push(`/game/level-${levelId + 1}`)} className="h-16 text-xl font-black rounded-2xl shadow-xl hover:scale-[1.02] transition-transform">
-                                        NEXT LEVEL
-                                    </Button>
-                                ) : null}
-                                <Button onClick={() => {
-                                    setCurrentQuestionIndex(0);
-                                    setScore(0);
-                                    setLives(MAX_LIVES);
-                                    setFinalMasteryPoints(0);
-                                    setGameState('playing');
-                                }} variant="outline" className="h-14 text-lg font-bold border-2 border-primary/20 rounded-2xl">
-                                    TRY AGAIN
-                                </Button>
-                                <Button variant="ghost" onClick={() => router.push('/game')} className="h-12 font-bold uppercase tracking-widest text-muted-foreground">
-                                    BACK TO LEVEL MAP
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
         </div>
+
+        {/* Final Results Overlays - z-[100] to sit above EVERYTHING including HUD header */}
+        {(gameState === 'levelComplete' || gameState === 'gameOver') && (
+            <div className="absolute inset-0 flex items-center justify-center p-4 z-[100] animate-in fade-in zoom-in-95 duration-500">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+                <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white rounded-[3rem] overflow-hidden relative z-[101]">
+                    <CardHeader className={cn("text-center py-10", gameState === 'levelComplete' ? "bg-green-500" : "bg-destructive")}>
+                        <div className="mx-auto bg-white/20 p-4 rounded-full w-fit mb-4">
+                            {gameState === 'levelComplete' ? <CheckCircle2 className="w-12 h-12 text-white" /> : <AlertCircle className="w-12 h-12 text-white" />}
+                        </div>
+                        <CardTitle className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter">
+                            {gameState === 'levelComplete' ? 'Level Clear!' : 'Game Over'}
+                        </CardTitle>
+                        <CardDescription className="text-white/80 font-bold text-lg mt-2 px-6">
+                            {gameState === 'levelComplete' ? `Awesome job on ${levelName}` : 'Keep going! Practice makes perfect.'}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-10 text-center space-y-8">
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Mastery Points Earned</p>
+                            <p className="text-7xl font-black text-primary drop-shadow-sm">{finalMasteryPoints}</p>
+                        </div>
+                        
+                        <div className="grid gap-4">
+                            {gameState === 'levelComplete' && levelId < 50 ? (
+                                <Button onClick={() => router.push(`/game/level-${levelId + 1}`)} className="h-16 text-xl font-black rounded-2xl shadow-xl hover:scale-[1.02] transition-transform">
+                                    NEXT LEVEL
+                                </Button>
+                            ) : null}
+                            <Button onClick={() => {
+                                setCurrentQuestionIndex(0);
+                                setScore(0);
+                                setLives(MAX_LIVES);
+                                setFinalMasteryPoints(0);
+                                setGameState('playing');
+                            }} variant="outline" className="h-14 text-lg font-bold border-2 border-primary/20 rounded-2xl">
+                                TRY AGAIN
+                            </Button>
+                            <Button variant="ghost" onClick={() => router.push('/game')} className="h-12 font-bold uppercase tracking-widest text-muted-foreground">
+                                BACK TO LEVEL MAP
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        )}
     </div>,
     document.body
   );
