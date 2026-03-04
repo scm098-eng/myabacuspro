@@ -89,5 +89,6 @@ export default function GamePage() {
         )
     }
 
+    // The BubbleGame component now handles its own full-screen fixed position
     return <BubbleGame levelId={levelId} level={levelInfo.type} levelName={levelInfo.name} />
 }

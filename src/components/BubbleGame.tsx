@@ -6,7 +6,7 @@ import type { GameLevel, Question } from '@/types';
 import { generateGameQuestions } from '@/lib/questions';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
-import { Heart, XCircle } from 'lucide-react';
+import { Heart, XCircle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -192,116 +192,114 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
   const currentQuestion = useMemo(() => questions[currentQuestionIndex], [questions, currentQuestionIndex]);
 
-  if (gameState === 'levelComplete') {
-     const hasNextLevel = levelId < 50;
-     return (
-      <Card className="w-full max-w-lg mx-auto text-center">
-        <CardHeader>
-          <CardTitle className="text-3xl text-green-500">Level Complete!</CardTitle>
-          <CardDescription>Great job! You passed {levelName}.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-2xl font-bold">Final Score: {score}</p>
-           <p className="text-muted-foreground">You've unlocked the next level!</p>
-          <div className="flex gap-4 justify-center">
-            {hasNextLevel && (
-                 <Button onClick={() => router.push(`/game/level-${levelId + 1}`)}>Next Level</Button>
-            )}
-            <Button variant="outline" asChild>
-                <Link href="/game">Back to Level Map</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (gameState === 'gameOver') {
-    const finalScorePercentage = (questions.length > 0) ? (score / (questions.length * 10)) * 100 : 0;
-    const failedDueToScore = lives > 0 && finalScorePercentage < MIN_SCORE_TO_PASS;
-
-    return (
-      <Card className="w-full max-w-lg mx-auto text-center">
-        <CardHeader>
-          <CardTitle className="text-3xl text-destructive">Game Over</CardTitle>
-           <CardDescription>
-              {failedDueToScore ? `You needed ${MIN_SCORE_TO_PASS}% to pass.` : "You ran out of lives!"} Keep practicing!
-            </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-2xl font-bold">Final Score: {score}</p>
-          <div className="flex gap-4 justify-center">
-            <Button onClick={() => {
-                setCurrentQuestionIndex(0);
-                setScore(0);
-                setLives(MAX_LIVES);
-                setGameState('playing');
-            }}>Try Again</Button>
-            <Button asChild variant="outline">
-              <Link href="/game">Back to Level Map</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  if (!currentQuestion) {
-      return <div>Loading Game...</div>;
-  }
-
   return (
-    <div className="relative w-full h-[70vh] bg-gradient-to-b from-cyan-400 to-blue-600 rounded-lg overflow-hidden border-4 border-blue-800 shadow-inner">
-        <div className="absolute inset-0 w-full h-full overflow-hidden">
+    <div className="fixed inset-0 z-[60] bg-gradient-to-b from-cyan-400 to-blue-600 flex flex-col items-center justify-center p-0 sm:p-4 overflow-hidden">
+        {/* Background Layer */}
+        <div className="absolute inset-0 z-0">
             <FloatingFish />
-            <div className="absolute bottom-0 left-0 w-full h-24 bg-yellow-200" style={{clipPath: 'polygon(0 20%, 100% 0, 100% 100%, 0% 100%)'}}></div>
-            <div className="absolute bottom-0 left-0 w-full h-20 bg-yellow-100" style={{clipPath: 'polygon(0 30%, 100% 10%, 100% 100%, 0% 100%)'}}></div>
+            <div className="absolute bottom-0 left-0 w-full h-32 bg-yellow-200 opacity-80" style={{clipPath: 'polygon(0 20%, 100% 0, 100% 100%, 0% 100%)'}}></div>
+            <div className="absolute bottom-0 left-0 w-full h-24 bg-yellow-100 opacity-90" style={{clipPath: 'polygon(0 30%, 100% 10%, 100% 100%, 0% 100%)'}}></div>
             
-            <Seaweed className="left-[10%] bottom-[-20px] scale-75" />
-            <Seaweed className="left-[20%] scale-100" />
-            <Seaweed className="right-[15%] scale-90" />
-            <Seaweed className="right-[5%] bottom-[-30px] scale-60" />
-            <Seaweed className="left-[50%] -translate-x-1/2 bottom-[-40px] scale-50" />
-
+            <Seaweed className="left-[5%] bottom-[-20px] scale-125" />
+            <Seaweed className="left-[15%] scale-150" />
+            <Seaweed className="right-[10%] scale-125" />
+            <Seaweed className="right-[25%] bottom-[-30px] scale-110" />
+            <Seaweed className="left-[50%] -translate-x-1/2 bottom-[-40px] scale-90" />
         </div>
 
-        <div className="absolute top-0 left-0 right-0 p-2 bg-black/20 backdrop-blur-sm flex justify-between items-center z-20">
-            <div className="text-white px-2">
-                <h2 className="text-base font-bold">{levelName}</h2>
-                <p className="text-lg font-bold">Score: {score}</p>
+        {/* HUD (Heads-Up Display) */}
+        <div className="absolute top-0 left-0 right-0 p-4 bg-black/30 backdrop-blur-md flex justify-between items-center z-50">
+            <div className="text-white">
+                <h2 className="text-sm sm:text-lg font-black uppercase tracking-tight">{levelName}</h2>
+                <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs font-bold text-sky-200">SCORE:</span>
+                    <span className="text-xl sm:text-2xl font-black text-white">{score}</span>
+                </div>
             </div>
-            <div className="flex items-center gap-1 pr-2">
-                {Array.from({length: lives}).map((_, i) => (
-                    <Heart key={i} className="w-6 h-6 text-red-500 fill-current" />
-                ))}
-                {Array.from({length: MAX_LIVES - lives}).map((_, i) => (
-                    <XCircle key={i} className="w-6 h-6 text-white/50" />
-                ))}
+            
+            <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5 px-4 py-2 bg-white/10 rounded-2xl">
+                    {Array.from({length: MAX_LIVES}).map((_, i) => (
+                        <Heart key={i} className={cn("w-5 h-5 sm:w-7 sm:h-7 transition-all duration-300", i < lives ? "text-red-500 fill-current" : "text-white/20")} />
+                    ))}
+                </div>
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full" onClick={() => router.push('/game')}>
+                    <X className="w-6 h-6" />
+                </Button>
             </div>
         </div>
-      
-        {bubbles.map(bubble => (
-            <div
-            key={bubble.id}
-            className={cn(
-                "absolute bottom-[-150px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-lg",
-                bubble.isQuestion 
-                    ? 'w-64 h-24 bg-yellow-400 border-yellow-500 rounded-xl' 
-                    : 'w-24 h-24 bg-pink-500 border-pink-600 rounded-full'
+
+        {/* Play Area */}
+        <div className="relative w-full h-full max-w-6xl z-10">
+            {gameState === 'playing' && currentQuestion ? (
+                <>
+                    {bubbles.map(bubble => (
+                        <div
+                            key={bubble.id}
+                            className={cn(
+                                "absolute bottom-[-150px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-2xl transition-transform active:scale-95",
+                                bubble.isQuestion 
+                                    ? 'w-64 h-24 sm:w-80 sm:h-32 bg-yellow-400 border-yellow-500 rounded-3xl' 
+                                    : 'w-24 h-24 sm:w-28 sm:h-28 bg-pink-500 border-pink-600 rounded-full'
+                            )}
+                            style={{
+                                left: `${bubble.left}%`,
+                                animationDuration: `${bubble.duration}s`,
+                                animationDelay: `${bubble.delay}s`,
+                                transform: 'translateX(-50%)',
+                            }}
+                            onClick={() => handleBubbleClick(bubble)}
+                        >
+                            <span className="text-white text-3xl sm:text-4xl font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)]">
+                                {bubble.isQuestion ? currentQuestion.text : bubble.value}
+                            </span>
+                        </div>
+                    ))}
+                </>
+            ) : null}
+
+            {/* Overlays */}
+            {(gameState === 'levelComplete' || gameState === 'gameOver') && (
+                <div className="absolute inset-0 flex items-center justify-center p-4 z-50 animate-in fade-in zoom-in-95 duration-500">
+                    <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white/95 backdrop-blur-xl rounded-[2rem] overflow-hidden">
+                        <CardHeader className={cn("text-center py-8", gameState === 'levelComplete' ? "bg-green-500" : "bg-destructive")}>
+                            <CardTitle className="text-4xl font-black text-white uppercase tracking-tighter">
+                                {gameState === 'levelComplete' ? 'Fantastic!' : 'Game Over'}
+                            </CardTitle>
+                            <CardDescription className="text-white/80 font-bold text-lg mt-2">
+                                {gameState === 'levelComplete' ? `You passed ${levelName}!` : 'You ran out of bubbles!'}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-10 text-center space-y-8">
+                            <div className="space-y-2">
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Final Results</p>
+                                <p className="text-6xl font-black text-primary">{score}</p>
+                                <p className="text-sm font-bold text-muted-foreground">Mastery Points Earned</p>
+                            </div>
+                            
+                            <div className="grid gap-4">
+                                {gameState === 'levelComplete' && levelId < 50 ? (
+                                    <Button onClick={() => router.push(`/game/level-${levelId + 1}`)} className="h-16 text-xl font-black rounded-2xl shadow-xl">
+                                        NEXT LEVEL
+                                    </Button>
+                                ) : null}
+                                <Button onClick={() => {
+                                    setCurrentQuestionIndex(0);
+                                    setScore(0);
+                                    setLives(MAX_LIVES);
+                                    setGameState('playing');
+                                }} variant="outline" className="h-14 text-lg font-bold border-2 rounded-2xl">
+                                    TRY AGAIN
+                                </Button>
+                                <Button variant="ghost" onClick={() => router.push('/game')} className="h-12 font-bold uppercase tracking-widest text-muted-foreground">
+                                    BACK TO MAP
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             )}
-            style={{
-                left: `${bubble.left}%`,
-                animationDuration: `${bubble.duration}s`,
-                animationDelay: `${bubble.delay}s`,
-                transform: 'translateX(-50%)',
-            }}
-            onClick={() => handleBubbleClick(bubble)}
-            >
-            <span className="text-white text-3xl font-bold [text-shadow:2px_2px_2px_rgba(0,0,0,0.5)]">
-                {bubble.isQuestion ? currentQuestion.text : bubble.value}
-            </span>
-            </div>
-        ))}
+        </div>
 
         <style jsx>{`
             @keyframes sway {
@@ -309,12 +307,12 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
               50% { transform: rotate(5deg); }
             }
             @keyframes swimRight {
-                from { left: -100px; }
-                to { left: 110%; }
+                from { left: -150px; }
+                to { left: calc(100% + 150px); }
             }
             @keyframes swimLeft {
-                from { right: -100px; }
-                to { right: 110%; }
+                from { right: -150px; }
+                to { right: calc(100% + 150px); }
             }
         `}</style>
     </div>
