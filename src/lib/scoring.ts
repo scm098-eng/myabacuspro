@@ -17,8 +17,8 @@ export const calculatePoints = ({ correct, total, timeInSeconds, targetTime, lev
   let points = isGame ? 0 : 5; 
 
   // 2. Accuracy Points
-  // Bubble game: +5 per correct. Practice: +1 per correct.
-  points += isGame ? (correct * 5) : (correct * 1);
+  // Bubble game: +10 per correct. Practice: +1 per correct.
+  points += isGame ? (correct * 10) : (correct * 1);
 
   // 3. Time Bonus (Traffic Light System - Tests Only)
   if (!isGame && accuracy >= 80) {

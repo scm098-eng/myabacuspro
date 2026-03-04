@@ -54,15 +54,19 @@ const FishWithBubbles = ({ speed, delay, top, reverse }: { speed: number, delay:
         animation: `${reverse ? 'swimLeft' : 'swimRight'} ${speed}s linear infinite ${delay}s`
     }}
   >
-    <div className={cn("relative w-full h-full animate-[wiggle_2s_ease-in-out_infinite]", reverse && "transform -scale-x-100")}>
-      <Image 
-        src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish.png?alt=media&token=a2ce6964-2653-489b-9e2e-7f6e1c36c00b" 
-        alt="fish" 
-        width={96} 
-        height={96} 
-        className="object-contain" 
-      />
-      <MouthBubbles className={cn("top-1/2", reverse ? "left-0" : "right-0")} />
+    {/* Wrapper for wiggle - separate from flip logic */}
+    <div className="relative w-full h-full animate-[wiggle_2s_ease-in-out_infinite]">
+      {/* Wrapper for flip - avoids conflict with CSS animation transform */}
+      <div className={cn("w-full h-full", reverse && "transform -scale-x-100")}>
+        <Image 
+          src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish.png?alt=media&token=a2ce6964-2653-489b-9e2e-7f6e1c36c00b" 
+          alt="fish" 
+          width={96} 
+          height={96} 
+          className="object-contain" 
+        />
+        <MouthBubbles className={cn("top-1/2", reverse ? "left-0" : "right-0")} />
+      </div>
     </div>
   </div>
 );
@@ -97,10 +101,10 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   
   const advanceQuestion = useCallback(() => {
     if (currentQuestionIndex + 1 >= questions.length) {
-      const accuracy = (score / (questions.length * 5)) * 100;
+      const accuracy = (score / (questions.length * 10)) * 100;
       if (user) {
         const { earnedPoints } = calculatePoints({
-          correct: score / 5,
+          correct: score / 10,
           total: questions.length,
           timeInSeconds: 0,
           targetTime: 0,
@@ -198,7 +202,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
      if (lives <= 0 && gameState === 'playing') {
       if (user) {
         const { earnedPoints } = calculatePoints({
-          correct: score / 5,
+          correct: score / 10,
           total: questions.length,
           timeInSeconds: 0,
           targetTime: 0,
@@ -224,7 +228,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     }
 
     if (bubble.isCorrect) {
-      setScore(s => s + 5);
+      setScore(s => s + 10);
       playSound('correct');
     } else {
       setLives(l => l - 1);
@@ -271,16 +275,15 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                 </div>
             </div>
             
-            <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-2xl border border-white/5">
-                    {Array.from({length: MAX_LIVES}).map((_, i) => (
-                        <Heart key={i} className={cn("w-4 h-4 sm:w-6 sm:h-6 transition-all duration-300 drop-shadow-lg", i < lives ? "text-red-500 fill-red-500" : "text-white/10")} />
-                    ))}
-                </div>
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full h-10 w-10 sm:h-12 sm:w-12" onClick={() => router.push('/game')}>
-                    <X className="w-6 h-6 sm:w-8 sm:h-8" />
-                </Button>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-2xl border border-white/5">
+                {Array.from({length: MAX_LIVES}).map((_, i) => (
+                    <Heart key={i} className={cn("w-4 h-4 sm:w-6 sm:h-6 transition-all duration-300 drop-shadow-lg", i < lives ? "text-red-500 fill-red-500" : "text-white/10")} />
+                ))}
             </div>
+            
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full h-10 w-10 sm:h-12 sm:w-12" onClick={() => router.push('/game')}>
+                <X className="w-6 h-6 sm:w-8 sm:h-8" />
+            </Button>
         </div>
 
         {/* Game Stage */}
