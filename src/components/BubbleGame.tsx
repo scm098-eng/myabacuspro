@@ -122,7 +122,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
           playSound('success');
           setGameState('levelComplete');
         } else {
-          // Finished questions but didn't pass accuracy threshold
           addPoints(user.uid, earnedPoints);
           setFinalMasteryPoints(earnedPoints);
           setGameState('gameOver');
@@ -211,7 +210,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
           level: levelId,
           isGame: true
         });
-        // Remove 50% penalty - student keeps 5 points per right answer
         setFinalMasteryPoints(earnedPoints);
         addPoints(user.uid, earnedPoints);
       }
@@ -230,7 +228,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     }
 
     if (bubble.isCorrect) {
-      setScore(s => s + 10); // HUD score is 10 points per right answer
+      setScore(s => s + 10);
       playSound('correct');
     } else {
       setLives(l => l - 1);
@@ -316,11 +314,11 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                 </>
             )}
 
-            {/* Overlays */}
+            {/* Overlays - z-[100] to be above HUD stripe */}
             {(gameState === 'levelComplete' || gameState === 'gameOver') && (
-                <div className="absolute inset-0 flex items-center justify-center p-4 z-50 animate-in fade-in zoom-in-95 duration-500">
+                <div className="absolute inset-0 flex items-center justify-center p-4 z-[100] animate-in fade-in zoom-in-95 duration-500">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-md" />
-                    <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white/95 backdrop-blur-2xl rounded-[3rem] overflow-hidden relative z-10">
+                    <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white/95 backdrop-blur-2xl rounded-[3rem] overflow-hidden relative z-[101]">
                         <CardHeader className={cn("text-center py-10", gameState === 'levelComplete' ? "bg-green-500" : "bg-destructive")}>
                             <div className="mx-auto bg-white/20 p-4 rounded-full w-fit mb-4">
                                 {gameState === 'levelComplete' ? <CheckCircle2 className="w-12 h-12 text-white" /> : <AlertCircle className="w-12 h-12 text-white" />}
