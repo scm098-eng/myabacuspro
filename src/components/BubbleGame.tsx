@@ -55,9 +55,7 @@ const FishWithBubbles = ({ speed, delay, top, reverse }: { speed: number, delay:
         animation: `${reverse ? 'swimLeft' : 'swimRight'} ${speed}s linear infinite ${delay}s`
     }}
   >
-    {/* Inner wrapper handles the wiggle animation */}
     <div className="relative w-full h-full animate-[wiggle_2s_ease-in-out_infinite]">
-      {/* Container handles the horizontal flip for orientation */}
       <div className={cn("w-full h-full relative", reverse && "transform -scale-x-100")}>
         <Image 
           src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish.png?alt=media&token=a2ce6964-2653-489b-9e2e-7f6e1c36c00b" 
@@ -66,7 +64,6 @@ const FishWithBubbles = ({ speed, delay, top, reverse }: { speed: number, delay:
           height={96} 
           className="object-contain" 
         />
-        {/* Mouth bubbles positioned relative to the fish face (right side of image) */}
         <MouthBubbles className="top-[45%] right-0" />
       </div>
     </div>
@@ -103,10 +100,11 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   
   const advanceQuestion = useCallback(() => {
     if (currentQuestionIndex + 1 >= questions.length) {
-      const accuracy = (score / (questions.length * 5)) * 100;
+      // HUD score is 10 pts per correct answer
+      const accuracy = (score / (questions.length * 10)) * 100;
       if (user) {
         const { earnedPoints } = calculatePoints({
-          correct: score / 5,
+          correct: score / 10,
           total: questions.length,
           timeInSeconds: 0,
           targetTime: 0,
@@ -204,7 +202,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
      if (lives <= 0 && gameState === 'playing') {
       if (user) {
         const { earnedPoints } = calculatePoints({
-          correct: score / 5,
+          correct: score / 10,
           total: questions.length,
           timeInSeconds: 0,
           targetTime: 0,
@@ -230,7 +228,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     }
 
     if (bubble.isCorrect) {
-      setScore(s => s + 5);
+      setScore(s => s + 10); // Award 10 points in-game HUD
       playSound('correct');
     } else {
       setLives(l => l - 1);
