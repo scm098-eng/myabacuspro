@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -40,9 +39,9 @@ const Seaweed = ({ className }: { className: string }) => (
 
 const MouthBubbles = ({ className }: { className?: string }) => (
   <div className={cn("absolute w-4 h-4 pointer-events-none", className)}>
-    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-white/40 rounded-full animate-[bubble_3s_ease-in_infinite]" />
-    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-white/30 rounded-full animate-[bubble_4s_ease-in_infinite_1s]" />
-    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white/20 rounded-full animate-[bubble_2.5s_ease-in_infinite_0.5s]" />
+    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-white/40 rounded-full animate-[mouth-bubble_3s_ease-in_infinite]" />
+    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-white/30 rounded-full animate-[mouth-bubble_4s_ease-in_infinite_1s]" />
+    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white/20 rounded-full animate-[mouth-bubble_2.5s_ease-in_infinite_0.5s]" />
   </div>
 );
 
@@ -51,11 +50,11 @@ const FishWithBubbles = ({ speed, delay, top, reverse }: { speed: number, delay:
     className="absolute w-24 h-24 pointer-events-none select-none z-0 opacity-60"
     style={{ 
         top,
-        [reverse ? 'right' : 'left']: '-200px', // Start far off screen to avoid waiting on-side during delay
+        [reverse ? 'right' : 'left']: '-250px',
         animation: `${reverse ? 'swimLeft' : 'swimRight'} ${speed}s linear infinite ${delay}s`
     }}
   >
-    <div className={cn("relative w-full h-full", reverse && "transform -scale-x-100")}>
+    <div className={cn("relative w-full h-full animate-[wiggle_2s_ease-in-out_infinite]", reverse && "transform -scale-x-100")}>
       <Image 
         src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish.png?alt=media&token=a2ce6964-2653-489b-9e2e-7f6e1c36c00b" 
         alt="fish" 
@@ -98,10 +97,10 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   
   const advanceQuestion = useCallback(() => {
     if (currentQuestionIndex + 1 >= questions.length) {
-      const finalScorePercentage = (score / (questions.length * 10)) * 100;
+      const accuracy = (score / (questions.length * 5)) * 100;
       if (user) {
         const { earnedPoints } = calculatePoints({
-          correct: score / 10,
+          correct: score / 5,
           total: questions.length,
           timeInSeconds: 0,
           targetTime: 0,
@@ -109,7 +108,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
           isGame: true
         });
 
-        if (finalScorePercentage >= MIN_SCORE_TO_PASS) {
+        if (accuracy >= MIN_SCORE_TO_PASS) {
           saveCompletedGameLevel(levelId);
           recordDailyPractice(user.uid);
           addPoints(user.uid, earnedPoints);
@@ -199,7 +198,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
      if (lives <= 0 && gameState === 'playing') {
       if (user) {
         const { earnedPoints } = calculatePoints({
-          correct: score / 10,
+          correct: score / 5,
           total: questions.length,
           timeInSeconds: 0,
           targetTime: 0,
@@ -225,7 +224,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     }
 
     if (bubble.isCorrect) {
-      setScore(s => s + 10);
+      setScore(s => s + 5);
       playSound('correct');
     } else {
       setLives(l => l - 1);
@@ -238,15 +237,15 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-cyan-400 to-blue-600 flex flex-col items-center justify-center overflow-hidden touch-none">
-        {/* Background Decorations */}
+        {/* Environment Background */}
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
             <FishWithBubbles speed={25} delay={1} top="15%" />
             <FishWithBubbles speed={30} delay={5} top="35%" reverse />
             <FishWithBubbles speed={20} delay={8} top="55%" />
             
-            {/* Layered Natural Sand Floor */}
-            <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-yellow-300 to-yellow-200/80 opacity-80" style={{clipPath: 'polygon(0 60%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
-            <div className="absolute bottom-0 left-0 w-full h-10 bg-gradient-to-t from-yellow-200 to-yellow-100/60 opacity-90" style={{clipPath: 'polygon(0 70%, 100% 40%, 100% 100%, 0% 100%)'}}></div>
+            {/* Lowered Sand Floor */}
+            <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-yellow-300 to-yellow-200/80 opacity-80" style={{clipPath: 'polygon(0 60%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
+            <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-yellow-200 to-yellow-100/60 opacity-90" style={{clipPath: 'polygon(0 70%, 100% 40%, 100% 100%, 0% 100%)'}}></div>
             
             <Seaweed className="left-[5%] bottom-[-5px] scale-90" />
             <Seaweed className="left-[15%] bottom-[-10px] scale-110" />
@@ -257,14 +256,14 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
         {/* HUD */}
         <div className="absolute top-0 left-0 right-0 p-4 sm:p-6 bg-black/30 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50 animate-in slide-in-from-top duration-500">
-            <div className="flex items-center gap-4 sm:gap-8">
-                <div className="text-white">
-                    <h2 className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-sky-200">Level</h2>
+            <div className="flex items-center gap-4 sm:gap-8 text-white">
+                <div>
+                    <h2 className="text-[10px] font-black uppercase tracking-widest text-sky-200">Level</h2>
                     <p className="text-base sm:text-xl font-black uppercase leading-none truncate max-w-[120px] sm:max-w-none">{levelName}</p>
                 </div>
                 <div className="h-10 w-px bg-white/20 hidden sm:block" />
-                <div className="text-white">
-                    <h2 className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-sky-200">In-Game Score</h2>
+                <div>
+                    <h2 className="text-[10px] font-black uppercase tracking-widest text-sky-200">Points</h2>
                     <div className="flex items-center gap-2">
                         <Flame className="w-4 h-4 text-orange-400 fill-orange-400" />
                         <p className="text-xl sm:text-2xl font-black leading-none">{score}</p>
@@ -284,7 +283,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             </div>
         </div>
 
-        {/* Game Area */}
+        {/* Game Stage */}
         <div className="relative w-full h-full max-w-7xl z-10 flex items-center justify-center">
             {gameState === 'playing' && (
                 <>
@@ -313,7 +312,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                 </>
             )}
 
-            {/* Modal Overlays */}
+            {/* Overlays */}
             {(gameState === 'levelComplete' || gameState === 'gameOver') && (
                 <div className="absolute inset-0 flex items-center justify-center p-4 z-50 animate-in fade-in zoom-in-95 duration-500">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-md" />
@@ -333,7 +332,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                             <div className="space-y-2">
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Mastery Points Earned</p>
                                 <p className="text-7xl font-black text-primary drop-shadow-sm">{finalMasteryPoints}</p>
-                                {gameState === 'gameOver' && <p className="text-xs font-bold text-muted-foreground">Tip: Complete the level to earn bonus points!</p>}
                             </div>
                             
                             <div className="grid gap-4">
@@ -348,10 +346,10 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                                     setLives(MAX_LIVES);
                                     setFinalMasteryPoints(0);
                                     setGameState('playing');
-                                }} variant="outline" className="h-14 text-lg font-bold border-2 border-primary/20 rounded-2xl hover:bg-primary/5">
+                                }} variant="outline" className="h-14 text-lg font-bold border-2 border-primary/20 rounded-2xl">
                                     TRY AGAIN
                                 </Button>
-                                <Button variant="ghost" onClick={() => router.push('/game')} className="h-12 font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground">
+                                <Button variant="ghost" onClick={() => router.push('/game')} className="h-12 font-bold uppercase tracking-widest text-muted-foreground">
                                     BACK TO LEVEL MAP
                                 </Button>
                             </div>
@@ -360,26 +358,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                 </div>
             )}
         </div>
-
-        <style jsx>{`
-            @keyframes sway {
-              0%, 100% { transform: rotate(-5deg); }
-              50% { transform: rotate(5deg); }
-            }
-            @keyframes swimRight {
-                from { left: -250px; }
-                to { left: calc(100% + 250px); }
-            }
-            @keyframes swimLeft {
-                from { right: -250px; }
-                to { right: calc(100% + 250px); }
-            }
-            @keyframes bubble {
-              0% { transform: translateY(0) translateX(0); opacity: 0; }
-              10% { opacity: 1; }
-              100% { transform: translateY(-150px) translateX(calc(sin(10) * 20px)); opacity: 0; }
-            }
-        `}</style>
     </div>,
     document.body
   );

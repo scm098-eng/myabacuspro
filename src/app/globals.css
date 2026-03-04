@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -98,5 +97,31 @@
     to {
       transform: translate(-50%, -130vh);
     }
+  }
+
+  @keyframes sway {
+    0%, 100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+  }
+
+  @keyframes swimRight {
+    from { left: -250px; }
+    to { left: calc(100% + 250px); }
+  }
+
+  @keyframes swimLeft {
+    from { right: -250px; }
+    to { right: calc(100% + 250px); }
+  }
+
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(-3deg) skewX(-2deg); }
+    50% { transform: rotate(3deg) skewX(2deg); }
+  }
+
+  @keyframes mouth-bubble {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    20% { opacity: 0.6; }
+    100% { transform: translateY(-60px) scale(1.5); opacity: 0; }
   }
 }
