@@ -44,7 +44,7 @@ const AbacusRod = ({
   const rodHeight = 260; 
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-2 shrink-0">
       <div className={cn(
         "relative w-12 sm:w-16 flex flex-col items-center transition-all duration-200 rounded-lg py-2",
         isActive && "bg-red-500/10 ring-2 ring-red-500 shadow-md scale-105 z-30"
@@ -145,9 +145,9 @@ export default function BeadDisplay({
   };
 
   return (
-    <div className="flex justify-center items-center p-2 sm:p-4 rounded-xl border-[6px] sm:border-[8px] border-[#4a2c19] shadow-xl bg-[#c6a47f]" 
+    <div className="inline-flex justify-center items-center p-2 sm:p-4 rounded-xl border-[6px] sm:border-[8px] border-[#4a2c19] shadow-xl bg-[#c6a47f] shrink-0" 
          style={{boxShadow: 'inset 0 0 15px rgba(0,0,0,0.4), 0 8px 20px rgba(0,0,0,0.5)'}}>
-      <div className="flex flex-row bg-[#a6866a] p-1.5 sm:p-2.5 rounded-lg shadow-[inset_0_2px_6px_rgba(0,0,0,0.3)] gap-x-0.5 sm:gap-x-1 border-2 border-[#3d241a]/30">
+      <div className="flex flex-row bg-[#a6866a] p-1.5 sm:p-2.5 rounded-lg shadow-[inset_0_2px_6px_rgba(0,0,0,0.3)] gap-x-0.5 sm:gap-x-1 border-2 border-[#3d241a]/30 shrink-0">
         {digits.map((digit, index) => (
           <AbacusRod 
             key={index}

@@ -180,8 +180,8 @@ function ToolPreviewContent() {
               </div>
               
               {/* Horizontal Scrollable Container */}
-              <div className="w-full overflow-x-auto py-4 custom-scrollbar">
-                <div className="flex justify-center min-w-max px-4">
+              <div className="w-full overflow-x-auto py-4">
+                <div className="flex justify-start sm:justify-center min-w-max px-4">
                   <BeadDisplay value={value} onChange={setValue} rodCount={7} />
                 </div>
               </div>
@@ -262,8 +262,8 @@ function ToolPreviewContent() {
                 </CardHeader>
                 <CardContent className="py-10">
                   {/* Horizontal Scrollable Container */}
-                  <div className="w-full overflow-x-auto custom-scrollbar">
-                    <div className="flex justify-center min-w-max px-4">
+                  <div className="w-full overflow-x-auto">
+                    <div className="flex justify-start sm:justify-center min-w-max px-4">
                       <BeadDisplay 
                         value={currentLabValue} 
                         rodCount={7} 

@@ -248,7 +248,7 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
         
-          <div className="text-center my-auto transition-opacity duration-300 grid grid-cols-1 gap-8 items-center overflow-hidden" key={currentQuestionIndex}>
+          <div className="text-center my-auto transition-opacity duration-300 grid grid-cols-1 gap-8 items-center" key={currentQuestionIndex}>
             {renderQuestion()}
           </div>
 
