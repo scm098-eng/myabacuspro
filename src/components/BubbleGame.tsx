@@ -59,6 +59,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(MAX_LIVES);
   const [gameState, setGameState] = useState<'playing' | 'levelComplete' | 'gameOver'>('playing');
+  const [finalMasteryPoints, setFinalMasteryPoints] = useState(0);
   const [mounted, setMounted] = useState(false);
 
   const questionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -96,10 +97,13 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
           saveCompletedGameLevel(levelId);
           recordDailyPractice(user.uid);
           addPoints(user.uid, earnedPoints);
+          setFinalMasteryPoints(earnedPoints);
           playSound('success');
           setGameState('levelComplete');
         } else {
-          addPoints(user.uid, Math.floor(earnedPoints * 0.5));
+          const penaltyPoints = Math.floor(earnedPoints * 0.5);
+          addPoints(user.uid, penaltyPoints);
+          setFinalMasteryPoints(penaltyPoints);
           setGameState('gameOver');
         }
       }
@@ -177,12 +181,26 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   
   useEffect(() => {
      if (lives <= 0 && gameState === 'playing') {
+      // Calculate penalty points for displaying on Game Over screen
+      if (user) {
+        const { earnedPoints } = calculatePoints({
+          correct: score / 10,
+          total: questions.length,
+          timeInSeconds: 0,
+          targetTime: 0,
+          level: levelId,
+          isGame: true
+        });
+        const penaltyPoints = Math.floor(earnedPoints * 0.5);
+        setFinalMasteryPoints(penaltyPoints);
+        addPoints(user.uid, penaltyPoints);
+      }
       setGameState('gameOver');
       if (questionTimeoutRef.current) {
         clearTimeout(questionTimeoutRef.current);
       }
     }
-  }, [lives, gameState]);
+  }, [lives, gameState, score, questions.length, levelId, user, addPoints]);
 
   const handleBubbleClick = (bubble: Bubble) => {
     if (gameState !== 'playing' || bubble.isQuestion) return;
@@ -226,7 +244,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                 </div>
                 <div className="h-10 w-px bg-white/20 hidden sm:block" />
                 <div className="text-white">
-                    <h2 className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-sky-200">Score</h2>
+                    <h2 className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-sky-200">In-Game Score</h2>
                     <div className="flex items-center gap-2">
                         <Flame className="w-4 h-4 text-orange-400 fill-orange-400" />
                         <p className="text-xl sm:text-2xl font-black leading-none">{score}</p>
@@ -292,7 +310,8 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                         <CardContent className="p-10 text-center space-y-8">
                             <div className="space-y-2">
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Mastery Points Earned</p>
-                                <p className="text-7xl font-black text-primary drop-shadow-sm">{score}</p>
+                                <p className="text-7xl font-black text-primary drop-shadow-sm">{finalMasteryPoints}</p>
+                                {gameState === 'gameOver' && <p className="text-xs font-bold text-muted-foreground">Sessions that aren't completed earn 50% points.</p>}
                             </div>
                             
                             <div className="grid gap-4">
@@ -305,6 +324,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                                     setCurrentQuestionIndex(0);
                                     setScore(0);
                                     setLives(MAX_LIVES);
+                                    setFinalMasteryPoints(0);
                                     setGameState('playing');
                                 }} variant="outline" className="h-14 text-lg font-bold border-2 border-primary/20 rounded-2xl hover:bg-primary/5">
                                     TRY AGAIN
