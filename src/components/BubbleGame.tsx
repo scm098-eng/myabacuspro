@@ -29,7 +29,7 @@ const MAX_LIVES = 5;
 const MIN_SCORE_TO_PASS = 90;
 
 const Seaweed = ({ className }: { className: string }) => (
-    <div className={cn("absolute bottom-0 w-12 h-48 origin-bottom select-none pointer-events-none opacity-40", className)}>
+    <div className={cn("absolute bottom-0 w-12 h-40 origin-bottom select-none pointer-events-none opacity-30", className)}>
         <div className="relative w-full h-full transform-gpu animate-[sway_8s_ease-in-out_infinite]">
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-full bg-green-600 rounded-t-full" />
             <div className="absolute bottom-0 left-0 w-2 h-3/4 bg-green-500 rounded-t-full transform rotate-[-15deg] origin-bottom" />
@@ -51,6 +51,7 @@ const FishWithBubbles = ({ speed, delay, top, reverse }: { speed: number, delay:
     className="absolute w-24 h-24 pointer-events-none select-none z-0 opacity-60"
     style={{ 
         top,
+        [reverse ? 'right' : 'left']: '-200px', // Start far off screen to avoid waiting on-side during delay
         animation: `${reverse ? 'swimLeft' : 'swimRight'} ${speed}s linear infinite ${delay}s`
     }}
   >
@@ -243,15 +244,15 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             <FishWithBubbles speed={30} delay={5} top="35%" reverse />
             <FishWithBubbles speed={20} delay={8} top="55%" />
             
-            {/* Layered Sand */}
-            <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-yellow-300 to-yellow-200 opacity-80" style={{clipPath: 'polygon(0 40%, 100% 0, 100% 100%, 0% 100%)'}}></div>
-            <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-yellow-200 to-yellow-100 opacity-90" style={{clipPath: 'polygon(0 50%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
+            {/* Layered Natural Sand Floor */}
+            <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-yellow-300 to-yellow-200/80 opacity-80" style={{clipPath: 'polygon(0 60%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
+            <div className="absolute bottom-0 left-0 w-full h-10 bg-gradient-to-t from-yellow-200 to-yellow-100/60 opacity-90" style={{clipPath: 'polygon(0 70%, 100% 40%, 100% 100%, 0% 100%)'}}></div>
             
-            <Seaweed className="left-[5%] bottom-[-10px] scale-110" />
-            <Seaweed className="left-[15%] bottom-[-20px] scale-125" />
-            <Seaweed className="right-[10%] bottom-[-15px] scale-110" />
-            <Seaweed className="right-[25%] bottom-[-25px] scale-90" />
-            <Seaweed className="left-[50%] -translate-x-1/2 bottom-[-30px] scale-75" />
+            <Seaweed className="left-[5%] bottom-[-5px] scale-90" />
+            <Seaweed className="left-[15%] bottom-[-10px] scale-110" />
+            <Seaweed className="right-[10%] bottom-[-5px] scale-100" />
+            <Seaweed className="right-[25%] bottom-[-15px] scale-75" />
+            <Seaweed className="left-[50%] -translate-x-1/2 bottom-[-20px] scale-60" />
         </div>
 
         {/* HUD */}
@@ -291,7 +292,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                         <div
                             key={bubble.id}
                             className={cn(
-                                "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-2xl transition-transform active:scale-95",
+                                "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-2xl transition-transform active:scale-95 z-10",
                                 bubble.isQuestion 
                                     ? 'w-64 h-24 sm:w-96 sm:h-36 bg-yellow-400 border-yellow-500 rounded-[2.5rem] ring-8 ring-yellow-400/20' 
                                     : 'w-24 h-24 sm:w-32 sm:h-32 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
@@ -366,12 +367,12 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
               50% { transform: rotate(5deg); }
             }
             @keyframes swimRight {
-                from { left: -150px; }
-                to { left: calc(100% + 150px); }
+                from { left: -250px; }
+                to { left: calc(100% + 250px); }
             }
             @keyframes swimLeft {
-                from { right: -150px; }
-                to { right: calc(100% + 150px); }
+                from { right: -250px; }
+                to { right: calc(100% + 250px); }
             }
             @keyframes bubble {
               0% { transform: translateY(0) translateX(0); opacity: 0; }
