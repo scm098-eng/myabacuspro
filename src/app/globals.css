@@ -96,7 +96,7 @@
       transform: translate(-50%, 0);
     }
     to {
-      transform: translate(-50%, -100vh);
+      transform: translate(-50%, -130vh);
     }
   }
 }
