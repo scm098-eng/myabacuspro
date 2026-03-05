@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, Zap, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, Info, ShieldAlert, MailCheck, TrendingUp, ArrowUp, Sparkles, Clock, Crown, Rocket, Lightbulb, Target } from 'lucide-react';
+import { Check, Trophy, Zap, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, Info, ShieldAlert, MailCheck, TrendingUp, ArrowUp, Sparkles, Clock, Crown, Rocket, Lightbulb, Target, Timer as TimerIcon, Coffee } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -57,6 +57,10 @@ export default function StudentDashboardPage() {
   const [showAchievement, setShowAchievement] = useState(false);
   const [achievementData, setAchievementData] = useState<any>(null);
   
+  // Usage tracking
+  const [sessionStartTime] = useState(Date.now());
+  const [showBreakAlert, setShowBreakAlert] = useState(false);
+  
   const [pointsEarned, setPointsEarned] = useState<number | null>(null);
   const lastPointsRef = useRef<number>(0);
   const quoteRef = useRef<string>(motivationalQuotes[0]);
@@ -68,6 +72,24 @@ export default function StudentDashboardPage() {
       router.push('/login');
     }
   }, [isLoading, user, router]);
+
+  // Usage monitor: Alert after 30 minutes of continuous usage
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const elapsedMinutes = (Date.now() - sessionStartTime) / (1000 * 60);
+      if (elapsedMinutes >= 30 && !showBreakAlert) {
+        setShowBreakAlert(true);
+      }
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [sessionStartTime, showBreakAlert]);
+
+  // Auto-activate notifications on login
+  useEffect(() => {
+    if (mounted && user && profile && !profile.fcmToken && !isRequestingNotifications) {
+      handleEnableNotifications(true);
+    }
+  }, [mounted, user, profile]);
 
   useEffect(() => {
     if (profile && profile.totalPoints !== undefined) {
@@ -133,10 +155,11 @@ export default function StudentDashboardPage() {
     }
   }, [mounted, profile, getStudentTitle, user, updateUserProfile, isLoading]);
 
-  const handleEnableNotifications = async () => {
+  const handleEnableNotifications = async (isAuto = false) => {
     if (!user) return;
     setIsRequestingNotifications(true);
     try {
+      // Permission request - browser will still show prompt if not granted
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
         const messaging = getMessaging(firebaseApp);
@@ -148,11 +171,15 @@ export default function StudentDashboardPage() {
           const db = getFirestore(firebaseApp);
           const userRef = doc(db, "users", user.uid);
           await updateDoc(userRef, { fcmToken: token });
-          toast({ title: "Notifications Enabled!", description: "You'll receive daily reminders at 7 PM IST. 🔥" });
+          if (!isAuto) {
+            toast({ title: "Training Alerts Active!", description: "You'll receive daily math nudges at 7 PM IST. 🔥" });
+          }
         }
       }
     } catch (error: any) {
-      toast({ title: "Setup Failed", description: "Could not enable reminders.", variant: "destructive" });
+      if (!isAuto) {
+        toast({ title: "Setup Failed", description: "Could not enable reminders.", variant: "destructive" });
+      }
     } finally {
       setIsRequestingNotifications(false);
     }
@@ -173,7 +200,7 @@ export default function StudentDashboardPage() {
   const currentPoints = profile?.totalPoints || 0;
   const currentDays = profile?.totalDaysPracticed || 0;
   const currentRank = getStudentTitle(currentDays, currentPoints);
-  const ultimateGoal = RANK_CRITERIA[0]; // Human Calculator
+  const ultimateGoal = RANK_CRITERIA[0]; 
   
   const { nextRank, daysRemaining, pointsRemaining, totalProg } = useMemo(() => {
     const next = RANK_CRITERIA.slice().reverse().find(r => currentDays < r.daysReq || currentPoints < r.pointsReq);
@@ -189,9 +216,6 @@ export default function StudentDashboardPage() {
     return { nextRank: next, daysRemaining: dRem, pointsRemaining: pRem, totalProg: combinedProg };
   }, [currentDays, currentPoints]);
 
-  const ultimatePointsRem = Math.max(0, ultimateGoal.pointsReq - currentPoints);
-  const ultimateDaysRem = Math.max(0, ultimateGoal.daysReq - currentDays);
-
   if (isLoading || !mounted) {
     return (
       <div className="space-y-8 max-w-6xl mx-auto">
@@ -206,6 +230,7 @@ export default function StudentDashboardPage() {
   const isEmailVerified = user.emailVerified || /testuser|tempuser/i.test(user.email || '');
   const trialHoursRemaining = Math.floor((trialDaysRemaining % 1) * 24);
   const trialDaysInt = Math.floor(trialDaysRemaining);
+  const trialExpired = !isTrialActive && profile.subscriptionStatus === 'free';
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
@@ -219,6 +244,18 @@ export default function StudentDashboardPage() {
           totalDays={currentDays}
           onClose={() => setShowAchievement(false)}
         />
+      )}
+
+      {/* --- USAGE GUARDIAN ALERT --- */}
+      {showBreakAlert && (
+        <Alert className="bg-yellow-50 border-yellow-200 text-yellow-900 animate-in slide-in-from-top-4 duration-500">
+          <Coffee className="h-4 w-4 text-yellow-600" />
+          <AlertTitle className="font-bold">Time for a Quick Break? 🍵</AlertTitle>
+          <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <span>You've been practicing for 30 minutes! Take 5 minutes to rest your eyes and stretch. Mental math is better with a fresh mind.</span>
+            <Button size="sm" onClick={() => setShowBreakAlert(false)} variant="outline" className="border-yellow-300">Got it!</Button>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* --- EMAIL VERIFICATION ALERT --- */}
@@ -236,18 +273,19 @@ export default function StudentDashboardPage() {
         </Alert>
       )}
 
-      {/* --- MILESTONE MOTIVATION (3rd Day / 250 Pts) --- */}
-      {currentDays < 3 && currentPoints < 250 && (
-        <Alert className="bg-green-50 border-green-200 text-green-900 border-2">
-          <div className="flex gap-4 items-center">
-            <div className="bg-green-100 p-2 rounded-full"><Sparkles className="text-green-600" /></div>
-            <div>
-              <AlertTitle className="font-bold">First Milestone Ahead! 🌟</AlertTitle>
-              <AlertDescription className="font-medium">
-                Achieve <strong>250 points</strong> and practice for <strong>3 days</strong> to earn the <span className="text-green-700 font-bold">Rising Star</span> rank! You're almost there!
-              </AlertDescription>
-            </div>
-          </div>
+      {/* --- TRIAL EXPIRED MOTIVATION --- */}
+      {trialExpired && (
+        <Alert className="bg-slate-900 border-none text-white shadow-2xl animate-pulse">
+          <Crown className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+          <AlertTitle className="text-xl font-black uppercase tracking-tight">Your Free Trial Has Ended</AlertTitle>
+          <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-2">
+            <span className="font-medium text-slate-300">
+              You are now a <strong>Junior Calculator</strong>. To continue your journey to becoming a <strong>Human Calculator</strong> and unlock all 50+ game levels, upgrade to Pro now!
+            </span>
+            <Button asChild className="bg-yellow-400 text-slate-900 hover:bg-yellow-300 font-black uppercase tracking-widest px-8 h-12 shrink-0">
+              <Link href="/pricing">Get Full Access</Link>
+            </Button>
+          </AlertDescription>
         </Alert>
       )}
 
@@ -334,19 +372,6 @@ export default function StudentDashboardPage() {
                 <p className="text-slate-400 text-xs mt-1">You are a True Human Calculator.</p>
               </div>
             )}
-            
-            <div className="pt-4 border-t border-white/10">
-                <div className="flex justify-between items-center mb-2">
-                    <span className="text-[9px] font-black text-yellow-400 uppercase tracking-widest">Final Rank Status</span>
-                    <span className="text-[9px] font-black text-white/40">{Math.floor((currentPoints / ultimateGoal.pointsReq) * 100)}% Global Completion</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="h-1.5 flex-1 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-yellow-400 transition-all duration-1000" style={{ width: `${Math.min(100, (currentPoints / ultimateGoal.pointsReq) * 100)}%` }} />
-                    </div>
-                    <Crown className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                </div>
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -423,11 +448,17 @@ export default function StudentDashboardPage() {
             })}
           </div>
 
-          <Button onClick={() => router.push('/tests')} disabled={!isEmailVerified} className="w-full h-24 bg-primary hover:bg-primary/90 text-3xl font-black rounded-3xl shadow-xl uppercase tracking-[0.1em] group relative overflow-hidden">
+          <Button 
+            onClick={() => router.push('/tests')} 
+            disabled={!isEmailVerified} 
+            className="w-full h-24 bg-primary hover:bg-primary/90 rounded-3xl shadow-xl uppercase tracking-wider group relative overflow-hidden px-4"
+          >
             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-            <span className="relative z-10 flex items-center justify-center">
-                LAUNCH PRACTICE {!isEmailVerified && <ShieldAlert className="ml-2 h-6 w-6" />} 
-                <ChevronRight className="w-10 h-10 ml-4 stroke-[4px] group-hover:translate-x-2 transition-transform" />
+            <span className="relative z-10 flex items-center justify-center text-center">
+                <span className="text-xl sm:text-2xl md:text-3xl font-black">
+                    LAUNCH PRACTICE {!isEmailVerified && <ShieldAlert className="inline ml-2 h-6 w-6" />}
+                </span>
+                <ChevronRight className="w-8 h-8 sm:w-10 sm:h-10 ml-4 stroke-[4px] group-hover:translate-x-2 transition-transform shrink-0" />
             </span>
           </Button>
         </div>
@@ -440,7 +471,30 @@ export default function StudentDashboardPage() {
                 </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
-              <Button onClick={handleEnableNotifications} disabled={isRequestingNotifications || !!profile.fcmToken} variant={profile.fcmToken ? "ghost" : "default"} className={cn("w-full rounded-xl h-12 font-bold transition-all uppercase text-xs", profile.fcmToken ? "text-green-600 bg-green-50/50 cursor-default" : "shadow-md")}>{isRequestingNotifications ? <Loader2 className="animate-spin h-4 w-4" /> : profile.fcmToken ? <><Check className="mr-2 h-4 w-4 stroke-[3px]" /> Reminders Enabled</> : "Activate Daily Nudges"}</Button>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-green-100 p-2 rounded-lg">
+                    {profile.fcmToken ? <Check className="w-4 h-4 text-green-600" /> : <Loader2 className="w-4 h-4 text-primary animate-spin" />}
+                </div>
+                <p className="text-xs font-bold text-muted-foreground uppercase">
+                    {profile.fcmToken ? "Daily Nudges Auto-Enabled" : "Activating Training Alerts..."}
+                </p>
+              </div>
+              <Button onClick={() => handleEnableNotifications()} disabled={isRequestingNotifications || !!profile.fcmToken} variant={profile.fcmToken ? "ghost" : "default"} className={cn("w-full rounded-xl h-12 font-bold transition-all uppercase text-xs", profile.fcmToken ? "text-green-600 bg-green-50/50 cursor-default" : "shadow-md")}>
+                {isRequestingNotifications ? <Loader2 className="animate-spin h-4 w-4" /> : profile.fcmToken ? <><Check className="mr-2 h-4 w-4 stroke-[3px]" /> Reminders Active</> : "Refresh Notifications"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50 shadow-sm bg-blue-50/30 rounded-2xl overflow-hidden">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-bold text-blue-700 flex items-center gap-2 uppercase tracking-tight">
+                    <TimerIcon className="w-4 h-4" /> Usage Guardian
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p className="text-[10px] text-blue-600 font-medium leading-relaxed">
+                    Practicing for more than 30 minutes? We'll let you know when it's time to take a break.
+                </p>
             </CardContent>
           </Card>
 
