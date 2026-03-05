@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -207,7 +206,7 @@ export default function SignupPage() {
   
   const handleRedirect = (profile: ProfileData | null) => {
     if (profile && profile.firstName) {
-        // First-time users land on HOME PAGE after registration as requested
+        // First-time users land on HOME PAGE after registration
         router.push('/');
     } else {
         router.push('/profile');
@@ -246,7 +245,7 @@ export default function SignupPage() {
             ? 'Your application has been submitted. Please wait for admin approval.'
             : 'Welcome aboard! The path to mastery begins here.',
       });
-      // New users always launch on Home Page
+      // New users land on Home Page
       router.push('/');
     } catch (error: any) {
       console.error(error);
