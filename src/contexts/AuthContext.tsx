@@ -2,7 +2,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { createContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import {
   getAuth,
   onAuthStateChanged,
@@ -53,6 +53,8 @@ interface AuthContextType {
   recordDailyPractice: (userId: string) => Promise<void>;
   addPoints: (userId: string, points: number) => Promise<void>;
   getStudentTitle: (totalDays: number, totalPoints: number) => typeof RANK_CRITERIA[0];
+  isTrialActive: boolean;
+  trialDaysRemaining: number;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -144,6 +146,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     return () => unsubscribe();
   }, [auth, fetchProfile]);
+
+  const isTrialActive = useMemo(() => {
+    if (!profile || profile.role !== 'student' || profile.subscriptionStatus === 'pro') return false;
+    
+    const created = profile.createdAt?.toDate ? profile.createdAt.toDate() : new Date(profile.createdAt);
+    if (!created || isNaN(created.getTime())) return false;
+
+    const now = new Date();
+    const diffInMs = now.getTime() - created.getTime();
+    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+    
+    return diffInDays <= 3;
+  }, [profile]);
+
+  const trialDaysRemaining = useMemo(() => {
+    if (!profile || profile.role !== 'student' || profile.subscriptionStatus === 'pro') return 0;
+    
+    const created = profile.createdAt?.toDate ? profile.createdAt.toDate() : new Date(profile.createdAt);
+    if (!created || isNaN(created.getTime())) return 0;
+
+    const now = new Date();
+    const expiryDate = new Date(created.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const diffInMs = expiryDate.getTime() - now.getTime();
+    
+    return Math.max(0, diffInMs / (1000 * 60 * 60 * 24));
+  }, [profile]);
 
   const login = useCallback(async (email: string, pass: string): Promise<ProfileData | null> => {
     const userCredential = await signInWithEmailAndPassword(auth, email, pass);
@@ -609,7 +637,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             operation: 'update',
             requestResourceData: updateData,
         });
-        errorEmitter.emit('permission-error', permissionError);
+        errorEmitter.emit('permission-error', error);
     });
     
     // Reduced from 100 to 25 to slow down progression
@@ -624,7 +652,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
     sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, getAllUsers, getApprovedTeachers, 
     getUserTestHistory, getUserTestHistoryByDateRange, getUserProfile, approveTeacher, getCompletedGameLevels, 
-    saveCompletedGameLevel, fetchProfile, recordDailyPractice, addPoints, getStudentTitle 
+    saveCompletedGameLevel, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining
   };
 
   return (

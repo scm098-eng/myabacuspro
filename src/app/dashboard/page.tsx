@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, Zap, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, Info, ShieldAlert, MailCheck, TrendingUp, ArrowUp } from 'lucide-react';
+import { Check, Trophy, Zap, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, Info, ShieldAlert, MailCheck, TrendingUp, ArrowUp, Sparkles, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -36,7 +36,7 @@ const PointsAnimation = ({ points }: { points: number }) => {
 
 export default function StudentDashboardPage() {
   usePageBackground('');
-  const { profile, user, isLoading, getStudentTitle, updateUserProfile, sendVerificationEmail } = useAuth();
+  const { profile, user, isLoading, getStudentTitle, updateUserProfile, sendVerificationEmail, isTrialActive, trialDaysRemaining } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const { playSound } = useSound();
@@ -191,6 +191,9 @@ export default function StudentDashboardPage() {
   const daysInMonthLeft = 30 - new Date().getDate();
   const isEmailVerified = user.emailVerified || /testuser|tempuser/i.test(user.email || '') || (profile?.firstName?.toLowerCase() === 'maitreya' && profile?.surname?.toLowerCase() === 'mane');
 
+  const trialHoursRemaining = Math.floor((trialDaysRemaining % 1) * 24);
+  const trialDaysInt = Math.floor(trialDaysRemaining);
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       {showAchievement && achievementData && (
@@ -215,6 +218,24 @@ export default function StudentDashboardPage() {
               {isSendingVerification ? <Loader2 className="animate-spin h-4 w-4" /> : <MailCheck className="mr-2 h-4 w-4" />}
               Resend Link
             </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isTrialActive && profile.subscriptionStatus !== 'pro' && (
+        <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+          <Sparkles className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="font-bold uppercase tracking-tight">Free Trial Active! 🎉</AlertTitle>
+          <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <span className="text-sm font-medium">
+              You have unrestricted Pro access for the first 3 days. Use this time to master as many formulas as possible!
+            </span>
+            <div className="flex items-center gap-2 bg-white/50 px-4 py-2 rounded-full border border-blue-100">
+              <Clock className="h-4 w-4 text-blue-600" />
+              <span className="font-black font-mono">
+                {trialDaysInt > 0 ? `${trialDaysInt}d ` : ''}{trialHoursRemaining}h remaining
+              </span>
+            </div>
           </AlertDescription>
         </Alert>
       )}

@@ -18,7 +18,7 @@ import BeadsTestPageClient from '@/components/BeadsTestPageClient';
 export default function TestPage() {
   const params = useParams();
   const { testId, difficulty } = params as { testId: TestType, difficulty: Difficulty };
-  const { user, profile, isLoading } = useAuth();
+  const { user, profile, isLoading, isTrialActive } = useAuth();
   const router = useRouter();
   
   useEffect(() => {
@@ -59,8 +59,8 @@ export default function TestPage() {
     );
   }
 
-  // Pro subscription check for non-bead tests for students
-  if (profile?.role === 'student' && profile?.subscriptionStatus !== 'pro' && !isBeadTest) {
+  // Pro subscription check for non-bead tests for students (allowing trial access)
+  if (profile?.role === 'student' && profile?.subscriptionStatus !== 'pro' && !isBeadTest && !isTrialActive) {
     return (
        <div className="max-w-lg mx-auto text-center">
             <Alert variant="destructive">

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import type { TestType } from '@/types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { Lock } from 'lucide-react';
+import { Lock, Sparkles } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useRouter } from 'next/navigation';
 
@@ -19,15 +19,15 @@ interface TestCardProps {
 }
 
 export function TestCard({ testId, title, description, Icon, iconBg, isFormula = false }: TestCardProps) {
-  const { user, profile } = useAuth();
+  const { user, profile, isTrialActive } = useAuth();
   const router = useRouter();
   
   const isBeadTest = testId === 'beads-identify' || testId === 'beads-set';
   const isPro = profile?.subscriptionStatus === 'pro';
   const isAdminOrTeacher = profile?.role === 'admin' || profile?.role === 'teacher';
 
-  // Lock if not logged in, or if a student without pro (for non-bead tests)
-  const isLocked = !user || (!isAdminOrTeacher && !isPro && !isBeadTest);
+  // Lock if not logged in, or if a student without pro AND not in trial (for non-bead tests)
+  const isLocked = !user || (!isAdminOrTeacher && !isPro && !isBeadTest && !isTrialActive);
 
 
   const handleButtonClick = (difficulty: 'easy' | 'medium' | 'hard') => {
@@ -58,6 +58,7 @@ export function TestCard({ testId, title, description, Icon, iconBg, isFormula =
   const buttonContent = (difficulty: string) => (
       <div className="flex items-center justify-center">
         {isLocked && <Lock className="w-4 h-4 mr-2" />}
+        {!isLocked && isTrialActive && !isPro && !isBeadTest && !isAdminOrTeacher && <Sparkles className="w-3 h-3 mr-1 text-yellow-500 fill-yellow-500" />}
         {difficulty}
       </div>
   );
@@ -65,6 +66,7 @@ export function TestCard({ testId, title, description, Icon, iconBg, isFormula =
   const formulaButtonContent = () => (
        <div className="flex items-center justify-center">
         {isLocked && <Lock className="w-4 h-4 mr-2" />}
+        {!isLocked && isTrialActive && !isPro && !isAdminOrTeacher && <Sparkles className="w-3 h-3 mr-1 text-yellow-500 fill-yellow-500" />}
         Practice
       </div>
   );
@@ -91,6 +93,7 @@ export function TestCard({ testId, title, description, Icon, iconBg, isFormula =
                         </Button>
                     </TooltipTrigger>
                     {isLocked && user && <TooltipContent><p>Upgrade to Pro to access this test.</p></TooltipContent>}
+                    {!isLocked && isTrialActive && !isPro && !isAdminOrTeacher && <TooltipContent><p>Enjoying your free trial!</p></TooltipContent>}
                 </Tooltip>
              </div>
           ) : (
@@ -102,6 +105,7 @@ export function TestCard({ testId, title, description, Icon, iconBg, isFormula =
                   </Button>
                 </TooltipTrigger>
                 {isLocked && user && <TooltipContent><p>Upgrade to Pro to access this test.</p></TooltipContent>}
+                {!isLocked && isTrialActive && !isPro && !isAdminOrTeacher && <TooltipContent><p>Free Trial Access</p></TooltipContent>}
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -110,6 +114,7 @@ export function TestCard({ testId, title, description, Icon, iconBg, isFormula =
                    </Button>
                 </TooltipTrigger>
                 {isLocked && user && <TooltipContent><p>Upgrade to Pro to access this test.</p></TooltipContent>}
+                {!isLocked && isTrialActive && !isPro && !isAdminOrTeacher && <TooltipContent><p>Free Trial Access</p></TooltipContent>}
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -118,6 +123,7 @@ export function TestCard({ testId, title, description, Icon, iconBg, isFormula =
                   </Button>
                 </TooltipTrigger>
                 {isLocked && user && <TooltipContent><p>Upgrade to Pro to access this test.</p></TooltipContent>}
+                {!isLocked && isTrialActive && !isPro && !isAdminOrTeacher && <TooltipContent><p>Free Trial Access</p></TooltipContent>}
               </Tooltip>
             </div>
           )}
