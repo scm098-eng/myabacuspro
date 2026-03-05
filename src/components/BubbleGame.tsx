@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -41,8 +40,30 @@ const Seaweed = ({ className }: { className: string }) => (
 const MouthBubbles = ({ className }: { className?: string }) => (
   <div className={cn("absolute pointer-events-none", className)}>
     <div className="absolute bottom-0 left-0 w-1 h-1 bg-white/60 rounded-full animate-[mouth-bubble_2s_ease-in_infinite]" />
-    <div className="absolute bottom-[-10px] left-2 w-1.5 h-1.5 bg-white/40 rounded-full animate-[mouth-bubble_2.5s_ease-in_infinite_0.5s]" />
-    <div className="absolute bottom-[-20px] left-[-5px] w-1 h-1 bg-white/30 rounded-full animate-[mouth-bubble_3s_ease-in_infinite_1s]" />
+    <div className="absolute bottom-[-5px] left-2 w-1.5 h-1.5 bg-white/40 rounded-full animate-[mouth-bubble_2.5s_ease-in_infinite_0.3s]" />
+    <div className="absolute bottom-[-10px] left-[-3px] w-1 h-1 bg-white/30 rounded-full animate-[mouth-bubble_3s_ease-in_infinite_0.6s]" />
+    <div className="absolute bottom-[-15px] left-4 w-1.5 h-1.5 bg-white/50 rounded-full animate-[mouth-bubble_2.2s_ease-in_infinite_0.9s]" />
+    <div className="absolute bottom-[-20px] left-1 w-1 h-1 bg-white/40 rounded-full animate-[mouth-bubble_2.8s_ease-in_infinite_1.2s]" />
+    <div className="absolute bottom-[-25px] left-[-5px] w-1.5 h-1.5 bg-white/20 rounded-full animate-[mouth-bubble_3.5s_ease-in_infinite_1.5s]" />
+  </div>
+);
+
+const BackgroundBubbles = () => (
+  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    {[...Array(20)].map((_, i) => (
+      <div
+        key={i}
+        className="absolute bg-white/30 rounded-full animate-[bubble-rise-bg_linear_infinite]"
+        style={{
+          width: `${Math.random() * 10 + 4}px`,
+          height: `${Math.random() * 10 + 4}px`,
+          left: `${Math.random() * 100}%`,
+          bottom: "-50px",
+          animationDuration: `${Math.random() * 6 + 6}s`,
+          animationDelay: `${Math.random() * 12}s`,
+        }}
+      />
+    ))}
   </div>
 );
 
@@ -129,7 +150,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   }, [questions.length, user, levelId, saveCompletedGameLevel, recordDailyPractice, addPoints, playSound, gameState]);
 
   const advanceQuestion = useCallback((isCorrectOutcome?: boolean) => {
-    // Determine the next score state immediately to avoid race conditions
     const nextScore = isCorrectOutcome ? score + 10 : score;
     const nextIndex = currentQuestionIndex + 1;
 
@@ -191,9 +211,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         if (gameState === 'playing') {
             setLives(l => {
               const nextLives = l - 1;
-              if (nextLives <= 0) {
-                // Out of lives handled by separate effect for safety
-              }
               return nextLives;
             });
             playSound('wrong');
@@ -245,6 +262,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-cyan-400 to-blue-600 flex flex-col items-center justify-center overflow-hidden touch-none">
         {/* Environment Background */}
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
+            <BackgroundBubbles />
             <FishWithBubbles speed={25} delay={1} top="15%" />
             <FishWithBubbles speed={30} delay={5} top="35%" reverse />
             <FishWithBubbles speed={20} delay={8} top="55%" />
@@ -319,9 +337,9 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
         {/* Final Results Overlays */}
         {(gameState === 'levelComplete' || gameState === 'gameOver') && (
-            <div className="absolute inset-0 flex items-center justify-center p-4 z-[100] animate-in fade-in zoom-in-95 duration-500">
+            <div className="absolute inset-0 flex items-center justify-center p-4 z-[1000] animate-in fade-in zoom-in-95 duration-500">
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
-                <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white rounded-[3rem] overflow-hidden relative z-[101]">
+                <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white rounded-[3rem] overflow-hidden relative z-[1001]">
                     <CardHeader className={cn("text-center py-10", gameState === 'levelComplete' ? "bg-green-500" : "bg-destructive")}>
                         <div className="mx-auto bg-white/20 p-4 rounded-full w-fit mb-4">
                             {gameState === 'levelComplete' ? <CheckCircle2 className="w-12 h-12 text-white" /> : <AlertCircle className="w-12 h-12 text-white" />}

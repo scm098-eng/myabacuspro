@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useEffect, useState, useMemo } from 'react';
@@ -47,6 +46,7 @@ function ResultsComponent() {
   const score = Number(searchParams.get('score') || 0);
   const total = Number(searchParams.get('total') || 0);
   const time = Number(searchParams.get('time') || 0);
+  const earnedPoints = Number(searchParams.get('points') || 0);
   
   useEffect(() => {
     const data = sessionStorage.getItem('testResults');
@@ -158,18 +158,22 @@ function ResultsComponent() {
             <CardDescription className="text-lg font-medium">{getPerformanceMessage()}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-8 p-8">
-            <div className="text-center relative">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-2">Overall Performance</p>
-              <p className="text-7xl font-black text-primary drop-shadow-sm">{score}
-                <span className="text-3xl text-muted-foreground/50 font-bold">/{total}</span>
-              </p>
-              <div className="max-w-md mx-auto mt-6">
-                <div className="flex justify-between text-xs font-bold uppercase mb-2">
-                    <span>Accuracy</span>
-                    <span>{accuracy.toFixed(1)}%</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div className="text-center">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-2">Mastery Points Earned</p>
+                    <p className="text-7xl font-black text-primary drop-shadow-sm">{earnedPoints}</p>
                 </div>
-                <Progress value={accuracy} className="h-3 shadow-inner" />
-              </div>
+                <div className="text-center md:border-l md:pl-8">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-2">Overall Score</p>
+                    <p className="text-5xl font-black text-foreground">{score}<span className="text-2xl text-muted-foreground/50">/{total}</span></p>
+                    <div className="max-w-xs mx-auto mt-4">
+                        <div className="flex justify-between text-xs font-bold uppercase mb-1">
+                            <span>Accuracy</span>
+                            <span>{accuracy.toFixed(1)}%</span>
+                        </div>
+                        <Progress value={accuracy} className="h-2" />
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -241,9 +245,9 @@ function ResultsComponent() {
                   )}
               </div>
 
-              {/* Horizontal Scrollable Abacus Container - Anchored to start on mobile */}
-              <div className="w-full overflow-x-auto py-4">
-                  <div className="flex justify-start sm:justify-center min-w-max px-4">
+              {/* Horizontal Scrollable Abacus Container */}
+              <div className="w-full overflow-x-auto py-4 scrollbar-thin scrollbar-thumb-primary/20">
+                  <div className="flex flex-col items-center justify-start min-w-fit px-2 sm:px-4 mx-auto">
                       <BeadDisplay 
                           value={abacusValue} 
                           rodCount={7} 
