@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 
@@ -14,7 +13,7 @@ export async function POST(req: NextRequest) {
       console.error("CRITICAL: GMAIL_APP_PASSWORD is not present in the environment.");
       return NextResponse.json({ 
         error: 'Configuration Error',
-        details: 'The server secret (GMAIL_APP_PASSWORD) is missing. Please ensure you have created this secret in the Google Cloud Secret Manager and mapped it in apphosting.yaml.' 
+        details: 'The server secret (GMAIL_APP_PASSWORD) is missing. To fix this, go to your Firebase Console > App Hosting > Settings > Secrets, add "GMAIL_APP_PASSWORD" with your 16-character Google App Password, and redeploy.' 
       }, { status: 500 });
     }
 
