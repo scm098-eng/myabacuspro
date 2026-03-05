@@ -159,7 +159,7 @@ export default function StudentDashboardPage() {
     if (!user) return;
     setIsRequestingNotifications(true);
     try {
-      // Permission request - browser will still show prompt if not granted
+      // Permission request
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
         const messaging = getMessaging(firebaseApp);
@@ -177,8 +177,9 @@ export default function StudentDashboardPage() {
         }
       }
     } catch (error: any) {
+      console.error("Notification setup error:", error);
       if (!isAuto) {
-        toast({ title: "Setup Failed", description: "Could not enable reminders.", variant: "destructive" });
+        toast({ title: "Setup Failed", description: "Could not enable reminders. Check browser settings.", variant: "destructive" });
       }
     } finally {
       setIsRequestingNotifications(false);
@@ -454,11 +455,11 @@ export default function StudentDashboardPage() {
             className="w-full h-24 bg-primary hover:bg-primary/90 rounded-3xl shadow-xl uppercase tracking-wider group relative overflow-hidden px-4"
           >
             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-            <span className="relative z-10 flex items-center justify-center text-center">
-                <span className="text-xl sm:text-2xl md:text-3xl font-black">
+            <span className="relative z-10 flex flex-col sm:flex-row items-center justify-center text-center gap-2">
+                <span className="text-xl sm:text-2xl md:text-3xl font-black text-wrap max-w-full">
                     LAUNCH PRACTICE {!isEmailVerified && <ShieldAlert className="inline ml-2 h-6 w-6" />}
                 </span>
-                <ChevronRight className="w-8 h-8 sm:w-10 sm:h-10 ml-4 stroke-[4px] group-hover:translate-x-2 transition-transform shrink-0" />
+                <ChevronRight className="w-8 h-8 sm:w-10 sm:h-10 stroke-[4px] group-hover:translate-x-2 transition-transform shrink-0" />
             </span>
           </Button>
         </div>
@@ -472,15 +473,15 @@ export default function StudentDashboardPage() {
             </CardHeader>
             <CardContent className="pt-4">
               <div className="flex items-center gap-3 mb-4">
-                <div className="bg-green-100 p-2 rounded-lg">
-                    {profile.fcmToken ? <Check className="w-4 h-4 text-green-600" /> : <Loader2 className="w-4 h-4 text-primary animate-spin" />}
+                <div className={cn("p-2 rounded-lg", profile.fcmToken ? "bg-green-100" : "bg-primary/10")}>
+                    {profile.fcmToken ? <Check className="w-4 h-4 text-green-600" /> : isRequestingNotifications ? <Loader2 className="w-4 h-4 text-primary animate-spin" /> : <Bell className="w-4 h-4 text-primary" />}
                 </div>
                 <p className="text-xs font-bold text-muted-foreground uppercase">
-                    {profile.fcmToken ? "Daily Nudges Auto-Enabled" : "Activating Training Alerts..."}
+                    {profile.fcmToken ? "Daily Nudges Active" : isRequestingNotifications ? "Registering Device..." : "Alerts Not Set"}
                 </p>
               </div>
               <Button onClick={() => handleEnableNotifications()} disabled={isRequestingNotifications || !!profile.fcmToken} variant={profile.fcmToken ? "ghost" : "default"} className={cn("w-full rounded-xl h-12 font-bold transition-all uppercase text-xs", profile.fcmToken ? "text-green-600 bg-green-50/50 cursor-default" : "shadow-md")}>
-                {isRequestingNotifications ? <Loader2 className="animate-spin h-4 w-4" /> : profile.fcmToken ? <><Check className="mr-2 h-4 w-4 stroke-[3px]" /> Reminders Active</> : "Refresh Notifications"}
+                {isRequestingNotifications ? <Loader2 className="animate-spin h-4 w-4" /> : profile.fcmToken ? <><Check className="mr-2 h-4 w-4 stroke-[3px]" /> Active at 7 PM</> : "Enable Training Nudges"}
               </Button>
             </CardContent>
           </Card>
@@ -493,7 +494,7 @@ export default function StudentDashboardPage() {
             </CardHeader>
             <CardContent>
                 <p className="text-[10px] text-blue-600 font-medium leading-relaxed">
-                    Practicing for more than 30 minutes? We'll let you know when it's time to take a break.
+                    Safety check: After 30 mins of continuous practice, we'll suggest a quick break to rest your eyes.
                 </p>
             </CardContent>
           </Card>
