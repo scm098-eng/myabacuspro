@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, Zap, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, Info, ShieldAlert, MailCheck, TrendingUp, ArrowUp, Sparkles, Clock } from 'lucide-react';
+import { Check, Trophy, Zap, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, Info, ShieldAlert, MailCheck, TrendingUp, ArrowUp, Sparkles, Clock, Crown, Rocket } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,6 +24,7 @@ import { RANK_CRITERIA } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { useSound } from '@/hooks/useSound';
+import Link from 'next/link';
 
 const PointsAnimation = ({ points }: { points: number }) => {
   return (
@@ -188,9 +189,7 @@ export default function StudentDashboardPage() {
 
   if (!user || !profile) return null;
 
-  const daysInMonthLeft = 30 - new Date().getDate();
-  const isEmailVerified = user.emailVerified || /testuser|tempuser/i.test(user.email || '') || (profile?.firstName?.toLowerCase() === 'maitreya' && profile?.surname?.toLowerCase() === 'mane');
-
+  const isEmailVerified = user.emailVerified || /testuser|tempuser/i.test(user.email || '');
   const trialHoursRemaining = Math.floor((trialDaysRemaining % 1) * 24);
   const trialDaysInt = Math.floor(trialDaysRemaining);
 
@@ -209,7 +208,7 @@ export default function StudentDashboardPage() {
       )}
 
       {!isEmailVerified && (
-        <Alert variant="destructive" className="bg-orange-50 border-orange-200 text-orange-800">
+        <Alert variant="destructive" className="bg-orange-50 border-orange-200 text-orange-800 animate-in slide-in-from-top-4 duration-500">
           <ShieldAlert className="h-4 w-4 text-orange-600" />
           <AlertTitle className="font-bold">Verify Your Email</AlertTitle>
           <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -222,21 +221,52 @@ export default function StudentDashboardPage() {
         </Alert>
       )}
 
+      {/* --- MOTIVATIONAL TRIAL SECTION --- */}
       {isTrialActive && profile.subscriptionStatus !== 'pro' && (
-        <Alert className="bg-blue-50 border-blue-200 text-blue-800">
-          <Sparkles className="h-4 w-4 text-blue-600" />
-          <AlertTitle className="font-bold uppercase tracking-tight">Free Trial Active! 🎉</AlertTitle>
-          <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <span className="text-sm font-medium">
-              You have unrestricted Pro access for the first 3 days. Use this time to master as many formulas as possible!
-            </span>
-            <div className="flex items-center gap-2 bg-white/50 px-4 py-2 rounded-full border border-blue-100">
-              <Clock className="h-4 w-4 text-blue-600" />
-              <span className="font-black font-mono">
-                {trialDaysInt > 0 ? `${trialDaysInt}d ` : ''}{trialHoursRemaining}h remaining
-              </span>
+        <Alert className="bg-gradient-to-r from-blue-600 to-indigo-700 border-none text-white shadow-xl shadow-blue-900/20 py-6 overflow-hidden relative">
+          <div className="absolute top-0 right-0 -mr-10 -mt-10 opacity-10 rotate-12"><Rocket size={200} /></div>
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex gap-4 items-start">
+                <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm"><Crown className="h-8 w-8 text-yellow-300 fill-yellow-300" /></div>
+                <div className="space-y-1">
+                    <AlertTitle className="text-2xl font-black uppercase tracking-tight">Free Trial Active! 🎉</AlertTitle>
+                    <AlertDescription className="text-blue-100 font-medium max-w-lg">
+                        You have <strong>unrestricted Pro access</strong> to every level and test! Master all formulas while you have the power.
+                    </AlertDescription>
+                </div>
             </div>
-          </AlertDescription>
+            <div className="flex flex-col items-center gap-2">
+                <div className="flex items-center gap-3 bg-black/20 px-6 py-3 rounded-2xl border border-white/10 backdrop-blur-md">
+                    <Clock className="h-5 w-5 text-yellow-300 animate-pulse" />
+                    <span className="font-black font-mono text-xl">
+                        {trialDaysInt > 0 ? `${trialDaysInt}d ` : ''}{trialHoursRemaining}h left
+                    </span>
+                </div>
+                <Button asChild variant="secondary" className="bg-white text-blue-700 hover:bg-blue-50 font-black uppercase tracking-widest w-full">
+                    <Link href="/pricing">Get Pro Forever</Link>
+                </Button>
+            </div>
+          </div>
+        </Alert>
+      )}
+
+      {/* --- TRIAL EXPIRED MOTIVATION --- */}
+      {!isTrialActive && profile.subscriptionStatus === 'free' && (
+        <Alert className="bg-amber-50 border-amber-200 text-amber-900 py-6 border-2 border-dashed">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex gap-4 items-start">
+                <div className="bg-amber-100 p-3 rounded-2xl"><Trophy className="h-8 w-8 text-amber-600" /></div>
+                <div className="space-y-1">
+                    <AlertTitle className="text-xl font-bold">Your Trial has ended, {profile.firstName}!</AlertTitle>
+                    <AlertDescription className="text-amber-800/80 font-medium">
+                        You are now a <strong>Junior Calculator</strong>. Ready to unlock the full path to <strong>Grandmaster</strong>? Upgrade to Pro to access all 50+ levels and detailed analytics!
+                    </AlertDescription>
+                </div>
+            </div>
+            <Button asChild className="bg-amber-600 hover:bg-amber-700 text-white font-bold h-12 px-8 rounded-xl shadow-lg shadow-amber-900/20">
+                <Link href="/pricing">Unlock Pro Now</Link>
+            </Button>
+          </div>
         </Alert>
       )}
 

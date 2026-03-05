@@ -93,7 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (userDoc.exists()) {
-        const profileData = { ...userDoc.data(), uid: user.uid } as ProfileData;
+        const data = userDoc.data();
+        const profileData = { ...data, uid: user.uid } as ProfileData;
         
         const userEmail = user.email?.toLowerCase() || '';
         const isAdminByEmail = ADMIN_EMAILS.includes(userEmail);
@@ -106,6 +107,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else if (isProStudentByEmail) {
             profileData.role = 'student';
             profileData.subscriptionStatus = 'pro';
+        }
+
+        // --- NEW: 3-Day Free Trial Provisioning for Existing Users ---
+        // If a student is 'free' and doesn't have a trialStartDate, give it to them now.
+        if (profileData.role === 'student' && profileData.subscriptionStatus === 'free' && !profileData.trialStartDate) {
+            const now = new Date();
+            await updateDoc(userDocRef, {
+                trialStartDate: serverTimestamp()
+            });
+            profileData.trialStartDate = { toDate: () => now }; // Update local state immediately
         }
 
         setProfile(profileData);
@@ -150,11 +161,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isTrialActive = useMemo(() => {
     if (!profile || profile.role !== 'student' || profile.subscriptionStatus === 'pro') return false;
     
-    const created = profile.createdAt?.toDate ? profile.createdAt.toDate() : new Date(profile.createdAt);
-    if (!created || isNaN(created.getTime())) return false;
+    // Prioritize trialStartDate, fall back to createdAt if missing (should not happen with provisioning logic above)
+    const startDate = profile.trialStartDate?.toDate ? profile.trialStartDate.toDate() : (profile.createdAt?.toDate ? profile.createdAt.toDate() : new Date(profile.createdAt));
+    if (!startDate || isNaN(startDate.getTime())) return false;
 
     const now = new Date();
-    const diffInMs = now.getTime() - created.getTime();
+    const diffInMs = now.getTime() - startDate.getTime();
     const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
     
     return diffInDays <= 3;
@@ -163,11 +175,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const trialDaysRemaining = useMemo(() => {
     if (!profile || profile.role !== 'student' || profile.subscriptionStatus === 'pro') return 0;
     
-    const created = profile.createdAt?.toDate ? profile.createdAt.toDate() : new Date(profile.createdAt);
-    if (!created || isNaN(created.getTime())) return 0;
+    const startDate = profile.trialStartDate?.toDate ? profile.trialStartDate.toDate() : (profile.createdAt?.toDate ? profile.createdAt.toDate() : new Date(profile.createdAt));
+    if (!startDate || isNaN(startDate.getTime())) return 0;
 
     const now = new Date();
-    const expiryDate = new Date(created.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const expiryDate = new Date(startDate.getTime() + 3 * 24 * 60 * 60 * 1000);
     const diffInMs = expiryDate.getTime() - now.getTime();
     
     return Math.max(0, diffInMs / (1000 * 60 * 60 * 24));
@@ -212,6 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: user.email!,
           profilePhoto: photoURL || '',
           createdAt: serverTimestamp(),
+          trialStartDate: serverTimestamp(), // Trial starts at signup for new users
           subscriptionStatus: subStatus as any,
           role: role,
           teacherId: values.teacherId || null, 
@@ -267,6 +280,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         middleName: middleName,
         profilePhoto: user.photoURL || '',
         createdAt: serverTimestamp(),
+        trialStartDate: serverTimestamp(),
         subscriptionStatus: (isAdmin || isProStudent) ? 'pro' : 'free',
         role: isAdmin ? 'admin' : 'student',
         teacherId: null,
