@@ -145,7 +145,7 @@ async function getCroppedImg(
 export default function SignupPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/signup_bg.jpg?alt=media');
   const router = useRouter();
-  const { signup, getApprovedTeachers, loginWithGoogle } = useAuth();
+  const { signup, loginWithGoogle } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -207,7 +207,7 @@ export default function SignupPage() {
   
   const handleRedirect = (profile: ProfileData | null) => {
     if (profile && profile.firstName) {
-        // First-time users land on HOME PAGE after registration
+        // New users land on Home Page
         router.push('/');
     } else {
         router.push('/profile');
