@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -350,7 +351,7 @@ export default function StudentDashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Summary Grid - Fixed Layout */}
+      {/* Summary Grid - Mastery Points Layout Fixed */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="hover:shadow-md transition-shadow bg-card/50 border-border/50">
           <CardContent className="p-6 flex items-center gap-4">
@@ -367,23 +368,23 @@ export default function StudentDashboardPage() {
         <Card className={cn("hover:shadow-md transition-all bg-card border-border relative lg:col-span-2 overflow-hidden", pointsEarned && "ring-2 ring-green-500 shadow-lg scale-105 bg-green-50/10")}>
           <CardContent className="p-6 relative">
             {pointsEarned && <PointsAnimation points={pointsEarned} />}
-            <div className="grid grid-cols-3 items-center gap-2 divide-x divide-border/50 h-full">
-                <div className="flex flex-col items-center justify-center px-2">
-                    <div className="flex items-center gap-2">
-                        <div className="bg-yellow-100 p-1.5 rounded-lg shrink-0"><Star className="w-4 h-4 text-yellow-600 fill-yellow-600" /></div>
-                        <div className="min-w-0">
-                            <p className="text-xl md:text-2xl font-black text-foreground leading-none truncate">{currentPoints.toLocaleString()}</p>
-                            <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter mt-1">Total</p>
+            <div className="grid grid-cols-3 items-center gap-2 divide-x divide-border/50 h-full text-center">
+                <div className="px-2">
+                    <div className="flex flex-col items-center">
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <Star className="w-4 h-4 text-yellow-600 fill-yellow-600 shrink-0" />
+                            <span className="text-xl md:text-2xl font-black text-foreground truncate">{currentPoints.toLocaleString()}</span>
                         </div>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">Total Pts</p>
                     </div>
                 </div>
-                <div className="flex flex-col items-center justify-center px-2">
+                <div className="px-2 flex flex-col items-center">
                     <p className="text-lg md:text-xl font-black text-foreground truncate">{(profile.weeklyPoints || 0).toLocaleString()}</p>
-                    <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">Weekly</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">Weekly</p>
                 </div>
-                <div className="flex flex-col items-center justify-center px-2">
+                <div className="px-2 flex flex-col items-center">
                     <p className="text-lg md:text-xl font-black text-foreground truncate">{(profile.monthlyPoints || 0).toLocaleString()}</p>
-                    <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">Monthly</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">Monthly</p>
                 </div>
             </div>
           </CardContent>
@@ -394,7 +395,7 @@ export default function StudentDashboardPage() {
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-foreground font-headline flex items-center gap-3"><CalendarDays className="w-6 h-6 text-primary" /> Consistency Challenge</h2>
-            <Button variant="link" onClick={() => router.push('/progress')} className="font-bold text-primary p-0 uppercase tracking-tight text-xs">Practice History <ChevronRight className="w-4 h-4 ml-1" /></Button>
+            <Button variant="link" onClick={() => router.push('/progress')} className="font-bold text-primary p-0 uppercase tracking-tight text-xs">History <ChevronRight className="w-4 h-4 ml-1" /></Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -405,21 +406,37 @@ export default function StudentDashboardPage() {
                 <Card key={weekNum} className="overflow-hidden border-border shadow-sm rounded-2xl">
                   <CardHeader className="bg-muted/30 border-b border-border py-4">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2"><div className="bg-primary text-primary-foreground p-1 rounded"><Check className="w-3 h-3 stroke-[3px]" /></div><span className="font-bold text-foreground uppercase tracking-tight text-sm">Week {weekNum}</span></div>
+                      <div className="flex items-center gap-2">
+                        <div className="bg-primary text-primary-foreground p-1 rounded"><Check className="w-3 h-3 stroke-[3px]" /></div>
+                        <span className="font-bold text-foreground uppercase tracking-tight text-sm">Week {weekNum}</span>
+                      </div>
                       <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase tracking-widest">{weekProgress}/7 Days</span>
                     </div>
                   </CardHeader>
                   <CardContent className="p-6">
-                    <div className="flex justify-start items-center relative gap-2 sm:gap-3 overflow-hidden">
+                    <div className="flex justify-start items-center relative gap-1.5 sm:gap-2">
                       {[1, 2, 3, 4, 5, 6].map((dayOffset) => {
                         const isCompleted = currentDays >= (startDay + dayOffset);
                         const isCurrent = currentDays + 1 === (startDay + dayOffset);
-                        return <div key={dayOffset} className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 shadow-sm transition-all aspect-square shrink-0", isCompleted ? "bg-primary border-primary text-primary-foreground scale-105" : isCurrent ? "border-primary bg-background text-primary animate-pulse ring-4 ring-primary/5" : "bg-muted/50 border-border text-muted-foreground")}>{isCompleted ? <Check className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3px]" /> : <span className="text-[10px] sm:text-xs font-black">{dayOffset}</span>}</div>;
+                        return (
+                          <div 
+                            key={dayOffset} 
+                            className={cn(
+                              "w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center border-2 shadow-sm transition-all aspect-square shrink-0", 
+                              isCompleted ? "bg-primary border-primary text-primary-foreground scale-105" : isCurrent ? "border-primary bg-background text-primary animate-pulse ring-4 ring-primary/5" : "bg-muted/50 border-border text-muted-foreground"
+                            )}
+                          >
+                            {isCompleted ? <Check className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3px]" /> : <span className="text-[9px] sm:text-xs font-black">{dayOffset}</span>}
+                          </div>
+                        );
                       })}
                       {(() => {
                         const isCompleted = currentDays >= (startDay + 7);
                         return (
-                          <div className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-xl border-2 flex items-center justify-center transition-all aspect-square shrink-0", isCompleted ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted/50 border-border/50 grayscale opacity-50")}>
+                          <div className={cn(
+                            "w-7 h-7 sm:w-9 sm:h-9 rounded-xl border-2 flex items-center justify-center transition-all aspect-square shrink-0", 
+                            isCompleted ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted/50 border-border/50 grayscale opacity-50"
+                          )}>
                             <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
                         );
@@ -438,7 +455,7 @@ export default function StudentDashboardPage() {
           >
             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
             <span className="relative z-10 flex flex-col sm:flex-row items-center justify-center text-center gap-2">
-                <span className="text-xl sm:text-2xl md:text-3xl font-black text-wrap max-w-full">
+                <span className="text-xl sm:text-2xl md:text-3xl font-black">
                     START PRACTICE {!isEmailVerified && <ShieldAlert className="inline ml-2 h-6 w-6" />}
                 </span>
                 <ChevronRight className="w-8 h-8 sm:w-10 sm:h-10 stroke-[4px] group-hover:translate-x-2 transition-transform shrink-0" />
@@ -455,11 +472,6 @@ export default function StudentDashboardPage() {
                   </CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
-                <div className="flex items-center gap-3 mb-4">
-                  <p className="text-xs font-bold text-muted-foreground uppercase">
-                      Enable Daily Nudges
-                  </p>
-                </div>
                 <Button onClick={() => handleEnableNotifications()} disabled={isRequestingNotifications} className="w-full rounded-xl h-12 font-bold transition-all uppercase text-xs shadow-md">
                   {isRequestingNotifications ? <Loader2 className="animate-spin h-4 w-4" /> : "Enable Alerts"}
                 </Button>
@@ -498,13 +510,6 @@ export default function StudentDashboardPage() {
                     </div>
                   </div>
                 )) : <div className="py-24 text-center text-muted-foreground"><p className="text-sm font-bold uppercase tracking-widest animate-pulse">Summoning Champions...</p></div>}
-              </div>
-              <div className="p-4 bg-muted/20 border-t flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg"><Target className="w-4 h-4 text-primary" /></div>
-                <div>
-                    <p className="text-[10px] font-black uppercase text-foreground">Mission Target</p>
-                    <p className="text-[9px] text-muted-foreground font-medium">Climb the Hall of Fame daily to reach the top!</p>
-                </div>
               </div>
             </CardContent>
           </Card>
