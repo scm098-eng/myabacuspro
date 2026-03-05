@@ -368,20 +368,22 @@ export default function StudentDashboardPage() {
         <Card className={cn("hover:shadow-md transition-all bg-card/50 border-border/50 relative lg:col-span-2", pointsEarned && "ring-2 ring-green-500 shadow-lg scale-105 bg-green-50/10")}>
           <CardContent className="p-6 relative">
             {pointsEarned && <PointsAnimation points={pointsEarned} />}
-            <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-6 divide-y sm:divide-y-0 sm:divide-x divide-border/50 h-full">
-                <div className="flex items-center justify-center sm:justify-start gap-4 pb-4 sm:pb-0 h-full">
-                    <div className="bg-yellow-100 p-3 rounded-2xl"><Star className="w-6 h-6 text-yellow-600 fill-yellow-600" /></div>
-                    <div>
-                        <p className="text-3xl font-bold text-foreground leading-none">{currentPoints.toLocaleString()}</p>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Total Points</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-4 divide-y sm:divide-y-0 sm:divide-x divide-border/50 h-full">
+                <div className="flex flex-col items-center sm:items-start justify-center px-4 py-2">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-yellow-100 p-2 rounded-xl"><Star className="w-5 h-5 text-yellow-600 fill-yellow-600" /></div>
+                        <div>
+                            <p className="text-2xl md:text-3xl font-black text-foreground leading-none">{currentPoints.toLocaleString()}</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Total Points</p>
+                        </div>
                     </div>
                 </div>
-                <div className="text-center py-4 sm:py-0 h-full flex flex-col justify-center">
-                    <p className="text-2xl font-bold text-foreground">{(profile.weeklyPoints || 0).toLocaleString()}</p>
+                <div className="flex flex-col items-center justify-center py-2">
+                    <p className="text-xl md:text-2xl font-black text-foreground">{(profile.weeklyPoints || 0).toLocaleString()}</p>
                     <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Weekly</p>
                 </div>
-                <div className="text-center pt-4 sm:pt-0 h-full flex flex-col justify-center">
-                    <p className="text-2xl font-bold text-foreground">{(profile.monthlyPoints || 0).toLocaleString()}</p>
+                <div className="flex flex-col items-center justify-center py-2">
+                    <p className="text-xl md:text-2xl font-black text-foreground">{(profile.monthlyPoints || 0).toLocaleString()}</p>
                     <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Monthly</p>
                 </div>
             </div>
@@ -409,13 +411,21 @@ export default function StudentDashboardPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="p-6">
-                    <div className="flex justify-between items-center relative gap-2">
-                      {[1, 2, 3, 4, 5, 6, 7].map((dayOffset) => {
+                    <div className="flex justify-between items-center relative gap-1 sm:gap-2">
+                      {[1, 2, 3, 4, 5, 6].map((dayOffset) => {
                         const isCompleted = currentDays >= (startDay + dayOffset);
                         const isCurrent = currentDays + 1 === (startDay + dayOffset);
-                        return <div key={dayOffset} className={cn("w-10 h-10 aspect-square rounded-full flex items-center justify-center border-2 shadow-sm transition-all", isCompleted ? "bg-primary border-primary text-primary-foreground scale-105" : isCurrent ? "border-primary bg-background text-primary animate-pulse ring-4 ring-primary/5" : "bg-muted/50 border-border text-muted-foreground")}>{isCompleted ? <Check className="w-5 h-5 stroke-[3px]" /> : <span className="text-xs font-bold">{dayOffset}</span>}</div>;
+                        return <div key={dayOffset} className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 shadow-sm transition-all", isCompleted ? "bg-primary border-primary text-primary-foreground scale-105" : isCurrent ? "border-primary bg-background text-primary animate-pulse ring-4 ring-primary/5" : "bg-muted/50 border-border text-muted-foreground")}>{isCompleted ? <Check className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3px]" /> : <span className="text-[10px] sm:text-xs font-black">{dayOffset}</span>}</div>;
                       })}
-                      <div className={cn("w-10 h-10 aspect-square rounded-xl border-2 border-dashed flex items-center justify-center transition-all", weekProgress === 7 ? "bg-yellow-50 border-yellow-400 text-yellow-600 scale-110 shadow-md" : "bg-muted/50 border-border/50 grayscale opacity-50")}><Trophy className="w-5 h-5" /></div>
+                      {(() => {
+                        const isCompleted = currentDays >= (startDay + 7);
+                        const isCurrent = currentDays + 1 === (startDay + 7);
+                        return (
+                          <div className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-xl border-2 flex items-center justify-center transition-all", isCompleted ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : isCurrent ? "border-primary bg-background text-primary animate-pulse ring-4 ring-primary/5" : "bg-muted/50 border-border/50 grayscale opacity-50")}>
+                            <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
+                          </div>
+                        );
+                      })()}
                     </div>
                   </CardContent>
                 </Card>
@@ -439,26 +449,28 @@ export default function StudentDashboardPage() {
         </div>
 
         <div className="space-y-8">
-          <Card className="border-border/50 shadow-sm bg-primary/5 rounded-2xl overflow-hidden">
-            <CardHeader className="pb-2 border-b border-white/10 bg-white/5">
-                <CardTitle className="text-lg font-bold text-primary flex items-center gap-2 font-headline uppercase tracking-tight">
-                    <Bell className="w-5 h-5" /> Training Alerts
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3 mb-4">
-                <div className={cn("p-2 rounded-lg", profile.fcmToken ? "bg-green-100" : "bg-primary/10")}>
-                    {profile.fcmToken ? <Check className="w-4 h-4 text-green-600" /> : <Bell className="w-4 h-4 text-primary" />}
+          {!profile.fcmToken && (
+            <Card className="border-border/50 shadow-sm bg-primary/5 rounded-2xl overflow-hidden">
+              <CardHeader className="pb-2 border-b border-white/10 bg-white/5">
+                  <CardTitle className="text-lg font-bold text-primary flex items-center gap-2 font-headline uppercase tracking-tight">
+                      <Bell className="w-5 h-5" /> Training Alerts
+                  </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                      <Bell className="w-4 h-4 text-primary" />
+                  </div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase">
+                      Enable Daily Nudges
+                  </p>
                 </div>
-                <p className="text-xs font-bold text-muted-foreground uppercase">
-                    {profile.fcmToken ? "Daily Alerts Active" : "Alerts Not Set"}
-                </p>
-              </div>
-              <Button onClick={() => handleEnableNotifications()} disabled={isRequestingNotifications || !!profile.fcmToken} variant={profile.fcmToken ? "ghost" : "default"} className={cn("w-full rounded-xl h-12 font-bold transition-all uppercase text-xs", profile.fcmToken ? "text-green-600 bg-green-50/50 cursor-default" : "shadow-md")}>
-                {isRequestingNotifications ? <Loader2 className="animate-spin h-4 w-4" /> : profile.fcmToken ? <><Check className="mr-2 h-4 w-4 stroke-[3px]" /> Active at 7 PM</> : "Enable Training Alerts"}
-              </Button>
-            </CardContent>
-          </Card>
+                <Button onClick={() => handleEnableNotifications()} disabled={isRequestingNotifications} className="w-full rounded-xl h-12 font-bold transition-all uppercase text-xs shadow-md">
+                  {isRequestingNotifications ? <Loader2 className="animate-spin h-4 w-4" /> : "Enable Training Alerts"}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="border-border/50 shadow-sm overflow-hidden rounded-2xl">
             <CardHeader className="bg-muted/30 border-b border-border/50 pb-0">
