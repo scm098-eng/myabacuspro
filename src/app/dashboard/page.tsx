@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, Zap, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, Info, ShieldAlert, MailCheck, TrendingUp, ArrowUp, Sparkles, Clock, Crown, Rocket } from 'lucide-react';
+import { Check, Trophy, Zap, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, Info, ShieldAlert, MailCheck, TrendingUp, ArrowUp, Sparkles, Clock, Crown, Rocket, Lightbulb, Target } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -35,6 +35,14 @@ const PointsAnimation = ({ points }: { points: number }) => {
   );
 };
 
+const motivationalQuotes = [
+  "Precision is the pride of a Human Calculator.",
+  "Every bead moved is a step closer to Grandmaster status.",
+  "Speed comes from practice, mastery comes from consistency.",
+  "Visualize the beads, conquer the numbers.",
+  "Your brain is the world's most powerful computer. Train it!"
+];
+
 export default function StudentDashboardPage() {
   usePageBackground('');
   const { profile, user, isLoading, getStudentTitle, updateUserProfile, sendVerificationEmail, isTrialActive, trialDaysRemaining } = useAuth();
@@ -51,9 +59,11 @@ export default function StudentDashboardPage() {
   
   const [pointsEarned, setPointsEarned] = useState<number | null>(null);
   const lastPointsRef = useRef<number>(0);
+  const quoteRef = useRef<string>(motivationalQuotes[0]);
 
   useEffect(() => {
     setMounted(true);
+    quoteRef.current = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
     if (!isLoading && !user) {
       router.push('/login');
     }
@@ -163,6 +173,7 @@ export default function StudentDashboardPage() {
   const currentPoints = profile?.totalPoints || 0;
   const currentDays = profile?.totalDaysPracticed || 0;
   const currentRank = getStudentTitle(currentDays, currentPoints);
+  const ultimateGoal = RANK_CRITERIA[0]; // Human Calculator
   
   const { nextRank, daysRemaining, pointsRemaining, totalProg } = useMemo(() => {
     const next = RANK_CRITERIA.slice().reverse().find(r => currentDays < r.daysReq || currentPoints < r.pointsReq);
@@ -177,6 +188,9 @@ export default function StudentDashboardPage() {
 
     return { nextRank: next, daysRemaining: dRem, pointsRemaining: pRem, totalProg: combinedProg };
   }, [currentDays, currentPoints]);
+
+  const ultimatePointsRem = Math.max(0, ultimateGoal.pointsReq - currentPoints);
+  const ultimateDaysRem = Math.max(0, ultimateGoal.daysReq - currentDays);
 
   if (isLoading || !mounted) {
     return (
@@ -207,6 +221,7 @@ export default function StudentDashboardPage() {
         />
       )}
 
+      {/* --- EMAIL VERIFICATION ALERT --- */}
       {!isEmailVerified && (
         <Alert variant="destructive" className="bg-orange-50 border-orange-200 text-orange-800 animate-in slide-in-from-top-4 duration-500">
           <ShieldAlert className="h-4 w-4 text-orange-600" />
@@ -221,7 +236,22 @@ export default function StudentDashboardPage() {
         </Alert>
       )}
 
-      {/* --- MOTIVATIONAL TRIAL SECTION --- */}
+      {/* --- MILESTONE MOTIVATION (3rd Day / 250 Pts) --- */}
+      {currentDays < 3 && currentPoints < 250 && (
+        <Alert className="bg-green-50 border-green-200 text-green-900 border-2">
+          <div className="flex gap-4 items-center">
+            <div className="bg-green-100 p-2 rounded-full"><Sparkles className="text-green-600" /></div>
+            <div>
+              <AlertTitle className="font-bold">First Milestone Ahead! 🌟</AlertTitle>
+              <AlertDescription className="font-medium">
+                Achieve <strong>250 points</strong> and practice for <strong>3 days</strong> to earn the <span className="text-green-700 font-bold">Rising Star</span> rank! You're almost there!
+              </AlertDescription>
+            </div>
+          </div>
+        </Alert>
+      )}
+
+      {/* --- TRIAL SYSTEM HUD --- */}
       {isTrialActive && profile.subscriptionStatus !== 'pro' && (
         <Alert className="bg-gradient-to-r from-blue-600 to-indigo-700 border-none text-white shadow-xl shadow-blue-900/20 py-6 overflow-hidden relative">
           <div className="absolute top-0 right-0 -mr-10 -mt-10 opacity-10 rotate-12"><Rocket size={200} /></div>
@@ -231,7 +261,7 @@ export default function StudentDashboardPage() {
                 <div className="space-y-1">
                     <AlertTitle className="text-2xl font-black uppercase tracking-tight">Free Trial Active! 🎉</AlertTitle>
                     <AlertDescription className="text-blue-100 font-medium max-w-lg">
-                        You have <strong>unrestricted Pro access</strong> to every level and test! Master all formulas while you have the power.
+                        You have <strong>unrestricted Pro access</strong>! Master all formulas and reach for the top before the clock runs out.
                     </AlertDescription>
                 </div>
             </div>
@@ -243,80 +273,90 @@ export default function StudentDashboardPage() {
                     </span>
                 </div>
                 <Button asChild variant="secondary" className="bg-white text-blue-700 hover:bg-blue-50 font-black uppercase tracking-widest w-full">
-                    <Link href="/pricing">Get Pro Forever</Link>
+                    <Link href="/pricing">Lock in Pro Access</Link>
                 </Button>
             </div>
           </div>
         </Alert>
       )}
 
-      {/* --- TRIAL EXPIRED MOTIVATION --- */}
-      {!isTrialActive && profile.subscriptionStatus === 'free' && (
-        <Alert className="bg-amber-50 border-amber-200 text-amber-900 py-6 border-2 border-dashed">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex gap-4 items-start">
-                <div className="bg-amber-100 p-3 rounded-2xl"><Trophy className="h-8 w-8 text-amber-600" /></div>
-                <div className="space-y-1">
-                    <AlertTitle className="text-xl font-bold">Your Trial has ended, {profile.firstName}!</AlertTitle>
-                    <AlertDescription className="text-amber-800/80 font-medium">
-                        You are now a <strong>Junior Calculator</strong>. Ready to unlock the full path to <strong>Grandmaster</strong>? Upgrade to Pro to access all 50+ levels and detailed analytics!
-                    </AlertDescription>
-                </div>
-            </div>
-            <Button asChild className="bg-amber-600 hover:bg-amber-700 text-white font-bold h-12 px-8 rounded-xl shadow-lg shadow-amber-900/20">
-                <Link href="/pricing">Unlock Pro Now</Link>
-            </Button>
-          </div>
-        </Alert>
-      )}
-
-      <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 text-white min-h-[220px] flex flex-col justify-center rounded-2xl">
+      {/* Hero Header: Ultimate Mission */}
+      <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 text-white min-h-[240px] flex flex-col justify-center rounded-3xl">
         <div className="absolute inset-0 opacity-30 bg-cover bg-center" style={{ backgroundImage: "url('https://picsum.photos/seed/abacus/1200/400')" }} />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent" />
-        <CardContent className="relative z-10 p-8 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="space-y-4 text-center md:text-left max-w-xl">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight font-headline uppercase">Road to Mastery</h1>
-            <div className="flex flex-wrap justify-center md:justify-start gap-3">
-              <Badge className="bg-yellow-400 text-slate-900 font-bold px-4 py-1.5 rounded-full text-xs tracking-wide shadow-lg border-none">
-                {currentRank.icon} Rank: {currentRank.name}
+        <CardContent className="relative z-10 p-8 flex flex-col lg:flex-row justify-between items-center gap-10">
+          <div className="space-y-6 text-center lg:text-left max-w-xl">
+            <div className="space-y-2">
+                <h1 className="text-4xl md:text-5xl font-black tracking-tight font-headline uppercase leading-none">The Path to Power</h1>
+                <p className="text-blue-300 font-bold uppercase tracking-[0.2em] text-xs">Mission: Become a {ultimateGoal.name}</p>
+            </div>
+            <div className="flex flex-wrap justify-center lg:justify-start gap-3">
+              <Badge className="bg-yellow-400 text-slate-900 font-black px-4 py-2 rounded-full text-xs tracking-wider shadow-lg border-none">
+                {currentRank.icon} RANK: {currentRank.name}
               </Badge>
               {nextRank && (
-                <Badge variant="outline" className="text-white border-white/20 px-4 py-1.5 rounded-full text-xs tracking-wide font-bold">
-                  Target: {nextRank.icon} {nextRank.name}
+                <Badge variant="outline" className="text-white border-white/20 px-4 py-2 rounded-full text-xs tracking-wider font-bold">
+                  NEXT: {nextRank.icon} {nextRank.name}
                 </Badge>
               )}
             </div>
+            <div className="flex items-center gap-2 text-slate-400 text-sm italic font-medium bg-white/5 py-2 px-4 rounded-xl w-fit mx-auto lg:mx-0">
+                <Lightbulb className="w-4 h-4 text-yellow-400" />
+                "{quoteRef.current}"
+            </div>
           </div>
           
-          {nextRank && (
-            <div className="w-full md:w-80 space-y-4">
-              <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-300">
-                <span>Journey to {nextRank.name}</span>
-                <span>{Math.floor(totalProg)}% Complete</span>
-              </div>
-              <div className="h-4 w-full bg-white/10 rounded-full p-1 border border-white/10">
-                <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.6)] transition-all duration-1000" style={{ width: `${totalProg}%` }} />
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div className="bg-white/5 rounded-lg py-2">
-                  <p className="text-[14px] font-black text-white leading-none">{pointsRemaining.toLocaleString()}</p>
-                  <p className="text-[8px] text-slate-400 uppercase font-bold mt-1">Pts to go</p>
+          <div className="w-full max-w-sm space-y-6 bg-black/20 p-6 rounded-3xl border border-white/10 backdrop-blur-sm">
+            {nextRank ? (
+              <div className="space-y-4">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-blue-300">
+                  <span>Progress to {nextRank.name}</span>
+                  <span>{Math.floor(totalProg)}%</span>
                 </div>
-                <div className="bg-white/5 rounded-lg py-2">
-                  <p className="text-[14px] font-black text-white leading-none">{daysRemaining}</p>
-                  <p className="text-[8px] text-slate-400 uppercase font-bold mt-1">Days to go</p>
+                <div className="h-3 w-full bg-white/10 rounded-full p-0.5 border border-white/5">
+                  <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.6)] transition-all duration-1000" style={{ width: `${totalProg}%` }} />
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="bg-white/5 rounded-2xl py-3 border border-white/5">
+                    <p className="text-lg font-black text-white leading-none">{pointsRemaining.toLocaleString()}</p>
+                    <p className="text-[8px] text-slate-400 uppercase font-black mt-1">Pts Remaining</p>
+                  </div>
+                  <div className="bg-white/5 rounded-2xl py-3 border border-white/5">
+                    <p className="text-lg font-black text-white leading-none">{daysRemaining}</p>
+                    <p className="text-[8px] text-slate-400 uppercase font-black mt-1">Days to Go</p>
+                  </div>
                 </div>
               </div>
+            ) : (
+              <div className="text-center py-4">
+                <Trophy className="w-12 h-12 text-yellow-400 mx-auto mb-2" />
+                <p className="font-black uppercase tracking-tighter text-xl">Maximum Level Reached!</p>
+                <p className="text-slate-400 text-xs mt-1">You are a True Human Calculator.</p>
+              </div>
+            )}
+            
+            <div className="pt-4 border-t border-white/10">
+                <div className="flex justify-between items-center mb-2">
+                    <span className="text-[9px] font-black text-yellow-400 uppercase tracking-widest">Final Rank Status</span>
+                    <span className="text-[9px] font-black text-white/40">{Math.floor((currentPoints / ultimateGoal.pointsReq) * 100)}% Global Completion</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="h-1.5 flex-1 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full bg-yellow-400 transition-all duration-1000" style={{ width: `${Math.min(100, (currentPoints / ultimateGoal.pointsReq) * 100)}%` }} />
+                    </div>
+                    <Crown className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                </div>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 
+      {/* Summary Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="hover:shadow-md transition-shadow bg-card/50 border-border/50">
           <CardContent className="p-6 flex items-center gap-4">
             <div className="bg-orange-100 p-3 rounded-2xl"><Flame className="w-6 h-6 text-orange-600" /></div>
-            <div><p className="text-3xl font-bold text-foreground leading-none">{profile.currentStreak || 0}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Streak</p></div>
+            <div><p className="text-3xl font-bold text-foreground leading-none">{profile.currentStreak || 0}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Day Streak</p></div>
           </CardContent>
         </Card>
         <Card className="hover:shadow-md transition-shadow bg-card/50 border-border/50">
@@ -332,17 +372,17 @@ export default function StudentDashboardPage() {
                 <div className="bg-yellow-100 p-3 rounded-2xl"><Star className="w-6 h-6 text-yellow-600 fill-yellow-600" /></div>
                 <div>
                     <p className="text-3xl font-bold text-foreground leading-none">{currentPoints.toLocaleString()}</p>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Total Points</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Mastery Points</p>
                 </div>
             </div>
             <div className="flex-1 grid grid-cols-2 gap-8 text-center">
                 <div>
                     <p className="text-2xl font-bold text-foreground">{(profile.weeklyPoints || 0).toLocaleString()}</p>
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">This Week</p>
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Weekly</p>
                 </div>
                 <div>
                     <p className="text-2xl font-bold text-foreground">{(profile.monthlyPoints || 0).toLocaleString()}</p>
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">This Month</p>
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Monthly</p>
                 </div>
             </div>
           </CardContent>
@@ -352,8 +392,8 @@ export default function StudentDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-foreground font-headline flex items-center gap-3"><CalendarDays className="w-6 h-6 text-primary" /> 28 Day Challenge</h2>
-            <Button variant="link" onClick={() => router.push('/progress')} className="font-bold text-primary p-0 uppercase tracking-tight text-xs">History <ChevronRight className="w-4 h-4 ml-1" /></Button>
+            <h2 className="text-2xl font-bold text-foreground font-headline flex items-center gap-3"><CalendarDays className="w-6 h-6 text-primary" /> Consistency Challenge</h2>
+            <Button variant="link" onClick={() => router.push('/progress')} className="font-bold text-primary p-0 uppercase tracking-tight text-xs">Practice History <ChevronRight className="w-4 h-4 ml-1" /></Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -361,7 +401,7 @@ export default function StudentDashboardPage() {
               const startDay = (weekNum - 1) * 7;
               const weekProgress = Math.max(0, Math.min(7, currentDays - startDay));
               return (
-                <Card key={weekNum} className="overflow-hidden border-border/50 shadow-sm rounded-xl">
+                <Card key={weekNum} className="overflow-hidden border-border/50 shadow-sm rounded-2xl">
                   <CardHeader className="bg-muted/30 border-b border-border/50 py-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2"><div className="bg-primary text-primary-foreground p-1 rounded"><Check className="w-3 h-3 stroke-[3px]" /></div><span className="font-bold text-foreground uppercase tracking-tight text-sm">Week {weekNum}</span></div>
@@ -383,39 +423,65 @@ export default function StudentDashboardPage() {
             })}
           </div>
 
-          <Button onClick={() => router.push('/tests')} disabled={!isEmailVerified} className="w-full h-20 bg-primary hover:bg-primary/90 text-2xl font-bold rounded-2xl shadow-xl uppercase tracking-widest group">
-            Start Practice {!isEmailVerified && <ShieldAlert className="ml-2 h-6 w-6" />} <ChevronRight className="w-8 h-8 ml-4 stroke-[3px] group-hover:translate-x-2 transition-transform" />
+          <Button onClick={() => router.push('/tests')} disabled={!isEmailVerified} className="w-full h-24 bg-primary hover:bg-primary/90 text-3xl font-black rounded-3xl shadow-xl uppercase tracking-[0.1em] group relative overflow-hidden">
+            <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+            <span className="relative z-10 flex items-center justify-center">
+                LAUNCH PRACTICE {!isEmailVerified && <ShieldAlert className="ml-2 h-6 w-6" />} 
+                <ChevronRight className="w-10 h-10 ml-4 stroke-[4px] group-hover:translate-x-2 transition-transform" />
+            </span>
           </Button>
         </div>
 
         <div className="space-y-8">
-          <Card className="border-border/50 shadow-sm bg-primary/5">
-            <CardHeader className="pb-2"><CardTitle className="text-lg font-bold text-primary flex items-center gap-2 font-headline uppercase tracking-tight"><Bell className="w-5 h-5" /> Daily Reminders</CardTitle></CardHeader>
-            <CardContent>
-              <Button onClick={handleEnableNotifications} disabled={isRequestingNotifications || !!profile.fcmToken} variant={profile.fcmToken ? "ghost" : "default"} className={cn("w-full rounded-xl h-12 font-bold transition-all uppercase text-xs", profile.fcmToken ? "text-green-600 bg-green-50/50 cursor-default" : "shadow-md")}>{isRequestingNotifications ? <Loader2 className="animate-spin h-4 w-4" /> : profile.fcmToken ? <><Check className="mr-2 h-4 w-4 stroke-[3px]" /> Active</> : "Enable Notifications"}</Button>
+          <Card className="border-border/50 shadow-sm bg-primary/5 rounded-2xl overflow-hidden">
+            <CardHeader className="pb-2 border-b border-white/10 bg-white/5">
+                <CardTitle className="text-lg font-bold text-primary flex items-center gap-2 font-headline uppercase tracking-tight">
+                    <Bell className="w-5 h-5" /> Training Alerts
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <Button onClick={handleEnableNotifications} disabled={isRequestingNotifications || !!profile.fcmToken} variant={profile.fcmToken ? "ghost" : "default"} className={cn("w-full rounded-xl h-12 font-bold transition-all uppercase text-xs", profile.fcmToken ? "text-green-600 bg-green-50/50 cursor-default" : "shadow-md")}>{isRequestingNotifications ? <Loader2 className="animate-spin h-4 w-4" /> : profile.fcmToken ? <><Check className="mr-2 h-4 w-4 stroke-[3px]" /> Reminders Enabled</> : "Activate Daily Nudges"}</Button>
             </CardContent>
           </Card>
 
-          <Card className="border-border/50 shadow-sm overflow-hidden rounded-xl">
+          <Card className="border-border/50 shadow-sm overflow-hidden rounded-2xl">
             <CardHeader className="bg-muted/30 border-b border-border/50 pb-0">
-              <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2 font-headline uppercase tracking-tight mb-4"><Trophy className="text-yellow-500 w-6 h-6" /> Hall of Fame</CardTitle>
-              <Tabs defaultValue="totalPoints" onValueChange={setLeaderboardTab} className="w-full"><TabsList className="grid w-full grid-cols-3 bg-slate-200/50"><TabsTrigger value="weeklyPoints" className="text-[10px] font-bold uppercase py-2">Weekly</TabsTrigger><TabsTrigger value="monthlyPoints" className="text-[10px] font-bold uppercase py-2">Monthly</TabsTrigger><TabsTrigger value="totalPoints" className="text-[10px] font-bold uppercase py-2">Global</TabsTrigger></TabsList></Tabs>
+              <CardTitle className="text-xl font-black flex items-center gap-2 font-headline uppercase tracking-tight mb-4">
+                <Trophy className="text-yellow-500 w-6 h-6" /> Hall of Fame
+              </CardTitle>
+              <Tabs defaultValue="totalPoints" onValueChange={setLeaderboardTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 bg-slate-200/50 mb-2">
+                    <TabsTrigger value="weeklyPoints" className="text-[9px] font-black uppercase py-2">Weekly</TabsTrigger>
+                    <TabsTrigger value="monthlyPoints" className="text-[9px] font-black uppercase py-2">Monthly</TabsTrigger>
+                    <TabsTrigger value="totalPoints" className="text-[9px] font-black uppercase py-2">Global</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border/50 min-h-[400px]">
                 {leaderboard.length > 0 ? leaderboard.map((student, idx) => (
-                  <div key={student.uid} className={cn("flex items-center justify-between p-4", student.uid === profile.uid ? "bg-primary/5 ring-inset ring-1 ring-primary/10" : "hover:bg-muted/30")}>
+                  <div key={student.uid} className={cn("flex items-center justify-between p-4", student.uid === profile.uid ? "bg-primary/5 ring-inset ring-1 ring-primary/10" : "hover:bg-muted/30 transition-colors")}>
                     <div className="flex items-center gap-4">
-                      <span className={cn("w-6 text-sm font-bold", idx === 0 ? "text-yellow-500" : idx === 1 ? "text-slate-400" : idx === 2 ? "text-amber-600" : "text-muted-foreground")}>#{idx + 1}</span>
+                      <span className={cn("w-6 text-sm font-black", idx === 0 ? "text-yellow-500" : idx === 1 ? "text-slate-400" : idx === 2 ? "text-amber-600" : "text-muted-foreground")}>#{idx + 1}</span>
                       <Avatar className="h-12 w-12 border-2 border-white shadow-sm"><AvatarImage src={student.photo} /><AvatarFallback className="bg-muted font-bold">{student.name?.charAt(0)}</AvatarFallback></Avatar>
                       <div className="flex flex-col min-w-0">
                         <span className="text-sm font-bold text-foreground truncate">{student.name}</span>
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tight w-fit" style={{ backgroundColor: student.title.color + '20', color: student.title.color }}>{student.title.icon} {student.title.name}</span>
+                        <span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter w-fit" style={{ backgroundColor: student.title.color + '20', color: student.title.color }}>{student.title.icon} {student.title.name}</span>
                       </div>
                     </div>
-                    <div className="text-right"><span className="text-base font-bold text-primary leading-none block">{student.points.toLocaleString()}</span><span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Points</span></div>
+                    <div className="text-right">
+                        <span className="text-base font-black text-primary leading-none block">{student.points.toLocaleString()}</span>
+                        <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Points</span>
+                    </div>
                   </div>
-                )) : <div className="py-24 text-center text-muted-foreground"><p className="text-sm font-bold uppercase tracking-widest">Summoning Champions...</p></div>}
+                )) : <div className="py-24 text-center text-muted-foreground"><p className="text-sm font-bold uppercase tracking-widest animate-pulse">Summoning Champions...</p></div>}
+              </div>
+              <div className="p-4 bg-muted/20 border-t flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg"><Target className="w-4 h-4 text-primary" /></div>
+                <div>
+                    <p className="text-[10px] font-black uppercase text-foreground">Your Rank Mission</p>
+                    <p className="text-[9px] text-muted-foreground font-medium">Out-practice {leaderboard.length > 0 ? leaderboard[0].name : 'the leaders'} to climb!</p>
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -74,10 +74,11 @@ export const TEST_NAME_MAP: Record<string, string> = {
 };
 
 export const RANK_CRITERIA = [
-  { name: "Human Calculator", icon: "👑", color: "#FFD700", daysReq: 365, pointsReq: 100000, description: "Master of all formulas and infinite speed." },
-  { name: "Grandmaster", icon: "🔱", color: "#E5E4E2", daysReq: 270, pointsReq: 50000, description: "Elite status reserved for the most dedicated." },
-  { name: "Math Ninja", icon: "🥷", color: "#C0C0C0", daysReq: 180, pointsReq: 25000, description: "Lightning fast visualization and accuracy." },
-  { name: "Speed Runner", icon: "⚡", color: "#CD7F32", daysReq: 90, pointsReq: 10000, description: "Proven consistency and developing speed." },
-  { name: "Apprentice", icon: "🛠️", color: "#A52A2A", daysReq: 30, pointsReq: 2500, description: "Solid foundation in basic formulas." },
-  { name: "Junior Calculator", icon: "👶", color: "#ADD8E6", daysReq: 0, pointsReq: 0, description: "Starting the journey to mastery." }
+  { name: "Human Calculator", icon: "👑", color: "#FFD700", daysReq: 365, pointsReq: 100000, description: "The ultimate master. Speed and accuracy beyond limits." },
+  { name: "Grandmaster", icon: "🔱", color: "#E5E4E2", daysReq: 270, pointsReq: 50000, description: "Elite status reserved for the most dedicated math warriors." },
+  { name: "Math Ninja", icon: "🥷", color: "#C0C0C0", daysReq: 180, pointsReq: 25000, description: "Lightning fast visualization and precision." },
+  { name: "Speed Runner", icon: "⚡", color: "#CD7F32", daysReq: 90, pointsReq: 10000, description: "Unstoppable momentum and developing mastery." },
+  { name: "Apprentice", icon: "🛠️", color: "#A52A2A", daysReq: 30, pointsReq: 2500, description: "Solid foundation in all core abacus formulas." },
+  { name: "Rising Star", icon: "🌟", color: "#4ADE80", daysReq: 3, pointsReq: 250, description: "An incredible start! You're destined for greatness." },
+  { name: "Junior Calculator", icon: "👶", color: "#ADD8E6", daysReq: 0, pointsReq: 0, description: "The journey to math mastery begins today." }
 ];
