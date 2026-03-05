@@ -366,22 +366,21 @@ export default function StudentDashboardPage() {
           </CardContent>
         </Card>
         <Card className={cn("hover:shadow-md transition-all bg-card/50 border-border/50 relative lg:col-span-2", pointsEarned && "ring-2 ring-green-500 shadow-lg scale-105 bg-green-50/10")}>
-          <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-8 relative">
+          <CardContent className="p-6 relative">
             {pointsEarned && <PointsAnimation points={pointsEarned} />}
-            <div className="flex items-center gap-4 border-r border-border/50 pr-8 min-w-fit">
-                <div className="bg-yellow-100 p-3 rounded-2xl"><Star className="w-6 h-6 text-yellow-600 fill-yellow-600" /></div>
-                <div>
-                    <p className="text-3xl font-bold text-foreground leading-none">{currentPoints.toLocaleString()}</p>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Mastery Points</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-6 divide-y sm:divide-y-0 sm:divide-x divide-border/50 h-full">
+                <div className="flex items-center justify-center sm:justify-start gap-4 pb-4 sm:pb-0 h-full">
+                    <div className="bg-yellow-100 p-3 rounded-2xl"><Star className="w-6 h-6 text-yellow-600 fill-yellow-600" /></div>
+                    <div>
+                        <p className="text-3xl font-bold text-foreground leading-none">{currentPoints.toLocaleString()}</p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Total Points</p>
+                    </div>
                 </div>
-            </div>
-            <div className="flex-1 flex justify-around items-center w-full">
-                <div className="text-center">
+                <div className="text-center py-4 sm:py-0 h-full flex flex-col justify-center">
                     <p className="text-2xl font-bold text-foreground">{(profile.weeklyPoints || 0).toLocaleString()}</p>
                     <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Weekly</p>
                 </div>
-                <div className="w-px h-10 bg-border/50 mx-4" />
-                <div className="text-center">
+                <div className="text-center pt-4 sm:pt-0 h-full flex flex-col justify-center">
                     <p className="text-2xl font-bold text-foreground">{(profile.monthlyPoints || 0).toLocaleString()}</p>
                     <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Monthly</p>
                 </div>

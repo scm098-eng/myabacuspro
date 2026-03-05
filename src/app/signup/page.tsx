@@ -207,11 +207,8 @@ export default function SignupPage() {
   
   const handleRedirect = (profile: ProfileData | null) => {
     if (profile && profile.firstName) {
-        if(profile.role === 'admin' || (profile.role === 'teacher' && profile.status === 'approved')) {
-            router.push('/admin');
-        } else {
-            router.push('/');
-        }
+        // First-time users land on HOME PAGE after registration as requested
+        router.push('/');
     } else {
         router.push('/profile');
     }
@@ -247,9 +244,10 @@ export default function SignupPage() {
         title: 'Signup Successful!',
         description: values.role === 'teacher' 
             ? 'Your application has been submitted. Please wait for admin approval.'
-            : 'Welcome aboard! Please complete your profile.',
+            : 'Welcome aboard! The path to mastery begins here.',
       });
-      router.push(values.role === 'teacher' ? '/' : '/profile');
+      // New users always launch on Home Page
+      router.push('/');
     } catch (error: any) {
       console.error(error);
       let description = 'Could not create an account. Please try again.';
@@ -469,7 +467,7 @@ export default function SignupPage() {
                   <>
                     <FormField control={form.control} name="instituteName" render={({ field }) => (<FormItem><FormLabel>Name of Institute</FormLabel><FormControl><Input placeholder="Institute Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
                      <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
-                      <FormField control={form.control} name="instituteCountry" render={({ field }) => ( <FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a country" /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="instituteCountry" render={({ field }) => ( <FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a country" /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</Select><FormMessage /></FormItem> )} />
                       <FormField control={form.control} name="instituteState" render={({ field }) => ( 
                         <FormItem>
                           <FormLabel>State / Province / Region</FormLabel>
@@ -497,7 +495,7 @@ export default function SignupPage() {
                 )}
                 
                 <h3 className="text-lg font-medium pt-4 border-b">Residential Address</h3>
-                <FormField control={form.control} name="country" render={({ field }) => ( <FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a country" /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="country" render={({ field }) => ( <FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a country" /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</Select><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="state" render={({ field }) => ( 
                   <FormItem>
                     <FormLabel>State / Province / Region</FormLabel>

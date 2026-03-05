@@ -46,7 +46,8 @@ function LoginForm({ role }: { role: UserRole }) {
         if(profile.role === 'admin' || (profile.role === 'teacher' && profile.status === 'approved')) {
             router.push('/admin');
         } else {
-            router.push('/');
+            // Existing students/users land on Dashboard
+            router.push('/dashboard');
         }
     } else {
         router.push('/profile');
@@ -115,7 +116,6 @@ function LoginForm({ role }: { role: UserRole }) {
                     <FormItem>
                     <div className="flex justify-between items-center">
                         <FormLabel>Password</FormLabel>
-                        {/* Note: Forgot password is in the main component */}
                     </div>
                     <FormControl>
                         <div className="relative">
@@ -265,5 +265,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
