@@ -98,39 +98,47 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     setQuestions(newQuestions);
   }, [level]);
   
-  const advanceQuestion = useCallback(() => {
-    if (currentQuestionIndex + 1 >= questions.length) {
-      // Calculation: score is incremented by 10 per correct answer
-      const correctAnswers = score / 10;
-      const accuracy = (correctAnswers / questions.length) * 100;
-      
-      if (user) {
-        const { earnedPoints } = calculatePoints({
-          correct: correctAnswers,
-          total: questions.length,
-          timeInSeconds: 0,
-          targetTime: 0,
-          level: levelId,
-          isGame: true
-        });
+  const finishGame = useCallback(async (finalScore: number, finalLives: number) => {
+    if (gameState !== 'playing') return;
 
-        if (accuracy >= MIN_SCORE_TO_PASS) {
-          saveCompletedGameLevel(levelId);
-          recordDailyPractice(user.uid);
-          addPoints(user.uid, earnedPoints);
-          setFinalMasteryPoints(earnedPoints);
-          playSound('success');
-          setGameState('levelComplete');
-        } else {
-          addPoints(user.uid, earnedPoints);
-          setFinalMasteryPoints(earnedPoints);
-          setGameState('gameOver');
-        }
+    const correctAnswers = finalScore / 10;
+    const accuracy = (correctAnswers / questions.length) * 100;
+    
+    if (user) {
+      const { earnedPoints } = calculatePoints({
+        correct: correctAnswers,
+        total: questions.length,
+        timeInSeconds: 0,
+        targetTime: 0,
+        level: levelId,
+        isGame: true
+      });
+
+      setFinalMasteryPoints(earnedPoints);
+      addPoints(user.uid, earnedPoints);
+
+      if (accuracy >= MIN_SCORE_TO_PASS && finalLives > 0) {
+        saveCompletedGameLevel(levelId);
+        recordDailyPractice(user.uid);
+        playSound('success');
+        setGameState('levelComplete');
+      } else {
+        setGameState('gameOver');
       }
-    } else {
-      setCurrentQuestionIndex(i => i + 1);
     }
-  }, [currentQuestionIndex, questions.length, score, user, saveCompletedGameLevel, levelId, recordDailyPractice, addPoints, playSound]);
+  }, [questions.length, user, levelId, saveCompletedGameLevel, recordDailyPractice, addPoints, playSound, gameState]);
+
+  const advanceQuestion = useCallback((isCorrectOutcome?: boolean) => {
+    // Determine the next score state immediately to avoid race conditions
+    const nextScore = isCorrectOutcome ? score + 10 : score;
+    const nextIndex = currentQuestionIndex + 1;
+
+    if (nextIndex >= questions.length) {
+      finishGame(nextScore, lives);
+    } else {
+      setCurrentQuestionIndex(nextIndex);
+    }
+  }, [currentQuestionIndex, questions.length, score, lives, finishGame]);
 
   const generateBubbles = useCallback(() => {
     if (questionTimeoutRef.current) {
@@ -138,7 +146,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     }
     
     if (!questions.length || currentQuestionIndex >= questions.length || lives <= 0) {
-      setGameState('gameOver');
       return;
     }
 
@@ -182,9 +189,15 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
     questionTimeoutRef.current = setTimeout(() => {
         if (gameState === 'playing') {
-            setLives(l => l - 1);
+            setLives(l => {
+              const nextLives = l - 1;
+              if (nextLives <= 0) {
+                // Out of lives handled by separate effect for safety
+              }
+              return nextLives;
+            });
             playSound('wrong');
-            advanceQuestion();
+            advanceQuestion(false);
         }
     }, (maxDuration + 1) * 1000);
 
@@ -201,24 +214,12 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   
   useEffect(() => {
      if (lives <= 0 && gameState === 'playing') {
-      if (user) {
-        const { earnedPoints } = calculatePoints({
-          correct: score / 10,
-          total: questions.length,
-          timeInSeconds: 0,
-          targetTime: 0,
-          level: levelId,
-          isGame: true
-        });
-        setFinalMasteryPoints(earnedPoints);
-        addPoints(user.uid, earnedPoints);
-      }
-      setGameState('gameOver');
+      finishGame(score, 0);
       if (questionTimeoutRef.current) {
         clearTimeout(questionTimeoutRef.current);
       }
     }
-  }, [lives, gameState, score, questions.length, levelId, user, addPoints]);
+  }, [lives, gameState, score, finishGame]);
 
   const handleBubbleClick = (bubble: Bubble) => {
     if (gameState !== 'playing' || bubble.isQuestion) return;
@@ -227,14 +228,15 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         clearTimeout(questionTimeoutRef.current);
     }
 
-    if (bubble.isCorrect) {
-      setScore(s => s + 10); // 10 points for HUD
+    const isCorrect = bubble.isCorrect;
+    if (isCorrect) {
+      setScore(s => s + 10);
       playSound('correct');
     } else {
       setLives(l => l - 1);
       playSound('wrong');
     }
-    advanceQuestion();
+    advanceQuestion(isCorrect);
   };
 
   if (!mounted) return null;
@@ -257,7 +259,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             <Seaweed className="left-[50%] -translate-x-1/2 bottom-[-20px] scale-60" />
         </div>
 
-        {/* HUD - z-50 to be above bubbles but below final overlay */}
+        {/* HUD */}
         <div className="absolute top-0 left-0 right-0 p-4 sm:p-6 bg-black/30 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50 animate-in slide-in-from-top duration-500">
             <div className="flex items-center gap-4 sm:gap-8 text-white">
                 <div>
@@ -285,7 +287,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             </Button>
         </div>
 
-        {/* Game Stage (Bubbles) - z-10 */}
+        {/* Game Stage (Bubbles) */}
         <div className="relative w-full h-full max-w-7xl z-10 flex items-center justify-center">
             {gameState === 'playing' && (
                 <>
@@ -315,7 +317,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             )}
         </div>
 
-        {/* Final Results Overlays - z-[100] to sit above EVERYTHING including HUD header */}
+        {/* Final Results Overlays */}
         {(gameState === 'levelComplete' || gameState === 'gameOver') && (
             <div className="absolute inset-0 flex items-center justify-center p-4 z-[100] animate-in fade-in zoom-in-95 duration-500">
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />

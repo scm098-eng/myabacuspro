@@ -157,9 +157,18 @@ export default function StudentDashboardPage() {
 
   const handleEnableNotifications = async (isAuto = false) => {
     if (!user) return;
+    
+    // Safety check for stuck state
+    if (typeof Notification === 'undefined') return;
+    
+    if (Notification.permission === 'denied') {
+      if (!isAuto) toast({ title: "Setup Blocked", description: "Enable notifications in browser settings.", variant: "destructive" });
+      setIsRequestingNotifications(false);
+      return;
+    }
+
     setIsRequestingNotifications(true);
     try {
-      // Permission request
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
         const messaging = getMessaging(firebaseApp);
@@ -172,14 +181,14 @@ export default function StudentDashboardPage() {
           const userRef = doc(db, "users", user.uid);
           await updateDoc(userRef, { fcmToken: token });
           if (!isAuto) {
-            toast({ title: "Training Alerts Active!", description: "You'll receive daily math nudges at 7 PM IST. 🔥" });
+            toast({ title: "Training Alerts Active!", description: "Daily math nudges enabled at 7 PM IST. 🔥" });
           }
         }
       }
     } catch (error: any) {
       console.error("Notification setup error:", error);
       if (!isAuto) {
-        toast({ title: "Setup Failed", description: "Could not enable reminders. Check browser settings.", variant: "destructive" });
+        toast({ title: "Setup Failed", description: "Could not enable reminders.", variant: "destructive" });
       }
     } finally {
       setIsRequestingNotifications(false);
@@ -247,21 +256,21 @@ export default function StudentDashboardPage() {
         />
       )}
 
-      {/* --- USAGE GUARDIAN ALERT --- */}
+      {/* Usage Alert */}
       {showBreakAlert && (
         <Alert className="bg-yellow-50 border-yellow-200 text-yellow-900 animate-in slide-in-from-top-4 duration-500">
           <Coffee className="h-4 w-4 text-yellow-600" />
           <AlertTitle className="font-bold">Time for a Quick Break? 🍵</AlertTitle>
           <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <span>You've been practicing for 30 minutes! Take 5 minutes to rest your eyes and stretch. Mental math is better with a fresh mind.</span>
+            <span>You've been practicing for 30 minutes! Take 5 minutes to rest your eyes and stretch.</span>
             <Button size="sm" onClick={() => setShowBreakAlert(false)} variant="outline" className="border-yellow-300">Got it!</Button>
           </AlertDescription>
         </Alert>
       )}
 
-      {/* --- EMAIL VERIFICATION ALERT --- */}
+      {/* Verification Alert */}
       {!isEmailVerified && (
-        <Alert variant="destructive" className="bg-orange-50 border-orange-200 text-orange-800 animate-in slide-in-from-top-4 duration-500">
+        <Alert variant="destructive" className="bg-orange-50 border-orange-200 text-orange-800">
           <ShieldAlert className="h-4 w-4 text-orange-600" />
           <AlertTitle className="font-bold">Verify Your Email</AlertTitle>
           <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -274,52 +283,50 @@ export default function StudentDashboardPage() {
         </Alert>
       )}
 
-      {/* --- TRIAL EXPIRED MOTIVATION --- */}
+      {/* Trial Status */}
       {trialExpired && (
-        <Alert className="bg-slate-900 border-none text-white shadow-2xl animate-pulse">
+        <Alert className="bg-slate-900 border-none text-white shadow-2xl">
           <Crown className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-          <AlertTitle className="text-xl font-black uppercase tracking-tight">Your Free Trial Has Ended</AlertTitle>
+          <AlertTitle className="text-xl font-black uppercase tracking-tight">Free Trial Has Ended</AlertTitle>
           <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-2">
             <span className="font-medium text-slate-300">
-              You are now a <strong>Junior Calculator</strong>. To continue your journey to becoming a <strong>Human Calculator</strong> and unlock all 50+ game levels, upgrade to Pro now!
+              Continue your journey to becoming a <strong>Human Calculator</strong>. Upgrade to Pro now to unlock all 50+ levels!
             </span>
             <Button asChild className="bg-yellow-400 text-slate-900 hover:bg-yellow-300 font-black uppercase tracking-widest px-8 h-12 shrink-0">
-              <Link href="/pricing">Get Full Access</Link>
+              <Link href="/pricing">Get Pro Access</Link>
             </Button>
           </AlertDescription>
         </Alert>
       )}
 
-      {/* --- TRIAL SYSTEM HUD --- */}
       {isTrialActive && profile.subscriptionStatus !== 'pro' && (
-        <Alert className="bg-gradient-to-r from-blue-600 to-indigo-700 border-none text-white shadow-xl shadow-blue-900/20 py-6 overflow-hidden relative">
-          <div className="absolute top-0 right-0 -mr-10 -mt-10 opacity-10 rotate-12"><Rocket size={200} /></div>
+        <Alert className="bg-gradient-to-r from-blue-600 to-indigo-700 border-none text-white shadow-xl py-6 overflow-hidden relative">
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex gap-4 items-start">
                 <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm"><Crown className="h-8 w-8 text-yellow-300 fill-yellow-300" /></div>
                 <div className="space-y-1">
                     <AlertTitle className="text-2xl font-black uppercase tracking-tight">Free Trial Active! 🎉</AlertTitle>
                     <AlertDescription className="text-blue-100 font-medium max-w-lg">
-                        You have <strong>unrestricted Pro access</strong>! Master all formulas and reach for the top before the clock runs out.
+                        You have unrestricted Pro access! Reach for the top before the clock runs out.
                     </AlertDescription>
                 </div>
             </div>
             <div className="flex flex-col items-center gap-2">
-                <div className="flex items-center gap-3 bg-black/20 px-6 py-3 rounded-2xl border border-white/10 backdrop-blur-md">
+                <div className="flex items-center gap-3 bg-black/20 px-6 py-3 rounded-2xl border border-white/10">
                     <Clock className="h-5 w-5 text-yellow-300 animate-pulse" />
                     <span className="font-black font-mono text-xl">
                         {trialDaysInt > 0 ? `${trialDaysInt}d ` : ''}{trialHoursRemaining}h left
                     </span>
                 </div>
                 <Button asChild variant="secondary" className="bg-white text-blue-700 hover:bg-blue-50 font-black uppercase tracking-widest w-full">
-                    <Link href="/pricing">Lock in Pro Access</Link>
+                    <Link href="/pricing">Lock in Pro</Link>
                 </Button>
             </div>
           </div>
         </Alert>
       )}
 
-      {/* Hero Header: Ultimate Mission */}
+      {/* Hero Header */}
       <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 text-white min-h-[240px] flex flex-col justify-center rounded-3xl">
         <div className="absolute inset-0 opacity-30 bg-cover bg-center" style={{ backgroundImage: "url('https://picsum.photos/seed/abacus/1200/400')" }} />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent" />
@@ -369,7 +376,7 @@ export default function StudentDashboardPage() {
             ) : (
               <div className="text-center py-4">
                 <Trophy className="w-12 h-12 text-yellow-400 mx-auto mb-2" />
-                <p className="font-black uppercase tracking-tighter text-xl">Maximum Level Reached!</p>
+                <p className="font-black uppercase tracking-tighter text-xl">Maximum Rank Reached!</p>
                 <p className="text-slate-400 text-xs mt-1">You are a True Human Calculator.</p>
               </div>
             )}
@@ -377,7 +384,7 @@ export default function StudentDashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Summary Stats Grid */}
+      {/* Summary Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="hover:shadow-md transition-shadow bg-card/50 border-border/50">
           <CardContent className="p-6 flex items-center gap-4">
@@ -477,11 +484,11 @@ export default function StudentDashboardPage() {
                     {profile.fcmToken ? <Check className="w-4 h-4 text-green-600" /> : isRequestingNotifications ? <Loader2 className="w-4 h-4 text-primary animate-spin" /> : <Bell className="w-4 h-4 text-primary" />}
                 </div>
                 <p className="text-xs font-bold text-muted-foreground uppercase">
-                    {profile.fcmToken ? "Daily Nudges Active" : isRequestingNotifications ? "Registering Device..." : "Alerts Not Set"}
+                    {profile.fcmToken ? "Daily Alerts Active" : isRequestingNotifications ? "Setting Up..." : "Alerts Not Set"}
                 </p>
               </div>
               <Button onClick={() => handleEnableNotifications()} disabled={isRequestingNotifications || !!profile.fcmToken} variant={profile.fcmToken ? "ghost" : "default"} className={cn("w-full rounded-xl h-12 font-bold transition-all uppercase text-xs", profile.fcmToken ? "text-green-600 bg-green-50/50 cursor-default" : "shadow-md")}>
-                {isRequestingNotifications ? <Loader2 className="animate-spin h-4 w-4" /> : profile.fcmToken ? <><Check className="mr-2 h-4 w-4 stroke-[3px]" /> Active at 7 PM</> : "Enable Training Nudges"}
+                {isRequestingNotifications ? <Loader2 className="animate-spin h-4 w-4" /> : profile.fcmToken ? <><Check className="mr-2 h-4 w-4 stroke-[3px]" /> Active at 7 PM</> : "Enable Training Alerts"}
               </Button>
             </CardContent>
           </Card>
@@ -494,7 +501,7 @@ export default function StudentDashboardPage() {
             </CardHeader>
             <CardContent>
                 <p className="text-[10px] text-blue-600 font-medium leading-relaxed">
-                    Safety check: After 30 mins of continuous practice, we'll suggest a quick break to rest your eyes.
+                    Session monitor active. We'll suggest a quick break after 30 mins of continuous focus.
                 </p>
             </CardContent>
           </Card>
@@ -534,8 +541,8 @@ export default function StudentDashboardPage() {
               <div className="p-4 bg-muted/20 border-t flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg"><Target className="w-4 h-4 text-primary" /></div>
                 <div>
-                    <p className="text-[10px] font-black uppercase text-foreground">Your Rank Mission</p>
-                    <p className="text-[9px] text-muted-foreground font-medium">Out-practice {leaderboard.length > 0 ? leaderboard[0].name : 'the leaders'} to climb!</p>
+                    <p className="text-[10px] font-black uppercase text-foreground">Mission Target</p>
+                    <p className="text-[9px] text-muted-foreground font-medium">Climb the Hall of Fame daily to reach the top!</p>
                 </div>
               </div>
             </CardContent>
