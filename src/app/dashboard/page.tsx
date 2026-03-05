@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, Zap, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, Info, ShieldAlert, MailCheck, TrendingUp, ArrowUp, Sparkles, Clock, Crown, Rocket, Lightbulb, Target, Timer as TimerIcon, Coffee } from 'lucide-react';
+import { Check, Trophy, Zap, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, Info, ShieldAlert, MailCheck, TrendingUp, ArrowUp, Sparkles, Clock, Crown, Rocket, Lightbulb, Target, Timer as TimerIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -57,10 +57,6 @@ export default function StudentDashboardPage() {
   const [showAchievement, setShowAchievement] = useState(false);
   const [achievementData, setAchievementData] = useState<any>(null);
   
-  // Usage tracking
-  const [sessionStartTime] = useState(Date.now());
-  const [showBreakAlert, setShowBreakAlert] = useState(false);
-  
   const [pointsEarned, setPointsEarned] = useState<number | null>(null);
   const lastPointsRef = useRef<number>(0);
   const quoteRef = useRef<string>(motivationalQuotes[0]);
@@ -72,17 +68,6 @@ export default function StudentDashboardPage() {
       router.push('/login');
     }
   }, [isLoading, user, router]);
-
-  // Usage monitor: Alert after 30 minutes of continuous usage
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const elapsedMinutes = (Date.now() - sessionStartTime) / (1000 * 60);
-      if (elapsedMinutes >= 30 && !showBreakAlert) {
-        setShowBreakAlert(true);
-      }
-    }, 60000);
-    return () => clearInterval(timer);
-  }, [sessionStartTime, showBreakAlert]);
 
   // Auto-activate notifications on login
   useEffect(() => {
@@ -156,18 +141,15 @@ export default function StudentDashboardPage() {
   }, [mounted, profile, getStudentTitle, user, updateUserProfile, isLoading]);
 
   const handleEnableNotifications = async (isAuto = false) => {
-    if (!user) return;
-    
-    // Safety check for stuck state
-    if (typeof Notification === 'undefined') return;
+    if (!user || typeof Notification === 'undefined') return;
     
     if (Notification.permission === 'denied') {
       if (!isAuto) toast({ title: "Setup Blocked", description: "Enable notifications in browser settings.", variant: "destructive" });
-      setIsRequestingNotifications(false);
       return;
     }
 
-    setIsRequestingNotifications(true);
+    if (!isAuto) setIsRequestingNotifications(true);
+    
     try {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
@@ -187,11 +169,8 @@ export default function StudentDashboardPage() {
       }
     } catch (error: any) {
       console.error("Notification setup error:", error);
-      if (!isAuto) {
-        toast({ title: "Setup Failed", description: "Could not enable reminders.", variant: "destructive" });
-      }
     } finally {
-      setIsRequestingNotifications(false);
+      if (!isAuto) setIsRequestingNotifications(false);
     }
   };
 
@@ -254,18 +233,6 @@ export default function StudentDashboardPage() {
           totalDays={currentDays}
           onClose={() => setShowAchievement(false)}
         />
-      )}
-
-      {/* Usage Alert */}
-      {showBreakAlert && (
-        <Alert className="bg-yellow-50 border-yellow-200 text-yellow-900 animate-in slide-in-from-top-4 duration-500">
-          <Coffee className="h-4 w-4 text-yellow-600" />
-          <AlertTitle className="font-bold">Time for a Quick Break? 🍵</AlertTitle>
-          <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <span>You've been practicing for 30 minutes! Take 5 minutes to rest your eyes and stretch.</span>
-            <Button size="sm" onClick={() => setShowBreakAlert(false)} variant="outline" className="border-yellow-300">Got it!</Button>
-          </AlertDescription>
-        </Alert>
       )}
 
       {/* Verification Alert */}
@@ -399,21 +366,22 @@ export default function StudentDashboardPage() {
           </CardContent>
         </Card>
         <Card className={cn("hover:shadow-md transition-all bg-card/50 border-border/50 relative lg:col-span-2", pointsEarned && "ring-2 ring-green-500 shadow-lg scale-105 bg-green-50/10")}>
-          <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-around gap-6 relative">
+          <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-8 relative">
             {pointsEarned && <PointsAnimation points={pointsEarned} />}
-            <div className="flex items-center gap-4 border-r border-border/50 pr-8">
+            <div className="flex items-center gap-4 border-r border-border/50 pr-8 min-w-fit">
                 <div className="bg-yellow-100 p-3 rounded-2xl"><Star className="w-6 h-6 text-yellow-600 fill-yellow-600" /></div>
                 <div>
                     <p className="text-3xl font-bold text-foreground leading-none">{currentPoints.toLocaleString()}</p>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Mastery Points</p>
                 </div>
             </div>
-            <div className="flex-1 grid grid-cols-2 gap-8 text-center">
-                <div>
+            <div className="flex-1 flex justify-around items-center w-full">
+                <div className="text-center">
                     <p className="text-2xl font-bold text-foreground">{(profile.weeklyPoints || 0).toLocaleString()}</p>
                     <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Weekly</p>
                 </div>
-                <div>
+                <div className="w-px h-10 bg-border/50 mx-4" />
+                <div className="text-center">
                     <p className="text-2xl font-bold text-foreground">{(profile.monthlyPoints || 0).toLocaleString()}</p>
                     <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Monthly</p>
                 </div>
@@ -464,7 +432,7 @@ export default function StudentDashboardPage() {
             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
             <span className="relative z-10 flex flex-col sm:flex-row items-center justify-center text-center gap-2">
                 <span className="text-xl sm:text-2xl md:text-3xl font-black text-wrap max-w-full">
-                    LAUNCH PRACTICE {!isEmailVerified && <ShieldAlert className="inline ml-2 h-6 w-6" />}
+                    START PRACTICE {!isEmailVerified && <ShieldAlert className="inline ml-2 h-6 w-6" />}
                 </span>
                 <ChevronRight className="w-8 h-8 sm:w-10 sm:h-10 stroke-[4px] group-hover:translate-x-2 transition-transform shrink-0" />
             </span>
@@ -481,28 +449,15 @@ export default function StudentDashboardPage() {
             <CardContent className="pt-4">
               <div className="flex items-center gap-3 mb-4">
                 <div className={cn("p-2 rounded-lg", profile.fcmToken ? "bg-green-100" : "bg-primary/10")}>
-                    {profile.fcmToken ? <Check className="w-4 h-4 text-green-600" /> : isRequestingNotifications ? <Loader2 className="w-4 h-4 text-primary animate-spin" /> : <Bell className="w-4 h-4 text-primary" />}
+                    {profile.fcmToken ? <Check className="w-4 h-4 text-green-600" /> : <Bell className="w-4 h-4 text-primary" />}
                 </div>
                 <p className="text-xs font-bold text-muted-foreground uppercase">
-                    {profile.fcmToken ? "Daily Alerts Active" : isRequestingNotifications ? "Setting Up..." : "Alerts Not Set"}
+                    {profile.fcmToken ? "Daily Alerts Active" : "Alerts Not Set"}
                 </p>
               </div>
               <Button onClick={() => handleEnableNotifications()} disabled={isRequestingNotifications || !!profile.fcmToken} variant={profile.fcmToken ? "ghost" : "default"} className={cn("w-full rounded-xl h-12 font-bold transition-all uppercase text-xs", profile.fcmToken ? "text-green-600 bg-green-50/50 cursor-default" : "shadow-md")}>
                 {isRequestingNotifications ? <Loader2 className="animate-spin h-4 w-4" /> : profile.fcmToken ? <><Check className="mr-2 h-4 w-4 stroke-[3px]" /> Active at 7 PM</> : "Enable Training Alerts"}
               </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-sm bg-blue-50/30 rounded-2xl overflow-hidden">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold text-blue-700 flex items-center gap-2 uppercase tracking-tight">
-                    <TimerIcon className="w-4 h-4" /> Usage Guardian
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p className="text-[10px] text-blue-600 font-medium leading-relaxed">
-                    Session monitor active. We'll suggest a quick break after 30 mins of continuous focus.
-                </p>
             </CardContent>
           </Card>
 
