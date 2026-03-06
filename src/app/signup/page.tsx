@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -149,7 +150,7 @@ export default function SignupPage() {
       const signupData: SignupData = { ...values, profilePhoto: croppedImageFile || undefined };
       await signup(signupData);
       toast({ title: 'Signup Successful!', description: 'Welcome aboard!' });
-      router.push('/'); // New users land on Home
+      router.push('/'); // New users explore Home
     } catch (error: any) {
       toast({ title: 'Sign-up Failed', description: error.message, variant: 'destructive' });
     } finally {
@@ -176,6 +177,7 @@ export default function SignupPage() {
   };
 
   return (
+    <>
     <div className="flex flex-col items-center justify-center py-12">
       <Card className="w-full max-w-2xl mx-auto shadow-xl">
         <CardHeader className="text-center">
@@ -273,5 +275,6 @@ export default function SignupPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }

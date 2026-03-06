@@ -150,21 +150,32 @@ exports.sendWeeklyLeaderboardUpdates = onSchedule({
 exports.sendCustomPromotionalEmail = onCall({
     secrets: ["GMAIL_APP_PASSWORD"]
 }, async (request) => {
-    if (!request.auth || request.auth.token.role !== 'admin') {
-        throw new HttpsError('permission-denied', "Admin only.");
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', "User must be logged in.");
+    }
+
+    // Verify Admin role from Firestore (more robust than claims)
+    const userDoc = await db.collection('users').doc(request.auth.uid).get();
+    if (!userDoc.exists || userDoc.data().role !== 'admin') {
+        throw new HttpsError('permission-denied', "Only admins can perform this action.");
     }
 
     const { subject, message, isTest, testEmail } = request.data;
     const transporter = getTransporter();
 
     if (isTest && testEmail) {
-        await transporter.sendMail({
-            from: `"My Abacus Pro" <${GMAIL_USER}>`,
-            to: testEmail,
-            subject: `[TEST] ${subject}`,
-            html: `<div style="font-family: sans-serif;">${message}</div>`
-        });
-        return { status: "success", message: "Test sent." };
+        try {
+            await transporter.sendMail({
+                from: `"My Abacus Pro" <${GMAIL_USER}>`,
+                to: testEmail,
+                subject: `[TEST] ${subject}`,
+                html: `<div style="font-family: sans-serif;">${message}</div>`
+            });
+            return { status: "success", message: "Test email sent successfully." };
+        } catch (e) {
+            logger.error("Test email failed:", e);
+            throw new HttpsError('internal', `Gmail Error: ${e.message}`);
+        }
     }
 
     const targets = await db.collection('users')
@@ -182,7 +193,7 @@ exports.sendCustomPromotionalEmail = onCall({
             });
             count++;
         } catch (e) {
-            logger.error(`Promo failed for ${doc.data().email}`);
+            logger.error(`Promo failed for ${doc.data().email}:`, e);
         }
     }
 
@@ -271,8 +282,10 @@ exports.sendWeeklyMarketingEmails = onSchedule({
 exports.sendTestMarketingEmail = onCall({
     secrets: ["GMAIL_APP_PASSWORD"]
 }, async (request) => {
-    if (!request.auth || request.auth.token.role !== 'admin') {
-        throw new HttpsError('permission-denied', "Only admins can trigger test emails.");
+    if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
+    const userDoc = await db.collection('users').doc(request.auth.uid).get();
+    if (!userDoc.exists || userDoc.data().role !== 'admin') {
+        throw new HttpsError('permission-denied', "Admin only.");
     }
 
     const testEmail = request.data.email || request.auth.token.email;

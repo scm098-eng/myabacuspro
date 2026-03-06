@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -124,38 +125,38 @@ export default function StudentDashboardPage() {
         <div className="absolute inset-0 opacity-20 bg-cover bg-center" style={{ backgroundImage: "url('https://picsum.photos/seed/abacus/1200/400')" }} />
         <CardContent className="relative z-10 p-8 w-full flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="space-y-4 text-center md:text-left">
-            <h1 className="text-4xl md:text-5xl font-black font-headline uppercase">Road to Mastery</h1>
+            <h1 className="text-4xl md:text-5xl font-black font-headline uppercase text-white">Road to Mastery</h1>
             <div className="flex gap-2 justify-center md:justify-start">
-              <Badge className="bg-yellow-400 text-slate-900 font-bold px-4 py-1.5 rounded-full">RANK: {currentRank.name}</Badge>
-              <Badge variant="outline" className="text-white border-white/20 px-4 py-1.5 rounded-full">NEXT: {nextRank.name}</Badge>
+              <Badge className="bg-yellow-400 text-slate-900 font-bold px-4 py-1.5 rounded-full border-none">RANK: {currentRank.name}</Badge>
+              <Badge variant="outline" className="text-white border-white/20 px-4 py-1.5 rounded-full font-bold">NEXT: {nextRank.name}</Badge>
             </div>
           </div>
-          <div className="w-full md:w-80 space-y-3 bg-black/20 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
-            <div className="flex justify-between text-[10px] font-black uppercase text-blue-300"><span>Progress to {nextRank.name}</span><span>{Math.floor(progress)}%</span></div>
-            <div className="h-3 w-full bg-white/10 rounded-full p-0.5"><div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }} /></div>
+          <div className="w-full md:w-80 space-y-3 bg-black/20 p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-inner">
+            <div className="flex justify-between text-[10px] font-black uppercase text-blue-300 tracking-wider"><span>Progress to {nextRank.name}</span><span>{Math.floor(progress)}%</span></div>
+            <div className="h-3 w-full bg-white/10 rounded-full p-0.5"><div className="h-full bg-blue-500 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(59,130,246,0.5)]" style={{ width: `${progress}%` }} /></div>
           </div>
         </CardContent>
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-card/50 border-border/50"><CardContent className="p-6 flex items-center gap-4"><div className="bg-orange-100 p-3 rounded-2xl"><Flame className="text-orange-600" /></div><div><p className="text-3xl font-black">{profile.currentStreak || 0}</p><p className="text-[10px] font-bold text-muted-foreground uppercase">Streak</p></div></CardContent></Card>
-        <Card className="bg-card/50 border-border/50"><CardContent className="p-6 flex items-center gap-4"><div className="bg-blue-100 p-3 rounded-2xl"><CalendarDays className="text-blue-600" /></div><div><p className="text-3xl font-black">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase">Practice Days</p></div></CardContent></Card>
+        <Card className="bg-card/50 border-border/50 hover:border-orange-200 transition-colors"><CardContent className="p-6 flex items-center gap-4"><div className="bg-orange-100 p-3 rounded-2xl"><Flame className="text-orange-600 w-6 h-6" /></div><div><p className="text-3xl font-black">{profile.currentStreak || 0}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Streak</p></div></CardContent></Card>
+        <Card className="bg-card/50 border-border/50 hover:border-blue-200 transition-colors"><CardContent className="p-6 flex items-center gap-4"><div className="bg-blue-100 p-3 rounded-2xl"><CalendarDays className="text-blue-600 w-6 h-6" /></div><div><p className="text-3xl font-black">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Practice Days</p></div></CardContent></Card>
         
-        <Card className={cn("lg:col-span-2 relative overflow-hidden transition-all shadow-md bg-white border-2", pointsEarned && "ring-2 ring-green-500 bg-green-50/10")}>
+        <Card className={cn("lg:col-span-2 relative overflow-hidden transition-all shadow-md bg-white border-2", pointsEarned && "ring-4 ring-green-500 bg-green-50/10 scale-[1.02] shadow-green-100")}>
           <CardContent className="p-6 relative">
             {pointsEarned && <PointsAnimation points={pointsEarned} />}
-            <div className="grid grid-cols-3 divide-x-2 divide-slate-100 text-center">
-              <div className="px-2">
-                <p className="text-2xl font-black text-primary">{(profile.totalPoints || 0).toLocaleString()}</p>
-                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-tighter">Total Pts</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
+                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter mb-1">Total Pts</p>
+                <p className="text-2xl font-black text-primary truncate">{(profile.totalPoints || 0).toLocaleString()}</p>
               </div>
-              <div className="px-2">
-                <p className="text-2xl font-black">{(profile.weeklyPoints || 0).toLocaleString()}</p>
-                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-tighter">Weekly</p>
+              <div className="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
+                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter mb-1">Weekly</p>
+                <p className="text-2xl font-black text-foreground truncate">{(profile.weeklyPoints || 0).toLocaleString()}</p>
               </div>
-              <div className="px-2">
-                <p className="text-2xl font-black">{(profile.monthlyPoints || 0).toLocaleString()}</p>
-                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-tighter">Monthly</p>
+              <div className="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
+                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter mb-1">Monthly</p>
+                <p className="text-2xl font-black text-foreground truncate">{(profile.monthlyPoints || 0).toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -164,24 +165,24 @@ export default function StudentDashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <h2 className="text-2xl font-black flex items-center gap-3"><CalendarDays className="text-primary" /> Consistency Challenge</h2>
+          <h2 className="text-2xl font-black flex items-center gap-3 text-foreground"><CalendarDays className="text-primary w-7 h-7" /> Consistency Challenge</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map(w => {
               const startDay = (w - 1) * 7;
               const wp = Math.max(0, Math.min(7, currentDays - startDay));
               return (
-                <Card key={w} className="overflow-hidden border-border rounded-2xl shadow-sm">
+                <Card key={w} className="overflow-hidden border-border rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                   <CardHeader className="bg-muted/30 border-b p-4 flex flex-row items-center justify-between">
-                    <span className="font-black text-sm uppercase">Week {w}</span>
-                    <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">{wp}/7 Days</span>
+                    <span className="font-black text-sm uppercase tracking-wider">Week {w}</span>
+                    <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">{wp}/7 Days</span>
                   </CardHeader>
                   <CardContent className="p-6 flex justify-between gap-1">
                     {[1, 2, 3, 4, 5, 6].map(d => (
-                      <div key={d} className={cn("w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 flex items-center justify-center aspect-square shrink-0 transition-all", currentDays >= (startDay + d) ? "bg-primary border-primary text-white" : "bg-muted border-border text-muted-foreground")}>
-                        {currentDays >= (startDay + d) ? <Check className="w-4 h-4 stroke-[3px]" /> : <span className="text-[10px] sm:text-xs font-black">{d}</span>}
+                      <div key={d} className={cn("w-8 h-8 rounded-full border-2 flex items-center justify-center aspect-square shrink-0 transition-all duration-300", currentDays >= (startDay + d) ? "bg-primary border-primary text-white shadow-sm" : "bg-muted border-border text-muted-foreground")}>
+                        {currentDays >= (startDay + d) ? <Check className="w-4 h-4 stroke-[4px]" /> : <span className="text-[10px] font-black">{d}</span>}
                       </div>
                     ))}
-                    <div className={cn("w-7 h-7 sm:w-9 sm:h-9 rounded-xl border-2 flex items-center justify-center aspect-square shrink-0 transition-all", currentDays >= (startDay + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale")}>
+                    <div className={cn("w-8 h-8 rounded-xl border-2 flex items-center justify-center aspect-square shrink-0 transition-all duration-500", currentDays >= (startDay + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg shadow-yellow-200" : "bg-muted border-border opacity-50 grayscale")}>
                       <Trophy className="w-4 h-4" />
                     </div>
                   </CardContent>
@@ -189,35 +190,35 @@ export default function StudentDashboardPage() {
               );
             })}
           </div>
-          <Button onClick={() => router.push('/tests')} className="w-full h-24 bg-primary hover:bg-primary/90 rounded-3xl shadow-xl transition-transform hover:scale-[1.01] flex items-center justify-center gap-4">
+          <Button onClick={() => router.push('/tests')} className="w-full h-24 bg-primary hover:bg-primary/90 rounded-3xl shadow-xl transition-all hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-4 group">
             <span className="text-2xl font-black uppercase tracking-widest text-wrap max-w-xs leading-none">Start Practice</span>
-            <ChevronRight className="w-10 h-10 shrink-0 stroke-[4px]" />
+            <ChevronRight className="w-10 h-10 shrink-0 stroke-[4px] group-hover:translate-x-2 transition-transform" />
           </Button>
         </div>
 
         <div className="space-y-8">
           {!profile.fcmToken && (
-            <Card className="bg-primary/5 rounded-2xl border-primary/20">
+            <Card className="bg-primary/5 rounded-2xl border-primary/20 border-2">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-black flex items-center gap-2 uppercase tracking-tight">
-                  <Bell className="w-5 h-5 text-primary" /> Training Alerts
+                <CardTitle className="text-lg font-black flex items-center gap-2 uppercase tracking-tight text-primary">
+                  <Bell className="w-5 h-5" /> Training Alerts
                 </CardTitle>
-                <CardDescription className="text-xs font-bold text-muted-foreground">Stay on track for your daily streaks.</CardDescription>
+                <CardDescription className="text-xs font-bold text-muted-foreground leading-relaxed">Never miss a daily streak! Get a motivational nudge every evening.</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button onClick={handleEnableNotifications} disabled={isRequestingNotifications} className="w-full rounded-xl h-12 font-black uppercase text-xs">
-                  {isRequestingNotifications ? <Loader2 className="animate-spin w-4 h-4" /> : "Enable Now"}
+                <Button onClick={handleEnableNotifications} disabled={isRequestingNotifications} className="w-full rounded-xl h-12 font-black uppercase text-xs shadow-md">
+                  {isRequestingNotifications ? <Loader2 className="animate-spin w-4 h-4" /> : "Activate Reminders"}
                 </Button>
               </CardContent>
             </Card>
           )}
-          <Card className="rounded-2xl overflow-hidden border-border shadow-sm">
+          <Card className="rounded-2xl overflow-hidden border-border shadow-sm bg-white">
             <CardHeader className="bg-muted/30 border-b pb-0">
-              <CardTitle className="text-xl font-black flex items-center gap-2 uppercase tracking-tight mb-4">
+              <CardTitle className="text-xl font-black flex items-center gap-2 uppercase tracking-tight mb-4 text-foreground">
                 <Trophy className="text-yellow-500 w-6 h-6" /> Hall of Fame
               </CardTitle>
               <Tabs defaultValue="totalPoints" onValueChange={setLeaderboardTab} className="w-full">
-                <TabsList className="grid grid-cols-3 bg-slate-200/50 mb-2">
+                <TabsList className="grid grid-cols-3 bg-slate-200/50 mb-2 h-10 p-1">
                   <TabsTrigger value="weeklyPoints" className="text-[9px] font-black uppercase">Weekly</TabsTrigger>
                   <TabsTrigger value="monthlyPoints" className="text-[9px] font-black uppercase">Monthly</TabsTrigger>
                   <TabsTrigger value="totalPoints" className="text-[9px] font-black uppercase">Global</TabsTrigger>
@@ -227,13 +228,13 @@ export default function StudentDashboardPage() {
             <CardContent className="p-0">
               <div className="divide-y divide-border/50">
                 {leaderboard.length > 0 ? leaderboard.map((s, i) => (
-                  <div key={s.uid} className={cn("flex items-center justify-between p-4", s.uid === profile.uid ? "bg-primary/5" : "hover:bg-muted/30")}>
+                  <div key={s.uid} className={cn("flex items-center justify-between p-4 transition-colors", s.uid === profile.uid ? "bg-primary/5 border-l-4 border-l-primary" : "hover:bg-muted/30")}>
                     <div className="flex items-center gap-4">
-                      <span className={cn("w-6 text-sm font-black", i === 0 ? "text-yellow-500" : "text-muted-foreground")}>#{i + 1}</span>
-                      <Avatar className="h-10 w-10 border-2 border-white shadow-sm"><AvatarImage src={s.photo}/><AvatarFallback className="font-bold">{s.name?.charAt(0)}</AvatarFallback></Avatar>
+                      <span className={cn("w-6 text-sm font-black", i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground")}>#{i + 1}</span>
+                      <Avatar className="h-10 w-10 border-2 border-white shadow-sm ring-1 ring-slate-100"><AvatarImage src={s.photo}/><AvatarFallback className="font-bold bg-muted">{s.name?.charAt(0)}</AvatarFallback></Avatar>
                       <div className="min-w-0">
-                        <p className="text-sm font-bold truncate max-w-[100px]">{s.name}</p>
-                        <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase" style={{ backgroundColor: s.title.color + '20', color: s.title.color }}>{s.title.name}</span>
+                        <p className="text-sm font-bold truncate max-w-[100px] text-foreground">{s.name}</p>
+                        <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter" style={{ backgroundColor: s.title.color + '20', color: s.title.color }}>{s.title.name}</span>
                       </div>
                     </div>
                     <div className="text-right">
@@ -241,7 +242,7 @@ export default function StudentDashboardPage() {
                       <p className="text-[8px] font-black text-muted-foreground uppercase">Points</p>
                     </div>
                   </div>
-                )) : <div className="py-24 text-center text-muted-foreground uppercase font-black tracking-widest animate-pulse">Summoning Champions...</div>}
+                )) : <div className="py-24 text-center text-muted-foreground uppercase font-black tracking-widest animate-pulse text-xs">Summoning Champions...</div>}
               </div>
             </CardContent>
           </Card>
