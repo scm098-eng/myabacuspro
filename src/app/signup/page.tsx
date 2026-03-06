@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -150,7 +149,7 @@ export default function SignupPage() {
       const signupData: SignupData = { ...values, profilePhoto: croppedImageFile || undefined };
       await signup(signupData);
       toast({ title: 'Signup Successful!', description: 'Welcome aboard!' });
-      router.push('/');
+      router.push('/'); // New users land on Home
     } catch (error: any) {
       toast({ title: 'Sign-up Failed', description: error.message, variant: 'destructive' });
     } finally {
@@ -177,8 +176,7 @@ export default function SignupPage() {
   };
 
   return (
-    <>
-    <div className="flex items-center justify-center py-12">
+    <div className="flex flex-col items-center justify-center py-12">
       <Card className="w-full max-w-2xl mx-auto shadow-xl">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
@@ -223,7 +221,7 @@ export default function SignupPage() {
                 )}
                 {selectedRole === 'teacher' && (
                   <div className="space-y-6">
-                    <FormField control={form.control} name="instituteName" render={({ field }) => (<FormItem><FormLabel>Institute Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="instituteName" render={({ field }) => (<FormItem><FormLabel>Institute Name</FormLabel><FormControl><Input placeholder="Institute Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
                     <FormField control={form.control} name="instituteCountry" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="instituteState" render={({ field }) => (
@@ -264,15 +262,16 @@ export default function SignupPage() {
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="justify-center"><p className="text-sm">Already have an account? <Link href="/login" className="text-primary hover:underline">Log in</Link></p></CardFooter>
+        <CardFooter className="justify-center"><p className="text-sm text-muted-foreground">Already have an account? <Link href="/login" className="text-primary hover:underline font-semibold">Log in</Link></p></CardFooter>
       </Card>
+      <Dialog open={isPhotoDialogOpen} onOpenChange={setIsPhotoDialogOpen}>
+        <DialogContent><DialogHeader><DialogTitle>Crop Photo</DialogTitle></DialogHeader>
+          <div className="flex justify-center">
+            {imgSrc && <ReactCrop crop={crop} onChange={(_, p) => setCrop(p)} onComplete={(c) => setCompletedCrop(c)} aspect={1} circularCrop><img ref={imgRef} src={imgSrc} alt="Crop" className="max-h-[60vh]"/></ReactCrop>}
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setIsPhotoDialogOpen(false)}>Cancel</Button><Button onClick={handleCropConfirm}>Use Photo</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
-    <Dialog open={isPhotoDialogOpen} onOpenChange={setIsPhotoDialogOpen}>
-      <DialogContent><DialogHeader><DialogTitle>Crop Photo</DialogTitle></DialogHeader>
-        {imgSrc && <ReactCrop crop={crop} onChange={(_, p) => setCrop(p)} onComplete={(c) => setCompletedCrop(c)} aspect={1} circularCrop><img ref={imgRef} src={imgSrc} alt="Crop" /></ReactCrop>}
-        <DialogFooter><Button variant="outline" onClick={() => setIsPhotoDialogOpen(false)}>Cancel</Button><Button onClick={handleCropConfirm}>Use Photo</Button></DialogFooter>
-      </DialogContent>
-    </Dialog>
-    </>
   );
 }
