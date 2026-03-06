@@ -36,6 +36,11 @@ function LoginForm({ role }: { role: UserRole }) {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
 
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
+
   const handleRedirect = (profile: ProfileData | null) => {
     if (profile && profile.firstName) {
         if(profile.role === 'admin' || (profile.role === 'teacher' && profile.status === 'approved')) {
