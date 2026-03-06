@@ -51,13 +51,6 @@ export default function StudentDashboardPage() {
     if (!isLoading && !user) router.push('/login');
   }, [isLoading, user, router]);
 
-  // Auto-enable notifications attempt
-  useEffect(() => {
-    if (mounted && user && profile && !profile.fcmToken && Notification.permission === 'default') {
-      handleEnableNotifications();
-    }
-  }, [mounted, user, profile]);
-
   useEffect(() => {
     if (profile && profile.totalPoints !== undefined) {
       if (lastPointsRef.current !== 0 && profile.totalPoints > lastPointsRef.current) {
@@ -101,10 +94,10 @@ export default function StudentDashboardPage() {
         const token = await getToken(messaging, { vapidKey: 'BF27zRYbNBqLyR0w1XZVSCWK0YNgG7M9DymtcLAPr6A0gUoT0OlIn-q7fpPhgYgOwcj91lmXUL7KvTV4o0Yd7J8' });
         if (token) await updateDoc(doc(getFirestore(firebaseApp), "users", user.uid), { fcmToken: token });
       }
-    } catch (e) { console.error("FCM registration failed", e); } finally { setIsRequestingNotifications(false); }
+    } catch (e) { console.error("FCM failed", e); } finally { setIsRequestingNotifications(false); }
   };
 
-  if (isLoading || !mounted) return <div className="space-y-8 p-8"><Skeleton className="h-[200px] w-full" /><div className="grid grid-cols-3 gap-6"><Skeleton className="h-32" /><Skeleton className="h-32" /><Skeleton className="h-32" /></div></div>;
+  if (isLoading || !mounted) return <div className="space-y-8 p-8"><Skeleton className="h-[200px] w-full" /><div className="grid grid-cols-3 gap-6"><Skeleton className="h-32" /></div></div>;
   if (!user || !profile) return null;
 
   const currentPoints = profile.totalPoints || 0;
@@ -115,8 +108,6 @@ export default function StudentDashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
-      {showAchievement && achievementData && <AchievementModal studentName={`${profile.firstName} ${profile.surname}`} title={achievementData.name} icon={achievementData.icon} color={achievementData.color} totalPoints={currentPoints} totalDays={currentDays} onClose={() => setShowAchievement(false)} />}
-      
       {!user.emailVerified && !/test|temp/i.test(user.email!) && (
         <Alert variant="destructive"><ShieldAlert className="h-4 w-4" /><AlertTitle>Verify Email</AlertTitle><AlertDescription className="flex justify-between items-center">Verify your email to unlock all features.<Button size="sm" onClick={() => sendVerificationEmail()} variant="outline">Resend Link</Button></AlertDescription></Alert>
       )}
@@ -125,27 +116,27 @@ export default function StudentDashboardPage() {
         <div className="absolute inset-0 opacity-20 bg-cover bg-center" style={{ backgroundImage: "url('https://picsum.photos/seed/abacus/1200/400')" }} />
         <CardContent className="relative z-10 p-8 w-full flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="space-y-4 text-center md:text-left">
-            <h1 className="text-4xl md:text-5xl font-black font-headline uppercase text-white">Road to Mastery</h1>
+            <h1 className="text-4xl md:text-5xl font-black font-headline uppercase">Road to Mastery</h1>
             <div className="flex gap-2 justify-center md:justify-start">
               <Badge className="bg-yellow-400 text-slate-900 font-bold px-4 py-1.5 rounded-full border-none">RANK: {currentRank.name}</Badge>
               <Badge variant="outline" className="text-white border-white/20 px-4 py-1.5 rounded-full font-bold">NEXT: {nextRank.name}</Badge>
             </div>
           </div>
-          <div className="w-full md:w-80 space-y-3 bg-black/20 p-6 rounded-2xl border border-white/10 backdrop-blur-sm shadow-inner">
-            <div className="flex justify-between text-[10px] font-black uppercase text-blue-300 tracking-wider"><span>Progress to {nextRank.name}</span><span>{Math.floor(progress)}%</span></div>
-            <div className="h-3 w-full bg-white/10 rounded-full p-0.5"><div className="h-full bg-blue-500 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(59,130,246,0.5)]" style={{ width: `${progress}%` }} /></div>
+          <div className="w-full md:w-80 space-y-3 bg-black/20 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
+            <div className="flex justify-between text-[10px] font-black uppercase text-blue-300"><span>Progress to {nextRank.name}</span><span>{Math.floor(progress)}%</span></div>
+            <div className="h-3 w-full bg-white/10 rounded-full p-0.5"><div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }} /></div>
           </div>
         </CardContent>
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-card/50 border-border/50 hover:border-orange-200 transition-colors"><CardContent className="p-6 flex items-center gap-4"><div className="bg-orange-100 p-3 rounded-2xl"><Flame className="text-orange-600 w-6 h-6" /></div><div><p className="text-3xl font-black">{profile.currentStreak || 0}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Streak</p></div></CardContent></Card>
-        <Card className="bg-card/50 border-border/50 hover:border-blue-200 transition-colors"><CardContent className="p-6 flex items-center gap-4"><div className="bg-blue-100 p-3 rounded-2xl"><CalendarDays className="text-blue-600 w-6 h-6" /></div><div><p className="text-3xl font-black">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Practice Days</p></div></CardContent></Card>
+        <Card className="bg-card/50 border-border/50"><CardContent className="p-6 flex items-center gap-4"><div className="bg-orange-100 p-3 rounded-2xl"><Flame className="text-orange-600 w-6 h-6" /></div><div><p className="text-3xl font-black">{profile.currentStreak || 0}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Streak</p></div></CardContent></Card>
+        <Card className="bg-card/50 border-border/50"><CardContent className="p-6 flex items-center gap-4"><div className="bg-blue-100 p-3 rounded-2xl"><CalendarDays className="text-blue-600 w-6 h-6" /></div><div><p className="text-3xl font-black">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Practice Days</p></div></CardContent></Card>
         
-        <Card className={cn("lg:col-span-2 relative overflow-hidden transition-all shadow-md bg-white border-2", pointsEarned && "ring-4 ring-green-500 bg-green-50/10 scale-[1.02] shadow-green-100")}>
+        <Card className={cn("lg:col-span-2 relative overflow-hidden transition-all shadow-md bg-white border-2", pointsEarned && "ring-4 ring-green-500")}>
           <CardContent className="p-6 relative">
             {pointsEarned && <PointsAnimation points={pointsEarned} />}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-4">
               <div className="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
                 <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter mb-1">Total Pts</p>
                 <p className="text-2xl font-black text-primary truncate">{(profile.totalPoints || 0).toLocaleString()}</p>
@@ -165,24 +156,24 @@ export default function StudentDashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <h2 className="text-2xl font-black flex items-center gap-3 text-foreground"><CalendarDays className="text-primary w-7 h-7" /> Consistency Challenge</h2>
+          <h2 className="text-2xl font-black flex items-center gap-3"><CalendarDays className="text-primary w-7 h-7" /> Consistency Challenge</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map(w => {
               const startDay = (w - 1) * 7;
               const wp = Math.max(0, Math.min(7, currentDays - startDay));
               return (
-                <Card key={w} className="overflow-hidden border-border rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                <Card key={w} className="overflow-hidden border-border rounded-2xl shadow-sm">
                   <CardHeader className="bg-muted/30 border-b p-4 flex flex-row items-center justify-between">
-                    <span className="font-black text-sm uppercase tracking-wider">Week {w}</span>
-                    <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">{wp}/7 Days</span>
+                    <span className="font-black text-sm uppercase">Week {w}</span>
+                    <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">{wp}/7 Days</span>
                   </CardHeader>
-                  <CardContent className="p-6 flex justify-between gap-1">
+                  <CardContent className="p-6 flex justify-between gap-1 overflow-x-auto">
                     {[1, 2, 3, 4, 5, 6].map(d => (
-                      <div key={d} className={cn("w-8 h-8 rounded-full border-2 flex items-center justify-center aspect-square shrink-0 transition-all duration-300", currentDays >= (startDay + d) ? "bg-primary border-primary text-white shadow-sm" : "bg-muted border-border text-muted-foreground")}>
+                      <div key={d} className={cn("w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + d) ? "bg-primary border-primary text-white" : "bg-muted border-border text-muted-foreground")}>
                         {currentDays >= (startDay + d) ? <Check className="w-4 h-4 stroke-[4px]" /> : <span className="text-[10px] font-black">{d}</span>}
                       </div>
                     ))}
-                    <div className={cn("w-8 h-8 rounded-xl border-2 flex items-center justify-center aspect-square shrink-0 transition-all duration-500", currentDays >= (startDay + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg shadow-yellow-200" : "bg-muted border-border opacity-50 grayscale")}>
+                    <div className={cn("w-8 h-8 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale")}>
                       <Trophy className="w-4 h-4" />
                     </div>
                   </CardContent>
@@ -190,8 +181,8 @@ export default function StudentDashboardPage() {
               );
             })}
           </div>
-          <Button onClick={() => router.push('/tests')} className="w-full h-24 bg-primary hover:bg-primary/90 rounded-3xl shadow-xl transition-all hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-4 group">
-            <span className="text-2xl font-black uppercase tracking-widest text-wrap max-w-xs leading-none">Start Practice</span>
+          <Button onClick={() => router.push('/tests')} className="w-full h-24 bg-primary hover:bg-primary/90 rounded-3xl shadow-xl transition-all flex items-center justify-center gap-4 group">
+            <span className="text-2xl font-black uppercase tracking-widest leading-none">Start Practice</span>
             <ChevronRight className="w-10 h-10 shrink-0 stroke-[4px] group-hover:translate-x-2 transition-transform" />
           </Button>
         </div>
@@ -200,23 +191,19 @@ export default function StudentDashboardPage() {
           {!profile.fcmToken && (
             <Card className="bg-primary/5 rounded-2xl border-primary/20 border-2">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-black flex items-center gap-2 uppercase tracking-tight text-primary">
-                  <Bell className="w-5 h-5" /> Training Alerts
-                </CardTitle>
-                <CardDescription className="text-xs font-bold text-muted-foreground leading-relaxed">Never miss a daily streak! Get a motivational nudge every evening.</CardDescription>
+                <CardTitle className="text-lg font-black flex items-center gap-2 uppercase tracking-tight text-primary"><Bell className="w-5 h-5" /> Training Alerts</CardTitle>
+                <CardDescription className="text-xs font-bold text-muted-foreground">Never miss a daily streak! Get a motivational nudge every evening.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Button onClick={handleEnableNotifications} disabled={isRequestingNotifications} className="w-full rounded-xl h-12 font-black uppercase text-xs shadow-md">
-                  {isRequestingNotifications ? <Loader2 className="animate-spin w-4 h-4" /> : "Activate Reminders"}
+                  {isRequestingNotifications ? <Loader2 className="animate-spin" /> : "Activate Reminders"}
                 </Button>
               </CardContent>
             </Card>
           )}
-          <Card className="rounded-2xl overflow-hidden border-border shadow-sm bg-white">
+          <Card className="rounded-2xl overflow-hidden border-border shadow-sm">
             <CardHeader className="bg-muted/30 border-b pb-0">
-              <CardTitle className="text-xl font-black flex items-center gap-2 uppercase tracking-tight mb-4 text-foreground">
-                <Trophy className="text-yellow-500 w-6 h-6" /> Hall of Fame
-              </CardTitle>
+              <CardTitle className="text-xl font-black flex items-center gap-2 uppercase tracking-tight mb-4 text-foreground"><Trophy className="text-yellow-500 w-6 h-6" /> Hall of Fame</CardTitle>
               <Tabs defaultValue="totalPoints" onValueChange={setLeaderboardTab} className="w-full">
                 <TabsList className="grid grid-cols-3 bg-slate-200/50 mb-2 h-10 p-1">
                   <TabsTrigger value="weeklyPoints" className="text-[9px] font-black uppercase">Weekly</TabsTrigger>
@@ -227,22 +214,19 @@ export default function StudentDashboardPage() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border/50">
-                {leaderboard.length > 0 ? leaderboard.map((s, i) => (
-                  <div key={s.uid} className={cn("flex items-center justify-between p-4 transition-colors", s.uid === profile.uid ? "bg-primary/5 border-l-4 border-l-primary" : "hover:bg-muted/30")}>
+                {leaderboard.map((s, i) => (
+                  <div key={s.uid} className={cn("flex items-center justify-between p-4", s.uid === profile.uid ? "bg-primary/5 border-l-4 border-l-primary" : "hover:bg-muted/30")}>
                     <div className="flex items-center gap-4">
                       <span className={cn("w-6 text-sm font-black", i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground")}>#{i + 1}</span>
-                      <Avatar className="h-10 w-10 border-2 border-white shadow-sm ring-1 ring-slate-100"><AvatarImage src={s.photo}/><AvatarFallback className="font-bold bg-muted">{s.name?.charAt(0)}</AvatarFallback></Avatar>
+                      <Avatar className="h-10 w-10 border-2 border-white"><AvatarImage src={s.photo}/><AvatarFallback className="font-bold">{s.name?.charAt(0)}</AvatarFallback></Avatar>
                       <div className="min-w-0">
-                        <p className="text-sm font-bold truncate max-w-[100px] text-foreground">{s.name}</p>
-                        <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter" style={{ backgroundColor: s.title.color + '20', color: s.title.color }}>{s.title.name}</span>
+                        <p className="text-sm font-bold truncate max-w-[100px]">{s.name}</p>
+                        <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase" style={{ backgroundColor: s.title.color + '20', color: s.title.color }}>{s.title.name}</span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-black text-primary">{s.points.toLocaleString()}</p>
-                      <p className="text-[8px] font-black text-muted-foreground uppercase">Points</p>
-                    </div>
+                    <div className="text-right"><p className="text-sm font-black text-primary">{s.points.toLocaleString()}</p><p className="text-[8px] font-black text-muted-foreground uppercase">Points</p></div>
                   </div>
-                )) : <div className="py-24 text-center text-muted-foreground uppercase font-black tracking-widest animate-pulse text-xs">Summoning Champions...</div>}
+                ))}
               </div>
             </CardContent>
           </Card>

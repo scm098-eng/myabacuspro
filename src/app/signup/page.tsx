@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2, Camera } from 'lucide-react';
-import type { SignupData, ProfileData } from '@/types';
+import type { SignupData } from '@/types';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -28,10 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 const indianStates = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"];
 const grades = Array.from({ length: 12 }, (_, i) => `${i + 1}${['st', 'nd', 'rd'][i] || 'th'}`);
 
-const majorCountries = [
-  "India", "United States", "United Kingdom", "United Arab Emirates", "Australia", 
-  "Canada", "Singapore", "Malaysia", "Japan", "Germany", "France", "Other"
-];
+const majorCountries = ["India", "United States", "United Kingdom", "United Arab Emirates", "Australia", "Canada", "Singapore", "Malaysia", "Japan", "Germany", "France", "Other"];
 
 const formSchema = z.object({
   firstName: z.string().min(1, { message: "First name is required." }),
@@ -76,11 +73,7 @@ function calculateAge(dobStr: string | undefined) {
     return Math.abs(age_dt.getUTCFullYear() - 1970);
 }
 
-async function getCroppedImg(
-  image: HTMLImageElement,
-  crop: Crop,
-  fileName: string = 'cropped-image.jpg'
-): Promise<File | null> {
+async function getCroppedImg(image: HTMLImageElement, crop: Crop, fileName: string = 'cropped-image.jpg'): Promise<File | null> {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx || !crop.width || !crop.height) return null;
@@ -150,7 +143,7 @@ export default function SignupPage() {
       const signupData: SignupData = { ...values, profilePhoto: croppedImageFile || undefined };
       await signup(signupData);
       toast({ title: 'Signup Successful!', description: 'Welcome aboard!' });
-      router.push('/'); // New users explore Home
+      router.push('/');
     } catch (error: any) {
       toast({ title: 'Sign-up Failed', description: error.message, variant: 'destructive' });
     } finally {
@@ -185,12 +178,8 @@ export default function SignupPage() {
           <CardDescription>Join <span className="text-primary font-semibold">My Abacus Pro</span></CardDescription>
         </CardHeader>
         <CardContent>
-           <Button variant="outline" className="w-full" onClick={handleGoogleSignup}>
-                Sign up with Google
-            </Button>
-             <div className="my-6 flex items-center">
-                <Separator className="flex-1" /><span className="px-4 text-sm text-muted-foreground">OR</span><Separator className="flex-1" />
-             </div>
+           <Button variant="outline" className="w-full" onClick={handleGoogleSignup}>Sign up with Google</Button>
+           <div className="my-6 flex items-center"><Separator className="flex-1" /><span className="px-4 text-sm text-muted-foreground">OR</span><Separator className="flex-1" /></div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField control={form.control} name="role" render={({ field }) => (
