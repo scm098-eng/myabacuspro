@@ -77,13 +77,18 @@ exports.sendCustomPromotionalEmail = onCall({
         }
     }
 
-    let query = db.collection('users').where('role', '==', 'student');
+    let query = db.collection('users');
     
     // Filter based on target audience
-    if (targetAudience === 'pro') {
-        query = query.where('subscriptionStatus', '==', 'pro');
-    } else if (targetAudience === 'free') {
-        query = query.where('subscriptionStatus', '==', 'free');
+    if (targetAudience === 'teachers') {
+        query = query.where('role', '==', 'teacher').where('status', '==', 'approved');
+    } else {
+        query = query.where('role', '==', 'student');
+        if (targetAudience === 'pro') {
+            query = query.where('subscriptionStatus', '==', 'pro');
+        } else if (targetAudience === 'free') {
+            query = query.where('subscriptionStatus', '==', 'free');
+        }
     }
 
     const targets = await query.get();

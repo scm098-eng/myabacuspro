@@ -167,7 +167,7 @@ export default function StudentDashboardPage() {
                     <span className="font-black text-sm uppercase">Week {w}</span>
                     <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">{wp}/7 Days</span>
                   </CardHeader>
-                  <CardContent className="p-6 flex justify-between gap-1 overflow-x-auto">
+                  <CardContent className="p-6 flex justify-between gap-1">
                     {[1, 2, 3, 4, 5, 6].map(d => (
                       <div key={d} className={cn("w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + d) ? "bg-primary border-primary text-white" : "bg-muted border-border text-muted-foreground")}>
                         {currentDays >= (startDay + d) ? <Check className="w-4 h-4 stroke-[4px]" /> : <span className="text-[10px] font-black">{d}</span>}

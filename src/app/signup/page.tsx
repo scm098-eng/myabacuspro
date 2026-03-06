@@ -212,7 +212,7 @@ export default function SignupPage() {
                 )}
                 {selectedRole === 'teacher' && (
                   <div className="space-y-6">
-                    <FormField control={form.control} name="instituteName" render={({ field }) => (<FormItem><FormLabel>Institute Name</FormLabel><FormControl><Input placeholder="Institute Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="instituteName" render={({ field }) => (<FormItem><FormLabel>Institute Name</Label><FormControl><Input placeholder="Institute Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
                     <FormField control={form.control} name="instituteCountry" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="instituteState" render={({ field }) => (

@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Users, Briefcase, Crown, User, CheckCircle, Mail, MousePointer2, TrendingUp, Send, Loader2, Trophy, ShieldAlert, GraduationCap, Search, X, Users2 } from 'lucide-react';
+import { Eye, UserCheck, Users, Briefcase, Crown, User, CheckCircle, Mail, TrendingUp, Send, Loader2, Trophy, ShieldAlert, GraduationCap, Search, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit } from 'firebase/firestore';
@@ -279,6 +279,7 @@ export default function AdminDashboardPage() {
                                     <SelectItem value="all">All Students</SelectItem>
                                     <SelectItem value="pro">Pro Members Only</SelectItem>
                                     <SelectItem value="free">Free Users Only</SelectItem>
+                                    <SelectItem value="teachers">Approved Teachers Only</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
