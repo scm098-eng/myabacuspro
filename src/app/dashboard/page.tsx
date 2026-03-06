@@ -109,7 +109,7 @@ export default function StudentDashboardPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       {!user.emailVerified && !/test|temp/i.test(user.email!) && (
-        <Alert variant="destructive"><ShieldAlert className="h-4 w-4" /><AlertTitle>Verify Email</AlertTitle><AlertDescription className="flex justify-between items-center">Verify your email to unlock all features.<Button size="sm" onClick={() => sendVerificationEmail()} variant="outline">Resend Link</Button></AlertDescription></Alert>
+        <Alert variant="destructive"><ShieldAlert className="h-4 w-4" /><AlertTitle>Verify Email</AlertTitle><AlertDescription className="flex justify-between items-center text-xs">Verify your email to unlock all features.<Button size="sm" onClick={() => sendVerificationEmail()} variant="outline" className="h-7 text-[10px]">Resend Link</Button></AlertDescription></Alert>
       )}
 
       <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 text-white min-h-[220px] rounded-3xl flex items-center">
@@ -136,18 +136,18 @@ export default function StudentDashboardPage() {
         <Card className={cn("lg:col-span-2 relative overflow-hidden transition-all shadow-md bg-white border-2", pointsEarned && "ring-4 ring-green-500")}>
           <CardContent className="p-6 relative">
             {pointsEarned && <PointsAnimation points={pointsEarned} />}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
-                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter mb-1">Total Pts</p>
-                <p className="text-2xl font-black text-primary truncate">{(profile.totalPoints || 0).toLocaleString()}</p>
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
+              <div className="bg-slate-50 p-2 sm:p-3 rounded-xl text-center border border-slate-100 flex flex-col justify-center min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase text-muted-foreground tracking-tighter mb-1 truncate">Total Pts</p>
+                <p className="text-lg sm:text-2xl font-black text-primary truncate">{(profile.totalPoints || 0).toLocaleString()}</p>
               </div>
-              <div className="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
-                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter mb-1">Weekly</p>
-                <p className="text-2xl font-black text-foreground truncate">{(profile.weeklyPoints || 0).toLocaleString()}</p>
+              <div className="bg-slate-50 p-2 sm:p-3 rounded-xl text-center border border-slate-100 flex flex-col justify-center min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase text-muted-foreground tracking-tighter mb-1 truncate">Weekly</p>
+                <p className="text-lg sm:text-2xl font-black text-foreground truncate">{(profile.weeklyPoints || 0).toLocaleString()}</p>
               </div>
-              <div className="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
-                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter mb-1">Monthly</p>
-                <p className="text-2xl font-black text-foreground truncate">{(profile.monthlyPoints || 0).toLocaleString()}</p>
+              <div className="bg-slate-50 p-2 sm:p-3 rounded-xl text-center border border-slate-100 flex flex-col justify-center min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase text-muted-foreground tracking-tighter mb-1 truncate">Monthly</p>
+                <p className="text-lg sm:text-2xl font-black text-foreground truncate">{(profile.monthlyPoints || 0).toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -167,14 +167,16 @@ export default function StudentDashboardPage() {
                     <span className="font-black text-sm uppercase">Week {w}</span>
                     <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">{wp}/7 Days</span>
                   </CardHeader>
-                  <CardContent className="p-6 flex justify-between gap-1">
-                    {[1, 2, 3, 4, 5, 6].map(d => (
-                      <div key={d} className={cn("w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + d) ? "bg-primary border-primary text-white" : "bg-muted border-border text-muted-foreground")}>
-                        {currentDays >= (startDay + d) ? <Check className="w-4 h-4 stroke-[4px]" /> : <span className="text-[10px] font-black">{d}</span>}
+                  <CardContent className="p-4 sm:p-6 overflow-x-auto">
+                    <div className="flex justify-start items-center gap-2 flex-nowrap min-w-max pb-2">
+                      {[1, 2, 3, 4, 5, 6].map(d => (
+                        <div key={d} className={cn("w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + d) ? "bg-primary border-primary text-white" : "bg-muted border-border text-muted-foreground")}>
+                          {currentDays >= (startDay + d) ? <Check className="w-4 h-4 sm:w-5 sm:h-5 stroke-[4px]" /> : <span className="text-[10px] sm:text-xs font-black">{d}</span>}
+                        </div>
+                      ))}
+                      <div className={cn("w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale")}>
+                        <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
-                    ))}
-                    <div className={cn("w-8 h-8 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale")}>
-                      <Trophy className="w-4 h-4" />
                     </div>
                   </CardContent>
                 </Card>
@@ -192,7 +194,7 @@ export default function StudentDashboardPage() {
             <Card className="bg-primary/5 rounded-2xl border-primary/20 border-2">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-black flex items-center gap-2 uppercase tracking-tight text-primary"><Bell className="w-5 h-5" /> Training Alerts</CardTitle>
-                <CardDescription className="text-xs font-bold text-muted-foreground">Never miss a daily streak! Get a motivational nudge every evening.</CardDescription>
+                <CardDescription className="text-xs font-bold text-muted-foreground">Stay on track! Get a quick motivational nudge every evening.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Button onClick={handleEnableNotifications} disabled={isRequestingNotifications} className="w-full rounded-xl h-12 font-black uppercase text-xs shadow-md">

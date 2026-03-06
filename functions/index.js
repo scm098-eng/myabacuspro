@@ -53,66 +53,71 @@ exports.sendCustomPromotionalEmail = onCall({
         throw new HttpsError('unauthenticated', "User must be logged in.");
     }
 
-    // Verify Admin role from Firestore (more robust than claims)
-    const userDoc = await db.collection('users').doc(request.auth.uid).get();
-    if (!userDoc.exists || userDoc.data().role !== 'admin') {
-        throw new HttpsError('permission-denied', "Only admins can perform this action.");
-    }
-
-    const { subject, message, isTest, testEmail, targetAudience } = request.data;
-    const transporter = getTransporter();
-
-    if (isTest && testEmail) {
-        try {
-            await transporter.sendMail({
-                from: `"My Abacus Pro" <${GMAIL_USER}>`,
-                to: testEmail,
-                subject: `[TEST] ${subject}`,
-                html: `<div style="font-family: sans-serif;">${message}</div>`
-            });
-            return { status: "success", message: "Test email sent successfully." };
-        } catch (e) {
-            logger.error("Test email failed:", e);
-            throw new HttpsError('internal', `Gmail Error: ${e.message}`);
+    try {
+        // Verify Admin role from Firestore (more robust than claims)
+        const userDoc = await db.collection('users').doc(request.auth.uid).get();
+        if (!userDoc.exists || userDoc.data().role !== 'admin') {
+            throw new HttpsError('permission-denied', "Only admins can perform this action.");
         }
-    }
 
-    let query = db.collection('users');
-    
-    // Filter based on target audience
-    if (targetAudience === 'teachers') {
-        query = query.where('role', '==', 'teacher').where('status', '==', 'approved');
-    } else {
-        query = query.where('role', '==', 'student');
-        if (targetAudience === 'pro') {
-            query = query.where('subscriptionStatus', '==', 'pro');
-        } else if (targetAudience === 'free') {
-            query = query.where('subscriptionStatus', '==', 'free');
+        const { subject, message, isTest, testEmail, targetAudience } = request.data;
+        const transporter = getTransporter();
+
+        if (isTest && testEmail) {
+            try {
+                await transporter.sendMail({
+                    from: `"My Abacus Pro" <${GMAIL_USER}>`,
+                    to: testEmail,
+                    subject: `[TEST] ${subject}`,
+                    html: `<div style="font-family: sans-serif;">${message}</div>`
+                });
+                return { status: "success", message: "Test email sent successfully." };
+            } catch (e) {
+                logger.error("Test email failed:", e);
+                throw new HttpsError('internal', `Gmail Error: ${e.message}`);
+            }
         }
-    }
 
-    const targets = await query.get();
-
-    if (targets.empty) {
-        return { status: "success", recipients: 0, message: "No users found matching this criteria." };
-    }
-
-    let count = 0;
-    for (const doc of targets.docs) {
-        try {
-            await transporter.sendMail({
-                from: `"My Abacus Pro" <${GMAIL_USER}>`,
-                to: doc.data().email,
-                subject: subject,
-                html: `<div style="font-family: sans-serif;">${message}</div>`
-            });
-            count++;
-        } catch (e) {
-            logger.error(`Promo failed for ${doc.data().email}:`, e);
+        let query = db.collection('users');
+        
+        // Filter based on target audience
+        if (targetAudience === 'teachers') {
+            query = query.where('role', '==', 'teacher').where('status', '==', 'approved');
+        } else {
+            query = query.where('role', '==', 'student');
+            if (targetAudience === 'pro') {
+                query = query.where('subscriptionStatus', '==', 'pro');
+            } else if (targetAudience === 'free') {
+                query = query.where('subscriptionStatus', '==', 'free');
+            }
         }
-    }
 
-    return { status: "success", recipients: count };
+        const targets = await query.get();
+
+        if (targets.empty) {
+            return { status: "success", recipients: 0, message: "No users found matching this criteria." };
+        }
+
+        let count = 0;
+        for (const doc of targets.docs) {
+            try {
+                await transporter.sendMail({
+                    from: `"My Abacus Pro" <${GMAIL_USER}>`,
+                    to: doc.data().email,
+                    subject: subject,
+                    html: `<div style="font-family: sans-serif;">${message}</div>`
+                });
+                count++;
+            } catch (e) {
+                logger.error(`Promo failed for ${doc.data().email}:`, e);
+            }
+        }
+
+        return { status: "success", recipients: count };
+    } catch (err) {
+        logger.error("Global crash in promotional email function:", err);
+        throw new HttpsError('internal', err.message || "Failed to process email campaign.");
+    }
 });
 
 // ----------------------------------------------------
