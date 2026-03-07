@@ -18,7 +18,7 @@ import { getMessaging, getToken } from 'firebase/messaging';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import AchievementModal from '@/components/AchievementModal';
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { RANK_CRITERIA } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
@@ -167,14 +167,14 @@ export default function StudentDashboardPage() {
                     <span className="font-black text-sm uppercase">Week {w}</span>
                     <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">{wp}/7 Days</span>
                   </CardHeader>
-                  <CardContent className="p-4 sm:p-6 overflow-x-auto">
-                    <div className="flex justify-start items-center gap-2 flex-nowrap min-w-max pb-2">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex justify-start items-center gap-2 flex-nowrap min-w-max">
                       {[1, 2, 3, 4, 5, 6].map(d => (
-                        <div key={d} className={cn("w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + d) ? "bg-primary border-primary text-white" : "bg-muted border-border text-muted-foreground")}>
+                        <div key={d} className={cn("w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + d) ? "bg-primary border-primary text-white" : "bg-muted border-border text-muted-foreground")}>
                           {currentDays >= (startDay + d) ? <Check className="w-4 h-4 sm:w-5 sm:h-5 stroke-[4px]" /> : <span className="text-[10px] sm:text-xs font-black">{d}</span>}
                         </div>
                       ))}
-                      <div className={cn("w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale")}>
+                      <div className={cn("w-7 h-7 sm:w-9 sm:h-9 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale")}>
                         <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
                     </div>

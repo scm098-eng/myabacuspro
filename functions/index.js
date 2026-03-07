@@ -27,14 +27,16 @@ const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET;
 // GMAIL CONFIGURATION
 const GMAIL_USER = 'myabacuspro@gmail.com';
 
-// Helper to get transporter lazily
+// Helper to get transporter with explicit SMTP settings for stability
 function getTransporter() {
     const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
     if (!GMAIL_PASS) {
         logger.error("CRITICAL: GMAIL_APP_PASSWORD not found in environment.");
     }
     return nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true, // Use SSL
         auth: {
             user: GMAIL_USER,
             pass: GMAIL_PASS,
@@ -74,7 +76,7 @@ exports.sendCustomPromotionalEmail = onCall({
                 return { status: "success", message: "Test email sent successfully." };
             } catch (e) {
                 logger.error("Test email failed:", e);
-                throw new HttpsError('internal', `Gmail Error: ${e.message}`);
+                throw new HttpsError('internal', `Gmail SMTP Error: ${e.message}`);
             }
         }
 
