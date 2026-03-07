@@ -41,8 +41,6 @@ export default function StudentDashboardPage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
   const [isRequestingNotifications, setIsRequestingNotifications] = useState(false);
-  const [showAchievement, setShowAchievement] = useState(false);
-  const [achievementData, setAchievementData] = useState<any>(null);
   const [pointsEarned, setPointsEarned] = useState<number | null>(null);
   const lastPointsRef = useRef<number>(0);
 
@@ -130,8 +128,8 @@ export default function StudentDashboardPage() {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-card/50 border-border/50"><CardContent className="p-6 flex items-center gap-4"><div className="bg-orange-100 p-3 rounded-2xl"><Flame className="text-orange-600 w-6 h-6" /></div><div><p className="text-3xl font-black">{profile.currentStreak || 0}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Streak</p></div></CardContent></Card>
-        <Card className="bg-card/50 border-border/50"><CardContent className="p-6 flex items-center gap-4"><div className="bg-blue-100 p-3 rounded-2xl"><CalendarDays className="text-blue-600 w-6 h-6" /></div><div><p className="text-3xl font-black">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Practice Days</p></div></CardContent></Card>
+        <Card className="bg-card/50 border-border/50"><CardContent className="p-6 flex items-center gap-4"><div className="bg-orange-100 p-3 rounded-2xl shrink-0"><Flame className="text-orange-600 w-6 h-6" /></div><div><p className="text-3xl font-black leading-none">{profile.currentStreak || 0}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Streak</p></div></CardContent></Card>
+        <Card className="bg-card/50 border-border/50"><CardContent className="p-6 flex items-center gap-4"><div className="bg-blue-100 p-3 rounded-2xl shrink-0"><CalendarDays className="text-blue-600 w-6 h-6" /></div><div><p className="text-3xl font-black leading-none">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Practice Days</p></div></CardContent></Card>
         
         <Card className={cn("lg:col-span-2 relative overflow-hidden transition-all shadow-md bg-white border-2", pointsEarned && "ring-4 ring-green-500")}>
           <CardContent className="p-6 relative">
@@ -167,14 +165,14 @@ export default function StudentDashboardPage() {
                     <span className="font-black text-sm uppercase">Week {w}</span>
                     <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">{wp}/7 Days</span>
                   </CardHeader>
-                  <CardContent className="p-4 sm:p-6">
+                  <CardContent className="p-4 sm:p-6 overflow-x-auto scrollbar-none">
                     <div className="flex justify-start items-center gap-2 flex-nowrap min-w-max">
                       {[1, 2, 3, 4, 5, 6].map(d => (
-                        <div key={d} className={cn("w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + d) ? "bg-primary border-primary text-white" : "bg-muted border-border text-muted-foreground")}>
+                        <div key={d} className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + d) ? "bg-primary border-primary text-white" : "bg-muted border-border text-muted-foreground")}>
                           {currentDays >= (startDay + d) ? <Check className="w-4 h-4 sm:w-5 sm:h-5 stroke-[4px]" /> : <span className="text-[10px] sm:text-xs font-black">{d}</span>}
                         </div>
                       ))}
-                      <div className={cn("w-7 h-7 sm:w-9 sm:h-9 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale")}>
+                      <div className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale")}>
                         <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
                     </div>
@@ -220,13 +218,13 @@ export default function StudentDashboardPage() {
                   <div key={s.uid} className={cn("flex items-center justify-between p-4", s.uid === profile.uid ? "bg-primary/5 border-l-4 border-l-primary" : "hover:bg-muted/30")}>
                     <div className="flex items-center gap-4">
                       <span className={cn("w-6 text-sm font-black", i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground")}>#{i + 1}</span>
-                      <Avatar className="h-10 w-10 border-2 border-white"><AvatarImage src={s.photo}/><AvatarFallback className="font-bold">{s.name?.charAt(0)}</AvatarFallback></Avatar>
+                      <Avatar className="h-10 w-10 border-2 border-white shrink-0"><AvatarImage src={s.photo}/><AvatarFallback className="font-bold">{s.name?.charAt(0)}</AvatarFallback></Avatar>
                       <div className="min-w-0">
                         <p className="text-sm font-bold truncate max-w-[100px]">{s.name}</p>
                         <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase" style={{ backgroundColor: s.title.color + '20', color: s.title.color }}>{s.title.name}</span>
                       </div>
                     </div>
-                    <div className="text-right"><p className="text-sm font-black text-primary">{s.points.toLocaleString()}</p><p className="text-[8px] font-black text-muted-foreground uppercase">Points</p></div>
+                    <div className="text-right shrink-0"><p className="text-sm font-black text-primary">{s.points.toLocaleString()}</p><p className="text-[8px] font-black text-muted-foreground uppercase">Points</p></div>
                   </div>
                 ))}
               </div>

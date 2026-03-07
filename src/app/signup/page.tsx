@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2, Camera } from 'lucide-react';
-import type { SignupData } from '@/types';
+import type { SignupData, ProfileData } from '@/types';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -27,7 +27,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const indianStates = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"];
 const grades = Array.from({ length: 12 }, (_, i) => `${i + 1}${['st', 'nd', 'rd'][i] || 'th'}`);
-
 const majorCountries = ["India", "United States", "United Kingdom", "United Arab Emirates", "Australia", "Canada", "Singapore", "Malaysia", "Japan", "Germany", "France", "Other"];
 
 const formSchema = z.object({
@@ -93,12 +92,12 @@ async function getCroppedImg(image: HTMLImageElement, crop: Crop, fileName: stri
 export default function SignupPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/signup_bg.jpg?alt=media');
   const router = useRouter();
-  const { signup, loginWithGoogle } = useAuth();
+  const { signup, loginWithGoogle, getApprovedTeachers } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
+  const [teachers, setTeachers] = useState<ProfileData[]>([]);
   const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false);
   const [imgSrc, setImgSrc] = useState('');
   const [crop, setCrop] = useState<Crop>({ unit: '%', width: 90, height: 90, x: 5, y: 5 });
@@ -108,7 +107,9 @@ export default function SignupPage() {
   const imgRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { setIsMounted(true); }, []);
+  useEffect(() => {
+    getApprovedTeachers().then(setTeachers);
+  }, [getApprovedTeachers]);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -122,8 +123,7 @@ export default function SignupPage() {
   });
 
   const { watch } = form;
-  const dobValue = watch('dob');
-  const ageValue = calculateAge(dobValue);
+  const ageValue = calculateAge(watch('dob'));
   const selectedRole = watch('role');
   const selectedCountry = watch('country');
   const selectedInstCountry = watch('instituteCountry');
@@ -132,8 +132,8 @@ export default function SignupPage() {
     try {
       const profile = await loginWithGoogle();
       if (profile) router.push('/');
-    } catch (error: any) {
-      toast({ title: 'Google Sign-up Failed', description: error.message, variant: 'destructive' });
+    } catch (e: any) {
+      toast({ title: 'Sign-up Failed', description: e.message, variant: 'destructive' });
     }
   };
 
@@ -142,10 +142,10 @@ export default function SignupPage() {
     try {
       const signupData: SignupData = { ...values, profilePhoto: croppedImageFile || undefined };
       await signup(signupData);
-      toast({ title: 'Signup Successful!', description: 'Welcome aboard!' });
+      toast({ title: 'Welcome!', description: 'Your account is ready.' });
       router.push('/');
-    } catch (error: any) {
-      toast({ title: 'Sign-up Failed', description: error.message, variant: 'destructive' });
+    } catch (e: any) {
+      toast({ title: 'Sign-up Failed', description: e.message, variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
@@ -175,7 +175,7 @@ export default function SignupPage() {
       <Card className="w-full max-w-2xl mx-auto shadow-xl">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
-          <CardDescription>Join <span className="text-primary font-semibold">My Abacus Pro</span></CardDescription>
+          <CardDescription>Join My Abacus Pro</CardDescription>
         </CardHeader>
         <CardContent>
            <Button variant="outline" className="w-full" onClick={handleGoogleSignup}>Sign up with Google</Button>
@@ -204,15 +204,17 @@ export default function SignupPage() {
                 </div>
                 {selectedRole === 'student' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField control={form.control} name="schoolName" render={({ field }) => (<FormItem><FormLabel>School Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    {isMounted && <FormField control={form.control} name="grade" render={({ field }) => (
+                    <FormField control={form.control} name="teacherId" render={({ field }) => (
+                        <FormItem><FormLabel>Assigned Teacher *</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Pick a Teacher" /></SelectTrigger></FormControl><SelectContent>{teachers.map(t => <SelectItem key={t.uid} value={t.uid}>{t.firstName} {t.surname}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="grade" render={({ field }) => (
                         <FormItem><FormLabel>Grade/Std.</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Grade" /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                      )} />}
+                    )} />
                   </div>
                 )}
                 {selectedRole === 'teacher' && (
                   <div className="space-y-6">
-                    <FormField control={form.control} name="instituteName" render={({ field }) => (<FormItem><FormLabel>Institute Name</Label><FormControl><Input placeholder="Institute Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="instituteName" render={({ field }) => (<FormItem><FormLabel>Institute Name</FormLabel><FormControl><Input placeholder="Institute Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
                     <FormField control={form.control} name="instituteCountry" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="instituteState" render={({ field }) => (

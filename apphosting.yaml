@@ -6,20 +6,17 @@ runConfig:
   maxInstances: 1
 
 env:
-  # Razorpay Public Key (for the browser/frontend)
   - variable: NEXT_PUBLIC_RAZORPAY_KEY_ID
     secret: RAZORPAY_KEY_ID
     availability:
       - BUILD
       - RUNTIME
 
-  # Razorpay Secret Key (server-side only)
   - variable: RAZORPAY_KEY_SECRET
     secret: RAZORPAY_KEY_SECRET
     availability:
       - RUNTIME
 
-  # Gmail App Password (server-side only)
   - variable: GMAIL_APP_PASSWORD
     secret: GMAIL_APP_PASSWORD
     availability:
