@@ -1,4 +1,3 @@
-
 /**
  * Firebase Cloud Functions v2 (Node.js) Code
  * filename: functions/index.js
@@ -30,7 +29,7 @@ function getTransporter() {
     return nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 465,
-        secure: true,
+        secure: true, // Use SSL/TLS
         auth: {
             user: GMAIL_USER,
             pass: GMAIL_PASS,
@@ -45,30 +44,39 @@ exports.sendCustomPromotionalEmail = onCall({
     try {
         const userDoc = await db.collection('users').doc(request.auth.uid).get();
         if (!userDoc.exists || userDoc.data().role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
+        
         const { subject, message, isTest, testEmail, targetAudience } = request.data;
         const transporter = getTransporter();
+        
         if (isTest && testEmail) {
             await transporter.sendMail({ from: `"My Abacus Pro" <${GMAIL_USER}>`, to: testEmail, subject: `[TEST] ${subject}`, html: message });
             return { status: "success" };
         }
+        
         let query = db.collection('users');
         if (targetAudience === 'teachers') {
             query = query.where('role', '==', 'teacher').where('status', '==', 'approved');
-        } else {
-            query = query.where('role', '==', 'student');
-            if (targetAudience === 'pro') query = query.where('subscriptionStatus', '==', 'pro');
-            else if (targetAudience === 'free') query = query.where('subscriptionStatus', '==', 'free');
+        } else if (targetAudience === 'pro') {
+            query = query.where('subscriptionStatus', '==', 'pro');
+        } else if (targetAudience === 'free') {
+            query = query.where('subscriptionStatus', '==', 'free');
         }
+        
         const targets = await query.get();
         let count = 0;
         for (const doc of targets.docs) {
+            const data = doc.data();
+            if (!data.email) continue;
             try {
-                await transporter.sendMail({ from: `"My Abacus Pro" <${GMAIL_USER}>`, to: doc.data().email, subject, html: message });
+                await transporter.sendMail({ from: `"My Abacus Pro" <${GMAIL_USER}>`, to: data.email, subject, html: message });
                 count++;
-            } catch (e) { logger.error(`Email failed for ${doc.data().email}`); }
+            } catch (e) { logger.error(`Email failed for ${data.email}`, e); }
         }
         return { status: "success", recipients: count };
-    } catch (err) { throw new HttpsError('internal', err.message); }
+    } catch (err) { 
+        logger.error("Failed to send promo email", err);
+        throw new HttpsError('internal', err.message); 
+    }
 });
 
 exports.razorpaywebhook = onRequest(async (request, response) => {

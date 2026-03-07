@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -64,8 +63,8 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-const ADMIN_EMAILS = ['pallavib202@gmail.com', 'myabacuspro@gmail.com'];
-const EXCLUDED_FROM_TEACHER_LIST = ['scm098@gmail.com'];
+const ADMIN_EMAILS = ['pallavib202@gmail.com', 'myabacuspro@gmail.com', 'pallavib202@gmail.com'];
+const EXCLUDED_FROM_TEACHER_LIST = ['scm098@gmail.com', 'satishmane@gmail.com'];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -196,7 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const userDocRef = doc(firestore, 'users', user.uid);
-      const { password, ...rest } = values;
+      const { password, confirmPassword, ...rest } = values;
       const userEmail = user.email?.toLowerCase() || '';
       const isAdmin = ADMIN_EMAILS.includes(userEmail);
       const role = isAdmin ? 'admin' : values.role;

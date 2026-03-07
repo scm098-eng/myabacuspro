@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -95,7 +94,7 @@ export default function StudentDashboardPage() {
     } catch (e) { console.error("FCM failed", e); } finally { setIsRequestingNotifications(false); }
   };
 
-  if (isLoading || !mounted) return <div className="space-y-8 p-8"><Skeleton className="h-[200px] w-full" /><div className="grid grid-cols-3 gap-6"><Skeleton className="h-32" /></div></div>;
+  if (isLoading || !mounted) return <div className="space-y-8 p-8"><Skeleton className="h-[200px] w-full rounded-3xl" /><div className="grid grid-cols-3 gap-6"><Skeleton className="h-32" /></div></div>;
   if (!user || !profile) return null;
 
   const currentPoints = profile.totalPoints || 0;
@@ -128,24 +127,24 @@ export default function StudentDashboardPage() {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-card/50 border-border/50"><CardContent className="p-6 flex items-center gap-4"><div className="bg-orange-100 p-3 rounded-2xl shrink-0"><Flame className="text-orange-600 w-6 h-6" /></div><div><p className="text-3xl font-black leading-none">{profile.currentStreak || 0}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Streak</p></div></CardContent></Card>
-        <Card className="bg-card/50 border-border/50"><CardContent className="p-6 flex items-center gap-4"><div className="bg-blue-100 p-3 rounded-2xl shrink-0"><CalendarDays className="text-blue-600 w-6 h-6" /></div><div><p className="text-3xl font-black leading-none">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Practice Days</p></div></CardContent></Card>
+        <Card className="bg-card/50 border-border/50 shadow-sm"><CardContent className="p-6 flex items-center gap-4"><div className="bg-orange-100 p-3 rounded-2xl shrink-0"><Flame className="text-orange-600 w-6 h-6" /></div><div><p className="text-3xl font-black leading-none">{profile.currentStreak || 0}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Streak</p></div></CardContent></Card>
+        <Card className="bg-card/50 border-border/50 shadow-sm"><CardContent className="p-6 flex items-center gap-4"><div className="bg-blue-100 p-3 rounded-2xl shrink-0"><CalendarDays className="text-blue-600 w-6 h-6" /></div><div><p className="text-3xl font-black leading-none">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Practice Days</p></div></CardContent></Card>
         
-        <Card className={cn("lg:col-span-2 relative overflow-hidden transition-all shadow-md bg-white border-2", pointsEarned && "ring-4 ring-green-500")}>
+        <Card className={cn("lg:col-span-2 relative overflow-hidden transition-all shadow-md bg-white border-2", pointsEarned ? "border-green-500 ring-2 ring-green-100" : "border-slate-100")}>
           <CardContent className="p-6 relative">
             {pointsEarned && <PointsAnimation points={pointsEarned} />}
-            <div className="grid grid-cols-3 gap-2 sm:gap-4">
-              <div className="bg-slate-50 p-2 sm:p-3 rounded-xl text-center border border-slate-100 flex flex-col justify-center min-w-0">
-                <p className="text-[8px] sm:text-[9px] font-black uppercase text-muted-foreground tracking-tighter mb-1 truncate">Total Pts</p>
-                <p className="text-lg sm:text-2xl font-black text-primary truncate">{(profile.totalPoints || 0).toLocaleString()}</p>
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 h-full">
+              <div className="bg-slate-50 p-3 sm:p-4 rounded-2xl text-center border border-slate-100 flex flex-col justify-center min-w-0">
+                <p className="text-[8px] sm:text-[10px] font-black uppercase text-muted-foreground tracking-tighter mb-1 truncate">Total</p>
+                <p className="text-base sm:text-2xl font-black text-primary truncate">{(profile.totalPoints || 0).toLocaleString()}</p>
               </div>
-              <div className="bg-slate-50 p-2 sm:p-3 rounded-xl text-center border border-slate-100 flex flex-col justify-center min-w-0">
-                <p className="text-[8px] sm:text-[9px] font-black uppercase text-muted-foreground tracking-tighter mb-1 truncate">Weekly</p>
-                <p className="text-lg sm:text-2xl font-black text-foreground truncate">{(profile.weeklyPoints || 0).toLocaleString()}</p>
+              <div className="bg-slate-50 p-3 sm:p-4 rounded-2xl text-center border border-slate-100 flex flex-col justify-center min-w-0">
+                <p className="text-[8px] sm:text-[10px] font-black uppercase text-muted-foreground tracking-tighter mb-1 truncate">Weekly</p>
+                <p className="text-base sm:text-2xl font-black text-foreground truncate">{(profile.weeklyPoints || 0).toLocaleString()}</p>
               </div>
-              <div className="bg-slate-50 p-2 sm:p-3 rounded-xl text-center border border-slate-100 flex flex-col justify-center min-w-0">
-                <p className="text-[8px] sm:text-[9px] font-black uppercase text-muted-foreground tracking-tighter mb-1 truncate">Monthly</p>
-                <p className="text-lg sm:text-2xl font-black text-foreground truncate">{(profile.monthlyPoints || 0).toLocaleString()}</p>
+              <div className="bg-slate-50 p-3 sm:p-4 rounded-2xl text-center border border-slate-100 flex flex-col justify-center min-w-0">
+                <p className="text-[8px] sm:text-[10px] font-black uppercase text-muted-foreground tracking-tighter mb-1 truncate">Monthly</p>
+                <p className="text-base sm:text-2xl font-black text-foreground truncate">{(profile.monthlyPoints || 0).toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -160,20 +159,20 @@ export default function StudentDashboardPage() {
               const startDay = (w - 1) * 7;
               const wp = Math.max(0, Math.min(7, currentDays - startDay));
               return (
-                <Card key={w} className="overflow-hidden border-border rounded-2xl shadow-sm">
+                <Card key={w} className="overflow-hidden border-border rounded-2xl shadow-sm bg-card/30">
                   <CardHeader className="bg-muted/30 border-b p-4 flex flex-row items-center justify-between">
                     <span className="font-black text-sm uppercase">Week {w}</span>
                     <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">{wp}/7 Days</span>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 overflow-x-auto scrollbar-none">
-                    <div className="flex justify-start items-center gap-2 flex-nowrap min-w-max">
+                    <div className="flex justify-start items-center gap-2.5 flex-nowrap min-w-max">
                       {[1, 2, 3, 4, 5, 6].map(d => (
-                        <div key={d} className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + d) ? "bg-primary border-primary text-white" : "bg-muted border-border text-muted-foreground")}>
-                          {currentDays >= (startDay + d) ? <Check className="w-4 h-4 sm:w-5 sm:h-5 stroke-[4px]" /> : <span className="text-[10px] sm:text-xs font-black">{d}</span>}
+                        <div key={d} className={cn("w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + d) ? "bg-primary border-primary text-white shadow-md" : "bg-muted border-border text-muted-foreground")}>
+                          {currentDays >= (startDay + d) ? <Check className="w-5 h-5 stroke-[4px]" /> : <span className="text-[10px] sm:text-sm font-black">{d}</span>}
                         </div>
                       ))}
-                      <div className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale")}>
-                        <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <div className={cn("w-9 h-9 sm:w-11 sm:h-11 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale")}>
+                        <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
                     </div>
                   </CardContent>
@@ -192,7 +191,7 @@ export default function StudentDashboardPage() {
             <Card className="bg-primary/5 rounded-2xl border-primary/20 border-2">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-black flex items-center gap-2 uppercase tracking-tight text-primary"><Bell className="w-5 h-5" /> Training Alerts</CardTitle>
-                <CardDescription className="text-xs font-bold text-muted-foreground">Stay on track! Get a quick motivational nudge every evening.</CardDescription>
+                <CardDescription className="text-xs font-bold text-muted-foreground">Stay on track! Get a quick motivational nudge every evening at 7 PM IST.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Button onClick={handleEnableNotifications} disabled={isRequestingNotifications} className="w-full rounded-xl h-12 font-black uppercase text-xs shadow-md">
@@ -216,15 +215,15 @@ export default function StudentDashboardPage() {
               <div className="divide-y divide-border/50">
                 {leaderboard.map((s, i) => (
                   <div key={s.uid} className={cn("flex items-center justify-between p-4", s.uid === profile.uid ? "bg-primary/5 border-l-4 border-l-primary" : "hover:bg-muted/30")}>
-                    <div className="flex items-center gap-4">
-                      <span className={cn("w-6 text-sm font-black", i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground")}>#{i + 1}</span>
+                    <div className="flex items-center gap-4 min-w-0">
+                      <span className={cn("w-6 text-sm font-black shrink-0", i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground")}>#{i + 1}</span>
                       <Avatar className="h-10 w-10 border-2 border-white shrink-0"><AvatarImage src={s.photo}/><AvatarFallback className="font-bold">{s.name?.charAt(0)}</AvatarFallback></Avatar>
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold truncate max-w-[100px]">{s.name}</p>
-                        <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase" style={{ backgroundColor: s.title.color + '20', color: s.title.color }}>{s.title.name}</span>
+                      <div className="min-w-0 overflow-hidden">
+                        <p className="text-sm font-bold truncate">{s.name}</p>
+                        <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase inline-block truncate max-w-full" style={{ backgroundColor: s.title.color + '20', color: s.title.color }}>{s.title.name}</span>
                       </div>
                     </div>
-                    <div className="text-right shrink-0"><p className="text-sm font-black text-primary">{s.points.toLocaleString()}</p><p className="text-[8px] font-black text-muted-foreground uppercase">Points</p></div>
+                    <div className="text-right shrink-0 ml-2"><p className="text-sm font-black text-primary">{s.points.toLocaleString()}</p><p className="text-[8px] font-black text-muted-foreground uppercase">Points</p></div>
                   </div>
                 ))}
               </div>

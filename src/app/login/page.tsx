@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -45,6 +44,7 @@ function LoginForm({ role }: { role: UserRole }) {
         if(profile.role === 'admin' || (profile.role === 'teacher' && profile.status === 'approved')) {
             router.push('/admin');
         } else {
+            // Returning users go directly to dashboard
             router.push('/dashboard');
         }
     } else {

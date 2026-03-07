@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -143,6 +142,7 @@ export default function SignupPage() {
       const signupData: SignupData = { ...values, profilePhoto: croppedImageFile || undefined };
       await signup(signupData);
       toast({ title: 'Welcome!', description: 'Your account is ready.' });
+      // New users land on the home page
       router.push('/');
     } catch (e: any) {
       toast({ title: 'Sign-up Failed', description: e.message, variant: 'destructive' });
