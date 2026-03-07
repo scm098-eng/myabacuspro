@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -7,12 +6,12 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import type { ProfileData } from '@/types';
 import { usePageBackground } from '@/hooks/usePageBackground';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Users, Briefcase, Crown, User, CheckCircle, Mail, TrendingUp, Send, Loader2, Trophy, ShieldAlert, GraduationCap, Search, X } from 'lucide-react';
+import { Eye, UserCheck, Users, Briefcase, Crown, User, CheckCircle, Mail, TrendingUp, Send, Loader2, Trophy, ShieldAlert, GraduationCap, Search, X, Ban, ShieldCheck, ArrowRightLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit } from 'firebase/firestore';
@@ -42,7 +41,7 @@ const StatCard = ({ title, value, icon: Icon, subValue }: { title: string, value
 
 export default function AdminDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
-  const { profile, getAllUsers, approveTeacher, isLoading: authLoading, getStudentTitle } = useAuth();
+  const { profile, getAllUsers, approveTeacher, isLoading: authLoading, getStudentTitle, toggleUserSuspension, migrateStudents } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -58,6 +57,10 @@ export default function AdminDashboardPage() {
 
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
+
+  const [migrationFrom, setMigrationFrom] = useState('testteacher1@example.com');
+  const [migrationTo, setMigrationTo] = useState('pallavib202@gmail.com');
+  const [isMigrating, setIsMigrating] = useState(false);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -167,6 +170,40 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleApprove = async (tid: string) => {
+    try {
+      await approveTeacher(tid);
+      toast({ title: "Teacher Approved", description: "Access granted successfully." });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Approval Failed", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleToggleSuspension = async (uid: string, current: boolean) => {
+    try {
+      await toggleUserSuspension(uid, !current);
+      toast({ title: !current ? "User Suspended" : "User Unsuspended", variant: !current ? "destructive" : "default" });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Action Failed", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleMigration = async () => {
+    if (!migrationFrom || !migrationTo) return;
+    setIsMigrating(true);
+    try {
+      const res = await migrateStudents(migrationFrom, migrationTo);
+      toast({ title: "Migration Successful", description: `${res.count} students moved to ${migrationTo}.` });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Migration Failed", description: e.message, variant: "destructive" });
+    } finally {
+      setIsMigrating(false);
+    }
+  };
+
   const { filteredTeachers, filteredStudents, pendingTeachers, summaryStats, filteredSuspicious } = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = (u: ProfileData) => (
@@ -176,7 +213,7 @@ export default function AdminDashboardPage() {
         u.uid?.toLowerCase().includes(searchLower)
     );
 
-    const allTeachers = allUsers.filter(u => u.role === 'teacher');
+    const allTeachers = allUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
     const allStudents = allUsers.filter(u => u.role === 'student');
     const pending = allTeachers.filter(t => t.status === 'pending');
     
@@ -201,7 +238,7 @@ export default function AdminDashboardPage() {
         filteredStudents: allStudents.filter(u => (profile?.role === 'admin' || u.teacherId === profile?.uid)).filter(matchesSearch),
         pendingTeachers: pending, 
         summaryStats: {
-            totalTeachers: allTeachers.length,
+            totalTeachers: allTeachers.filter(t => t.status === 'approved' || t.role === 'admin').length,
             totalStudents: allStudents.length,
             proUsers: allStudents.filter(s => s.subscriptionStatus === 'pro').length,
             freeUsers: allStudents.filter(s => s.subscriptionStatus !== 'pro').length,
@@ -223,7 +260,7 @@ export default function AdminDashboardPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Total Students" value={summaryStats.totalStudents} icon={GraduationCap} />
                 <StatCard title="Active Pro" value={summaryStats.proUsers} icon={Crown} />
-                <StatCard title="Verified Teachers" value={summaryStats.totalTeachers} icon={Briefcase} />
+                <StatCard title="Verified Staff" value={summaryStats.totalTeachers} icon={Briefcase} />
                 <StatCard title="Global Conversion" value={`${((summaryStats.proUsers / (summaryStats.totalStudents || 1)) * 100).toFixed(1)}%`} icon={TrendingUp} />
             </div>
             <div className="relative group max-w-2xl">
@@ -235,12 +272,12 @@ export default function AdminDashboardPage() {
       </Card>
 
       <Tabs defaultValue="students" className="w-full">
-        <TabsList className="bg-muted p-1 mb-8">
-            <TabsTrigger value="students"><GraduationCap className="w-4 h-4 mr-2" />Students</TabsTrigger>
-            {profile?.role === 'admin' && <TabsTrigger value="teachers"><Briefcase className="w-4 h-4 mr-2" />Teachers</TabsTrigger>}
-            {profile?.role === 'admin' && <TabsTrigger value="moderation"><ShieldAlert className="w-4 h-4 mr-2 text-red-500" />Moderation</TabsTrigger>}
-            {profile?.role === 'admin' && <TabsTrigger value="marketing"><Mail className="w-4 h-4 mr-2" />Email Center</TabsTrigger>}
-            <TabsTrigger value="leaderboard"><Trophy className="w-4 h-4 mr-2" />Hall of Fame</TabsTrigger>
+        <TabsList className="bg-muted p-1 mb-8 overflow-x-auto justify-start h-auto flex-wrap">
+            <TabsTrigger value="students" className="h-10"><GraduationCap className="w-4 h-4 mr-2" />Students</TabsTrigger>
+            {profile?.role === 'admin' && <TabsTrigger value="teachers" className="h-10"><Briefcase className="w-4 h-4 mr-2" />Staff</TabsTrigger>}
+            {profile?.role === 'admin' && <TabsTrigger value="moderation" className="h-10"><ShieldAlert className="w-4 h-4 mr-2 text-red-500" />Moderation</TabsTrigger>}
+            {profile?.role === 'admin' && <TabsTrigger value="marketing" className="h-10"><Mail className="w-4 h-4 mr-2" />Email Center</TabsTrigger>}
+            <TabsTrigger value="leaderboard" className="h-10"><Trophy className="w-4 h-4 mr-2" />Hall of Fame</TabsTrigger>
         </TabsList>
 
         <TabsContent value="students">
@@ -250,16 +287,89 @@ export default function AdminDashboardPage() {
                     <Table>
                         <TableHeader><TableRow><TableHead>Student</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {filteredStudents.map((s) => (
+                            {filteredStudents.length > 0 ? filteredStudents.map((s) => (
                                 <TableRow key={s.uid} className={s.isSuspended ? "opacity-50" : ""}>
                                     <TableCell><div className="flex items-center gap-2"><Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto}/></Avatar><div><p className="text-sm font-bold">{s.firstName} {s.surname}</p><p className="text-[10px] text-muted-foreground">{s.email}</p></div></div></TableCell>
                                     <TableCell><Badge variant={s.subscriptionStatus === 'pro' ? 'default' : 'outline'} className={s.subscriptionStatus === 'pro' ? 'bg-green-500/20 text-green-700' : ''}>{s.subscriptionStatus}</Badge></TableCell>
                                     <TableCell className="text-right"><Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link></Button></TableCell>
                                 </TableRow>
+                            )) : <TableRow><TableCell colSpan={3} className="text-center py-10 text-muted-foreground">No students found.</TableCell></TableRow>}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </TabsContent>
+
+        <TabsContent value="teachers">
+            <Card>
+                <CardHeader><CardTitle className="font-headline">Staff Directory</CardTitle><CardDescription>Admins and approved teachers managing students.</CardDescription></CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Role</TableHead><TableHead>Students</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                            {filteredTeachers.length > 0 ? filteredTeachers.map((t) => (
+                                <TableRow key={t.uid}>
+                                    <TableCell><p className="text-sm font-bold">{t.firstName} {t.surname}</p><p className="text-[10px] text-muted-foreground">{t.email}</p></TableCell>
+                                    <TableCell><Badge variant="outline" className="capitalize">{t.role}</Badge></TableCell>
+                                    <TableCell><p className="text-xs font-medium">{t.stats.total} Total</p><p className="text-[10px] text-green-600">{t.stats.pro} Pro</p></TableCell>
+                                    <TableCell><Badge variant={t.status === 'approved' || t.role === 'admin' ? 'default' : 'secondary'}>{t.status || 'Active'}</Badge></TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex justify-end gap-2">
+                                            {t.status === 'pending' && <Button size="sm" onClick={() => handleApprove(t.uid)}><UserCheck className="w-4 h-4" /></Button>}
+                                            <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${t.uid}`}><Eye className="w-4 h-4" /></Link></Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            )) : <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">No staff members found.</TableCell></TableRow>}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </TabsContent>
+
+        <TabsContent value="moderation" className="space-y-8">
+            <Card className="border-red-200">
+                <CardHeader><CardTitle className="text-red-700 flex items-center gap-2"><ShieldAlert /> Suspicious Accounts</CardTitle><CardDescription>Users with high scores or restricted status.</CardDescription></CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Points</TableHead><TableHead>Issue</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                            {filteredSuspicious.map((u) => (
+                                <TableRow key={u.uid} className={u.isSuspended ? "bg-red-50/50" : ""}>
+                                    <TableCell><p className="text-sm font-bold">{u.firstName} {u.surname}</p><p className="text-[10px] text-muted-foreground">{u.email}</p></TableCell>
+                                    <TableCell className="font-mono text-xs">{u.totalPoints?.toLocaleString()}</TableCell>
+                                    <TableCell><Badge variant="outline">{u.isSuspended ? "Suspended" : (u.totalPoints || 0) > 100000 ? "Unusual Points" : "Manual Flag"}</Badge></TableCell>
+                                    <TableCell className="text-right">
+                                        <Button size="sm" variant={u.isSuspended ? "outline" : "destructive"} onClick={() => handleToggleSuspension(u.uid, !!u.isSuspended)}>
+                                            {u.isSuspended ? <ShieldCheck className="w-4 h-4 mr-2" /> : <Ban className="w-4 h-4 mr-2" />}
+                                            {u.isSuspended ? "Restore" : "Suspend"}
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
                             ))}
                         </TableBody>
                     </Table>
                 </CardContent>
+            </Card>
+
+            <Card className="border-blue-200">
+                <CardHeader><CardTitle className="text-blue-700 flex items-center gap-2"><ArrowRightLeft /> Student Migration Tool</CardTitle><CardDescription>Move all students from one teacher to another.</CardDescription></CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label>From Teacher Email</Label>
+                        <Input value={migrationFrom} onChange={(e) => setMigrationFrom(e.target.value)} placeholder="testteacher1@example.com" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>To Teacher/Admin Email</Label>
+                        <Input value={migrationTo} onChange={(e) => setMigrationTo(e.target.value)} placeholder="pallavib202@gmail.com" />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleMigration} disabled={isMigrating} className="w-full">
+                        {isMigrating ? <Loader2 className="animate-spin mr-2" /> : <ArrowRightLeft className="w-4 h-4 mr-2" />}
+                        Confirm Migration
+                    </Button>
+                </CardFooter>
             </Card>
         </TabsContent>
 
@@ -279,7 +389,7 @@ export default function AdminDashboardPage() {
                                     <SelectItem value="all">All Students</SelectItem>
                                     <SelectItem value="pro">Pro Members Only</SelectItem>
                                     <SelectItem value="free">Free Users Only</SelectItem>
-                                    <SelectItem value="teachers">Approved Teachers Only</SelectItem>
+                                    <SelectItem value="teachers">Approved Staff Only</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

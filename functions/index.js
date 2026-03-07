@@ -29,7 +29,7 @@ function getTransporter() {
     return nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 465,
-        secure: true, // Use SSL/TLS
+        secure: true, // Use SSL
         auth: {
             user: GMAIL_USER,
             pass: GMAIL_PASS,
@@ -64,14 +64,26 @@ exports.sendCustomPromotionalEmail = onCall({
         
         const targets = await query.get();
         let count = 0;
+        const sendPromises = [];
+
         for (const doc of targets.docs) {
             const data = doc.data();
             if (!data.email) continue;
-            try {
-                await transporter.sendMail({ from: `"My Abacus Pro" <${GMAIL_USER}>`, to: data.email, subject, html: message });
-                count++;
-            } catch (e) { logger.error(`Email failed for ${data.email}`, e); }
+            sendPromises.push(
+                transporter.sendMail({ from: `"My Abacus Pro" <${GMAIL_USER}>`, to: data.email, subject, html: message })
+                .then(() => { count++; })
+                .catch(e => { logger.error(`Email failed for ${data.email}`, e); })
+            );
         }
+        
+        await Promise.all(sendPromises);
+        
+        // Log campaign stats
+        await db.collection('stats').doc('marketing').set({
+            emailsSent: admin.firestore.FieldValue.increment(count),
+            lastCampaignAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
         return { status: "success", recipients: count };
     } catch (err) { 
         logger.error("Failed to send promo email", err);

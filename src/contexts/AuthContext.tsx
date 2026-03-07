@@ -16,7 +16,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp, getFirestore, type Firestore, collection, getDocs, query, where, arrayUnion, updateDoc, increment, orderBy, limit, onSnapshot, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, getFirestore, type Firestore, collection, getDocs, query, where, arrayUnion, updateDoc, increment, orderBy, limit, onSnapshot, deleteDoc, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, getStorage, type FirebaseStorage, deleteObject } from 'firebase/storage';
 import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload } from '@/types';
 import { errorEmitter } from '@/lib/error-emitter';
@@ -52,6 +52,7 @@ interface AuthContextType {
   recordDailyPractice: (userId: string) => Promise<void>;
   addPoints: (userId: string, points: number) => Promise<void>;
   getStudentTitle: (totalDays: number, totalPoints: number) => typeof RANK_CRITERIA[0];
+  migrateStudents: (fromEmail: string, toEmail: string) => Promise<{ success: boolean; count: number }>;
   isTrialActive: boolean;
   trialDaysRemaining: number;
 }
@@ -119,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return profileData;
         }
         
-        if (profileData.role === 'student' && !profileData.teacherId && pathname !== '/profile' && pathname !== '/signup' && pathname !== '/login') {
+        if (profileData.role === 'student' && !profileData.teacherId && !['/profile', '/signup', '/login', '/about', '/pricing', '/contact', '/'].includes(pathname)) {
             toast({
                 title: 'Please Select a Teacher',
                 description: 'You must select a teacher before you can access other parts of the site.',
@@ -414,12 +415,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return RANK_CRITERIA.find(t => totalDays >= t.daysReq && totalPoints >= t.pointsReq) || RANK_CRITERIA[RANK_CRITERIA.length - 1];
   }, []);
 
+  const migrateStudents = useCallback(async (fromEmail: string, toEmail: string) => {
+    if (profile?.role !== 'admin') throw new Error('Admin only');
+    
+    // 1. Get UIDs for both emails
+    const usersCol = collection(firestore, 'users');
+    const qFrom = query(usersCol, where('email', '==', fromEmail.toLowerCase().trim()), limit(1));
+    const qTo = query(usersCol, where('email', '==', toEmail.toLowerCase().trim()), limit(1));
+    
+    const [snapFrom, snapTo] = await Promise.all([getDocs(qFrom), getDocs(qTo)]);
+    
+    if (snapFrom.empty) throw new Error(`Source teacher (${fromEmail}) not found.`);
+    if (snapTo.empty) throw new Error(`Target teacher (${toEmail}) not found.`);
+    
+    const fromUid = snapFrom.docs[0].id;
+    const toUid = snapTo.docs[0].id;
+    
+    // 2. Find all students assigned to fromUid
+    const qStudents = query(usersCol, where('teacherId', '==', fromUid));
+    const snapStudents = await getDocs(qStudents);
+    
+    if (snapStudents.empty) return { success: true, count: 0 };
+    
+    // 3. Batch update
+    const batch = writeBatch(firestore);
+    snapStudents.docs.forEach(doc => {
+      batch.update(doc.ref, { teacherId: toUid, updatedAt: serverTimestamp() });
+    });
+    
+    await batch.commit();
+    return { success: true, count: snapStudents.size };
+  }, [firestore, profile]);
+
   const value = { 
     user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
     sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, getAllUsers, getApprovedTeachers, 
     getUserTestHistory, getUserTestHistoryByDateRange, getUserProfile, approveTeacher, getCompletedGameLevels, 
-    saveCompletedGameLevel, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining
+    saveCompletedGameLevel, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining, migrateStudents
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
+export const useAuth = () => {
+  const context = React.useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
