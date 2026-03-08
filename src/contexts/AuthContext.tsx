@@ -1,8 +1,7 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
-import { createContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useState, useEffect, useCallback, useMemo, useContext } from 'react';
 import {
   getAuth,
   onAuthStateChanged,
@@ -84,7 +83,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = userDoc.data();
         const profileData = { ...data, uid: authUser.uid } as ProfileData;
         
-        // Sync verification status to Firestore
         if (data.emailVerified !== authUser.emailVerified) {
           await updateDoc(userDocRef, { emailVerified: authUser.emailVerified });
           profileData.emailVerified = authUser.emailVerified;
@@ -379,7 +377,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export const useAuth = () => {
-  const context = React.useContext(AuthContext);
+  const context = useContext(AuthContext);
   if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };
