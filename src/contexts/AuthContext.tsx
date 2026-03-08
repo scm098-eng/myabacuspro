@@ -17,11 +17,9 @@ import {
   type User,
 } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp, getFirestore, collection, getDocs, query, where, arrayUnion, updateDoc, increment, orderBy, limit, deleteDoc, writeBatch } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, getFirestore, collection, getDocs, query, where, arrayUnion, updateDoc, increment, orderBy, limit, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, getStorage } from 'firebase/storage';
 import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload } from '@/types';
-import { errorEmitter } from '@/lib/error-emitter';
-import { FirestorePermissionError } from '@/lib/errors';
 import { useRouter, usePathname } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { format, startOfWeek, startOfMonth } from 'date-fns';
@@ -62,7 +60,6 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-// Updated Admin List
 const ADMIN_EMAILS = ['pallavib202@gmail.com', 'myabacuspro@gmail.com'];
 const EXCLUDED_FROM_TEACHER_LIST = ['scm098@gmail.com', 'satishmane@gmail.com'];
 
@@ -75,21 +72,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const storage = getStorage(firebaseApp);
   const router = useRouter();
   const pathname = usePathname();
-  const { toast } = useToast();
   
-  const fetchProfile = useCallback(async (user: User): Promise<ProfileData | null> => {
+  const fetchProfile = useCallback(async (authUser: User): Promise<ProfileData | null> => {
     try {
-      const userDocRef = doc(firestore, 'users', user.uid);
+      const userDocRef = doc(firestore, 'users', authUser.uid);
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
         const data = userDoc.data();
-        const profileData = { ...data, uid: user.uid } as ProfileData;
+        const profileData = { ...data, uid: authUser.uid } as ProfileData;
         
-        const userEmail = user.email?.toLowerCase() || '';
-        const isAdminByEmail = ADMIN_EMAILS.includes(userEmail);
-        
-        if (isAdminByEmail) {
+        // Sync email verification status to Firestore for admin monitoring
+        if (data.emailVerified !== authUser.emailVerified) {
+          await updateDoc(userDocRef, { emailVerified: authUser.emailVerified });
+          profileData.emailVerified = authUser.emailVerified;
+        }
+
+        const userEmail = authUser.email?.toLowerCase() || '';
+        if (ADMIN_EMAILS.includes(userEmail)) {
             profileData.role = 'admin';
             profileData.subscriptionStatus = 'pro';
             if (profileData.status !== 'approved') {
@@ -101,7 +101,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (profileData.isSuspended && pathname !== '/suspended') {
           router.push('/suspended');
-          return profileData;
         }
         
         return profileData;
@@ -172,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const dataToSave: Omit<ProfileData, 'uid'> = {
           ...rest,
           email: user.email!,
+          emailVerified: user.emailVerified,
           profilePhoto: photoURL || '',
           createdAt: serverTimestamp(),
           trialStartDate: serverTimestamp(),
@@ -207,6 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
        await setDoc(userDocRef, {
         email: user.email,
+        emailVerified: user.emailVerified,
         firstName: firstName || '',
         surname: surname,
         profilePhoto: user.photoURL || '',

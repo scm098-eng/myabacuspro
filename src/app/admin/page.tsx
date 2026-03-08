@@ -7,12 +7,12 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import type { ProfileData } from '@/types';
 import { usePageBackground } from '@/hooks/usePageBackground';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Briefcase, Crown, Mail, TrendingUp, Send, Loader2, Trophy, ShieldAlert, GraduationCap, Search, X, Ban, ShieldCheck } from 'lucide-react';
+import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, ShieldAlert, GraduationCap, Search, X, Ban, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit } from 'firebase/firestore';
@@ -158,7 +158,16 @@ export default function AdminDashboardPage() {
     }, {} as Record<string, { total: number, pro: number, free: number }>);
 
     const teachersWithStats = allTeachers.map(t => ({ ...t, stats: teacherMap[t.uid] || { total: 0, pro: 0, free: 0 } }));
-    const suspicious = allUsers.filter(u => (u.totalPoints || 0) > 100000 || u.isSuspended);
+    
+    // Logic for suspicious/flagged accounts
+    const suspicious = allUsers.map(u => {
+        let reasons = [];
+        if (u.isSuspended) reasons.push("Account Suspended");
+        if ((u.totalPoints || 0) > 100000) reasons.push("High Point Total");
+        if (u.emailVerified === false) reasons.push("Email Unverified");
+        
+        return { ...u, flagReasons: reasons };
+    }).filter(u => u.flagReasons.length > 0);
     
     return { 
         filteredTeachers: teachersWithStats.filter(matches), 
@@ -259,15 +268,21 @@ export default function AdminDashboardPage() {
 
         <TabsContent value="moderation" className="space-y-8">
             <Card className="border-red-200">
-                <CardHeader><CardTitle className="text-red-700">Flagged Accounts</CardTitle><CardDescription>Users with exceptionally high points or active suspensions.</CardDescription></CardHeader>
+                <CardHeader><CardTitle className="text-red-700">Flagged Accounts</CardTitle><CardDescription>Users needing verification or monitoring.</CardDescription></CardHeader>
                 <CardContent>
                     <Table>
-                        <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Points</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
+                        <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Flag Reason</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
                         <TableBody>
                             {filteredSuspicious.length > 0 ? filteredSuspicious.map((u) => (
                                 <TableRow key={u.uid}>
                                     <TableCell><p className="text-sm font-bold">{u.firstName} {u.surname}</p><p className="text-[10px] text-muted-foreground">{u.email}</p></TableCell>
-                                    <TableCell className="font-mono text-xs">{u.totalPoints?.toLocaleString()}</TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-wrap gap-1">
+                                            {u.flagReasons.map(r => (
+                                                <Badge key={r} variant="outline" className="text-[9px] border-red-200 bg-red-50 text-red-700">{r}</Badge>
+                                            ))}
+                                        </div>
+                                    </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
                                             <Button size="sm" variant={u.isSuspended ? "outline" : "destructive"} onClick={() => handleToggleSuspension(u.uid, !!u.isSuspended)}>
