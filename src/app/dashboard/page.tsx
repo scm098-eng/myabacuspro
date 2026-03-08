@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp } from 'lucide-react';
+import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, AlertCircle, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,7 +22,7 @@ import { RANK_CRITERIA } from '@/lib/constants';
 
 export default function StudentDashboardPage() {
   usePageBackground('');
-  const { profile, user, isLoading, getStudentTitle } = useAuth();
+  const { profile, user, isLoading, getStudentTitle, isTrialActive, trialDaysRemaining } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
@@ -68,25 +68,73 @@ export default function StudentDashboardPage() {
   const currentPoints = profile.totalPoints || 0;
   const currentDays = profile.totalDaysPracticed || 0;
   const currentRank = getStudentTitle(currentDays, currentPoints);
+  
+  // Find the NEXT rank higher than current (Rank criteria is ordered High to Low)
   const nextRank = RANK_CRITERIA.slice().reverse().find(r => currentDays < r.daysReq || currentPoints < r.pointsReq) || RANK_CRITERIA[0];
-  const progress = Math.min(100, ((currentPoints / (nextRank.pointsReq || 1)) + (currentDays / (nextRank.daysReq || 1))) * 50);
+  
+  // Calculate specific remaining requirements
+  const daysNeeded = Math.max(0, nextRank.daysReq - currentDays);
+  const pointsNeeded = Math.max(0, nextRank.pointsReq - currentPoints);
+  
+  // Blended progress calculation
+  const pointsProg = Math.min(1, currentPoints / (nextRank.pointsReq || 1));
+  const daysProg = Math.min(1, currentDays / (nextRank.daysReq || 1));
+  const progress = ((pointsProg + daysProg) / 2) * 100;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
+      {/* Trial Urgency Banner */}
+      {isTrialActive && profile.subscriptionStatus !== 'pro' && (
+        <Card className="bg-orange-500 text-white border-none shadow-lg rounded-2xl overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
+          <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-full">
+                <Clock className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <p className="font-black uppercase tracking-tight text-sm">Action Required: Free Trial Ending</p>
+                <p className="text-xs opacity-90 font-bold">You have <span className="underline decoration-2">{trialDaysRemaining.toFixed(1)} days</span> left. Upgrade to keep your progress and leaderboard rank!</p>
+              </div>
+            </div>
+            <Button onClick={() => router.push('/pricing')} className="bg-white text-orange-600 hover:bg-orange-50 font-black rounded-xl px-6 h-10 shadow-lg shrink-0">
+              Upgrade Now
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Hero Header */}
       <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 text-white min-h-[220px] rounded-3xl flex items-center">
         <div className="absolute inset-0 opacity-20 bg-cover bg-center" style={{ backgroundImage: "url('https://picsum.photos/seed/abacus/1200/400')" }} />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent" />
         <CardContent className="relative z-10 p-8 w-full flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="space-y-4 text-center md:text-left">
-            <h1 className="text-4xl md:text-5xl font-black font-headline uppercase">Road to Mastery</h1>
-            <div className="flex gap-2 justify-center md:justify-start">
-              <Badge className="bg-yellow-400 text-slate-900 font-bold px-4 py-1.5 rounded-full border-none">RANK: {currentRank.name}</Badge>
-              <Badge variant="outline" className="text-white border-white/20 px-4 py-1.5 rounded-full font-bold">NEXT: {nextRank.name}</Badge>
+            <h1 className="text-4xl md:text-5xl font-black font-headline uppercase leading-none">Road to Mastery</h1>
+            <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+              <Badge className="bg-yellow-400 text-slate-900 font-bold px-4 py-1.5 rounded-full border-none shadow-md">RANK: {currentRank.name}</Badge>
+              <Badge variant="outline" className="text-white border-white/20 px-4 py-1.5 rounded-full font-bold bg-white/5 backdrop-blur-sm">NEXT: {nextRank.name}</Badge>
+            </div>
+            {/* Specific Remaining Requirements Labels */}
+            <div className="flex flex-wrap gap-4 justify-center md:justify-start text-[10px] font-black uppercase tracking-widest text-slate-400 pt-2">
+              <div className="flex items-center gap-1.5 bg-black/30 px-3 py-1 rounded-lg border border-white/5">
+                <CalendarDays className={cn("w-3 h-3", daysNeeded === 0 ? "text-green-400" : "text-blue-400")} />
+                {daysNeeded === 0 ? "Days Goal Met" : `${daysNeeded} More Days Needed`}
+              </div>
+              <div className="flex items-center gap-1.5 bg-black/30 px-3 py-1 rounded-lg border border-white/5">
+                <Star className={cn("w-3 h-3", pointsNeeded === 0 ? "text-green-400" : "text-yellow-400")} />
+                {pointsNeeded === 0 ? "Points Goal Met" : `${pointsNeeded.toLocaleString()} Pts Needed`}
+              </div>
             </div>
           </div>
           <div className="w-full md:w-80 space-y-3 bg-black/20 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
-            <div className="flex justify-between text-[10px] font-black uppercase text-blue-300"><span>Progress to {nextRank.name}</span><span>{Math.floor(progress)}%</span></div>
-            <div className="h-3 w-full bg-white/10 rounded-full p-0.5"><div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }} /></div>
+            <div className="flex justify-between text-[10px] font-black uppercase text-blue-300">
+              <span>Goal: {nextRank.name}</span>
+              <span>{Math.floor(progress)}%</span>
+            </div>
+            <div className="h-3 w-full bg-white/10 rounded-full p-0.5 shadow-inner">
+              <div className="h-full bg-gradient-to-r from-blue-500 to-sky-400 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(56,189,248,0.5)]" style={{ width: `${progress}%` }} />
+            </div>
+            <p className="text-[8px] font-bold text-center text-slate-500 italic tracking-wide">Must meet both Days and Points to rank up</p>
           </div>
         </CardContent>
       </Card>
@@ -94,7 +142,6 @@ export default function StudentDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-card/50 border-border/50 shadow-sm"><CardContent className="p-6 flex items-center gap-4"><div className="bg-orange-100 p-3 rounded-2xl shrink-0"><Flame className="text-orange-600 w-6 h-6" /></div><div><p className="text-3xl font-black leading-none">{profile.currentStreak || 0}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Streak</p></div></CardContent></Card>
         <Card className="bg-card/50 border-border/50 shadow-sm"><CardContent className="p-6 flex items-center gap-4"><div className="bg-blue-100 p-3 rounded-2xl shrink-0"><CalendarDays className="text-blue-600 w-6 h-6" /></div><div><p className="text-3xl font-black leading-none">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Practice Days</p></div></CardContent></Card>
-        {/* FIXED: High-contrast points layout to prevent overlap */}
         <Card className="lg:col-span-2 shadow-md bg-white border-slate-100 border-2"><CardContent className="p-6 h-full flex flex-col justify-center">
             <div className="grid grid-cols-3 gap-2 sm:gap-4">
               <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100"><p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Total</p><p className="text-base sm:text-xl font-black text-primary">{(profile.totalPoints || 0).toLocaleString()}</p></div>
