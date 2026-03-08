@@ -30,13 +30,95 @@ function getTransporter() {
     return nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 465,
-        secure: true, // Use SSL for production stability
+        secure: true, 
         auth: {
             user: GMAIL_USER,
             pass: GMAIL_PASS,
         },
     });
 }
+
+/**
+ * Generates a 6-digit OTP and sends it via email.
+ */
+exports.sendVerificationOTP = onCall({
+    secrets: ["GMAIL_APP_PASSWORD"]
+}, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
+    const userId = request.auth.uid;
+    const email = request.auth.token.email;
+    
+    // Generate 6-digit code
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    try {
+        // Store OTP in Firestore with expiration (10 minutes)
+        await db.collection('users').doc(userId).set({
+            pendingOTP: otp,
+            otpExpiresAt: admin.firestore.Timestamp.fromDate(new Date(Date.now() + 10 * 60 * 1000))
+        }, { merge: true });
+
+        const transporter = getTransporter();
+        await transporter.sendMail({
+            from: `"My Abacus Pro Verification" <${GMAIL_USER}>`,
+            to: email,
+            subject: `${otp} is your verification code`,
+            html: `
+                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 500px; margin: auto;">
+                    <h2 style="color: #2563eb; text-align: center;">Verify Your Account</h2>
+                    <p>Welcome to My Abacus Pro! Please use the following code to verify your email address:</p>
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1e293b; border: 1px solid #e2e8f0;">
+                        ${otp}
+                    </div>
+                    <p style="margin-top: 20px; font-size: 14px; color: #64748b; text-align: center;">This code will expire in 10 minutes.</p>
+                </div>
+            `
+        });
+
+        return { status: "success" };
+    } catch (err) {
+        logger.error("Failed to send OTP", err);
+        throw new HttpsError('internal', "Could not send verification code.");
+    }
+});
+
+/**
+ * Validates the OTP and updates Auth/Firestore status.
+ */
+exports.verifyEmailWithOTP = onCall(async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
+    const { otp } = request.data;
+    const userId = request.auth.uid;
+
+    const userDoc = await db.collection('users').doc(userId).get();
+    if (!userDoc.exists) throw new HttpsError('not-found', "User not found.");
+
+    const data = userDoc.data();
+    if (!data.pendingOTP || data.pendingOTP !== otp) {
+        throw new HttpsError('invalid-argument', "Invalid verification code.");
+    }
+
+    if (data.otpExpiresAt.toDate() < new Date()) {
+        throw new HttpsError('deadline-exceeded', "Code has expired. Please request a new one.");
+    }
+
+    try {
+        // Update Auth User
+        await admin.auth().updateUser(userId, { emailVerified: true });
+        
+        // Update Firestore
+        await db.collection('users').doc(userId).update({
+            emailVerified: true,
+            pendingOTP: admin.firestore.FieldValue.delete(),
+            otpExpiresAt: admin.firestore.FieldValue.delete()
+        });
+
+        return { status: "success" };
+    } catch (err) {
+        logger.error("OTP Verification failed", err);
+        throw new HttpsError('internal', "Verification process failed.");
+    }
+});
 
 exports.sendCustomPromotionalEmail = onCall({
     secrets: ["GMAIL_APP_PASSWORD"]

@@ -240,9 +240,8 @@ export interface ProfileData {
   fcmToken?: string;
   lastAwardedRank?: string;
   isSuspended?: boolean;
-  // Trial fields
+  emailVerified?: boolean;
   trialStartDate?: any;
-  // Marketing fields
   lastMarketingEmailSent?: any;
   marketingCampaignClicked?: boolean;
   lastCampaignClicked?: string;
@@ -278,6 +277,7 @@ export type UpdateProfilePayload = {
   lastAwardedRank?: string;
   isSuspended?: boolean;
   trialStartDate?: any;
+  emailVerified?: boolean;
 };
 
 

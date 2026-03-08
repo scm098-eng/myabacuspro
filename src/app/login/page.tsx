@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -14,10 +15,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import type { ProfileData, UserRole } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Label } from '@/components/ui/label';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -30,9 +32,13 @@ const forgotPasswordSchema = z.object({
 
 function LoginForm({ role }: { role: UserRole }) {
   const router = useRouter();
-  const { login, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle, sendOTP, verifyOTP } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [otpValue, setOtpValue] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -41,10 +47,14 @@ function LoginForm({ role }: { role: UserRole }) {
 
   const handleRedirect = (profile: ProfileData | null) => {
     if (profile) {
+        if (!profile.emailVerified && profile.role !== 'admin') {
+            sendOTP();
+            setNeedsVerification(true);
+            return;
+        }
         if(profile.role === 'admin' || (profile.role === 'teacher' && profile.status === 'approved')) {
             router.push('/admin');
         } else {
-            // Returning users go directly to dashboard
             router.push('/dashboard');
         }
     } else {
@@ -71,6 +81,41 @@ function LoginForm({ role }: { role: UserRole }) {
     } catch (error) {
       toast({ title: 'Google Login Failed', description: 'Please try again.', variant: 'destructive' });
     }
+  }
+
+  const handleVerifyOTP = async () => {
+    setIsVerifying(true);
+    try {
+        await verifyOTP(otpValue);
+        toast({ title: "Email Verified!" });
+        router.push('/dashboard');
+    } catch (e: any) {
+        toast({ title: "Verification Failed", description: e.message, variant: "destructive" });
+    } finally { setIsVerifying(false); }
+  };
+
+  if (needsVerification) {
+    return (
+        <div className="space-y-6">
+            <div className="text-center">
+                <ShieldCheck className="w-10 h-10 text-primary mx-auto mb-2" />
+                <p className="text-sm font-medium">Verify your email to continue.</p>
+            </div>
+            <div className="space-y-2">
+                <Label>Enter 6-digit Code</Label>
+                <Input 
+                    value={otpValue} 
+                    onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="text-center text-3xl font-black tracking-widest h-14"
+                />
+            </div>
+            <Button onClick={handleVerifyOTP} className="w-full" disabled={isVerifying}>
+                {isVerifying && <Loader2 className="animate-spin mr-2" />}
+                Verify Email
+            </Button>
+            <Button variant="ghost" onClick={() => sendOTP()} className="w-full text-xs">Resend Code</Button>
+        </div>
+    );
   }
   
   return (

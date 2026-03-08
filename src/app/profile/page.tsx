@@ -14,7 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, CalendarIcon, Camera, Edit, X } from 'lucide-react';
+import { Loader2, CalendarIcon, Camera, Edit, X, BadgeCheck, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import type { ProfileData, UpdateProfilePayload } from '@/types';
@@ -239,7 +239,13 @@ export default function ProfilePage() {
       <Card className="shadow-lg">
         <CardHeader>
             <div className="flex justify-between items-start">
-                <div><CardTitle className="text-3xl font-headline">My Profile</CardTitle><CardDescription>Manage your personal details.</CardDescription></div>
+                <div>
+                    <CardTitle className="text-3xl font-headline flex items-center gap-2">
+                        My Profile
+                        {profile.emailVerified ? <BadgeCheck className="w-6 h-6 text-green-500" /> : <ShieldAlert className="w-6 h-6 text-orange-500" />}
+                    </CardTitle>
+                    <CardDescription>{profile.emailVerified ? 'Verified Account' : 'Action Required: Verification Pending'}</CardDescription>
+                </div>
                 {!isEditing && <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>}
             </div>
         </CardHeader>

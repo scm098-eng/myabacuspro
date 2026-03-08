@@ -19,6 +19,7 @@ import {
 import { firebaseApp } from '@/lib/firebase';
 import { doc, setDoc, getDoc, serverTimestamp, getFirestore, collection, getDocs, query, where, arrayUnion, updateDoc, increment, orderBy, limit, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, getStorage } from 'firebase/storage';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload } from '@/types';
 import { useRouter, usePathname } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -32,7 +33,8 @@ interface AuthContextType {
   signup: (values: SignupData) => Promise<void>;
   loginWithGoogle: () => Promise<ProfileData | null>;
   sendPasswordReset: (email: string) => Promise<void>;
-  sendVerificationEmail: () => Promise<void>;
+  sendOTP: () => Promise<void>;
+  verifyOTP: (code: string) => Promise<void>;
   updateUserProfile: (uid: string, data: UpdateProfilePayload) => Promise<void>;
   toggleUserSuspension: (uid: string, isSuspended: boolean) => Promise<void>;
   deleteUserAccount: (uid: string) => Promise<void>;
@@ -82,7 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = userDoc.data();
         const profileData = { ...data, uid: authUser.uid } as ProfileData;
         
-        // Sync email verification status to Firestore for admin monitoring
         if (data.emailVerified !== authUser.emailVerified) {
           await updateDoc(userDocRef, { emailVerified: authUser.emailVerified });
           profileData.emailVerified = authUser.emailVerified;
@@ -92,8 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (ADMIN_EMAILS.includes(userEmail)) {
             profileData.role = 'admin';
             profileData.subscriptionStatus = 'pro';
-            if (profileData.status !== 'approved') {
-              await updateDoc(userDocRef, { status: 'approved', role: 'admin', subscriptionStatus: 'pro' });
+            if (profileData.status !== 'approved' || !profileData.emailVerified) {
+              await updateDoc(userDocRef, { status: 'approved', role: 'admin', subscriptionStatus: 'pro', emailVerified: true });
             }
         }
 
@@ -171,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const dataToSave: Omit<ProfileData, 'uid'> = {
           ...rest,
           email: user.email!,
-          emailVerified: user.emailVerified,
+          emailVerified: isAdmin,
           profilePhoto: photoURL || '',
           createdAt: serverTimestamp(),
           trialStartDate: serverTimestamp(),
@@ -207,7 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
        await setDoc(userDocRef, {
         email: user.email,
-        emailVerified: user.emailVerified,
+        emailVerified: user.emailVerified || isAdmin,
         firstName: firstName || '',
         surname: surname,
         profilePhoto: user.photoURL || '',
@@ -230,6 +231,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return await fetchProfile(user);
   }, [auth, firestore, fetchProfile]);
   
+  const sendOTP = useCallback(async () => {
+    const functions = getFunctions(firebaseApp);
+    const sendFn = httpsCallable(functions, 'sendVerificationOTP');
+    await sendFn();
+  }, []);
+
+  const verifyOTP = useCallback(async (otp: string) => {
+    const functions = getFunctions(firebaseApp);
+    const verifyFn = httpsCallable(functions, 'verifyEmailWithOTP');
+    await verifyFn({ otp });
+    if (user) await fetchProfile(user);
+  }, [user, fetchProfile]);
+
   const sendPasswordReset = useCallback(async (email: string) => {
     await sendPasswordResetEmail(auth, email);
   }, [auth]);
@@ -355,7 +369,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { 
     user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
-    sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, getAllUsers, getApprovedTeachers, 
+    sendPasswordReset, sendVerificationEmail, sendOTP, verifyOTP, updateUserProfile, toggleUserSuspension, deleteUserAccount, getAllUsers, getApprovedTeachers, 
     getUserTestHistory, getUserTestHistoryByDateRange, getUserProfile, approveTeacher, getCompletedGameLevels, 
     saveCompletedGameLevel, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining
   };
