@@ -272,7 +272,7 @@ export default function ProfilePage() {
                                         <FormControl>
                                           <Button variant={"outline"} className={cn("w-full justify-between text-left font-normal", !field.value && "text-muted-foreground")}>
                                             {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                            <CalendarIcon className="h-4 w-4 opacity-50" />
+                                            <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
                                           </Button>
                                         </FormControl>
                                       </PopoverTrigger>

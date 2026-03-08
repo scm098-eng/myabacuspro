@@ -146,20 +146,28 @@ export default function AdminDashboardPage() {
     const matches = (u: ProfileData) => (u.firstName?.toLowerCase().includes(sl) || u.surname?.toLowerCase().includes(sl) || u.email?.toLowerCase().includes(sl));
     const allTeachers = allUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
     const allStudents = allUsers.filter(u => u.role === 'student');
+    
     const teacherMap = allStudents.reduce((acc, s) => {
         if (s.teacherId) {
-            if (!acc[s.teacherId]) acc[s.teacherId] = { total: 0, pro: 0 };
+            if (!acc[s.teacherId]) acc[s.teacherId] = { total: 0, pro: 0, free: 0 };
             acc[s.teacherId].total++;
             if (s.subscriptionStatus === 'pro') acc[s.teacherId].pro++;
+            else acc[s.teacherId].free++;
         }
         return acc;
-    }, {} as Record<string, { total: number, pro: number }>);
-    const teachersWithStats = allTeachers.map(t => ({ ...t, stats: teacherMap[t.uid] || { total: 0, pro: 0 } }));
+    }, {} as Record<string, { total: number, pro: number, free: number }>);
+
+    const teachersWithStats = allTeachers.map(t => ({ ...t, stats: teacherMap[t.uid] || { total: 0, pro: 0, free: 0 } }));
     const suspicious = allUsers.filter(u => (u.totalPoints || 0) > 100000 || u.isSuspended);
+    
     return { 
         filteredTeachers: teachersWithStats.filter(matches), 
         filteredStudents: allStudents.filter(u => (profile?.role === 'admin' || u.teacherId === profile?.uid)).filter(matches),
-        summaryStats: { totalTeachers: allTeachers.filter(t => t.status === 'approved' || t.role === 'admin').length, totalStudents: allStudents.length, proUsers: allStudents.filter(s => s.subscriptionStatus === 'pro').length },
+        summaryStats: { 
+            totalTeachers: allTeachers.filter(t => t.status === 'approved' || t.role === 'admin').length, 
+            totalStudents: allStudents.length, 
+            proUsers: allStudents.filter(s => s.subscriptionStatus === 'pro').length 
+        },
         filteredSuspicious: suspicious.filter(matches)
     };
   }, [allUsers, searchTerm, profile]);
@@ -220,12 +228,20 @@ export default function AdminDashboardPage() {
                 <CardHeader><CardTitle className="font-headline">Teacher Staff</CardTitle></CardHeader>
                 <CardContent>
                     <Table>
-                        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Students</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Students Breakdown</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                         <TableBody>
                             {filteredTeachers.length > 0 ? filteredTeachers.map((t) => (
                                 <TableRow key={t.uid}>
                                     <TableCell><p className="text-sm font-bold">{t.firstName} {t.surname}</p><p className="text-[10px] text-muted-foreground">{t.email}</p></TableCell>
-                                    <TableCell><p className="text-xs">{t.stats.total} total</p></TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-xs font-bold">{t.stats.total} Total</span>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="outline" className="h-5 text-[9px] bg-green-50 text-green-700 border-green-200">Pro: {t.stats.pro}</Badge>
+                                                <Badge variant="outline" className="h-5 text-[9px] bg-slate-50 text-slate-600">Free: {t.stats.free}</Badge>
+                                            </div>
+                                        </div>
+                                    </TableCell>
                                     <TableCell><Badge variant={t.status === 'approved' || t.role === 'admin' ? 'default' : 'secondary'}>{t.status || 'Active'}</Badge></TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
