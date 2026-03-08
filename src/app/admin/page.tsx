@@ -305,7 +305,7 @@ export default function AdminDashboardPage() {
                 <CardHeader><CardTitle className="font-headline">Staff Directory</CardTitle><CardDescription>Admins and approved teachers managing students.</CardDescription></CardHeader>
                 <CardContent>
                     <Table>
-                        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Role</TableHead><TableHead>Students</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Role</TableHead><TableHead>Students</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableHeader>
                         <TableBody>
                             {filteredTeachers.length > 0 ? filteredTeachers.map((t) => (
                                 <TableRow key={t.uid}>

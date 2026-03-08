@@ -28,6 +28,21 @@ const indianStates = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "
 const grades = Array.from({ length: 12 }, (_, i) => `${i + 1}${['st', 'nd', 'rd'][i] || 'th'}`);
 const majorCountries = ["India", "United States", "United Kingdom", "United Arab Emirates", "Australia", "Canada", "Singapore", "Malaysia", "Japan", "Germany", "France", "Other"];
 
+const countryCodes: Record<string, string> = {
+  "India": "+91 ",
+  "United States": "+1 ",
+  "United Kingdom": "+44 ",
+  "United Arab Emirates": "+971 ",
+  "Australia": "+61 ",
+  "Canada": "+1 ",
+  "Singapore": "+65 ",
+  "Malaysia": "+60 ",
+  "Japan": "+81 ",
+  "Germany": "+49 ",
+  "France": "+33 ",
+  "Other": ""
+};
+
 const formSchema = z.object({
   firstName: z.string().min(1, { message: "First name is required." }),
   middleName: z.string().optional(),
@@ -121,11 +136,23 @@ export default function SignupPage() {
     },
   });
 
-  const { watch } = form;
+  const { watch, setValue } = form;
   const ageValue = calculateAge(watch('dob'));
   const selectedRole = watch('role');
   const selectedCountry = watch('country');
   const selectedInstCountry = watch('instituteCountry');
+
+  // Auto Country Code logic
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name === 'country') {
+        const code = countryCodes[value.country || 'India'] || "";
+        setValue('mobileNo', code);
+        setValue('whatsappNo', code);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, setValue]);
   
   const handleGoogleSignup = async () => {
     try {
@@ -142,7 +169,6 @@ export default function SignupPage() {
       const signupData: SignupData = { ...values, profilePhoto: croppedImageFile || undefined };
       await signup(signupData);
       toast({ title: 'Welcome!', description: 'Your account is ready.' });
-      // New users land on the home page
       router.push('/');
     } catch (e: any) {
       toast({ title: 'Sign-up Failed', description: e.message, variant: 'destructive' });

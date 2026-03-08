@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
@@ -34,6 +33,21 @@ const majorCountries = [
   "India", "United States", "United Kingdom", "United Arab Emirates", "Australia", 
   "Canada", "Singapore", "Malaysia", "Japan", "Germany", "France", "Other"
 ];
+
+const countryCodes: Record<string, string> = {
+  "India": "+91 ",
+  "United States": "+1 ",
+  "United Kingdom": "+44 ",
+  "United Arab Emirates": "+971 ",
+  "Australia": "+61 ",
+  "Canada": "+1 ",
+  "Singapore": "+65 ",
+  "Malaysia": "+60 ",
+  "Japan": "+81 ",
+  "Germany": "+49 ",
+  "France": "+33 ",
+  "Other": ""
+};
 
 const profileSchema = z.object({
   firstName: z.string().min(1, { message: "First name is required." }),
@@ -144,7 +158,7 @@ const ReadOnlyField = ({ label, value }: { label: string; value?: string | null 
 
 
 export default function ProfilePage() {
-  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/profile_bg.jpg?alt=media&token=c4d5e6f7-g8h9-i0j1-k2l3-m4n5o6p7q8r9');
+  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/profile_bg.jpg?alt=media');
   const router = useRouter();
   const { user, profile, isLoading, getApprovedTeachers, fetchProfile, updateUserProfile } = useAuth();
   const { toast } = useToast();
@@ -213,6 +227,35 @@ export default function ProfilePage() {
       }
     }
   }, [profile, teachers, form]);
+
+  const { watch, setValue } = form;
+  const dob = watch('dob');
+  const age = calculateAge(dob);
+  const firstName = watch('firstName');
+  const surname = watch('surname');
+  const selectedCountry = watch('country');
+  const selectedInstCountry = watch('instituteCountry');
+
+  // Auto Country Code logic for Profile
+  useEffect(() => {
+    if (isEditing) {
+      const subscription = watch((value, { name }) => {
+        if (name === 'country') {
+          const code = countryCodes[value.country || 'India'] || "";
+          // Only update if current field is empty or just has another code
+          const currentMobile = form.getValues('mobileNo');
+          if (!currentMobile || Object.values(countryCodes).some(c => currentMobile === c)) {
+            setValue('mobileNo', code);
+          }
+          const currentWhatsApp = form.getValues('whatsappNo');
+          if (!currentWhatsApp || Object.values(countryCodes).some(c => currentWhatsApp === c)) {
+            setValue('whatsappNo', code);
+          }
+        }
+      });
+      return () => subscription.unsubscribe();
+    }
+  }, [watch, setValue, isEditing, form]);
   
   async function onSubmit(values: z.infer<typeof profileSchema>) {
     if (!user) {
@@ -324,15 +367,6 @@ export default function ProfilePage() {
       }
     };
   }, [avatarPreview]);
-
-
-  const { watch } = form;
-  const dob = watch('dob');
-  const age = calculateAge(dob);
-  const firstName = watch('firstName');
-  const surname = watch('surname');
-  const selectedCountry = watch('country');
-  const selectedInstCountry = watch('instituteCountry');
 
   const isStudentRole = profile?.role === 'student';
   const isTeacherListLoading = isStudentRole && teachers.length === 0;
@@ -451,17 +485,15 @@ export default function ProfilePage() {
                                   <FormLabel>Date of Birth *</FormLabel>
                                     <Popover>
                                       <PopoverTrigger asChild>
-                                        <Button
-                                          variant={"outline"}
-                                          className={cn( "w-full justify-start text-left font-normal", !field.value && "text-muted-foreground" )}
-                                        >
-                                           <div className="flex w-full items-center justify-between">
-                                            <span>
-                                              {field.value ? ( format(field.value, "PPP") ) : ( "Pick a date" )}
-                                            </span>
-                                            <CalendarIcon className="h-4 w-4 opacity-50" />
-                                           </div>
-                                        </Button>
+                                        <FormControl>
+                                          <Button
+                                            variant={"outline"}
+                                            className={cn( "w-full justify-between text-left font-normal", !field.value && "text-muted-foreground" )}
+                                          >
+                                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                            <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
+                                          </Button>
+                                        </FormControl>
                                       </PopoverTrigger>
                                       <PopoverContent className="w-auto p-0" align="start">
                                           <Calendar
@@ -482,7 +514,7 @@ export default function ProfilePage() {
                             />
                              <div className="space-y-2">
                                  <Label>Age</Label>
-                                 <Input value={age !== null ? `${age} years old` : 'Select DOB to calculate'} disabled />
+                                 <Input value={age !== null ? `${age} years old` : 'Select DOB'} disabled />
                              </div>
                         </div>
                       </>
@@ -550,26 +582,16 @@ export default function ProfilePage() {
                       <>
                         <FormField control={form.control} name="instituteName" render={({ field }) => (<FormItem><FormLabel>Name of Institute</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
-                        <FormField
-                            control={form.control}
-                            name="instituteCountry"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Country</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value || 'India'}>
-                                    <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a country" />
-                                    </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      {majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        <FormField control={form.control} name="instituteCountry" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Country</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || 'India'}>
+                              <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                              <SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <FormField
                             control={form.control}
