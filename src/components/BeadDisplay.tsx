@@ -59,14 +59,14 @@ const AbacusRod = ({
         </div>
 
         {/* Upper Section (Heavenly Bead) */}
-        <div className="w-full h-[30%] flex flex-col items-center justify-between z-20 pb-3 pt-1">
+        <div className="w-full h-[30%] flex flex-col items-center justify-between z-20 pb-1 pt-1">
            {upperBeadActive && <div className="flex-grow" />}
            <Bead onClick={() => onBeadClick(5)} />
            {!upperBeadActive && <div className="flex-grow" />}
         </div>
 
          {/* Lower Section (Earthly Beads) */}
-        <div className="w-full h-[70%] flex flex-col items-center justify-start z-20 pt-3">
+        <div className="w-full h-[70%] flex flex-col items-center justify-start z-20 pt-1">
               <div className="flex flex-col items-center">
                   {Array.from({ length: lowerBeadsValue }).map((_, i) => (
                       <Bead key={`active-${i}`} onClick={() => onBeadClick(i + 1)} />
