@@ -181,12 +181,13 @@ export default function ProfilePage() {
   }, [profile, teachers, form]);
   
   async function onSubmit(values: z.infer<typeof profileSchema>) {
+    if (!user) return;
     setIsSubmitting(true);
     try {
       const payload: UpdateProfilePayload = { ...values, dob: values.dob.toISOString() };
       if (croppedImageFile) payload.profilePhoto = croppedImageFile;
-      await updateUserProfile(user!.uid, payload);
-      await fetchProfile(user!); 
+      await updateUserProfile(user.uid, payload);
+      await fetchProfile(user); 
       toast({ title: "Profile Updated" });
       setIsEditing(false);
     } catch (error: any) {
@@ -313,7 +314,20 @@ export default function ProfilePage() {
                         <h3 className="text-lg font-medium pt-4 border-b">Residential Address</h3>
                         <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <FormField control={form.control} name="state" render={({ field }) => (<FormItem><FormLabel>State</FormLabel>{selectedCountry === 'India' ? (<Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>) : (<FormControl><Input {...field} /></FormControl>)}<FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="state" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>State</FormLabel>
+                              {selectedCountry === 'India' ? (
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                  <SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                                </Select>
+                              ) : (
+                                <FormControl><Input {...field} /></FormControl>
+                              )}
+                              <FormMessage />
+                            </FormItem>
+                          )} />
                           <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
                         <h3 className="text-lg font-medium pt-4 border-b">Contact Details</h3>
@@ -330,7 +344,20 @@ export default function ProfilePage() {
                         <FormField control={form.control} name="instituteName" render={({ field }) => (<FormItem><FormLabel>Name of Institute</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
                         <FormField control={form.control} name="instituteCountry" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} value={field.value || 'India'}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="instituteState" render={({ field }) => ( <FormItem><FormLabel>State</FormLabel>{selectedInstCountry === 'India' ? (<Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>) : (<FormControl><Input {...field} /></FormControl>)}<FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="instituteState" render={({ field }) => ( 
+                          <FormItem>
+                            <FormLabel>State</FormLabel>
+                            {selectedInstCountry === 'India' ? (
+                              <Select onValueChange={field.onChange} value={field.value || ''}>
+                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                <SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                              </Select>
+                            ) : (
+                              <FormControl><Input {...field} /></FormControl>
+                            )}
+                            <FormMessage />
+                          </FormItem> 
+                        )} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <FormField control={form.control} name="instituteDistrict" render={({ field }) => (<FormItem><FormLabel>District</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                             <FormField control={form.control} name="instituteTaluka" render={({ field }) => (<FormItem><FormLabel>Taluka / Tehsil</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
