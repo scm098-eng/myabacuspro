@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, AlertCircle, Clock } from 'lucide-react';
+import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, AlertCircle, Clock, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -69,8 +69,9 @@ export default function StudentDashboardPage() {
   const currentDays = profile.totalDaysPracticed || 0;
   const currentRank = getStudentTitle(currentDays, currentPoints);
   
-  // Find the NEXT rank higher than current (Rank criteria is ordered High to Low)
-  const nextRank = RANK_CRITERIA.slice().reverse().find(r => currentDays < r.daysReq || currentPoints < r.pointsReq) || RANK_CRITERIA[0];
+  // Find the NEXT rank higher than current
+  const currentIndex = RANK_CRITERIA.findIndex(r => r.name === currentRank.name);
+  const nextRank = currentIndex > 0 ? RANK_CRITERIA[currentIndex - 1] : RANK_CRITERIA[0];
   
   // Calculate specific remaining requirements
   const daysNeeded = Math.max(0, nextRank.daysReq - currentDays);

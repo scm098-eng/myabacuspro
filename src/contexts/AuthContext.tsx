@@ -84,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = userDoc.data();
         const profileData = { ...data, uid: authUser.uid } as ProfileData;
         
+        // Sync verification status to Firestore
         if (data.emailVerified !== authUser.emailVerified) {
           await updateDoc(userDocRef, { emailVerified: authUser.emailVerified });
           profileData.emailVerified = authUser.emailVerified;
