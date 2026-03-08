@@ -228,7 +228,7 @@ export default function ProfilePage() {
 
   if (isLoading || !user || !profile || (profile.role === 'student' && teachers.length === 0)) return <div className="max-w-4xl mx-auto"><Skeleton className="h-96 w-full" /></div>;
 
-  const displayName = `${watch('firstName')} ${watch('surname')}`;
+  const currentDisplayName = `${watch('firstName')} ${watch('surname')}`;
   const isStudentWithoutTeacher = profile.role === 'student' && (!watch('teacherId') || watch('teacherId') === 'unassigned');
   const teacherObj = teachers.find(t => t.uid === watch('teacherId'));
   const teacherName = teacherObj ? `${teacherObj.firstName} ${teacherObj.surname}` : 'Not Assigned';
@@ -259,7 +259,7 @@ export default function ProfilePage() {
                             {isEditing && <Button type="button" size="icon" variant="outline" className="absolute bottom-0 right-0 rounded-full" onClick={() => fileInputRef.current?.click()}><Camera className="h-5 w-5"/></Button>}
                             <input type="file" ref={fileInputRef} onChange={onFileSelect} accept="image/*" className="hidden" />
                         </div>
-                        <div><h2 className="text-2xl font-bold">{displayName}</h2><p className="text-muted-foreground">{user.email}</p></div>
+                        <div><h2 className="text-2xl font-bold">{currentDisplayName}</h2><p className="text-muted-foreground">{user.email}</p></div>
                     </div>
                     
                     {isEditing ? (
@@ -294,7 +294,7 @@ export default function ProfilePage() {
                       </>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <ReadOnlyField label="Full Name" value={displayName} />
+                        <ReadOnlyField label="Full Name" value={currentDisplayName} />
                         <ReadOnlyField label="Age" value={age ? `${age} years` : 'Not set'} />
                       </div>
                     )}
