@@ -245,7 +245,7 @@ function ResultsComponent() {
                   )}
               </div>
 
-              {/* FIXED: Horizontal Scrollable Abacus Container - uses min-w-max to prevent cutoff */}
+              {/* Horizontal Scrollable Abacus Container - Fixed with min-w-max */}
               <div className="w-full overflow-x-auto py-6">
                   <div className="flex justify-start sm:justify-center min-w-max px-6 mx-auto">
                       <BeadDisplay 

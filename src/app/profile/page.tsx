@@ -132,6 +132,7 @@ export default function ProfilePage() {
   const dob = watch('dob');
   const age = calculateAge(dob);
   const selectedCountry = watch('country');
+  const selectedInstCountry = watch('instituteCountry');
 
   // AUTO COUNTRY CODE LOGIC
   useEffect(() => {
@@ -268,7 +269,6 @@ export default function ProfilePage() {
                                 <FormItem className="flex flex-col">
                                   <FormLabel>Date of Birth *</FormLabel>
                                     <Popover>
-                                      {/* FIXED: PopoverTrigger has only one child (FormControl wrapping Button) */}
                                       <PopoverTrigger asChild>
                                         <FormControl>
                                           <Button variant={"outline"} className={cn("w-full justify-between text-left font-normal", !field.value && "text-muted-foreground")}>
@@ -305,7 +305,7 @@ export default function ProfilePage() {
 
                     {isEditing ? (
                       <>
-                        <h3 className="text-lg font-medium pt-4 border-b">Address</h3>
+                        <h3 className="text-lg font-medium pt-4 border-b">Residential Address</h3>
                         <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></FormItem>)} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <FormField control={form.control} name="state" render={({ field }) => (<FormItem><FormLabel>State</FormLabel>{selectedCountry === 'India' ? <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select> : <FormControl><Input {...field} /></FormControl>}</FormItem>)} />
@@ -318,6 +318,32 @@ export default function ProfilePage() {
                         </div>
                       </>
                     ) : <ReadOnlyField label="Address" value={`${watch('addressLine1')}, ${watch('city')}, ${watch('state')}, ${watch('country')}`} />}
+
+                    {profile.role === 'teacher' && (
+                      isEditing ? (
+                      <>
+                        <FormField control={form.control} name="instituteName" render={({ field }) => (<FormItem><FormLabel>Name of Institute</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
+                        <FormField control={form.control} name="instituteCountry" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} value={field.value || 'India'}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="instituteState" render={({ field }) => ( <FormItem><FormLabel>State</FormLabel>{selectedInstCountry === 'India' ? <Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select> : <FormControl><Input {...field} /></FormControl>}<FormMessage /></FormItem> )} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField control={form.control} name="instituteDistrict" render={({ field }) => (<FormItem><FormLabel>District</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="instituteTaluka" render={({ field }) => (<FormItem><FormLabel>Taluka / Tehsil</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField control={form.control} name="instituteCity" render={({ field }) => (<FormItem><FormLabel>City / Town</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="institutePincode" render={({ field }) => (<FormItem><FormLabel>Pincode</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                        <FormField control={form.control} name="instituteAddressLine1" render={({ field }) => (<FormItem><FormLabel>Address Line 1</FormLabel><FormControl><Input placeholder="House No, Street, Area" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                      </>
+                      ) : (
+                          <>
+                            <ReadOnlyField label="Name of Institute" value={watch('instituteName')} />
+                            <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
+                            <ReadOnlyField label="Address" value={`${watch('instituteAddressLine1')}, ${watch('instituteCity')}, ${watch('instituteState')}, ${watch('instituteCountry')}`} />
+                          </>
+                      )
+                    )}
 
                     {isEditing && (
                         <div className="flex justify-end gap-4 pt-4">

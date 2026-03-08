@@ -63,6 +63,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
+// Updated Admin List
 const ADMIN_EMAILS = ['pallavib202@gmail.com', 'myabacuspro@gmail.com'];
 const EXCLUDED_FROM_TEACHER_LIST = ['scm098@gmail.com', 'satishmane@gmail.com'];
 

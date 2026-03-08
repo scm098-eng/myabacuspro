@@ -50,30 +50,30 @@ const AbacusRod = ({
         isActive && "bg-red-500/10 ring-2 ring-red-500 shadow-md scale-105 z-30"
       )} style={{ height: `${rodHeight}px` }}>
         
-        {/* Rod Wire - Strictly Centered */}
+        {/* Rod Wire */}
         <div className="absolute h-full w-1 bg-gradient-to-r from-[#3d241a] to-[#5d342a] left-1/2 -translate-x-1/2 top-0 z-0 rounded-full shadow-inner" />
         
-        {/* Separator Bar (Horizontal) - Positioned at 30% mark */}
+        {/* Separator Bar (Horizontal) */}
          <div className="absolute top-[30%] left-[-4px] right-[-4px] h-3 sm:h-4 bg-gradient-to-b from-[#e7c9a8] to-[#d4b48f] -translate-y-1/2 z-10 shadow-[0_2px_5px_rgba(0,0,0,0.4)] flex items-center justify-center border-y-2 border-black/40">
            {isUnitRod && <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 bg-black rounded-full shadow-inner border border-black ring-1 ring-white/20"></div>}
         </div>
 
-        {/* Upper Section (Heavenly Bead) - Spacing fixed to 8px to prevent overlap with bar */}
-        <div className="w-full h-[30%] flex flex-col items-center justify-between z-20 pb-2 pt-1">
-           {upperBeadActive && <div className="flex-grow" />}
-           <Bead onClick={() => onBeadClick(5)} />
-           {!upperBeadActive && <div className="flex-grow" />}
+        {/* Upper Section (Heavenly Bead) - Spacing fixed to sit flush with bar */}
+        <div className="w-full h-[30%] flex flex-col items-center justify-end pb-[6.5px] z-20">
+           <div className={cn("transition-all duration-300", !upperBeadActive && "-translate-y-12")}>
+              <Bead onClick={() => onBeadClick(5)} />
+           </div>
         </div>
 
-         {/* Lower Section (Earthly Beads) - Spacing fixed to 8px to prevent overlap with bar */}
-        <div className="w-full h-[70%] flex flex-col items-center justify-start z-20 pt-2">
+         {/* Lower Section (Earthly Beads) - Spacing fixed to sit flush with bar */}
+        <div className="w-full h-[70%] flex flex-col items-center justify-start pt-[6.5px] z-20">
               <div className="flex flex-col items-center">
                   {Array.from({ length: lowerBeadsValue }).map((_, i) => (
                       <Bead key={`active-${i}`} onClick={() => onBeadClick(i + 1)} />
                   ))}
               </div>
               
-              <div className="flex-grow min-h-[8px]" />
+              <div className="flex-grow min-h-[12px]" />
               
               <div className="flex flex-col items-center">
                   {Array.from({ length: 4 - lowerBeadsValue }).map((_, i) => (
