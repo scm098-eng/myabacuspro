@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Briefcase, Crown, Mail, TrendingUp, Send, Loader2, Trophy, ShieldAlert, GraduationCap, Search, X, Ban, ShieldCheck, ArrowRightLeft } from 'lucide-react';
+import { Eye, UserCheck, Briefcase, Crown, Mail, TrendingUp, Send, Loader2, Trophy, ShieldAlert, GraduationCap, Search, X, Ban, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit } from 'firebase/firestore';
@@ -39,7 +39,7 @@ const StatCard = ({ title, value, icon: Icon, subValue }: { title: string, value
 
 export default function AdminDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
-  const { profile, getAllUsers, approveTeacher, isLoading: authLoading, getStudentTitle, toggleUserSuspension, migrateStudents } = useAuth();
+  const { profile, getAllUsers, approveTeacher, isLoading: authLoading, getStudentTitle, toggleUserSuspension } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -55,10 +55,6 @@ export default function AdminDashboardPage() {
 
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
-
-  const [migrationFrom, setMigrationFrom] = useState('testteacher1@example.com');
-  const [migrationTo, setMigrationTo] = useState('pallavib202@gmail.com');
-  const [isMigrating, setIsMigrating] = useState(false);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -145,17 +141,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleMigration = async () => {
-    setIsMigrating(true);
-    try {
-      const res = await migrateStudents(migrationFrom, migrationTo);
-      toast({ title: "Migration Complete", description: `${res.count} students transferred.` });
-      fetchData();
-    } catch (e: any) {
-      toast({ title: "Migration Failed", description: e.message, variant: "destructive" });
-    } finally { setIsMigrating(false); }
-  };
-
   const { filteredTeachers, filteredStudents, summaryStats, filteredSuspicious } = useMemo(() => {
     const sl = searchTerm.toLowerCase();
     const matches = (u: ProfileData) => (u.firstName?.toLowerCase().includes(sl) || u.surname?.toLowerCase().includes(sl) || u.email?.toLowerCase().includes(sl));
@@ -217,13 +202,13 @@ export default function AdminDashboardPage() {
                     <Table>
                         <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {filteredStudents.map((s) => (
+                            {filteredStudents.length > 0 ? filteredStudents.map((s) => (
                                 <TableRow key={s.uid} className={s.isSuspended ? "opacity-50" : ""}>
                                     <TableCell><div className="flex items-center gap-2"><Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto}/></Avatar><div><p className="text-sm font-bold">{s.firstName} {s.surname}</p><p className="text-[10px] text-muted-foreground">{s.email}</p></div></div></TableCell>
                                     <TableCell><Badge variant={s.subscriptionStatus === 'pro' ? 'default' : 'outline'}>{s.subscriptionStatus}</Badge></TableCell>
                                     <TableCell className="text-right"><Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link></Button></TableCell>
                                 </TableRow>
-                            ))}
+                            )) : <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">No students found.</TableCell></TableRow>}
                         </TableBody>
                     </Table>
                 </CardContent>
@@ -237,7 +222,7 @@ export default function AdminDashboardPage() {
                     <Table>
                         <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Students</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {filteredTeachers.map((t) => (
+                            {filteredTeachers.length > 0 ? filteredTeachers.map((t) => (
                                 <TableRow key={t.uid}>
                                     <TableCell><p className="text-sm font-bold">{t.firstName} {t.surname}</p><p className="text-[10px] text-muted-foreground">{t.email}</p></TableCell>
                                     <TableCell><p className="text-xs">{t.stats.total} total</p></TableCell>
@@ -249,7 +234,7 @@ export default function AdminDashboardPage() {
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )) : <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No staff members found.</TableCell></TableRow>}
                         </TableBody>
                     </Table>
                 </CardContent>
@@ -258,33 +243,37 @@ export default function AdminDashboardPage() {
 
         <TabsContent value="moderation" className="space-y-8">
             <Card className="border-red-200">
-                <CardHeader><CardTitle className="text-red-700">Flagged Accounts</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-red-700">Flagged Accounts</CardTitle><CardDescription>Users with exceptionally high points or active suspensions.</CardDescription></CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Points</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {filteredSuspicious.map((u) => (
+                            {filteredSuspicious.length > 0 ? filteredSuspicious.map((u) => (
                                 <TableRow key={u.uid}>
-                                    <TableCell><p className="text-sm font-bold">{u.firstName} {u.surname}</p></TableCell>
+                                    <TableCell><p className="text-sm font-bold">{u.firstName} {u.surname}</p><p className="text-[10px] text-muted-foreground">{u.email}</p></TableCell>
                                     <TableCell className="font-mono text-xs">{u.totalPoints?.toLocaleString()}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button size="sm" variant={u.isSuspended ? "outline" : "destructive"} onClick={() => handleToggleSuspension(u.uid, !!u.isSuspended)}>
-                                            {u.isSuspended ? "Restore" : "Suspend"}
-                                        </Button>
+                                        <div className="flex justify-end gap-2">
+                                            <Button size="sm" variant={u.isSuspended ? "outline" : "destructive"} onClick={() => handleToggleSuspension(u.uid, !!u.isSuspended)}>
+                                                {u.isSuspended ? "Restore" : "Suspend"}
+                                            </Button>
+                                            <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${u.uid}`}><Eye className="w-4 h-4" /></Link></Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )) : (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="text-center py-12">
+                                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                            <ShieldCheck className="h-8 w-8 text-green-500 opacity-20" />
+                                            <p className="text-sm font-medium">No flagged accounts found.</p>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>
-            </Card>
-            <Card className="border-blue-200">
-                <CardHeader><CardTitle className="text-blue-700">Student Migration Tool</CardTitle><CardDescription>Transfer all assigned students from one teacher to another.</CardDescription></CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2"><Label>From Email (Source)</Label><Input value={migrationFrom} onChange={(e) => setMigrationFrom(e.target.value)} /></div>
-                    <div className="space-y-2"><Label>To Email (Target)</Label><Input value={migrationTo} onChange={(e) => setMigrationTo(e.target.value)} /></div>
-                </CardContent>
-                <CardFooter><Button onClick={handleMigration} disabled={isMigrating} className="w-full">Execute Student Transfer</Button></CardFooter>
             </Card>
         </TabsContent>
 
@@ -313,7 +302,7 @@ export default function AdminDashboardPage() {
                 </CardHeader>
                 <CardContent className="p-0">
                     <div className="divide-y">
-                        {leaderboard.map((s, idx) => (
+                        {leaderboard.length > 0 ? leaderboard.map((s, idx) => (
                             <div key={s.uid} className="flex items-center justify-between p-4">
                                 <div className="flex items-center gap-4">
                                     <span className="w-6 text-sm font-bold text-muted-foreground">#{idx + 1}</span>
@@ -322,7 +311,7 @@ export default function AdminDashboardPage() {
                                 </div>
                                 <div className="text-right"><span className="text-sm font-bold text-primary block">{s.points.toLocaleString()}</span><span className="text-[8px] font-bold text-muted-foreground uppercase">Points</span></div>
                             </div>
-                        ))}
+                        )) : <div className="p-8 text-center text-muted-foreground">Loading leaderboard...</div>}
                     </div>
                 </CardContent>
             </Card>

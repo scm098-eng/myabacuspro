@@ -53,7 +53,6 @@ interface AuthContextType {
   recordDailyPractice: (userId: string) => Promise<void>;
   addPoints: (userId: string, points: number) => Promise<void>;
   getStudentTitle: (totalDays: number, totalPoints: number) => typeof RANK_CRITERIA[0];
-  migrateStudents: (fromEmail: string, toEmail: string) => Promise<{ success: boolean; count: number }>;
   isTrialActive: boolean;
   trialDaysRemaining: number;
 }
@@ -353,30 +352,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return RANK_CRITERIA.find(t => totalDays >= t.daysReq && totalPoints >= t.pointsReq) || RANK_CRITERIA[RANK_CRITERIA.length - 1];
   }, []);
 
-  const migrateStudents = useCallback(async (fromEmail: string, toEmail: string) => {
-    if (profile?.role !== 'admin') throw new Error('Admin only');
-    const usersCol = collection(firestore, 'users');
-    const qFrom = query(usersCol, where('email', '==', fromEmail.toLowerCase().trim()), limit(1));
-    const qTo = query(usersCol, where('email', '==', toEmail.toLowerCase().trim()), limit(1));
-    const [snapFrom, snapTo] = await Promise.all([getDocs(qFrom), getDocs(qTo)]);
-    if (snapFrom.empty) throw new Error(`Source (${fromEmail}) not found.`);
-    if (snapTo.empty) throw new Error(`Target (${toEmail}) not found.`);
-    const fromUid = snapFrom.docs[0].id;
-    const toUid = snapTo.docs[0].id;
-    const qStudents = query(usersCol, where('teacherId', '==', fromUid));
-    const snapStudents = await getDocs(qStudents);
-    if (snapStudents.empty) return { success: true, count: 0 };
-    const batch = writeBatch(firestore);
-    snapStudents.docs.forEach(d => batch.update(d.ref, { teacherId: toUid, updatedAt: serverTimestamp() }));
-    await batch.commit();
-    return { success: true, count: snapStudents.size };
-  }, [firestore, profile]);
-
   const value = { 
     user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
     sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, getAllUsers, getApprovedTeachers, 
     getUserTestHistory, getUserTestHistoryByDateRange, getUserProfile, approveTeacher, getCompletedGameLevels, 
-    saveCompletedGameLevel, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining, migrateStudents
+    saveCompletedGameLevel, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
