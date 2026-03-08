@@ -30,13 +30,12 @@ interface Step {
   atRodFromRight?: number;
 }
 
-// Particle component for the "submission" animation
 const FloatingParticle = ({ index }: { index: number }) => {
   const [style, setStyle] = useState<React.CSSProperties>({ opacity: 0 });
 
   useEffect(() => {
-    const randomX = (Math.random() - 0.5) * 400; // Spread wide
-    const randomY = -600 - Math.random() * 400; // Move up far
+    const randomX = (Math.random() - 0.5) * 400;
+    const randomY = -600 - Math.random() * 400;
     const duration = 1.5 + Math.random() * 1;
     const delay = Math.random() * 0.5;
 
@@ -97,7 +96,6 @@ function ResultsComponent() {
     setLoading(false);
     playSound('success');
 
-    // 🎊 Initial Pop
     if (earnedPoints > 0) {
       confetti({
         particleCount: 100,
@@ -107,7 +105,6 @@ function ResultsComponent() {
         colors: ['#f97316', '#fbbf24', '#ffffff']
       });
       
-      // Trigger submission particles after a short delay
       setTimeout(() => setShowSubmissionAnim(true), 500);
     }
   }, [playSound, earnedPoints]);
@@ -221,7 +218,6 @@ function ResultsComponent() {
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-2">Mastery Points Earned</p>
                     <div className="relative inline-block">
                       <p className="text-7xl font-black text-primary drop-shadow-sm">{earnedPoints}</p>
-                      {/* Submission Particles Source */}
                       {showSubmissionAnim && Array.from({ length: 15 }).map((_, i) => (
                         <FloatingParticle key={i} index={i} />
                       ))}
@@ -309,7 +305,6 @@ function ResultsComponent() {
                   )}
               </div>
 
-              {/* Horizontal Scrollable Abacus Container - Fixed with min-w-max */}
               <div className="w-full overflow-x-auto py-6 scrollbar-thin scrollbar-thumb-primary/20">
                   <div className="flex justify-start sm:justify-center min-w-max px-6 mx-auto">
                       <BeadDisplay 

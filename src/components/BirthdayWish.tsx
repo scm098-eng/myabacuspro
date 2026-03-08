@@ -14,10 +14,8 @@ export default function BirthdayWish() {
 
   useEffect(() => {
     if (profile?.dob && isToday(parseISO(profile.dob))) {
-      // Use a timeout to avoid showing the dialog immediately on page load, which can be jarring.
       const timer = setTimeout(() => {
         setIsOpen(true);
-        // 🎊 CELEBRATION FLASH: Confetti Burst
         confetti({
           particleCount: 150,
           spread: 70,

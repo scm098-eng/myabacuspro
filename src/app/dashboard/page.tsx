@@ -69,22 +69,18 @@ export default function StudentDashboardPage() {
   const currentDays = profile.totalDaysPracticed || 0;
   const currentRank = getStudentTitle(currentDays, currentPoints);
   
-  // Find the NEXT rank higher than current
   const currentIndex = RANK_CRITERIA.findIndex(r => r.name === currentRank.name);
   const nextRank = currentIndex > 0 ? RANK_CRITERIA[currentIndex - 1] : RANK_CRITERIA[0];
   
-  // Calculate specific remaining requirements
   const daysNeeded = Math.max(0, nextRank.daysReq - currentDays);
   const pointsNeeded = Math.max(0, nextRank.pointsReq - currentPoints);
   
-  // Blended progress calculation
   const pointsProg = Math.min(1, currentPoints / (nextRank.pointsReq || 1));
   const daysProg = Math.min(1, currentDays / (nextRank.daysReq || 1));
   const progress = ((pointsProg + daysProg) / 2) * 100;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
-      {/* Trial Urgency Banner */}
       {isTrialActive && profile.subscriptionStatus !== 'pro' && (
         <Card className="bg-orange-500 text-white border-none shadow-lg rounded-2xl overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
           <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -104,7 +100,6 @@ export default function StudentDashboardPage() {
         </Card>
       )}
 
-      {/* Hero Header */}
       <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 text-white min-h-[220px] rounded-3xl flex items-center">
         <div className="absolute inset-0 opacity-20 bg-cover bg-center" style={{ backgroundImage: "url('https://picsum.photos/seed/abacus/1200/400')" }} />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent" />
@@ -115,7 +110,6 @@ export default function StudentDashboardPage() {
               <Badge className="bg-yellow-400 text-slate-900 font-bold px-4 py-1.5 rounded-full border-none shadow-md">RANK: {currentRank.name}</Badge>
               <Badge variant="outline" className="text-white border-white/20 px-4 py-1.5 rounded-full font-bold bg-white/5 backdrop-blur-sm">NEXT: {nextRank.name}</Badge>
             </div>
-            {/* Specific Remaining Requirements Labels */}
             <div className="flex flex-wrap gap-4 justify-center md:justify-start text-[10px] font-black uppercase tracking-widest text-slate-400 pt-2">
               <div className="flex items-center gap-1.5 bg-black/30 px-3 py-1 rounded-lg border border-white/5">
                 <CalendarDays className={cn("w-3 h-3", daysNeeded === 0 ? "text-green-400" : "text-blue-400")} />

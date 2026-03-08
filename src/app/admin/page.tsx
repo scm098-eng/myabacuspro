@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, ShieldAlert, GraduationCap, Search, X, Ban, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, ShieldAlert, GraduationCap, Search, X, Ban, ShieldCheck, AlertCircle, Cake } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit } from 'firebase/firestore';
@@ -23,6 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { isWithinInterval, add, parseISO, getDate, getMonth } from 'date-fns';
 
 const StatCard = ({ title, value, icon: Icon, subValue }: { title: string, value: string | number, icon: React.ElementType, subValue?: string }) => (
     <Card>
@@ -37,6 +38,22 @@ const StatCard = ({ title, value, icon: Icon, subValue }: { title: string, value
     </Card>
 );
 
+const isBirthdaySoon = (dob: string) => {
+    if (!dob) return false;
+    const today = new Date();
+    const birthday = parseISO(dob);
+    const nextBirthday = new Date(today.getFullYear(), getMonth(birthday), getDate(birthday));
+    if (nextBirthday < today) nextBirthday.setFullYear(today.getFullYear() + 1);
+    return isWithinInterval(nextBirthday, { start: today, end: add(today, { days: 7 }) });
+};
+
+const isBirthdayToday = (dob: string) => {
+    if (!dob) return false;
+    const today = new Date();
+    const birthday = parseISO(dob);
+    return getMonth(today) === getMonth(birthday) && getDate(today) === getDate(birthday);
+}
+
 export default function AdminDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
   const { profile, getAllUsers, approveTeacher, isLoading: authLoading, getStudentTitle, toggleUserSuspension } = useAuth();
@@ -46,7 +63,6 @@ export default function AdminDashboardPage() {
   const [allUsers, setAllUsers] = useState<ProfileData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [marketingStats, setMarketingStats] = useState({ emailsSent: 0, conversions: 0 });
   
   const [emailSubject, setEmailSubject] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
@@ -79,16 +95,6 @@ export default function AdminDashboardPage() {
       fetchData();
     }
   }, [authLoading, profile, router, fetchData]);
-
-  useEffect(() => {
-    if (profile?.role === 'admin') {
-      const db = getFirestore(firebaseApp);
-      const statsRef = doc(db, "stats", "marketing");
-      return onSnapshot(statsRef, (doc) => {
-        if (doc.exists()) setMarketingStats(doc.data() as any);
-      });
-    }
-  }, [profile]);
 
   useEffect(() => {
     if (profile?.role === 'admin' || profile?.role === 'teacher') {
@@ -141,11 +147,12 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const { filteredTeachers, filteredStudents, summaryStats, filteredSuspicious } = useMemo(() => {
+  const { filteredTeachers, filteredStudents, summaryStats, filteredSuspicious, upcomingBirthdays } = useMemo(() => {
     const sl = searchTerm.toLowerCase();
     const matches = (u: ProfileData) => (u.firstName?.toLowerCase().includes(sl) || u.surname?.toLowerCase().includes(sl) || u.email?.toLowerCase().includes(sl));
     const allTeachers = allUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
     const allStudents = allUsers.filter(u => u.role === 'student');
+    const birthdays = allUsers.filter(u => isBirthdaySoon(u.dob)).sort((a,b) => (parseISO(a.dob).getMonth()*31 + getDate(parseISO(a.dob))) - (parseISO(b.dob).getMonth()*31 + getDate(parseISO(b.dob))));
     
     const teacherMap = allStudents.reduce((acc, s) => {
         if (s.teacherId) {
@@ -159,13 +166,11 @@ export default function AdminDashboardPage() {
 
     const teachersWithStats = allTeachers.map(t => ({ ...t, stats: teacherMap[t.uid] || { total: 0, pro: 0, free: 0 } }));
     
-    // Logic for suspicious/flagged accounts
     const suspicious = allUsers.map(u => {
         let reasons = [];
         if (u.isSuspended) reasons.push("Account Suspended");
         if ((u.totalPoints || 0) > 100000) reasons.push("High Point Total");
         if (u.emailVerified === false) reasons.push("Email Unverified");
-        
         return { ...u, flagReasons: reasons };
     }).filter(u => u.flagReasons.length > 0);
     
@@ -177,7 +182,8 @@ export default function AdminDashboardPage() {
             totalStudents: allStudents.length, 
             proUsers: allStudents.filter(s => s.subscriptionStatus === 'pro').length 
         },
-        filteredSuspicious: suspicious.filter(matches)
+        filteredSuspicious: suspicious.filter(matches),
+        upcomingBirthdays: birthdays
     };
   }, [allUsers, searchTerm, profile]);
 
@@ -203,136 +209,150 @@ export default function AdminDashboardPage() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="students" className="w-full">
-        <TabsList className="bg-muted p-1 mb-8 overflow-x-auto justify-start h-auto flex-wrap">
-            <TabsTrigger value="students" className="h-10">Students</TabsTrigger>
-            {profile?.role === 'admin' && <TabsTrigger value="teachers" className="h-10">Staff</TabsTrigger>}
-            {profile?.role === 'admin' && <TabsTrigger value="moderation" className="h-10">Moderation</TabsTrigger>}
-            {profile?.role === 'admin' && <TabsTrigger value="marketing" className="h-10">Marketing</TabsTrigger>}
-            <TabsTrigger value="leaderboard" className="h-10">Leaderboard</TabsTrigger>
-        </TabsList>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+            <Tabs defaultValue="students" className="w-full">
+                <TabsList className="bg-muted p-1 mb-8 overflow-x-auto justify-start h-auto flex-wrap">
+                    <TabsTrigger value="students" className="h-10">Students</TabsTrigger>
+                    {profile?.role === 'admin' && <TabsTrigger value="teachers" className="h-10">Staff</TabsTrigger>}
+                    {profile?.role === 'admin' && <TabsTrigger value="moderation" className="h-10">Moderation</TabsTrigger>}
+                    {profile?.role === 'admin' && <TabsTrigger value="marketing" className="h-10">Marketing</TabsTrigger>}
+                </TabsList>
 
-        <TabsContent value="students">
-            <Card>
-                <CardHeader><CardTitle className="font-headline">Student Directory</CardTitle></CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
-                        <TableBody>
-                            {filteredStudents.length > 0 ? filteredStudents.map((s) => (
-                                <TableRow key={s.uid} className={s.isSuspended ? "opacity-50" : ""}>
-                                    <TableCell><div className="flex items-center gap-2"><Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto}/></Avatar><div><p className="text-sm font-bold">{s.firstName} {s.surname}</p><p className="text-[10px] text-muted-foreground">{s.email}</p></div></div></TableCell>
-                                    <TableCell><Badge variant={s.subscriptionStatus === 'pro' ? 'default' : 'outline'}>{s.subscriptionStatus}</Badge></TableCell>
-                                    <TableCell className="text-right"><Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link></Button></TableCell>
-                                </TableRow>
-                            )) : <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">No students found.</TableCell></TableRow>}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-        </TabsContent>
+                <TabsContent value="students">
+                    <Card>
+                        <CardHeader><CardTitle className="font-headline">Student Directory</CardTitle></CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {filteredStudents.length > 0 ? filteredStudents.map((s) => (
+                                        <TableRow key={s.uid} className={s.isSuspended ? "opacity-50" : ""}>
+                                            <TableCell><div className="flex items-center gap-2"><Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto}/></Avatar><div><p className="text-sm font-bold">{s.firstName} {s.surname}</p><p className="text-[10px] text-muted-foreground">{s.email}</p></div></div></TableCell>
+                                            <TableCell><Badge variant={s.subscriptionStatus === 'pro' ? 'default' : 'outline'}>{s.subscriptionStatus}</Badge></TableCell>
+                                            <TableCell className="text-right"><Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link></Button></TableCell>
+                                        </TableRow>
+                                    )) : <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">No students found.</TableCell></TableRow>}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
 
-        <TabsContent value="teachers">
-            <Card>
-                <CardHeader><CardTitle className="font-headline">Teacher Staff</CardTitle></CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Students Breakdown</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                        <TableBody>
-                            {filteredTeachers.length > 0 ? filteredTeachers.map((t) => (
-                                <TableRow key={t.uid}>
-                                    <TableCell><p className="text-sm font-bold">{t.firstName} {t.surname}</p><p className="text-[10px] text-muted-foreground">{t.email}</p></TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col gap-1">
-                                            <span className="text-xs font-bold">{t.stats.total} Total</span>
-                                            <div className="flex items-center gap-2">
-                                                <Badge variant="outline" className="h-5 text-[9px] bg-green-50 text-green-700 border-green-200">Pro: {t.stats.pro}</Badge>
-                                                <Badge variant="outline" className="h-5 text-[9px] bg-slate-50 text-slate-600">Free: {t.stats.free}</Badge>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell><Badge variant={t.status === 'approved' || t.role === 'admin' ? 'default' : 'secondary'}>{t.status || 'Active'}</Badge></TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
-                                            {t.status === 'pending' && <Button size="sm" onClick={() => handleApprove(t.uid)}><UserCheck className="w-4 h-4" /></Button>}
-                                            <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${t.uid}`}><Eye className="w-4 h-4" /></Link></Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            )) : <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No staff members found.</TableCell></TableRow>}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-        </TabsContent>
+                <TabsContent value="teachers">
+                    <Card>
+                        <CardHeader><CardTitle className="font-headline">Teacher Staff</CardTitle></CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Students Breakdown</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {filteredTeachers.length > 0 ? filteredTeachers.map((t) => (
+                                        <TableRow key={t.uid}>
+                                            <TableCell><p className="text-sm font-bold">{t.firstName} {t.surname}</p><p className="text-[10px] text-muted-foreground">{t.email}</p></TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-xs font-bold">{t.stats.total} Total</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge variant="outline" className="h-5 text-[9px] bg-green-50 text-green-700 border-green-200">Pro: {t.stats.pro}</Badge>
+                                                        <Badge variant="outline" className="h-5 text-[9px] bg-slate-50 text-slate-600">Free: {t.stats.free}</Badge>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell><Badge variant={t.status === 'approved' || t.role === 'admin' ? 'default' : 'secondary'}>{t.status || 'Active'}</Badge></TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    {t.status === 'pending' && <Button size="sm" onClick={() => handleApprove(t.uid)}><UserCheck className="w-4 h-4" /></Button>}
+                                                    <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${t.uid}`}><Eye className="w-4 h-4" /></Link></Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )) : <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No staff members found.</TableCell></TableRow>}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
 
-        <TabsContent value="moderation" className="space-y-8">
-            <Card className="border-red-200">
-                <CardHeader><CardTitle className="text-red-700">Flagged Accounts</CardTitle><CardDescription>Users needing verification or monitoring.</CardDescription></CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Flag Reason</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
-                        <TableBody>
-                            {filteredSuspicious.length > 0 ? filteredSuspicious.map((u) => (
-                                <TableRow key={u.uid}>
-                                    <TableCell><p className="text-sm font-bold">{u.firstName} {u.surname}</p><p className="text-[10px] text-muted-foreground">{u.email}</p></TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-wrap gap-1">
-                                            {u.flagReasons.map(r => (
-                                                <Badge key={r} variant="outline" className="text-[9px] border-red-200 bg-red-50 text-red-700">{r}</Badge>
-                                            ))}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <Button size="sm" variant={u.isSuspended ? "outline" : "destructive"} onClick={() => handleToggleSuspension(u.uid, !!u.isSuspended)}>
-                                                {u.isSuspended ? "Restore" : "Suspend"}
-                                            </Button>
-                                            <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${u.uid}`}><Eye className="w-4 h-4" /></Link></Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            )) : (
-                                <TableRow>
-                                    <TableCell colSpan={3} className="text-center py-12">
-                                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                            <ShieldCheck className="h-8 w-8 text-green-500 opacity-20" />
-                                            <p className="text-sm font-medium">No flagged accounts found.</p>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-        </TabsContent>
+                <TabsContent value="moderation">
+                    <Card className="border-red-200">
+                        <CardHeader><CardTitle className="text-red-700">Flagged Accounts</CardTitle><CardDescription>Users needing verification or monitoring.</CardDescription></CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Flag Reason</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {filteredSuspicious.length > 0 ? filteredSuspicious.map((u) => (
+                                        <TableRow key={u.uid}>
+                                            <TableCell><p className="text-sm font-bold">{u.firstName} {u.surname}</p><p className="text-[10px] text-muted-foreground">{u.email}</p></TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {u.flagReasons.map(r => (
+                                                        <Badge key={r} variant="outline" className="text-[9px] border-red-200 bg-red-50 text-red-700">{r}</Badge>
+                                                    ))}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button size="sm" variant={u.isSuspended ? "outline" : "destructive"} onClick={() => handleToggleSuspension(u.uid, !!u.isSuspended)}>
+                                                        {u.isSuspended ? "Restore" : "Suspend"}
+                                                    </Button>
+                                                    <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${u.uid}`}><Eye className="w-4 h-4" /></Link></Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )) : <TableRow><TableCell colSpan={3} className="text-center py-12 text-muted-foreground">No flagged accounts found.</TableCell></TableRow>}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
 
-        <TabsContent value="marketing">
-            <Card>
-                <CardHeader><CardTitle>Campaign Manager</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2"><Label>Audience</Label><Select value={targetAudience} onValueChange={setTargetAudience}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Users</SelectItem><SelectItem value="pro">Pro Only</SelectItem><SelectItem value="free">Free Only</SelectItem><SelectItem value="teachers">Staff Only</SelectItem></SelectContent></Select></div>
-                    <div className="space-y-2"><Label>Subject</Label><Input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} /></div>
-                    <div className="space-y-2"><Label>Message (HTML allowed)</Label><Textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} className="min-h-[200px]" /></div>
-                    <div className="flex gap-4"><Button onClick={() => handleSendPromo(true)} variant="outline" disabled={isSendingPromo}>Send Test Email</Button><Button onClick={() => handleSendPromo(false)} className="flex-1" disabled={isSendingPromo}>Launch Campaign</Button></div>
-                </CardContent>
-            </Card>
-        </TabsContent>
+                <TabsContent value="marketing">
+                    <Card>
+                        <CardHeader><CardTitle>Campaign Manager</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2"><Label>Audience</Label><Select value={targetAudience} onValueChange={setTargetAudience}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Users</SelectItem><SelectItem value="pro">Pro Only</SelectItem><SelectItem value="free">Free Only</SelectItem><SelectItem value="teachers">Staff Only</SelectItem></SelectContent></Select></div>
+                            <div className="space-y-2"><Label>Subject</Label><Input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} /></div>
+                            <div className="space-y-2"><Label>Message (HTML allowed)</Label><Textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} className="min-h-[200px]" /></div>
+                            <div className="flex gap-4"><Button onClick={() => handleSendPromo(true)} variant="outline" disabled={isSendingPromo}>Send Test Email</Button><Button onClick={() => handleSendPromo(false)} className="flex-1" disabled={isSendingPromo}>Launch Campaign</Button></div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        </div>
 
-        <TabsContent value="leaderboard">
-            <Card className="max-w-4xl mx-auto overflow-hidden">
-                <CardHeader className="bg-muted/30 pb-0">
+        <div className="space-y-8">
+            {profile?.role === 'admin' && upcomingBirthdays.length > 0 && (
+                <Card>
+                    <CardHeader><CardTitle className="flex items-center gap-2 font-headline"><Cake className="text-pink-500 w-5 h-5"/> Upcoming Birthdays</CardTitle></CardHeader>
+                    <CardContent className="p-0">
+                        <div className="divide-y">
+                            {upcomingBirthdays.map((u) => (
+                                <div key={u.uid} className="flex items-center justify-between p-4 hover:bg-muted/30">
+                                    <div>
+                                        <p className="text-sm font-bold">{u.firstName} {u.surname}</p>
+                                        <p className="text-[10px] text-muted-foreground capitalize">{u.role}</p>
+                                    </div>
+                                    {isBirthdayToday(u.dob) ? <Badge className="bg-pink-500/20 text-pink-700 border-pink-400">Today!</Badge> : <p className="text-xs font-medium text-muted-foreground">{new Date(u.dob).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>}
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            <Card className="rounded-2xl overflow-hidden border-border shadow-sm">
+                <CardHeader className="bg-muted/30 border-b pb-0">
+                    <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2 font-headline uppercase tracking-tight mb-4"><Trophy className="text-yellow-500 w-6 h-6" /> Hall of Fame</CardTitle>
                     <Tabs defaultValue="totalPoints" onValueChange={setLeaderboardTab} className="w-full">
-                        <TabsList className="grid grid-cols-3 mb-4">
-                            <TabsTrigger value="weeklyPoints">Weekly</TabsTrigger>
-                            <TabsTrigger value="monthlyPoints">Monthly</TabsTrigger>
-                            <TabsTrigger value="totalPoints">Global</TabsTrigger>
+                        <TabsList className="grid grid-cols-3 bg-slate-200/50 mb-2 h-10">
+                            <TabsTrigger value="weeklyPoints" className="text-[10px] font-bold">Weekly</TabsTrigger>
+                            <TabsTrigger value="monthlyPoints" className="text-[10px] font-bold">Monthly</TabsTrigger>
+                            <TabsTrigger value="totalPoints" className="text-[10px] font-bold">Global</TabsTrigger>
                         </TabsList>
                     </Tabs>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className="divide-y">
+                    <div className="divide-y divide-border/50">
                         {leaderboard.length > 0 ? leaderboard.map((s, idx) => (
                             <div key={s.uid} className="flex items-center justify-between p-4">
                                 <div className="flex items-center gap-4">
@@ -346,8 +366,8 @@ export default function AdminDashboardPage() {
                     </div>
                 </CardContent>
             </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
     </div>
   );
 }
