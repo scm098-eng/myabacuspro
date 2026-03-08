@@ -212,7 +212,7 @@ export default function AdminDashboardPage() {
 
         <TabsContent value="students">
             <Card>
-                <CardHeader><CardTitle className="font-headline">Students</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="font-headline">Student Directory</CardTitle></CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
@@ -232,7 +232,7 @@ export default function AdminDashboardPage() {
 
         <TabsContent value="teachers">
             <Card>
-                <CardHeader><CardTitle className="font-headline">Staff</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="font-headline">Teacher Staff</CardTitle></CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Students</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
@@ -279,12 +279,12 @@ export default function AdminDashboardPage() {
                 </CardContent>
             </Card>
             <Card className="border-blue-200">
-                <CardHeader><CardTitle className="text-blue-700">Student Migration</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-blue-700">Student Migration Tool</CardTitle><CardDescription>Transfer all assigned students from one teacher to another.</CardDescription></CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2"><Label>From Email</Label><Input value={migrationFrom} onChange={(e) => setMigrationFrom(e.target.value)} /></div>
-                    <div className="space-y-2"><Label>To Email</Label><Input value={migrationTo} onChange={(e) => setMigrationTo(e.target.value)} /></div>
+                    <div className="space-y-2"><Label>From Email (Source)</Label><Input value={migrationFrom} onChange={(e) => setMigrationFrom(e.target.value)} /></div>
+                    <div className="space-y-2"><Label>To Email (Target)</Label><Input value={migrationTo} onChange={(e) => setMigrationTo(e.target.value)} /></div>
                 </CardContent>
-                <CardFooter><Button onClick={handleMigration} disabled={isMigrating} className="w-full">Perform Migration</Button></CardFooter>
+                <CardFooter><Button onClick={handleMigration} disabled={isMigrating} className="w-full">Execute Student Transfer</Button></CardFooter>
             </Card>
         </TabsContent>
 
@@ -292,10 +292,10 @@ export default function AdminDashboardPage() {
             <Card>
                 <CardHeader><CardTitle>Campaign Manager</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="space-y-2"><Label>Audience</Label><Select value={targetAudience} onValueChange={setTargetAudience}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="pro">Pro</SelectItem><SelectItem value="free">Free</SelectItem><SelectItem value="teachers">Staff</SelectItem></SelectContent></Select></div>
+                    <div className="space-y-2"><Label>Audience</Label><Select value={targetAudience} onValueChange={setTargetAudience}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Users</SelectItem><SelectItem value="pro">Pro Only</SelectItem><SelectItem value="free">Free Only</SelectItem><SelectItem value="teachers">Staff Only</SelectItem></SelectContent></Select></div>
                     <div className="space-y-2"><Label>Subject</Label><Input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} /></div>
-                    <div className="space-y-2"><Label>Message</Label><Textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} className="min-h-[200px]" /></div>
-                    <div className="flex gap-4"><Button onClick={() => handleSendPromo(true)} variant="outline" disabled={isSendingPromo}>Send Test</Button><Button onClick={() => handleSendPromo(false)} className="flex-1" disabled={isSendingPromo}>Launch</Button></div>
+                    <div className="space-y-2"><Label>Message (HTML allowed)</Label><Textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} className="min-h-[200px]" /></div>
+                    <div className="flex gap-4"><Button onClick={() => handleSendPromo(true)} variant="outline" disabled={isSendingPromo}>Send Test Email</Button><Button onClick={() => handleSendPromo(false)} className="flex-1" disabled={isSendingPromo}>Launch Campaign</Button></div>
                 </CardContent>
             </Card>
         </TabsContent>

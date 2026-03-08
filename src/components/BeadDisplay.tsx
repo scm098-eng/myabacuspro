@@ -58,15 +58,15 @@ const AbacusRod = ({
            {isUnitRod && <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 bg-black rounded-full shadow-inner border border-black ring-1 ring-white/20"></div>}
         </div>
 
-        {/* Upper Section (Heavenly Bead) - Clearance fixed to 6.5px to sit flush with separator */}
-        <div className="w-full h-[30%] flex flex-col items-center justify-between z-20 pb-[6.5px] pt-1">
+        {/* Upper Section (Heavenly Bead) - Spacing fixed to 8px to prevent overlap with bar */}
+        <div className="w-full h-[30%] flex flex-col items-center justify-between z-20 pb-2 pt-1">
            {upperBeadActive && <div className="flex-grow" />}
            <Bead onClick={() => onBeadClick(5)} />
            {!upperBeadActive && <div className="flex-grow" />}
         </div>
 
-         {/* Lower Section (Earthly Beads) - Clearance fixed to 6.5px to sit flush with separator */}
-        <div className="w-full h-[70%] flex flex-col items-center justify-start z-20 pt-[6.5px]">
+         {/* Lower Section (Earthly Beads) - Spacing fixed to 8px to prevent overlap with bar */}
+        <div className="w-full h-[70%] flex flex-col items-center justify-start z-20 pt-2">
               <div className="flex flex-col items-center">
                   {Array.from({ length: lowerBeadsValue }).map((_, i) => (
                       <Bead key={`active-${i}`} onClick={() => onBeadClick(i + 1)} />

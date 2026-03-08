@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useEffect, useState, useMemo } from 'react';
@@ -5,14 +6,13 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, XCircle, Clock, AlertTriangle, HelpCircle, GraduationCap, ChevronLeft, ChevronRight, Lightbulb } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertTriangle, HelpCircle, ChevronLeft, ChevronRight, Lightbulb } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import type { Question } from '@/types';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { cn, parseCalculationSteps } from '@/lib/utils';
-import Link from 'next/link';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import BeadDisplay from '@/components/BeadDisplay';
 import { useSound } from '@/hooks/useSound';
@@ -245,9 +245,9 @@ function ResultsComponent() {
                   )}
               </div>
 
-              {/* Horizontal Scrollable Abacus Container */}
-              <div className="w-full overflow-x-auto py-4 scrollbar-thin scrollbar-thumb-primary/20">
-                  <div className="flex flex-col items-center justify-start min-w-fit px-2 sm:px-4 mx-auto">
+              {/* FIXED: Horizontal Scrollable Abacus Container - uses min-w-max to prevent cutoff */}
+              <div className="w-full overflow-x-auto py-6">
+                  <div className="flex justify-start sm:justify-center min-w-max px-6 mx-auto">
                       <BeadDisplay 
                           value={abacusValue} 
                           rodCount={7} 

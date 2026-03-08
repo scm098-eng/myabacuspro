@@ -65,14 +65,6 @@ const formSchema = z.object({
   confirmPassword: z.string(),
   role: z.enum(['student', 'teacher'], { required_error: 'You must select a role.' }),
   teacherId: z.string().optional(),
-  instituteName: z.string().optional(),
-  instituteCountry: z.string().optional(),
-  instituteAddressLine1: z.string().optional(),
-  instituteCity: z.string().optional(),
-  instituteTaluka: z.string().optional(),
-  instituteDistrict: z.string().optional(),
-  instituteState: z.string().optional(),
-  institutePincode: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -121,18 +113,12 @@ export default function SignupPage() {
   const imgRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    getApprovedTeachers().then(setTeachers);
-  }, [getApprovedTeachers]);
-  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '', password: '', confirmPassword: '', firstName: '', middleName: '', surname: '',
       country: 'India', addressLine1: '', city: '', taluka: '', district: '', state: '', pincode: '',
       schoolName: '', mobileNo: '', whatsappNo: '', dob: '', grade: '', role: 'student',
-      instituteName: '', instituteCountry: 'India', instituteAddressLine1: '', instituteCity: '',
-      instituteTaluka: '', instituteDistrict: '', instituteState: '', institutePincode: '',
     },
   });
 
@@ -140,8 +126,8 @@ export default function SignupPage() {
   const ageValue = calculateAge(watch('dob'));
   const selectedRole = watch('role');
   const selectedCountry = watch('country');
-  const selectedInstCountry = watch('instituteCountry');
 
+  // AUTO COUNTRY CODE LOGIC
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === 'country') {
@@ -152,6 +138,10 @@ export default function SignupPage() {
     });
     return () => subscription.unsubscribe();
   }, [watch, setValue]);
+
+  useEffect(() => {
+    getApprovedTeachers().then(setTeachers);
+  }, [getApprovedTeachers]);
   
   const handleGoogleSignup = async () => {
     try {

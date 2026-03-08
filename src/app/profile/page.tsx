@@ -132,17 +132,17 @@ export default function ProfilePage() {
   const dob = watch('dob');
   const age = calculateAge(dob);
   const selectedCountry = watch('country');
-  const selectedInstCountry = watch('instituteCountry');
 
+  // AUTO COUNTRY CODE LOGIC
   useEffect(() => {
     if (isEditing) {
       const subscription = watch((value, { name }) => {
         if (name === 'country') {
-          const code = countryCodes[value.country || 'India'] || "+91 ";
-          const curM = form.getValues('mobileNo');
-          if (!curM || Object.values(countryCodes).some(c => curM === c)) setValue('mobileNo', code);
-          const curW = form.getValues('whatsappNo');
-          if (!curW || Object.values(countryCodes).some(c => curW === c)) setValue('whatsappNo', code);
+          const code = countryCodes[value?.country || 'India'] || "+91 ";
+          const currentM = form.getValues('mobileNo');
+          if (!currentM || Object.values(countryCodes).some(c => currentM === c)) setValue('mobileNo', code);
+          const currentW = form.getValues('whatsappNo');
+          if (!currentW || Object.values(countryCodes).some(c => currentW === c)) setValue('whatsappNo', code);
         }
       });
       return () => subscription.unsubscribe();
@@ -212,11 +212,26 @@ export default function ProfilePage() {
     }
   };
 
+  const handleCancelEdit = () => {
+      if (profile) {
+        form.reset({
+            ...profile,
+            dob: profile.dob ? new Date(profile.dob) : new Date(),
+            grade: profile.grade || '',
+            teacherId: profile.teacherId || '',
+            country: profile.country || 'India',
+            instituteCountry: profile.instituteCountry || 'India',
+        });
+      }
+      setIsEditing(false);
+  }
+
   if (isLoading || !user || !profile || (profile.role === 'student' && teachers.length === 0)) return <div className="max-w-4xl mx-auto"><Skeleton className="h-96 w-full" /></div>;
 
   const displayName = `${watch('firstName')} ${watch('surname')}`;
   const isStudentWithoutTeacher = profile.role === 'student' && (!watch('teacherId') || watch('teacherId') === 'unassigned');
-  const teacherName = teachers.find(t => t.uid === watch('teacherId')) ? `${teachers.find(t => t.uid === watch('teacherId'))?.firstName} ${teachers.find(t => t.uid === watch('teacherId'))?.surname}` : 'Not Assigned';
+  const teacherObj = teachers.find(t => t.uid === watch('teacherId'));
+  const teacherName = teacherObj ? `${teacherObj.firstName} ${teacherObj.surname}` : 'Not Assigned';
 
   return (
     <>
@@ -224,8 +239,8 @@ export default function ProfilePage() {
       <Card className="shadow-lg">
         <CardHeader>
             <div className="flex justify-between items-start">
-                <div><CardTitle className="text-3xl font-headline">My Profile</CardTitle><CardDescription>Manage your details.</CardDescription></div>
-                {!isEditing && <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>}
+                <div><CardTitle className="text-3xl font-headline">My Profile</CardTitle><CardDescription>Manage your personal details.</CardDescription></div>
+                {!isEditing && <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>}
             </div>
         </CardHeader>
         <CardContent>
@@ -253,6 +268,7 @@ export default function ProfilePage() {
                                 <FormItem className="flex flex-col">
                                   <FormLabel>Date of Birth *</FormLabel>
                                     <Popover>
+                                      {/* FIXED: PopoverTrigger has only one child (FormControl wrapping Button) */}
                                       <PopoverTrigger asChild>
                                         <FormControl>
                                           <Button variant={"outline"} className={cn("w-full justify-between text-left font-normal", !field.value && "text-muted-foreground")}>
@@ -295,7 +311,7 @@ export default function ProfilePage() {
                           <FormField control={form.control} name="state" render={({ field }) => (<FormItem><FormLabel>State</FormLabel>{selectedCountry === 'India' ? <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select> : <FormControl><Input {...field} /></FormControl>}</FormItem>)} />
                           <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                         </div>
-                        <h3 className="text-lg font-medium pt-4 border-b">Contact</h3>
+                        <h3 className="text-lg font-medium pt-4 border-b">Contact Details</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <FormField control={form.control} name="mobileNo" render={({ field }) => (<FormItem><FormLabel>Mobile No.</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                           <FormField control={form.control} name="whatsappNo" render={({ field }) => (<FormItem><FormLabel>WhatsApp</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />

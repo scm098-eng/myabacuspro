@@ -75,6 +75,7 @@ export default function StudentDashboardPage() {
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 text-white min-h-[220px] rounded-3xl flex items-center">
         <div className="absolute inset-0 opacity-20 bg-cover bg-center" style={{ backgroundImage: "url('https://picsum.photos/seed/abacus/1200/400')" }} />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent" />
         <CardContent className="relative z-10 p-8 w-full flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="space-y-4 text-center md:text-left">
             <h1 className="text-4xl md:text-5xl font-black font-headline uppercase">Road to Mastery</h1>
@@ -93,6 +94,7 @@ export default function StudentDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-card/50 border-border/50 shadow-sm"><CardContent className="p-6 flex items-center gap-4"><div className="bg-orange-100 p-3 rounded-2xl shrink-0"><Flame className="text-orange-600 w-6 h-6" /></div><div><p className="text-3xl font-black leading-none">{profile.currentStreak || 0}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Streak</p></div></CardContent></Card>
         <Card className="bg-card/50 border-border/50 shadow-sm"><CardContent className="p-6 flex items-center gap-4"><div className="bg-blue-100 p-3 rounded-2xl shrink-0"><CalendarDays className="text-blue-600 w-6 h-6" /></div><div><p className="text-3xl font-black leading-none">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Practice Days</p></div></CardContent></Card>
+        {/* FIXED: High-contrast points layout to prevent overlap */}
         <Card className="lg:col-span-2 shadow-md bg-white border-slate-100 border-2"><CardContent className="p-6 h-full flex flex-col justify-center">
             <div className="grid grid-cols-3 gap-2 sm:gap-4">
               <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100"><p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Total</p><p className="text-base sm:text-xl font-black text-primary">{(profile.totalPoints || 0).toLocaleString()}</p></div>
@@ -177,6 +179,13 @@ export default function StudentDashboardPage() {
                     <div className="text-right shrink-0 ml-2"><p className="text-sm font-black text-primary">{s.points.toLocaleString()}</p><p className="text-[8px] font-black text-muted-foreground uppercase">Points</p></div>
                   </div>
                 ))}
+              </div>
+              <div className="bg-primary/5 p-4 border-t border-border/50">
+                <div className="flex items-center gap-3 mb-2">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                  <p className="text-[11px] font-bold text-foreground uppercase tracking-tight">Your Performance</p>
+                </div>
+                <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">Calculate your potential today and climb the ranks!</p>
               </div>
             </CardContent>
           </Card>
