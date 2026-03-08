@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -74,13 +73,15 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         return acc;
     }, 0);
 
+    let earnedPointsTotal = 0;
+
     if (user) {
       const accuracy = questions.length > 0 ? (score / questions.length) * 100 : 0;
       const timeSpent = settings.timeLimit - timeLeft;
       const db = getFirestore(firebaseApp);
       
       const difficultyLevel = difficulty === 'easy' ? 1 : (difficulty === 'medium' ? 2 : 3);
-      const { earnedPoints } = calculatePoints({
+      const pointsCalculation = calculatePoints({
         correct: score,
         total: questions.length,
         timeInSeconds: timeSpent,
@@ -88,6 +89,8 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         level: difficultyLevel,
         isGame: false
       });
+      
+      earnedPointsTotal = pointsCalculation.earnedPoints;
 
       const resultData = {
         userId: user.uid,
@@ -98,7 +101,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         accuracy,
         timeSpent,
         timeLeft,
-        earnedPoints,
+        earnedPoints: earnedPointsTotal,
         createdAt: serverTimestamp(),
       };
       
@@ -112,7 +115,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       });
 
       recordDailyPractice(user.uid);
-      addPoints(user.uid, earnedPoints);
+      addPoints(user.uid, earnedPointsTotal);
     }
     
     if (typeof window !== 'undefined' && window.sessionStorage) {
@@ -123,7 +126,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       sessionStorage.setItem('testResults', JSON.stringify(resultsToStore));
     }
 
-    router.replace(`/results?score=${score}&total=${questions.length}&time=${timeLeft}`);
+    router.replace(`/results?score=${score}&total=${questions.length}&time=${timeLeft}&points=${earnedPointsTotal}`);
   }, [userAnswers, questions, router, timeLeft, user, testId, difficulty, settings.timeLimit, isFinished, recordDailyPractice, addPoints]);
 
   useEffect(() => {
@@ -138,7 +141,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       setTimeLeft((prev) => {
         const nextTime = prev - 1;
         
-        // Timer sound triggers
         if (nextTime > 60 && nextTime % 60 === 0) {
           playSound('timerTick');
         } else if (nextTime === 60) {

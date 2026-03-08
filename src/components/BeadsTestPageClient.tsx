@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -84,6 +83,8 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
         return acc;
     }, 0);
 
+    let earnedPointsTotal = 0;
+
     if (user) {
       const accuracy = questions.length > 0 ? (score / questions.length) * 100 : 0;
       const db = getFirestore(firebaseApp);
@@ -96,11 +97,13 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
         level: 1, 
         isGame: false
       });
+      
+      earnedPointsTotal = earnedPoints;
 
       const resultData = {
         userId: user.uid, testId, difficulty, score,
         totalQuestions: questions.length, accuracy, timeSpent: 0, timeLeft: 0,
-        earnedPoints,
+        earnedPoints: earnedPointsTotal,
         createdAt: serverTimestamp(),
       };
       
@@ -113,9 +116,8 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
           errorEmitter.emit('permission-error', permissionError);
       });
 
-      // Record daily practice and points
       recordDailyPractice(user.uid);
-      addPoints(user.uid, earnedPoints);
+      addPoints(user.uid, earnedPointsTotal);
     }
     
     if (typeof window !== 'undefined' && window.sessionStorage) {
@@ -126,7 +128,7 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
       sessionStorage.setItem('testResults', JSON.stringify(resultsToStore));
     }
 
-    router.replace(`/results?score=${score}&total=${questions.length}&time=0`);
+    router.replace(`/results?score=${score}&total=${questions.length}&time=0&points=${earnedPointsTotal}`);
   }, [questions, router, user, testId, difficulty, isFinished, recordDailyPractice, addPoints]);
 
   const goToNextQuestion = (updatedAnswers: (number | null)[]) => {
@@ -185,7 +187,6 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
       return (
         <div className="flex flex-col items-center w-full">
             <p className="mb-4 text-lg font-semibold">What is the value shown?</p>
-            {/* Horizontal Scrollable Container - Anchored to start on mobile */}
             <div className="w-full overflow-x-auto py-4">
                 <div className="flex justify-start sm:justify-center min-w-max px-4">
                     <BeadDisplay value={currentQuestion.answer} />
@@ -208,7 +209,6 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
         <div className="flex flex-col items-center w-full">
             <p className="mb-4 text-lg font-semibold">Set this value on the abacus:</p>
             <p className="text-4xl font-bold mb-4 text-primary">{currentQuestion.answer}</p>
-            {/* Horizontal Scrollable Container - Anchored to start on mobile */}
             <div className="w-full overflow-x-auto py-4">
                 <div className="flex justify-start sm:justify-center min-w-max px-4">
                     <BeadDisplay value={abacusValue} onChange={setAbacusValue} />
