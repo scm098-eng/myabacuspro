@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
@@ -133,7 +134,6 @@ export default function ProfilePage() {
   const selectedCountry = watch('country');
   const selectedInstCountry = watch('instituteCountry');
 
-  // AUTO COUNTRY CODE LOGIC
   useEffect(() => {
     if (isEditing) {
       const subscription = watch((value, { name }) => {
@@ -316,7 +316,7 @@ export default function ProfilePage() {
                           <FormField control={form.control} name="whatsappNo" render={({ field }) => (<FormItem><FormLabel>WhatsApp</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                         </div>
                       </>
-                    ) : <ReadOnlyField label="Address" value={`${watch('addressLine1')}, ${watch('city')}, ${watch('state')}, ${watch('country')}`} />}
+                    ) : <ReadOnlyField label="Address" value={`${watch('addressLine1') || ''}, ${watch('city') || ''}, ${watch('state') || ''}, ${watch('country') || ''}`} />}
 
                     {profile.role === 'teacher' && (
                       isEditing ? (
@@ -339,7 +339,7 @@ export default function ProfilePage() {
                           <>
                             <ReadOnlyField label="Name of Institute" value={watch('instituteName')} />
                             <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
-                            <ReadOnlyField label="Address" value={`${watch('instituteAddressLine1')}, ${watch('instituteCity')}, ${watch('instituteState')}, ${watch('instituteCountry')}`} />
+                            <ReadOnlyField label="Address" value={`${watch('instituteAddressLine1') || ''}, ${watch('instituteCity') || ''}, ${watch('instituteState') || ''}, ${watch('instituteCountry') || ''}`} />
                           </>
                       )
                     )}

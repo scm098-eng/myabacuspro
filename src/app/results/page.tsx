@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, XCircle, Clock, AlertTriangle, HelpCircle, ChevronLeft, ChevronRight, Lightbulb } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertTriangle, HelpCircle, ChevronLeft, ChevronRight, Lightbulb, Star } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import type { Question } from '@/types';
@@ -16,6 +16,7 @@ import { cn, parseCalculationSteps } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import BeadDisplay from '@/components/BeadDisplay';
 import { useSound } from '@/hooks/useSound';
+import confetti from 'canvas-confetti';
 
 interface ResultsData {
   questions: Question[];
@@ -29,6 +30,40 @@ interface Step {
   atRodFromRight?: number;
 }
 
+// Particle component for the "submission" animation
+const FloatingParticle = ({ index }: { index: number }) => {
+  const [style, setStyle] = useState<React.CSSProperties>({ opacity: 0 });
+
+  useEffect(() => {
+    const randomX = (Math.random() - 0.5) * 400; // Spread wide
+    const randomY = -600 - Math.random() * 400; // Move up far
+    const duration = 1.5 + Math.random() * 1;
+    const delay = Math.random() * 0.5;
+
+    setStyle({
+      position: 'absolute',
+      left: '50%',
+      top: '50%',
+      transform: `translate(-50%, -50%)`,
+      zIndex: 50,
+      pointerEvents: 'none',
+      animation: `float-particle ${duration}s ease-out ${delay}s forwards`,
+      '--target-x': `${randomX}px`,
+      '--target-y': `${randomY}px`,
+    } as any);
+  }, []);
+
+  return (
+    <div style={style}>
+      {index % 2 === 0 ? (
+        <Star className="w-6 h-6 text-yellow-400 fill-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
+      ) : (
+        <div className="w-5 h-5 bg-orange-400 rounded-full border-2 border-orange-600 shadow-lg flex items-center justify-center text-[10px] font-bold text-orange-900">₹</div>
+      )}
+    </div>
+  );
+};
+
 function ResultsComponent() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/results_bg.jpg?alt=media&token=c4d5e6f7-g8h9-i0j1-k2l3-m4n5o6p7q8r9');
   const searchParams = useSearchParams();
@@ -38,6 +73,7 @@ function ResultsComponent() {
   const [resultsData, setResultsData] = useState<ResultsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showSubmissionAnim, setShowSubmissionAnim] = useState(false);
   
   const [modalQuestion, setModalQuestion] = useState<Question | null>(null);
   const [calculationSteps, setCalculationSteps] = useState<Step[]>([]);
@@ -55,12 +91,26 @@ function ResultsComponent() {
         const parsed = JSON.parse(data);
         setResultsData(parsed);
       } catch (e) {
-        console.error("Failed to parse test results from session storage", e);
+        console.error("Failed to parse test results", e);
       }
     }
     setLoading(false);
     playSound('success');
-  }, [playSound]);
+
+    // 🎊 Initial Pop
+    if (earnedPoints > 0) {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        shapes: ['star'],
+        colors: ['#f97316', '#fbbf24', '#ffffff']
+      });
+      
+      // Trigger submission particles after a short delay
+      setTimeout(() => setShowSubmissionAnim(true), 500);
+    }
+  }, [playSound, earnedPoints]);
 
   const accuracy = total > 0 ? (score / total) * 100 : 0;
   const minutes = Math.floor(time / 60);
@@ -151,6 +201,14 @@ function ResultsComponent() {
   
   return (
     <>
+      <style jsx global>{`
+        @keyframes float-particle {
+          0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+          80% { opacity: 0.8; }
+          100% { transform: translate(calc(-50% + var(--target-x)), calc(-50% + var(--target-y))) scale(0.2); opacity: 0; }
+        }
+      `}</style>
+
       <div className="max-w-4xl mx-auto space-y-8">
         <Card className="shadow-xl border-none bg-gradient-to-br from-card to-muted/20 overflow-hidden">
           <CardHeader className="text-center pb-2">
@@ -159,9 +217,15 @@ function ResultsComponent() {
           </CardHeader>
           <CardContent className="space-y-8 p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                <div className="text-center">
+                <div className="text-center relative">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-2">Mastery Points Earned</p>
-                    <p className="text-7xl font-black text-primary drop-shadow-sm">{earnedPoints}</p>
+                    <div className="relative inline-block">
+                      <p className="text-7xl font-black text-primary drop-shadow-sm">{earnedPoints}</p>
+                      {/* Submission Particles Source */}
+                      {showSubmissionAnim && Array.from({ length: 15 }).map((_, i) => (
+                        <FloatingParticle key={i} index={i} />
+                      ))}
+                    </div>
                 </div>
                 <div className="text-center md:border-l md:pl-8">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-2">Overall Score</p>
@@ -201,7 +265,7 @@ function ResultsComponent() {
           </CardContent>
            <CardFooter className="flex-col sm:flex-row gap-4 p-8 bg-muted/30 border-t">
               <Button onClick={() => router.push('/tests')} className="flex-1 h-12 text-base font-bold">New Test</Button>
-              <Button onClick={() => router.push('/progress')} variant="secondary" className="flex-1 h-12 text-base font-bold">History</Button>
+              <Button onClick={() => router.push('/dashboard')} variant="secondary" className="flex-1 h-12 text-base font-bold">My Dashboard</Button>
               <Button onClick={() => router.push('/')} variant="outline" className="flex-1 h-12 text-base font-bold">Home</Button>
           </CardFooter>
         </Card>
@@ -246,7 +310,7 @@ function ResultsComponent() {
               </div>
 
               {/* Horizontal Scrollable Abacus Container - Fixed with min-w-max */}
-              <div className="w-full overflow-x-auto py-6">
+              <div className="w-full overflow-x-auto py-6 scrollbar-thin scrollbar-thumb-primary/20">
                   <div className="flex justify-start sm:justify-center min-w-max px-6 mx-auto">
                       <BeadDisplay 
                           value={abacusValue} 
@@ -259,7 +323,6 @@ function ResultsComponent() {
             <ScrollBar orientation="vertical" />
           </ScrollArea>
 
-          {/* Sticky Footer Navigation */}
           <div className="shrink-0 p-4 sm:p-6 bg-muted/30 border-t flex justify-between items-center bg-background/95 backdrop-blur-sm mt-auto">
               <Button 
                   onClick={() => setCurrentStepIndex(prev => Math.max(0, prev - 1))}
