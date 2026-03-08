@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -82,8 +83,7 @@ function calculateAge(dobStr: string | undefined) {
     const birthDate = new Date(dobStr);
     if (isNaN(birthDate.getTime())) return null;
     const diff_ms = Date.now() - birthDate.getTime();
-    const age_dt = new Date(diff_ms);
-    return Math.abs(age_dt.getUTCFullYear() - 1970);
+    return Math.abs(new Date(diff_ms).getUTCFullYear() - 1970);
 }
 
 async function getCroppedImg(image: HTMLImageElement, crop: Crop, fileName: string = 'cropped-image.jpg'): Promise<File | null> {
@@ -142,11 +142,10 @@ export default function SignupPage() {
   const selectedCountry = watch('country');
   const selectedInstCountry = watch('instituteCountry');
 
-  // Auto Country Code logic
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === 'country') {
-        const code = countryCodes[value.country || 'India'] || "";
+        const code = countryCodes[value.country || 'India'] || "+91 ";
         setValue('mobileNo', code);
         setValue('whatsappNo', code);
       }
@@ -156,25 +155,23 @@ export default function SignupPage() {
   
   const handleGoogleSignup = async () => {
     try {
-      const profile = await loginWithGoogle();
-      if (profile) router.push('/');
+      await loginWithGoogle();
+      router.push('/');
     } catch (e: any) {
-      toast({ title: 'Sign-up Failed', description: e.message, variant: 'destructive' });
+      toast({ title: 'Sign-up Failed', description: e.message, variant: "destructive" });
     }
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
-      const signupData: SignupData = { ...values, profilePhoto: croppedImageFile || undefined };
+      const signupData: SignupData = { ...values, profilePhoto: croppedImageFile };
       await signup(signupData);
-      toast({ title: 'Welcome!', description: 'Your account is ready.' });
+      toast({ title: "Welcome!", description: "Account created successfully." });
       router.push('/');
     } catch (e: any) {
-      toast({ title: 'Sign-up Failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setIsSubmitting(false);
-    }
+      toast({ title: 'Sign-up Failed', description: e.message, variant: "destructive" });
+    } finally { setIsSubmitting(false); }
   };
 
   const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -200,8 +197,8 @@ export default function SignupPage() {
     <div className="flex flex-col items-center justify-center py-12">
       <Card className="w-full max-w-2xl mx-auto shadow-xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
-          <CardDescription>Join My Abacus Pro</CardDescription>
+          <CardTitle className="text-2xl font-headline">Create Account</CardTitle>
+          <CardDescription>Join the My Abacus Pro family.</CardDescription>
         </CardHeader>
         <CardContent>
            <Button variant="outline" className="w-full" onClick={handleGoogleSignup}>Sign up with Google</Button>
@@ -238,20 +235,6 @@ export default function SignupPage() {
                     )} />
                   </div>
                 )}
-                {selectedRole === 'teacher' && (
-                  <div className="space-y-6">
-                    <FormField control={form.control} name="instituteName" render={({ field }) => (<FormItem><FormLabel>Institute Name</FormLabel><FormControl><Input placeholder="Institute Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
-                    <FormField control={form.control} name="instituteCountry" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="instituteState" render={({ field }) => (
-                      <FormItem><FormLabel>State</FormLabel>
-                        {selectedInstCountry === 'India' ? (
-                          <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
-                        ) : (<FormControl><Input {...field} /></FormControl>)}
-                      <FormMessage /></FormItem>
-                    )} />
-                  </div>
-                )}
                 <h3 className="text-lg font-medium pt-4 border-b">Residential Address</h3>
                 <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="state" render={({ field }) => (
@@ -277,7 +260,7 @@ export default function SignupPage() {
                   <FormField control={form.control} name="password" render={({ field }) => (<FormItem><FormLabel>Password *</FormLabel><FormControl><div className="relative"><Input type={showPassword ? 'text' : 'password'} {...field} /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="confirmPassword" render={({ field }) => (<FormItem><FormLabel>Confirm *</FormLabel><FormControl><div className="relative"><Input type={showConfirmPassword ? 'text' : 'password'} {...field} /><button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-3">{showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></FormControl><FormMessage /></FormItem>)} />
                 </div>
-                <Button type="submit" className="w-full" disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin mr-2" /> : null}Create Account</Button>
+                <Button type="submit" className="w-full" disabled={isSubmitting}>{isSubmitting && <Loader2 className="animate-spin mr-2" />}Create Account</Button>
             </form>
           </Form>
         </CardContent>

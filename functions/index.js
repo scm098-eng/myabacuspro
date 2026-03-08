@@ -1,3 +1,4 @@
+
 /**
  * Firebase Cloud Functions v2 (Node.js) Code
  * filename: functions/index.js
@@ -29,7 +30,7 @@ function getTransporter() {
     return nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 465,
-        secure: true, // Use SSL
+        secure: true, // Use SSL for production stability
         auth: {
             user: GMAIL_USER,
             pass: GMAIL_PASS,
@@ -77,8 +78,6 @@ exports.sendCustomPromotionalEmail = onCall({
         }
         
         await Promise.all(sendPromises);
-        
-        // Log campaign stats
         await db.collection('stats').doc('marketing').set({
             emailsSent: admin.firestore.FieldValue.increment(count),
             lastCampaignAt: admin.firestore.FieldValue.serverTimestamp()
@@ -92,10 +91,9 @@ exports.sendCustomPromotionalEmail = onCall({
 });
 
 exports.razorpaywebhook = onRequest(async (request, response) => {
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET; 
     const signature = request.headers['x-razorpay-signature'];
     const rawBodyBuffer = request.rawBody; 
-    const expectedSignature = crypto.createHmac('sha256', webhookSecret).update(rawBodyBuffer).digest('hex');
+    const expectedSignature = crypto.createHmac('sha256', WEBHOOK_SECRET).update(rawBodyBuffer).digest('hex');
     if (expectedSignature !== signature) return response.status(200).send('Validation Failed'); 
     const payload = request.body;
     const eventType = payload.event;

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
@@ -13,7 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, CalendarIcon, Camera, Edit, X, Globe } from 'lucide-react';
+import { Loader2, CalendarIcon, Camera, Edit, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import type { ProfileData, UpdateProfilePayload } from '@/types';
@@ -28,11 +29,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const indianStates = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"];
-
-const majorCountries = [
-  "India", "United States", "United Kingdom", "United Arab Emirates", "Australia", 
-  "Canada", "Singapore", "Malaysia", "Japan", "Germany", "France", "Other"
-];
+const majorCountries = ["India", "United States", "United Kingdom", "United Arab Emirates", "Australia", "Canada", "Singapore", "Malaysia", "Japan", "Germany", "France", "Other"];
 
 const countryCodes: Record<string, string> = {
   "India": "+91 ",
@@ -76,86 +73,33 @@ const profileSchema = z.object({
   institutePincode: z.string().optional(),
 });
 
-
 function calculateAge(dob: Date | undefined) {
   if (!dob) return null;
   const diff_ms = Date.now() - dob.getTime();
-  const age_dt = new Date(diff_ms);
-  return Math.abs(age_dt.getUTCFullYear() - 1970);
+  return Math.abs(new Date(diff_ms).getUTCFullYear() - 1970);
 }
 
-async function getCroppedImg(
-  image: HTMLImageElement,
-  crop: Crop,
-  fileName: string = 'cropped-image.jpg'
-): Promise<File | null> {
+async function getCroppedImg(image: HTMLImageElement, crop: Crop, fileName: string = 'cropped-image.jpg'): Promise<File | null> {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
-
-  if (!ctx || !crop.width || !crop.height) {
-    console.error('Canvas context not available or invalid crop dimensions');
-    return null;
-  }
-
+  if (!ctx || !crop.width || !crop.height) return null;
   const scaleX = image.naturalWidth / image.width;
   const scaleY = image.naturalHeight / image.height;
-  
   canvas.width = crop.width;
   canvas.height = crop.height;
-
-  const sourceX = crop.x * scaleX;
-  const sourceY = crop.y * scaleY;
-  const sourceWidth = crop.width * scaleX;
-  const sourceHeight = crop.height * scaleY;
-
-  try {
-    ctx.drawImage(
-      image,
-      sourceX,
-      sourceY,
-      sourceWidth,
-      sourceHeight,
-      0,
-      0,
-      crop.width,
-      crop.height
-    );
-
-    return new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            console.error('Canvas to blob conversion failed');
-            reject(new Error('Failed to create blob from canvas'));
-            return;
-          }
-          
-          const file = new File([blob], fileName, {
-            type: 'image/jpeg',
-            lastModified: Date.now(),
-          });
-          resolve(file);
-        },
-        'image/jpeg',
-        0.95
-      );
-    });
-  } catch (error) {
-    console.error('Error in getCroppedImg:', error);
-    return null;
-  }
+  ctx.drawImage(image, crop.x * scaleX, crop.y * scaleY, crop.width * scaleX, crop.height * scaleY, 0, 0, crop.width, crop.height);
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      if (!blob) resolve(null);
+      else resolve(new File([blob], fileName, { type: 'image/jpeg', lastModified: Date.now() }));
+    }, 'image/jpeg', 0.95);
+  });
 }
 
 const ReadOnlyField = ({ label, value }: { label: string; value?: string | null }) => {
   if (!value) return null;
-  return (
-    <div className="space-y-2">
-      <Label className="text-muted-foreground">{label}</Label>
-      <div className="p-2 border-b">{value}</div>
-    </div>
-  );
+  return (<div className="space-y-2"><Label className="text-muted-foreground">{label}</Label><div className="p-2 border-b">{value}</div></div>);
 };
-
 
 export default function ProfilePage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/profile_bg.jpg?alt=media');
@@ -166,7 +110,6 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [teachers, setTeachers] = useState<ProfileData[]>([]);
-
   const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false);
   const [imgSrc, setImgSrc] = useState('');
   const [crop, setCrop] = useState<Crop>({ unit: '%', width: 90, height: 90, x: 5, y: 5 });
@@ -179,35 +122,48 @@ export default function ProfilePage() {
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      firstName: '', middleName: '', surname: '',
-      country: 'India', addressLine1: '', city: '', taluka: '', district: '', state: '', pincode: '',
-      schoolName: '', mobileNo: '', whatsappNo: '', grade: '', teacherId: '',
+      firstName: '', middleName: '', surname: '', country: 'India', addressLine1: '', city: '', 
+      taluka: '', district: '', state: '', pincode: '', schoolName: '', mobileNo: '', whatsappNo: '', grade: '', teacherId: '',
       instituteName: '', instituteCountry: 'India', instituteAddressLine1: '', instituteCity: '', instituteTaluka: '', instituteDistrict: '', instituteState: '', institutePincode: ''
     },
   });
+
+  const { watch, setValue } = form;
+  const dob = watch('dob');
+  const age = calculateAge(dob);
+  const selectedCountry = watch('country');
+  const selectedInstCountry = watch('instituteCountry');
+
+  useEffect(() => {
+    if (isEditing) {
+      const subscription = watch((value, { name }) => {
+        if (name === 'country') {
+          const code = countryCodes[value.country || 'India'] || "+91 ";
+          const curM = form.getValues('mobileNo');
+          if (!curM || Object.values(countryCodes).some(c => curM === c)) setValue('mobileNo', code);
+          const curW = form.getValues('whatsappNo');
+          if (!curW || Object.values(countryCodes).some(c => curW === c)) setValue('whatsappNo', code);
+        }
+      });
+      return () => subscription.unsubscribe();
+    }
+  }, [watch, setValue, isEditing, form]);
 
   const fetchTeachers = useCallback(async () => {
     if (profile?.role === 'student') {
       try {
         const approvedTeachers = await getApprovedTeachers();
         setTeachers(approvedTeachers);
-      } catch (error) {
-        console.error("Failed to fetch teachers", error);
-        setTeachers([]);
-      }
+      } catch (error) { setTeachers([]); }
     }
-  }, [getApprovedTeachers, profile?.role]);
+  }, [getApprovedTeachers, profile]);
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/login');
-    }
+    if (!isLoading && !user) router.push('/login');
   }, [isLoading, user, router]);
 
   useEffect(() => {
-    if (profile) {
-      fetchTeachers();
-    }
+    if (profile) fetchTeachers();
   }, [profile, fetchTeachers]);
   
   useEffect(() => {
@@ -218,206 +174,49 @@ export default function ProfilePage() {
         grade: profile.grade || '',
         teacherId: profile.teacherId || '',
         country: profile.country || 'India',
-        state: profile.state || '',
         instituteCountry: profile.instituteCountry || 'India',
-        instituteState: profile.instituteState || ''
       });
-      if(profile.profilePhoto) {
-        setAvatarPreview(profile.profilePhoto);
-      }
+      if(profile.profilePhoto) setAvatarPreview(profile.profilePhoto);
     }
   }, [profile, teachers, form]);
-
-  const { watch, setValue } = form;
-  const dob = watch('dob');
-  const age = calculateAge(dob);
-  const firstName = watch('firstName');
-  const surname = watch('surname');
-  const selectedCountry = watch('country');
-  const selectedInstCountry = watch('instituteCountry');
-
-  // Auto Country Code logic for Profile
-  useEffect(() => {
-    if (isEditing) {
-      const subscription = watch((value, { name }) => {
-        if (name === 'country') {
-          const code = countryCodes[value.country || 'India'] || "";
-          // Only update if current field is empty or just has another code
-          const currentMobile = form.getValues('mobileNo');
-          if (!currentMobile || Object.values(countryCodes).some(c => currentMobile === c)) {
-            setValue('mobileNo', code);
-          }
-          const currentWhatsApp = form.getValues('whatsappNo');
-          if (!currentWhatsApp || Object.values(countryCodes).some(c => currentWhatsApp === c)) {
-            setValue('whatsappNo', code);
-          }
-        }
-      });
-      return () => subscription.unsubscribe();
-    }
-  }, [watch, setValue, isEditing, form]);
   
   async function onSubmit(values: z.infer<typeof profileSchema>) {
-    if (!user) {
-      toast({ title: "Not Authenticated", description: "You must be logged in to update your profile.", variant: "destructive" });
-      return;
-    }
-
     setIsSubmitting(true);
     try {
-      const payload: UpdateProfilePayload = {
-        ...values,
-        dob: values.dob.toISOString(),
-      };
-
-      if (croppedImageFile) {
-        payload.profilePhoto = croppedImageFile;
-      }
-
-      await updateUserProfile(user.uid, payload);
-      
-      await fetchProfile(user); 
-
-      toast({ title: "Profile Updated", description: "Your information has been saved successfully." });
+      const payload: UpdateProfilePayload = { ...values, dob: values.dob.toISOString() };
+      if (croppedImageFile) payload.profilePhoto = croppedImageFile;
+      await updateUserProfile(user!.uid, payload);
+      await fetchProfile(user!); 
+      toast({ title: "Profile Updated" });
       setIsEditing(false);
     } catch (error: any) {
-      console.error('Update failed:', error);
-      toast({ title: "Update Failed", description: error.message || "Could not update your profile. Please check the console for details.", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
-    }
+      toast({ title: "Update Failed", description: error.message, variant: "destructive" });
+    } finally { setIsSubmitting(false); }
   }
 
   const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      if (!file.type.startsWith('image/')) {
-        toast({ title: "Invalid File", description: "Please select an image file.", variant: "destructive" });
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        toast({ title: "File Too Large", description: "Please select an image smaller than 5MB.", variant: "destructive" });
-        return;
-      }
-      setCrop({ unit: '%', width: 90, height: 90, x: 5, y: 5 });
       const reader = new FileReader();
-      reader.addEventListener('load', () => {
-        setImgSrc(reader.result?.toString() || '');
-        setIsPhotoDialogOpen(true);
-      });
-      reader.readAsDataURL(file);
+      reader.onload = () => { setImgSrc(reader.result?.toString() || ''); setIsPhotoDialogOpen(true); };
+      reader.readAsDataURL(e.target.files[0]);
     }
   };
 
   const handleCropConfirm = async () => {
-    if (!completedCrop?.width || !completedCrop?.height || !imgRef.current) {
-      toast({ title: "Invalid Crop", description: "Please select an area to crop.", variant: "destructive" });
-      return;
-    }
-    try {
-      const croppedFile = await getCroppedImg(imgRef.current, completedCrop, `profile-photo-${Date.now()}.jpg`);
-      if (!croppedFile) {
-        throw new Error('Failed to process the cropped image');
-      }
-      setCroppedImageFile(croppedFile);
-      if (avatarPreview && avatarPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(avatarPreview);
-      }
-      const newPreviewUrl = URL.createObjectURL(croppedFile);
-      setAvatarPreview(newPreviewUrl);
+    if (!completedCrop || !imgRef.current) return;
+    const file = await getCroppedImg(imgRef.current, completedCrop);
+    if (file) {
+      setCroppedImageFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
       setIsPhotoDialogOpen(false);
-      setImgSrc('');
-      toast({ title: "Photo Ready", description: "Photo cropped successfully. It will be saved when you save your changes." });
-    } catch (error: any) {
-      console.error('Crop error:', error);
-      toast({ title: "Crop Failed", description: error.message || "Could not process the image. Please try again.", variant: "destructive" });
     }
   };
 
-  const handleCancelCrop = () => {
-    setIsPhotoDialogOpen(false);
-    setImgSrc('');
-    setCrop({ unit: '%', width: 90, height: 90, x: 5, y: 5 });
-    setCompletedCrop(undefined);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-  
-  const handleCancelEdit = () => {
-      if (profile) {
-        form.reset({
-            ...profile,
-            dob: profile.dob ? new Date(profile.dob) : new Date(),
-            grade: profile.grade || '',
-            teacherId: profile.teacherId || '',
-            country: profile.country || 'India',
-            state: profile.state || '',
-            instituteCountry: profile.instituteCountry || 'India',
-            instituteState: profile.instituteState || ''
-        });
-      }
-      setIsEditing(false);
-  }
+  if (isLoading || !user || !profile || (profile.role === 'student' && teachers.length === 0)) return <div className="max-w-4xl mx-auto"><Skeleton className="h-96 w-full" /></div>;
 
-  useEffect(() => {
-    return () => {
-      if (avatarPreview && avatarPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(avatarPreview);
-      }
-    };
-  }, [avatarPreview]);
-
-  const isStudentRole = profile?.role === 'student';
-  const isTeacherListLoading = isStudentRole && teachers.length === 0;
-
-  if (isLoading || !user || !profile || isTeacherListLoading) {
-    return (
-       <div className="max-w-4xl mx-auto">
-        <Card className="shadow-lg">
-          <CardHeader className="flex flex-row items-center gap-4">
-             <Skeleton className="h-24 w-24 rounded-full" />
-             <div className="space-y-2">
-                <Skeleton className="h-6 w-48" />
-                <Skeleton className="h-4 w-32" />
-             </div>
-          </CardHeader>
-          <CardContent className="space-y-4 mt-4">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-             </div>
-             <Skeleton className="h-20 w-full" />
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-             </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-             </div>
-             <Skeleton className="h-10 w-full" />
-          </CardContent>
-        </Card>
-       </div>
-    );
-  }
-  
-  const displayName = (firstName && surname) ? `${firstName} ${surname}` : user.displayName || 'User';
-  const displayInitial = (firstName && surname) 
-    ? (firstName?.[0] || '') + (surname?.[0] || '') 
-    : user.email?.charAt(0).toUpperCase() || 'U';
-
+  const displayName = `${watch('firstName')} ${watch('surname')}`;
   const isStudentWithoutTeacher = profile.role === 'student' && (!watch('teacherId') || watch('teacherId') === 'unassigned');
-  const disableTeacherSelect = profile.role === 'teacher' || profile.role === 'admin';
-  
-  const selectedTeacher = teachers.find(t => t.uid === watch('teacherId'));
-  const teacherName = selectedTeacher 
-    ? `${selectedTeacher.firstName} ${selectedTeacher.surname}` 
-    : (watch('teacherId') === 'unassigned' ? 'Not Applicable' : 'Not Assigned');
-
-  const fullResidentialAddress = [watch('addressLine1'), watch('city'), watch('taluka'), watch('district'), watch('state'), watch('pincode'), watch('country')].filter(Boolean).join(', ');
-  const fullInstituteAddress = [watch('instituteAddressLine1'), watch('instituteCity'), watch('instituteTaluka'), watch('instituteDistrict'), watch('instituteState'), watch('institutePincode'), watch('instituteCountry')].filter(Boolean).join(', ');
+  const teacherName = teachers.find(t => t.uid === watch('teacherId')) ? `${teachers.find(t => t.uid === watch('teacherId'))?.firstName} ${teachers.find(t => t.uid === watch('teacherId'))?.surname}` : 'Not Assigned';
 
   return (
     <>
@@ -425,307 +224,89 @@ export default function ProfilePage() {
       <Card className="shadow-lg">
         <CardHeader>
             <div className="flex justify-between items-start">
-                <div>
-                    <CardTitle className="text-3xl font-headline">My Profile</CardTitle>
-                    <CardDescription>View and edit your personal information.</CardDescription>
-                </div>
-                {!isEditing && (
-                    <Button onClick={() => setIsEditing(true)}>
-                        <Edit className="mr-2 h-4 w-4" /> Edit Profile
-                    </Button>
-                )}
+                <div><CardTitle className="text-3xl font-headline">My Profile</CardTitle><CardDescription>Manage your details.</CardDescription></div>
+                {!isEditing && <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>}
             </div>
         </CardHeader>
         <CardContent>
-            {isStudentWithoutTeacher && (
-                <Alert variant="destructive" className="mb-6">
-                    <AlertTitle>Action Required</AlertTitle>
-                    <AlertDescription>
-                        Please select a teacher from the list below to complete your profile and access all features.
-                    </AlertDescription>
-                </Alert>
-            )}
+            {isStudentWithoutTeacher && <Alert variant="destructive" className="mb-6"><AlertTitle>Action Required</AlertTitle><AlertDescription>Please select a teacher to complete your profile.</AlertDescription></Alert>}
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                    <div className="flex flex-col sm:flex-row items-center gap-6">
+                    <div className="flex items-center gap-6">
                         <div className="relative">
-                            <Avatar className="h-24 w-24 border-4 border-primary/20">
-                                <AvatarImage src={avatarPreview || ''} alt={displayName} />
-                                <AvatarFallback className="text-3xl">{displayInitial}</AvatarFallback>
-                            </Avatar>
-                            {isEditing && (
-                                <>
-                                    <input type="file" ref={fileInputRef} onChange={onFileSelect} accept="image/*" className="hidden" />
-                                    <Button type="button" size="icon" variant="outline" className="absolute bottom-0 right-0 rounded-full" onClick={() => fileInputRef.current?.click()}>
-                                        <Camera className="h-5 w-5"/>
-                                    </Button>
-                                </>
-                            )}
+                            <Avatar className="h-24 w-24 border-4 border-primary/20"><AvatarImage src={avatarPreview || ''} /><AvatarFallback>{watch('firstName')?.[0]}</AvatarFallback></Avatar>
+                            {isEditing && <Button type="button" size="icon" variant="outline" className="absolute bottom-0 right-0 rounded-full" onClick={() => fileInputRef.current?.click()}><Camera className="h-5 w-5"/></Button>}
+                            <input type="file" ref={fileInputRef} onChange={onFileSelect} accept="image/*" className="hidden" />
                         </div>
-                        <div className="text-center sm:text-left flex-grow">
-                            <h2 className="text-2xl font-bold">{displayName}</h2>
-                            <p className="text-muted-foreground">{user.email}</p>
-                        </div>
+                        <div><h2 className="text-2xl font-bold">{displayName}</h2><p className="text-muted-foreground">{user.email}</p></div>
                     </div>
                     
                     {isEditing ? (
                       <>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem> <FormLabel>First Name *</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                            <FormField control={form.control} name="middleName" render={({ field }) => ( <FormItem> <FormLabel>Middle Name</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                            <FormField control={form.control} name="surname" render={({ field }) => ( <FormItem> <FormLabel>Surname *</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                            <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="middleName" render={({ field }) => (<FormItem><FormLabel>Middle Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="surname" render={({ field }) => (<FormItem><FormLabel>Surname *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
-                        
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                           <FormField
-                              control={form.control}
-                              name="dob"
-                              render={({ field }) => (
+                           <FormField control={form.control} name="dob" render={({ field }) => (
                                 <FormItem className="flex flex-col">
                                   <FormLabel>Date of Birth *</FormLabel>
                                     <Popover>
                                       <PopoverTrigger asChild>
                                         <FormControl>
-                                          <Button
-                                            variant={"outline"}
-                                            className={cn( "w-full justify-between text-left font-normal", !field.value && "text-muted-foreground" )}
-                                          >
+                                          <Button variant={"outline"} className={cn("w-full justify-between text-left font-normal", !field.value && "text-muted-foreground")}>
                                             {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                            <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
+                                            <CalendarIcon className="h-4 w-4 opacity-50" />
                                           </Button>
                                         </FormControl>
                                       </PopoverTrigger>
                                       <PopoverContent className="w-auto p-0" align="start">
-                                          <Calendar
-                                          mode="single"
-                                          captionLayout="dropdown-buttons"
-                                          fromYear={1950}
-                                          toYear={new Date().getFullYear()}
-                                          selected={field.value}
-                                          onSelect={field.onChange}
-                                          disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                                          initialFocus
-                                          />
+                                          <Calendar mode="single" captionLayout="dropdown-buttons" fromYear={1950} toYear={new Date().getFullYear()} selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
                                       </PopoverContent>
                                     </Popover>
                                   <FormMessage />
                                 </FormItem>
-                              )}
-                            />
-                             <div className="space-y-2">
-                                 <Label>Age</Label>
-                                 <Input value={age !== null ? `${age} years old` : 'Select DOB'} disabled />
-                             </div>
+                              )} />
+                             <div className="space-y-2"><Label>Age</Label><Input value={age !== null ? `${age} years old` : 'Select DOB'} disabled /></div>
                         </div>
                       </>
                     ) : (
-                      <>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <ReadOnlyField label="First Name" value={watch('firstName')} />
-                            <ReadOnlyField label="Middle Name" value={watch('middleName')} />
-                            <ReadOnlyField label="Surname" value={watch('surname')} />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <ReadOnlyField label="Date of Birth" value={dob ? format(dob, "PPP") : 'Not set'} />
-                            <ReadOnlyField label="Age" value={age !== null ? `${age} years old` : 'Not set'} />
-                        </div>
-                      </>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <ReadOnlyField label="Full Name" value={displayName} />
+                        <ReadOnlyField label="Age" value={age ? `${age} years` : 'Not set'} />
+                      </div>
                     )}
                     
                     {isEditing ? (
-                        <FormField
-                            control={form.control}
-                            name="teacherId"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Assigned Teacher *</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || ''} disabled={disableTeacherSelect}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a teacher" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="unassigned" disabled={profile.role === 'student'}>
-                                                {profile.role === 'student' ? 'Select a teacher' : 'Not Applicable'}
-                                            </SelectItem>
-                                            {teachers.map((teacher) => (
-                                                <SelectItem key={teacher.uid} value={teacher.uid}>
-                                                    {`${teacher.firstName} ${teacher.surname}`}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    ) : (
-                        <ReadOnlyField label="Assigned Teacher" value={teacherName} />
-                    )}
+                        <FormField control={form.control} name="teacherId" render={({ field }) => (
+                                <FormItem><FormLabel>Assigned Teacher *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={profile.role !== 'student'}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>
+                                    <SelectItem value="unassigned">None</SelectItem>
+                                    {teachers.map(t => <SelectItem key={t.uid} value={t.uid}>{t.firstName} {t.surname}</SelectItem>)}
+                                </SelectContent></Select><FormMessage /></FormItem>
+                            )} />
+                    ) : <ReadOnlyField label="Teacher" value={teacherName} />}
 
-                    {profile.role === 'student' && (
-                        isEditing ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField control={form.control} name="schoolName" render={({ field }) => ( <FormItem> <FormLabel>School Name</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                                <FormField control={form.control} name="grade" render={({ field }) => ( <FormItem> <FormLabel>Grade/Std.</FormLabel> <FormControl><Input placeholder="e.g. 5th" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <ReadOnlyField label="School Name" value={watch('schoolName')} />
-                                <ReadOnlyField label="Grade/Std." value={watch('grade')} />
-                            </div>
-                        )
-                    )}
-                    {profile.role === 'teacher' && (
-                      isEditing ? (
+                    {isEditing ? (
                       <>
-                        <FormField control={form.control} name="instituteName" render={({ field }) => (<FormItem><FormLabel>Name of Institute</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
-                        <FormField control={form.control} name="instituteCountry" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Country</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || 'India'}>
-                              <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                              <SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
+                        <h3 className="text-lg font-medium pt-4 border-b">Address</h3>
+                        <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></FormItem>)} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <FormField
-                            control={form.control}
-                            name="instituteState"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>State / Province / Region</FormLabel>
-                                {selectedInstCountry === 'India' ? (
-                                  <Select onValueChange={field.onChange} value={field.value || ''}>
-                                    <FormControl>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Select a state" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      {indianStates.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}
-                                    </SelectContent>
-                                  </Select>
-                                ) : (
-                                  <FormControl>
-                                    <Input placeholder="Enter state/province" {...field} />
-                                  </FormControl>
-                                )}
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField control={form.control} name="instituteCity" render={({ field }) => (<FormItem><FormLabel>City / Town</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="state" render={({ field }) => (<FormItem><FormLabel>State</FormLabel>{selectedCountry === 'India' ? <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select> : <FormControl><Input {...field} /></FormControl>}</FormItem>)} />
+                          <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                         </div>
+                        <h3 className="text-lg font-medium pt-4 border-b">Contact</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="instituteDistrict" render={({ field }) => (<FormItem><FormLabel>District / Region</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name="instituteTaluka" render={({ field }) => (<FormItem><FormLabel>Area / Taluka</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="mobileNo" render={({ field }) => (<FormItem><FormLabel>Mobile No.</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                          <FormField control={form.control} name="whatsappNo" render={({ field }) => (<FormItem><FormLabel>WhatsApp</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="institutePincode" render={({ field }) => (<FormItem><FormLabel>Pincode / Zip Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                        <FormField control={form.control} name="instituteAddressLine1" render={({ field }) => (<FormItem><FormLabel>Address Line 1</FormLabel><FormControl><Input placeholder="House No, Street, Area" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </>
-                      ) : (
-                          <>
-                            <ReadOnlyField label="Name of Institute" value={watch('instituteName')} />
-                            <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
-                            <ReadOnlyField label="Address" value={fullInstituteAddress} />
-                          </>
-                      )
-                    )}
-
-                    <h3 className="text-lg font-medium pt-4 border-b">Residential Address</h3>
-                     {isEditing ? (
-                        <>
-                            <FormField
-                                control={form.control}
-                                name="country"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Country</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || 'India'}>
-                                        <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a country" />
-                                        </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                          {majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              <FormField
-                                control={form.control}
-                                name="state"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>State / Province / Region</FormLabel>
-                                    {selectedCountry === 'India' ? (
-                                      <Select onValueChange={field.onChange} value={field.value || ''}>
-                                        <FormControl>
-                                          <SelectTrigger>
-                                            <SelectValue placeholder="Select a state" />
-                                          </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                          {indianStates.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}
-                                        </SelectContent>
-                                      </Select>
-                                    ) : (
-                                      <FormControl>
-                                        <Input placeholder="Enter state/province" {...field} />
-                                      </FormControl>
-                                    )}
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City / Town</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField control={form.control} name="district" render={({ field }) => (<FormItem><FormLabel>District / Region</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="taluka" render={({ field }) => (<FormItem><FormLabel>Area / Taluka</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField control={form.control} name="pincode" render={({ field }) => (<FormItem><FormLabel>Pincode / Zip Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            </div>
-                            <FormField control={form.control} name="addressLine1" render={({ field }) => (<FormItem><FormLabel>Address Line 1</FormLabel><FormControl><Input placeholder="House No, Street, Area" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </>
-                     ) : (
-                        <ReadOnlyField label="Address" value={fullResidentialAddress} />
-                     )}
-
-                    <h3 className="text-lg font-medium pt-4 border-b">Contact Details</h3>
-                     {isEditing ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="mobileNo" render={({ field }) => ( <FormItem> <FormLabel>Mobile No. (with country code)</FormLabel> <FormControl><Input placeholder="+1 234 567 890" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                            <FormField control={form.control} name="whatsappNo" render={({ field }) => ( <FormItem> <FormLabel>WhatsApp No. (Optional)</FormLabel> <FormControl><Input placeholder="+1 234 567 890" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-                         </div>
-                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <ReadOnlyField label="Mobile No." value={watch('mobileNo')} />
-                            <ReadOnlyField label="WhatsApp No." value={watch('whatsappNo')} />
-                        </div>
-                     )}
+                    ) : <ReadOnlyField label="Address" value={`${watch('addressLine1')}, ${watch('city')}, ${watch('state')}, ${watch('country')}`} />}
 
                     {isEditing && (
                         <div className="flex justify-end gap-4 pt-4">
-                            <Button type="button" variant="outline" onClick={handleCancelEdit}>
-                               <X className="mr-2 h-4 w-4" /> Cancel
-                            </Button>
-                            <Button type="submit" disabled={isSubmitting}>
-                               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                               Save Changes
-                            </Button>
+                            <Button type="button" variant="outline" onClick={handleCancelEdit}>Cancel</Button>
+                            <Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Changes</Button>
                         </div>
                     )}
                 </form>
@@ -735,20 +316,11 @@ export default function ProfilePage() {
     </div>
     <Dialog open={isPhotoDialogOpen} onOpenChange={setIsPhotoDialogOpen}>
         <DialogContent className="max-w-md">
-            <DialogHeader>
-                <DialogTitle>Crop your new photo</DialogTitle>
-            </DialogHeader>
-            {imgSrc && (
-                <div className="flex justify-center">
-                    <ReactCrop crop={crop} onChange={(_, percentCrop) => setCrop(percentCrop)} onComplete={(c) => setCompletedCrop(c)} aspect={1} circularCrop minWidth={50} minHeight={50} >
-                        <img ref={imgRef} src={imgSrc} alt="Crop preview" style={{ maxHeight: "60vh", maxWidth: "100%" }} onLoad={() => { if (imgRef.current) { const { width, height } = imgRef.current; const size = Math.min(width, height) * 0.9; const x = (width - size) / 2; const y = (height - size) / 2; setCrop({ unit: 'px', x, y, width: size, height: size, }); } }} />
-                    </ReactCrop>
-                </div>
-            )}
-             <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={handleCancelCrop}> Cancel </Button>
-                <Button onClick={handleCropConfirm} disabled={!completedCrop?.width}> Crop & Use </Button>
-             </DialogFooter>
+            <DialogHeader><DialogTitle>Crop Photo</DialogTitle></DialogHeader>
+            <div className="flex justify-center">
+                {imgSrc && <ReactCrop crop={crop} onChange={(_, p) => setCrop(p)} onComplete={(c) => setCompletedCrop(c)} aspect={1} circularCrop><img ref={imgRef} src={imgSrc} alt="Crop" style={{ maxHeight: "60vh" }} /></ReactCrop>}
+            </div>
+             <DialogFooter><Button variant="outline" onClick={() => setIsPhotoDialogOpen(false)}>Cancel</Button><Button onClick={handleCropConfirm}>Use Photo</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </>

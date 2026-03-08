@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -16,8 +17,8 @@ import {
   type User,
 } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp, getFirestore, type Firestore, collection, getDocs, query, where, arrayUnion, updateDoc, increment, orderBy, limit, onSnapshot, deleteDoc, writeBatch } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, getStorage, type FirebaseStorage, deleteObject } from 'firebase/storage';
+import { doc, setDoc, getDoc, serverTimestamp, getFirestore, collection, getDocs, query, where, arrayUnion, updateDoc, increment, orderBy, limit, deleteDoc, writeBatch } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, getStorage } from 'firebase/storage';
 import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload } from '@/types';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
@@ -60,11 +61,9 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({
-  prompt: 'select_account'
-});
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-const ADMIN_EMAILS = ['pallavib202@gmail.com', 'myabacuspro@gmail.com', 'pallavib202@gmail.com'];
+const ADMIN_EMAILS = ['pallavib202@gmail.com', 'myabacuspro@gmail.com'];
 const EXCLUDED_FROM_TEACHER_LIST = ['scm098@gmail.com', 'satishmane@gmail.com'];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -81,16 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback(async (user: User): Promise<ProfileData | null> => {
     try {
       const userDocRef = doc(firestore, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef).catch(async (error) => {
-          if (error.code === 'permission-denied') {
-              const permissionError = new FirestorePermissionError({
-                  path: `/users/${user.uid}`,
-                  operation: 'get',
-              });
-              errorEmitter.emit('permission-error', permissionError);
-          }
-          throw error;
-      });
+      const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
         const data = userDoc.data();
@@ -102,15 +92,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isAdminByEmail) {
             profileData.role = 'admin';
             profileData.subscriptionStatus = 'pro';
-            if (profileData.status === 'pending') profileData.status = 'approved';
-        }
-
-        if (profileData.role === 'student' && profileData.subscriptionStatus === 'free' && !profileData.trialStartDate) {
-            const now = new Date();
-            await updateDoc(userDocRef, {
-                trialStartDate: serverTimestamp()
-            });
-            profileData.trialStartDate = { toDate: () => now };
+            if (profileData.status !== 'approved') {
+              await updateDoc(userDocRef, { status: 'approved', role: 'admin', subscriptionStatus: 'pro' });
+            }
         }
 
         setProfile(profileData);
@@ -120,15 +104,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return profileData;
         }
         
-        if (profileData.role === 'student' && !profileData.teacherId && !['/profile', '/signup', '/login', '/about', '/pricing', '/contact', '/'].includes(pathname)) {
-            toast({
-                title: 'Please Select a Teacher',
-                description: 'You must select a teacher before you can access other parts of the site.',
-                variant: 'destructive',
-            });
-            router.push('/profile');
-        }
-
         return profileData;
       }
       return null;
@@ -136,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching profile:', error);
         return null;
     }
-  }, [firestore, pathname, router, toast]);
+  }, [firestore, pathname, router]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -154,21 +129,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isTrialActive = useMemo(() => {
     if (!profile || profile.role !== 'student' || profile.subscriptionStatus === 'pro') return false;
-    const startDate = profile.trialStartDate?.toDate ? profile.trialStartDate.toDate() : (profile.createdAt?.toDate ? profile.createdAt.toDate() : new Date(profile.createdAt));
-    if (!startDate || isNaN(startDate.getTime())) return false;
+    const startDate = profile.trialStartDate?.toDate ? profile.trialStartDate.toDate() : (profile.createdAt?.toDate ? profile.createdAt.toDate() : new Date());
     const now = new Date();
-    const diffInMs = now.getTime() - startDate.getTime();
-    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+    const diffInDays = (now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
     return diffInDays <= 3;
   }, [profile]);
 
   const trialDaysRemaining = useMemo(() => {
     if (!profile || profile.role !== 'student' || profile.subscriptionStatus === 'pro') return 0;
-    const startDate = profile.trialStartDate?.toDate ? profile.trialStartDate.toDate() : (profile.createdAt?.toDate ? profile.createdAt.toDate() : new Date(profile.createdAt));
-    if (!startDate || isNaN(startDate.getTime())) return 0;
-    const now = new Date();
+    const startDate = profile.trialStartDate?.toDate ? profile.trialStartDate.toDate() : (profile.createdAt?.toDate ? profile.createdAt.toDate() : new Date());
     const expiryDate = new Date(startDate.getTime() + 3 * 24 * 60 * 60 * 1000);
-    const diffInMs = expiryDate.getTime() - now.getTime();
+    const diffInMs = expiryDate.getTime() - new Date().getTime();
     return Math.max(0, diffInMs / (1000 * 60 * 60 * 24));
   }, [profile]);
 
@@ -180,13 +151,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = useCallback(async (values: SignupData) => {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
-      await sendEmailVerification(user);
-
+      
       let photoURL = '';
       if (values.profilePhoto) {
-        const file = values.profilePhoto;
         const storageRef = ref(storage, `profile_photos/${user.uid}`);
-        await uploadBytes(storageRef, file);
+        await uploadBytes(storageRef, values.profilePhoto);
         photoURL = await getDownloadURL(storageRef);
       }
 
@@ -199,37 +168,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { password, confirmPassword, ...rest } = values;
       const userEmail = user.email?.toLowerCase() || '';
       const isAdmin = ADMIN_EMAILS.includes(userEmail);
-      const role = isAdmin ? 'admin' : values.role;
-      const subStatus = isAdmin ? 'pro' : 'free';
-
-      const dataToSave: Omit<ProfileData, 'uid'> & { createdAt: any } = {
+      
+      const dataToSave: Omit<ProfileData, 'uid'> = {
           ...rest,
           email: user.email!,
           profilePhoto: photoURL || '',
           createdAt: serverTimestamp(),
           trialStartDate: serverTimestamp(),
-          subscriptionStatus: subStatus as any,
-          role: role,
+          subscriptionStatus: isAdmin ? 'pro' : 'free',
+          role: isAdmin ? 'admin' : values.role,
           teacherId: values.teacherId || null, 
           isSuspended: false,
-          ...(role === 'teacher' && { 
-            status: 'pending',
-            instituteAddress: [values.instituteAddressLine1, values.instituteCity, values.instituteTaluka, values.instituteDistrict, values.instituteState, values.institutePincode].filter(Boolean).join(', ')
-          }),
-          ...(role === 'admin' && { status: 'approved' }),
+          status: isAdmin ? 'approved' : (values.role === 'teacher' ? 'pending' : undefined),
           currentStreak: 0,
           totalDaysPracticed: 0,
           monthlyPoints: 0,
           weeklyPoints: 0,
           totalPoints: 0,
-          lastAwardedRank: 'Junior Calculator',
           lastWeeklyReset: format(startOfWeek(new Date()), 'yyyy-ww'),
           lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
       };
 
       await setDoc(userDocRef, dataToSave);
-      await login(values.email, values.password);
-  }, [auth, firestore, storage, login]);
+      await fetchProfile(user);
+  }, [auth, firestore, storage, fetchProfile]);
 
   const loginWithGoogle = useCallback(async (): Promise<ProfileData | null> => {
     const result = await signInWithPopup(auth, googleProvider);
@@ -240,16 +202,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!userDoc.exists()) {
       const [firstName, ...rest] = (user.displayName || '').split(' ');
       const surname = rest.pop() || '';
-      const middleName = rest.join(' ');
       const userEmail = user.email?.toLowerCase() || '';
       const isAdmin = ADMIN_EMAILS.includes(userEmail);
       
-       const dataToSave = {
-        uid: user.uid,
+       await setDoc(userDocRef, {
         email: user.email,
         firstName: firstName || '',
         surname: surname,
-        middleName: middleName,
         profilePhoto: user.photoURL || '',
         createdAt: serverTimestamp(),
         trialStartDate: serverTimestamp(),
@@ -263,11 +222,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         monthlyPoints: 0,
         weeklyPoints: 0,
         totalPoints: 0,
-        lastAwardedRank: 'Junior Calculator',
         lastWeeklyReset: format(startOfWeek(new Date()), 'yyyy-ww'),
         lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
-      };
-       await setDoc(userDocRef, dataToSave);
+      });
     }
     return await fetchProfile(user);
   }, [auth, firestore, fetchProfile]);
@@ -315,65 +272,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getAllUsers = useCallback(async (role?: UserRole): Promise<ProfileData[]> => {
     const usersCol = collection(firestore, 'users');
     const q = role ? query(usersCol, where("role", "==", role)) : query(usersCol);
-    try {
-        const snap = await getDocs(q);
-        return snap.docs.map(doc => ({ ...doc.data(), uid: doc.id } as ProfileData));
-    } catch (e) { return []; }
+    const snap = await getDocs(q);
+    return snap.docs.map(doc => ({ ...doc.data(), uid: doc.id } as ProfileData));
   }, [firestore]);
 
   const getApprovedTeachers = useCallback(async (): Promise<ProfileData[]> => {
     const usersCol = collection(firestore, 'users');
     const q = query(usersCol, where("role", "in", ["teacher", "admin"]));
-     try {
-        const snap = await getDocs(q);
-        return snap.docs
-            .map(doc => ({ ...doc.data(), uid: doc.id } as ProfileData))
-            .filter(u => !EXCLUDED_FROM_TEACHER_LIST.includes(u.email?.toLowerCase()))
-            .filter(u => u.role === 'admin' || u.status === 'approved');
-    } catch (e) { return []; }
+    const snap = await getDocs(q);
+    return snap.docs
+        .map(doc => ({ ...doc.data(), uid: doc.id } as ProfileData))
+        .filter(u => !EXCLUDED_FROM_TEACHER_LIST.includes(u.email?.toLowerCase()))
+        .filter(u => u.role === 'admin' || u.status === 'approved');
   }, [firestore]);
 
   const getUserTestHistory = useCallback(async (userId: string): Promise<TestResult[]> => {
-     if (profile?.role === 'admin' || profile?.role === 'teacher') {
-        const q = query(collection(firestore, 'testResults'), where("userId", "==", userId));
-        try {
-            const snap = await getDocs(q); 
-            return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
-        } catch (e) { return []; }
-     }
-     return [];
-  }, [profile, firestore]);
+    const q = query(collection(firestore, 'testResults'), where("userId", "==", userId), orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q); 
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
+  }, [firestore]);
 
   const getUserTestHistoryByDateRange = useCallback(async (userId: string, start: Date, end: Date): Promise<TestResult[]> => {
     const q = query(collection(firestore, 'testResults'), where("userId", "==", userId), where("createdAt", ">=", start), where("createdAt", "<=", end));
-    try {
-        const snap = await getDocs(q); 
-        return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
-    } catch (e) { return []; }
+    const snap = await getDocs(q); 
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
   }, [firestore]);
 
   const getUserProfile = useCallback(async (userId: string): Promise<ProfileData | null> => {
-     if (profile?.role === 'admin' || profile?.role === 'teacher') {
-        try {
-            const snap = await getDoc(doc(firestore, 'users', userId));
-            return snap.exists() ? snap.data() as ProfileData : null;
-        } catch (e) { return null; }
-     }
-     return null;
-  }, [profile, firestore]);
+    const snap = await getDoc(doc(firestore, 'users', userId));
+    return snap.exists() ? { ...snap.data(), uid: snap.id } as ProfileData : null;
+  }, [firestore]);
   
   const approveTeacher = useCallback(async (teacherId: string, callback?: () => void) => {
     if (profile?.role !== 'admin') throw new Error('Unauthorized');
     await updateDoc(doc(firestore, 'users', teacherId), { status: 'approved', updatedAt: serverTimestamp() });
     if(callback) callback();
-  }, [profile?.role, firestore]);
+  }, [profile, firestore]);
 
   const getCompletedGameLevels = useCallback(async (): Promise<number[]> => {
     if (!user) return [];
-    try {
-        const snap = await getDoc(doc(firestore, "gameProgress", user.uid));
-        return snap.exists() ? snap.data().completedLevels || [] : [];
-    } catch (e) { return []; }
+    const snap = await getDoc(doc(firestore, "gameProgress", user.uid));
+    return snap.exists() ? snap.data().completedLevels || [] : [];
   }, [user, firestore]);
 
   const saveCompletedGameLevel = useCallback(async (levelId: number) => {
@@ -393,8 +332,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data.lastWeeklyReset !== currentWeekKey) { updateData.weeklyPoints = points; updateData.lastWeeklyReset = currentWeekKey; } else { updateData.weeklyPoints = increment(points); }
     if (data.lastMonthlyReset !== currentMonthKey) { updateData.monthlyPoints = points; updateData.lastMonthlyReset = currentMonthKey; } else { updateData.monthlyPoints = increment(points); }
     await updateDoc(userRef, updateData);
-    await fetchProfile({ uid: userId } as User);
-  }, [firestore, fetchProfile]);
+  }, [firestore]);
 
   const recordDailyPractice = useCallback(async (userId: string) => {
     const userRef = doc(firestore, "users", userId);
@@ -402,11 +340,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!userSnap.exists()) return;
     const data = userSnap.data() as ProfileData;
     const today = new Date().toISOString().split('T')[0];
-    const lastDate = data.lastPracticeDate || "";
-    if (lastDate === today) return;
+    if (data.lastPracticeDate === today) return;
     const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
-    let newStreak = lastDate === yesterdayStr ? (data.currentStreak || 0) + 1 : 1;
+    const newStreak = data.lastPracticeDate === yesterdayStr ? (data.currentStreak || 0) + 1 : 1;
     await updateDoc(userRef, { lastPracticeDate: today, currentStreak: newStreak, totalDaysPracticed: increment(1), updatedAt: serverTimestamp() });
     await addPoints(userId, 25);
   }, [firestore, addPoints]);
@@ -417,32 +354,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const migrateStudents = useCallback(async (fromEmail: string, toEmail: string) => {
     if (profile?.role !== 'admin') throw new Error('Admin only');
-    
-    // 1. Get UIDs for both emails
     const usersCol = collection(firestore, 'users');
     const qFrom = query(usersCol, where('email', '==', fromEmail.toLowerCase().trim()), limit(1));
     const qTo = query(usersCol, where('email', '==', toEmail.toLowerCase().trim()), limit(1));
-    
     const [snapFrom, snapTo] = await Promise.all([getDocs(qFrom), getDocs(qTo)]);
-    
-    if (snapFrom.empty) throw new Error(`Source teacher (${fromEmail}) not found.`);
-    if (snapTo.empty) throw new Error(`Target teacher (${toEmail}) not found.`);
-    
+    if (snapFrom.empty) throw new Error(`Source (${fromEmail}) not found.`);
+    if (snapTo.empty) throw new Error(`Target (${toEmail}) not found.`);
     const fromUid = snapFrom.docs[0].id;
     const toUid = snapTo.docs[0].id;
-    
-    // 2. Find all students assigned to fromUid
     const qStudents = query(usersCol, where('teacherId', '==', fromUid));
     const snapStudents = await getDocs(qStudents);
-    
     if (snapStudents.empty) return { success: true, count: 0 };
-    
-    // 3. Batch update
     const batch = writeBatch(firestore);
-    snapStudents.docs.forEach(doc => {
-      batch.update(doc.ref, { teacherId: toUid, updatedAt: serverTimestamp() });
-    });
-    
+    snapStudents.docs.forEach(d => batch.update(d.ref, { teacherId: toUid, updatedAt: serverTimestamp() }));
     await batch.commit();
     return { success: true, count: snapStudents.size };
   }, [firestore, profile]);
@@ -459,8 +383,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export const useAuth = () => {
   const context = React.useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };

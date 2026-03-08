@@ -53,20 +53,20 @@ const AbacusRod = ({
         {/* Rod Wire - Strictly Centered */}
         <div className="absolute h-full w-1 bg-gradient-to-r from-[#3d241a] to-[#5d342a] left-1/2 -translate-x-1/2 top-0 z-0 rounded-full shadow-inner" />
         
-        {/* Separator Bar (Horizontal) with Unit Points */}
+        {/* Separator Bar (Horizontal) - Positioned at 30% mark */}
          <div className="absolute top-[30%] left-[-4px] right-[-4px] h-3 sm:h-4 bg-gradient-to-b from-[#e7c9a8] to-[#d4b48f] -translate-y-1/2 z-10 shadow-[0_2px_5px_rgba(0,0,0,0.4)] flex items-center justify-center border-y-2 border-black/40">
            {isUnitRod && <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 bg-black rounded-full shadow-inner border border-black ring-1 ring-white/20"></div>}
         </div>
 
-        {/* Upper Section (Heavenly Bead) */}
-        <div className="w-full h-[30%] flex flex-col items-center justify-between z-20 pb-1 pt-1">
+        {/* Upper Section (Heavenly Bead) - Clearance fixed to 6.5px to sit flush with separator */}
+        <div className="w-full h-[30%] flex flex-col items-center justify-between z-20 pb-[6.5px] pt-1">
            {upperBeadActive && <div className="flex-grow" />}
            <Bead onClick={() => onBeadClick(5)} />
            {!upperBeadActive && <div className="flex-grow" />}
         </div>
 
-         {/* Lower Section (Earthly Beads) */}
-        <div className="w-full h-[70%] flex flex-col items-center justify-start z-20 pt-1">
+         {/* Lower Section (Earthly Beads) - Clearance fixed to 6.5px to sit flush with separator */}
+        <div className="w-full h-[70%] flex flex-col items-center justify-start z-20 pt-[6.5px]">
               <div className="flex flex-col items-center">
                   {Array.from({ length: lowerBeadsValue }).map((_, i) => (
                       <Bead key={`active-${i}`} onClick={() => onBeadClick(i + 1)} />

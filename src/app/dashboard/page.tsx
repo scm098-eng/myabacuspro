@@ -1,12 +1,13 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, Zap, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, ShieldAlert, TrendingUp, Lightbulb } from 'lucide-react';
+import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, doc, updateDoc } from 'firebase/firestore';
@@ -16,32 +17,18 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMessaging, getToken } from 'firebase/messaging';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import AchievementModal from '@/components/AchievementModal';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RANK_CRITERIA } from '@/lib/constants';
-import { errorEmitter } from '@/lib/error-emitter';
-import { FirestorePermissionError } from '@/lib/errors';
-import { useSound } from '@/hooks/useSound';
-
-const PointsAnimation = ({ points }: { points: number }) => (
-  <div className="absolute -top-12 left-1/2 -translate-x-1/2 animate-in fade-in slide-in-from-bottom-10 duration-1000 flex items-center gap-1 text-green-600 font-black text-2xl drop-shadow-md pointer-events-none z-50">
-    <Star className="w-5 h-5 fill-yellow-400 stroke-yellow-600" /> +{points}
-  </div>
-);
 
 export default function StudentDashboardPage() {
   usePageBackground('');
-  const { profile, user, isLoading, getStudentTitle, sendVerificationEmail } = useAuth();
+  const { profile, user, isLoading, getStudentTitle } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const { playSound } = useSound();
   const [mounted, setMounted] = useState(false);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
   const [isRequestingNotifications, setIsRequestingNotifications] = useState(false);
-  const [pointsEarned, setPointsEarned] = useState<number | null>(null);
-  const lastPointsRef = useRef<number>(0);
 
   useEffect(() => {
     setMounted(true);
@@ -49,35 +36,16 @@ export default function StudentDashboardPage() {
   }, [isLoading, user, router]);
 
   useEffect(() => {
-    if (profile && profile.totalPoints !== undefined) {
-      if (lastPointsRef.current !== 0 && profile.totalPoints > lastPointsRef.current) {
-        const diff = profile.totalPoints - lastPointsRef.current;
-        setPointsEarned(diff);
-        playSound('points');
-        setTimeout(() => setPointsEarned(null), 2500);
-      }
-      lastPointsRef.current = profile.totalPoints;
-    }
-  }, [profile?.totalPoints, playSound]);
-
-  useEffect(() => {
     if (mounted && user) {
       const db = getFirestore(firebaseApp);
       const q = query(collection(db, "users"), where("role", "==", "student"), orderBy(leaderboardTab, "desc"), limit(10));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      return onSnapshot(q, (snapshot) => {
         const data = snapshot.docs.map(doc => {
           const ud = doc.data() as ProfileData;
-          return { 
-            uid: doc.id, 
-            name: `${ud.firstName} ${ud.surname}`, 
-            photo: ud.profilePhoto, 
-            points: ud[leaderboardTab as keyof ProfileData] || 0, 
-            title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) 
-          };
+          return { uid: doc.id, name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: ud[leaderboardTab as keyof ProfileData] || 0, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
         });
         setLeaderboard(data);
-      }, (err) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: '/users', operation: 'list' })));
-      return () => unsubscribe();
+      });
     }
   }, [mounted, user, getStudentTitle, leaderboardTab]);
 
@@ -105,10 +73,6 @@ export default function StudentDashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
-      {!user.emailVerified && !/test|temp/i.test(user.email!) && (
-        <Alert variant="destructive"><ShieldAlert className="h-4 w-4" /><AlertTitle>Verify Email</AlertTitle><AlertDescription className="flex justify-between items-center text-xs">Verify your email to unlock all features.<Button size="sm" onClick={() => sendVerificationEmail()} variant="outline" className="h-7 text-[10px]">Resend Link</Button></AlertDescription></Alert>
-      )}
-
       <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 text-white min-h-[220px] rounded-3xl flex items-center">
         <div className="absolute inset-0 opacity-20 bg-cover bg-center" style={{ backgroundImage: "url('https://picsum.photos/seed/abacus/1200/400')" }} />
         <CardContent className="relative z-10 p-8 w-full flex flex-col md:flex-row justify-between items-center gap-8">
@@ -129,26 +93,13 @@ export default function StudentDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-card/50 border-border/50 shadow-sm"><CardContent className="p-6 flex items-center gap-4"><div className="bg-orange-100 p-3 rounded-2xl shrink-0"><Flame className="text-orange-600 w-6 h-6" /></div><div><p className="text-3xl font-black leading-none">{profile.currentStreak || 0}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Streak</p></div></CardContent></Card>
         <Card className="bg-card/50 border-border/50 shadow-sm"><CardContent className="p-6 flex items-center gap-4"><div className="bg-blue-100 p-3 rounded-2xl shrink-0"><CalendarDays className="text-blue-600 w-6 h-6" /></div><div><p className="text-3xl font-black leading-none">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Practice Days</p></div></CardContent></Card>
-        
-        <Card className={cn("lg:col-span-2 relative overflow-hidden transition-all shadow-md bg-white border-2", pointsEarned ? "border-green-500 ring-2 ring-green-100" : "border-slate-100")}>
-          <CardContent className="p-6 relative">
-            {pointsEarned && <PointsAnimation points={pointsEarned} />}
-            <div className="grid grid-cols-3 gap-2 sm:gap-4 h-full">
-              <div className="bg-slate-50 p-3 sm:p-4 rounded-2xl text-center border border-slate-100 flex flex-col justify-center min-w-0">
-                <p className="text-[8px] sm:text-[10px] font-black uppercase text-muted-foreground tracking-tighter mb-1 truncate">Total</p>
-                <p className="text-base sm:text-2xl font-black text-primary truncate">{(profile.totalPoints || 0).toLocaleString()}</p>
-              </div>
-              <div className="bg-slate-50 p-3 sm:p-4 rounded-2xl text-center border border-slate-100 flex flex-col justify-center min-w-0">
-                <p className="text-[8px] sm:text-[10px] font-black uppercase text-muted-foreground tracking-tighter mb-1 truncate">Weekly</p>
-                <p className="text-base sm:text-2xl font-black text-foreground truncate">{(profile.weeklyPoints || 0).toLocaleString()}</p>
-              </div>
-              <div className="bg-slate-50 p-3 sm:p-4 rounded-2xl text-center border border-slate-100 flex flex-col justify-center min-w-0">
-                <p className="text-[8px] sm:text-[10px] font-black uppercase text-muted-foreground tracking-tighter mb-1 truncate">Monthly</p>
-                <p className="text-base sm:text-2xl font-black text-foreground truncate">{(profile.monthlyPoints || 0).toLocaleString()}</p>
-              </div>
+        <Card className="lg:col-span-2 shadow-md bg-white border-slate-100 border-2"><CardContent className="p-6 h-full flex flex-col justify-center">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
+              <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100"><p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Total</p><p className="text-base sm:text-xl font-black text-primary">{(profile.totalPoints || 0).toLocaleString()}</p></div>
+              <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100"><p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Weekly</p><p className="text-base sm:text-xl font-black">{(profile.weeklyPoints || 0).toLocaleString()}</p></div>
+              <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100"><p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Monthly</p><p className="text-base sm:text-xl font-black">{(profile.monthlyPoints || 0).toLocaleString()}</p></div>
             </div>
-          </CardContent>
-        </Card>
+        </CardContent></Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -167,7 +118,7 @@ export default function StudentDashboardPage() {
                   <CardContent className="p-4 sm:p-6 overflow-x-auto scrollbar-none">
                     <div className="flex justify-start items-center gap-2.5 flex-nowrap min-w-max">
                       {[1, 2, 3, 4, 5, 6].map(d => (
-                        <div key={d} className={cn("w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + d) ? "bg-primary border-primary text-white shadow-md" : "bg-muted border-border text-muted-foreground")}>
+                        <div key={d} className={cn("w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square", currentDays >= (startDay + d) ? "bg-primary border-primary text-white shadow-md" : "bg-muted border-border text-muted-foreground")}>
                           {currentDays >= (startDay + d) ? <Check className="w-5 h-5 stroke-[4px]" /> : <span className="text-[10px] sm:text-sm font-black">{d}</span>}
                         </div>
                       ))}
@@ -180,9 +131,9 @@ export default function StudentDashboardPage() {
               );
             })}
           </div>
-          <Button onClick={() => router.push('/tests')} className="w-full h-24 bg-primary hover:bg-primary/90 rounded-3xl shadow-xl transition-all flex items-center justify-center gap-4 group">
+          <Button onClick={() => router.push('/tests')} className="w-full h-24 bg-primary hover:bg-primary/90 rounded-3xl shadow-xl flex items-center justify-center gap-4 group">
             <span className="text-2xl font-black uppercase tracking-widest leading-none">Start Practice</span>
-            <ChevronRight className="w-10 h-10 shrink-0 stroke-[4px] group-hover:translate-x-2 transition-transform" />
+            <ChevronRight className="w-10 h-10 group-hover:translate-x-2 transition-transform stroke-[4px]" />
           </Button>
         </div>
 
@@ -191,10 +142,10 @@ export default function StudentDashboardPage() {
             <Card className="bg-primary/5 rounded-2xl border-primary/20 border-2">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-black flex items-center gap-2 uppercase tracking-tight text-primary"><Bell className="w-5 h-5" /> Training Alerts</CardTitle>
-                <CardDescription className="text-xs font-bold text-muted-foreground">Stay on track! Get a quick motivational nudge every evening at 7 PM IST.</CardDescription>
+                <CardDescription className="text-xs font-bold text-muted-foreground">Get a motivational nudge every evening at 7 PM IST.</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button onClick={handleEnableNotifications} disabled={isRequestingNotifications} className="w-full rounded-xl h-12 font-black uppercase text-xs shadow-md">
+                <Button onClick={handleEnableNotifications} disabled={isRequestingNotifications} className="w-full rounded-xl h-12 font-black uppercase text-xs">
                   {isRequestingNotifications ? <Loader2 className="animate-spin" /> : "Activate Reminders"}
                 </Button>
               </CardContent>
@@ -214,7 +165,7 @@ export default function StudentDashboardPage() {
             <CardContent className="p-0">
               <div className="divide-y divide-border/50">
                 {leaderboard.map((s, i) => (
-                  <div key={s.uid} className={cn("flex items-center justify-between p-4", s.uid === profile.uid ? "bg-primary/5 border-l-4 border-l-primary" : "hover:bg-muted/30")}>
+                  <div key={s.uid} className={cn("flex items-center justify-between p-4", s.uid === profile.uid ? "bg-primary/5" : "hover:bg-muted/30")}>
                     <div className="flex items-center gap-4 min-w-0">
                       <span className={cn("w-6 text-sm font-black shrink-0", i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground")}>#{i + 1}</span>
                       <Avatar className="h-10 w-10 border-2 border-white shrink-0"><AvatarImage src={s.photo}/><AvatarFallback className="font-bold">{s.name?.charAt(0)}</AvatarFallback></Avatar>
