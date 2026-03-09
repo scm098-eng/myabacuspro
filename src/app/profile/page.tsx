@@ -60,8 +60,8 @@ const profileSchema = z.object({
   pincode: z.string().optional(),
   schoolName: z.string().optional(),
   grade: z.string().optional(),
-  mobileNo: z.string().optional(),
-  whatsappNo: z.string().optional(),
+  mobileNo: z.string().min(5, { message: "Mobile number is required." }),
+  whatsappNo: z.string().min(5, { message: "WhatsApp number is required." }),
   teacherId: z.string().optional(),
   instituteName: z.string().optional(),
   instituteCountry: z.string().optional(),
@@ -330,8 +330,8 @@ export default function ProfilePage() {
                         </div>
                         <h3 className="text-lg font-medium pt-4 border-b">Contact Details</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <FormField control={form.control} name="mobileNo" render={({ field }) => (<FormItem><FormLabel>Mobile No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="whatsappNo" render={({ field }) => (<FormItem><FormLabel>WhatsApp</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="mobileNo" render={({ field }) => (<FormItem><FormLabel>Mobile No. *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="whatsappNo" render={({ field }) => (<FormItem><FormLabel>WhatsApp No. *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
                       </>
                     ) : <ReadOnlyField label="Address" value={`${watch('addressLine1') || ''}, ${watch('city') || ''}, ${watch('state') || ''}, ${watch('country') || ''}`} />}

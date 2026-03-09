@@ -58,8 +58,8 @@ const formSchema = z.object({
   pincode: z.string().optional(),
   schoolName: z.string().optional(),
   grade: z.string().optional(),
-  mobileNo: z.string().optional(),
-  whatsappNo: z.string().optional(),
+  mobileNo: z.string().min(5, { message: "Mobile number is required." }),
+  whatsappNo: z.string().min(5, { message: "WhatsApp number is required." }),
   email: z.string().email({ message: 'Please enter a valid email.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
   confirmPassword: z.string(),
@@ -293,6 +293,10 @@ export default function SignupPage() {
                 </div>
                 <FormField control={form.control} name="addressLine1" render={({ field }) => (<FormItem><FormLabel>Address Line 1</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <h3 className="text-lg font-medium pt-4 border-b">Contact & Login</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField control={form.control} name="mobileNo" render={({ field }) => (<FormItem><FormLabel>Mobile No. *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="whatsappNo" render={({ field }) => (<FormItem><FormLabel>WhatsApp No. *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                </div>
                 <div className="flex items-center gap-4">
                   <Avatar className="h-20 w-20"><AvatarImage src={avatarPreview || ''} /><AvatarFallback>{watch('firstName')?.[0]}</AvatarFallback></Avatar>
                   <input type="file" ref={fileInputRef} onChange={onFileSelect} accept="image/*" className="hidden" />
