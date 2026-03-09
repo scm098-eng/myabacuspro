@@ -14,6 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Loader2, CalendarIcon, Camera, Edit, X, BadgeCheck, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
@@ -29,6 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const indianStates = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"];
+const grades = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"];
 const majorCountries = ["India", "United States", "United Kingdom", "United Arab Emirates", "Australia", "Canada", "Singapore", "Malaysia", "Japan", "Germany", "France", "Other"];
 
 const countryCodes: Record<string, string> = {
@@ -277,7 +279,9 @@ export default function ProfilePage() {
                                     <Popover>
                                       <PopoverTrigger asChild>
                                         <Button variant={"outline"} className={cn("w-full justify-between text-left font-normal", !field.value && "text-muted-foreground")}>
-                                          {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                          <FormControl>
+                                            <span>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}</span>
+                                          </FormControl>
                                           <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
                                         </Button>
                                       </PopoverTrigger>
@@ -299,18 +303,38 @@ export default function ProfilePage() {
                     )}
                     
                     {isEditing ? (
-                        <FormField control={form.control} name="teacherId" render={({ field }) => (
-                                <FormItem><FormLabel>Assigned Teacher *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={profile.role !== 'student'}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>
-                                    <SelectItem value="unassigned">None</SelectItem>
-                                    {teachers.map(t => <SelectItem key={t.uid} value={t.uid}>{t.firstName} {t.surname}</SelectItem>)}
-                                </SelectContent></Select><FormMessage /></FormItem>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <FormField control={form.control} name="teacherId" render={({ field }) => (
+                                  <FormItem><FormLabel>Assigned Teacher *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={profile.role !== 'student'}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>
+                                      <SelectItem value="unassigned">None</SelectItem>
+                                      {teachers.map(t => <SelectItem key={t.uid} value={t.uid}>{t.firstName} {t.surname}</SelectItem>)}
+                                  </SelectContent></Select><FormMessage /></FormItem>
+                              )} />
+                          {profile.role === 'student' && (
+                            <FormField control={form.control} name="grade" render={({ field }) => (
+                                <FormItem><FormLabel>Grade/Std.</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                             )} />
-                    ) : <ReadOnlyField label="Teacher" value={teacherName} />}
+                          )}
+                        </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <ReadOnlyField label="Teacher" value={teacherName} />
+                        {profile.role === 'student' && <ReadOnlyField label="Grade/Std." value={watch('grade')} />}
+                      </div>
+                    )}
+
+                    {isEditing && profile.role === 'student' && (
+                      <FormField control={form.control} name="schoolName" render={({ field }) => (
+                          <FormItem><FormLabel>School Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                      )} />
+                    )}
+
+                    {!isEditing && profile.role === 'student' && <ReadOnlyField label="School Name" value={watch('schoolName')} />}
 
                     {isEditing ? (
                       <>
                         <h3 className="text-lg font-medium pt-4 border-b">Residential Address</h3>
-                        <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country *</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <FormField control={form.control} name="state" render={({ field }) => (
                             <FormItem>
@@ -328,6 +352,15 @@ export default function ProfilePage() {
                           )} />
                           <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
+                        <FormField control={form.control} name="addressLine1" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Full Address</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Enter your full address (House No, Street, Landmark...)" {...field} rows={3} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
                         <h3 className="text-lg font-medium pt-4 border-b">Contact Details</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <FormField control={form.control} name="mobileNo" render={({ field }) => (<FormItem><FormLabel>Mobile No. *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -364,7 +397,15 @@ export default function ProfilePage() {
                             <FormField control={form.control} name="instituteCity" render={({ field }) => (<FormItem><FormLabel>City / Town</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                             <FormField control={form.control} name="institutePincode" render={({ field }) => (<FormItem><FormLabel>Pincode</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
-                        <FormField control={form.control} name="instituteAddressLine1" render={({ field }) => (<FormItem><FormLabel>Address Line 1</FormLabel><FormControl><Input placeholder="House No, Street, Area" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="instituteAddressLine1" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Institute Address</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Enter institute address" {...field} rows={2} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
                       </>
                       ) : (
                           <>
