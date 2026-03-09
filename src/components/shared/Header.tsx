@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -29,7 +30,6 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  // UseEffect to prevent hydration errors by only rendering client-side logic after mounting
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -144,14 +144,16 @@ export function Header() {
     <header className="bg-card/90 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link href="/" className="flex flex-col items-center">
-            <div className="flex items-end gap-2">
-              <Brain className="h-8 w-8 text-primary" />
-              <Logo />
+          <Link href="/">
+            <div className="flex flex-col items-center">
+              <div className="flex items-end gap-2">
+                <Brain className="h-8 w-8 text-primary" />
+                <Logo />
+              </div>
+              <p className="text-[0.55rem] text-muted-foreground tracking-widest mt-1 uppercase font-bold hidden sm:block">
+                LEARN • PRACTICE • SUCCEED
+              </p>
             </div>
-            <p className="text-[0.55rem] text-muted-foreground tracking-widest mt-1 uppercase font-bold hidden sm:block">
-              LEARN • PRACTICE • SUCCEED
-            </p>
           </Link>
           
           <div className="hidden md:flex items-center gap-6">
@@ -179,14 +181,16 @@ export function Header() {
                     </SheetHeader>
                     <div className="flex flex-col h-full">
                         <div className="p-6 border-b">
-                            <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex flex-col items-center">
-                                <div className="flex items-end gap-2 pb-1">
-                                    <Brain className="h-8 w-8 text-primary" />
-                                    <Logo />
+                            <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
+                                <div className="flex flex-col items-center">
+                                    <div className="flex items-end gap-2 pb-1">
+                                        <Brain className="h-8 w-8 text-primary" />
+                                        <Logo />
+                                    </div>
+                                    <p className="text-[0.55rem] text-muted-foreground tracking-widest mt-1 uppercase font-bold">
+                                        LEARN • PRACTICE • SUCCEED
+                                    </p>
                                 </div>
-                                <p className="text-[0.55rem] text-muted-foreground tracking-widest mt-1 uppercase font-bold">
-                                    LEARN • PRACTICE • SUCCEED
-                                </p>
                             </Link>
                         </div>
                         <div className="flex-1 overflow-y-auto py-4">
