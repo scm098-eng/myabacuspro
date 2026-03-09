@@ -21,7 +21,6 @@ import { ref, uploadBytes, getDownloadURL, getStorage } from 'firebase/storage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload } from '@/types';
 import { useRouter, usePathname } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
 import { format, startOfWeek, startOfMonth } from 'date-fns';
 import { RANK_CRITERIA } from '@/lib/constants';
 
