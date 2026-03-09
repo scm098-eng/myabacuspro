@@ -346,7 +346,7 @@ export default function ProfilePage() {
                               )} />
                           {profile.role === 'student' && (
                             <FormField control={form.control} name="grade" render={({ field }) => (
-                                <FormItem><FormLabel>Grade/Std.</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></FormItem>
+                                <FormItem><FormLabel>Grade/Std.</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                             )} />
                           )}
                         </div>

@@ -64,9 +64,6 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 const ADMIN_EMAILS = ['pallavib202@gmail.com', 'myabacuspro@gmail.com'];
 const EXCLUDED_FROM_TEACHER_LIST = ['scm098@gmail.com', 'satishmane@gmail.com'];
 
-/**
- * Clean data for Firestore: remove undefined and convert empty strings to null
- */
 const sanitizeForFirestore = (data: any) => {
   const clean: any = {};
   Object.keys(data).forEach(key => {
@@ -269,7 +266,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { profilePhoto, ...profileData } = data;
     const userDocRef = doc(firestore, 'users', uid);
     
-    // Sanitize data: remove undefined and convert empty strings to null
     const sanitizedData = sanitizeForFirestore(profileData);
     const payload: any = { ...sanitizedData, updatedAt: serverTimestamp() };
     
