@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -38,13 +39,20 @@ export default function StudentDashboardPage() {
     if (mounted && user) {
       const db = getFirestore(firebaseApp);
       const q = query(collection(db, "users"), where("role", "==", "student"), orderBy(leaderboardTab, "desc"), limit(10));
-      return onSnapshot(q, (snapshot) => {
+      const unsubscribe = onSnapshot(q, (snapshot) => {
         const data = snapshot.docs.map(doc => {
           const ud = doc.data() as ProfileData;
-          return { uid: doc.id, name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: ud[leaderboardTab as keyof ProfileData] || 0, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
+          return { 
+            uid: doc.id, 
+            name: `${ud.firstName} ${ud.surname}`, 
+            photo: ud.profilePhoto, 
+            points: ud[leaderboardTab as keyof ProfileData] || 0, 
+            title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) 
+          };
         });
         setLeaderboard(data);
       });
+      return () => unsubscribe();
     }
   }, [mounted, user, getStudentTitle, leaderboardTab]);
 
@@ -57,11 +65,15 @@ export default function StudentDashboardPage() {
         const messaging = getMessaging(firebaseApp);
         const token = await getToken(messaging, { vapidKey: 'BF27zRYbNBqLyR0w1XZVSCWK0YNgG7M9DymtcLAPr6A0gUoT0OlIn-q7fpPhgYgOwcj91lmXUL7KvTV4o0Yd7J8' });
         if (token) await updateDoc(doc(getFirestore(firebaseApp), "users", user.uid), { fcmToken: token });
+        toast({ title: "Reminders Active!", description: "Check in every evening at 7 PM IST. 🔥" });
       }
-    } catch (e) { console.error("FCM failed", e); } finally { setIsRequestingNotifications(false); }
+    } catch (e) { 
+      console.error("FCM failed", e);
+      toast({ title: "Setup Failed", description: "Notifications could not be enabled.", variant: "destructive" });
+    } finally { setIsRequestingNotifications(false); }
   };
 
-  if (isLoading || !mounted) return <div className="space-y-8 p-8"><Skeleton className="h-[200px] w-full rounded-3xl" /><div className="grid grid-cols-3 gap-6"><Skeleton className="h-32" /></div></div>;
+  if (isLoading || !mounted) return <div className="space-y-8 p-8"><Skeleton className="h-[200px] w-full rounded-3xl" /><div className="grid grid-cols-1 md:grid-cols-4 gap-6"><Skeleton className="h-32" /></div></div>;
   if (!user || !profile) return null;
 
   const currentPoints = profile.totalPoints || 0;
@@ -88,12 +100,12 @@ export default function StudentDashboardPage() {
                 <Clock className="w-6 h-6 animate-pulse" />
               </div>
               <div>
-                <p className="font-black uppercase tracking-tight text-sm">Action Required: Free Trial Ending</p>
-                <p className="text-xs opacity-90 font-bold">You have <span className="underline decoration-2">{trialDaysRemaining.toFixed(1)} days</span> left. Upgrade to keep your progress and leaderboard rank!</p>
+                <p className="font-black uppercase tracking-tight text-sm">Free Trial Ending Soon</p>
+                <p className="text-xs opacity-90 font-bold">You have <span className="underline decoration-2">{trialDaysRemaining.toFixed(1)} days</span> left. Upgrade to keep your progress!</p>
               </div>
             </div>
             <Button onClick={() => router.push('/pricing')} className="bg-white text-orange-600 hover:bg-orange-50 font-black rounded-xl px-6 h-10 shadow-lg shrink-0">
-              Upgrade Now
+              Upgrade to Pro
             </Button>
           </CardContent>
         </Card>
@@ -107,16 +119,16 @@ export default function StudentDashboardPage() {
             <h1 className="text-4xl md:text-5xl font-black font-headline uppercase leading-none">Road to Mastery</h1>
             <div className="flex flex-wrap gap-2 justify-center md:justify-start">
               <Badge className="bg-yellow-400 text-slate-900 font-bold px-4 py-1.5 rounded-full border-none shadow-md">RANK: {currentRank.name}</Badge>
-              <Badge variant="outline" className="text-white border-white/20 px-4 py-1.5 rounded-full font-bold bg-white/5 backdrop-blur-sm">NEXT: {nextRank.name}</Badge>
+              <Badge variant="outline" className="text-white border-white/20 px-4 py-1.5 rounded-full font-bold bg-white/5 backdrop-blur-sm">GOAL: {nextRank.name}</Badge>
             </div>
             <div className="flex flex-wrap gap-4 justify-center md:justify-start text-[10px] font-black uppercase tracking-widest text-slate-400 pt-2">
               <div className="flex items-center gap-1.5 bg-black/30 px-3 py-1 rounded-lg border border-white/5">
                 <CalendarDays className={cn("w-3 h-3", daysNeeded === 0 ? "text-green-400" : "text-blue-400")} />
-                {daysNeeded === 0 ? "Days Goal Met" : `${daysNeeded} More Days Needed`}
+                {daysNeeded === 0 ? "Days Requirement Met" : `${daysNeeded} More Days Needed`}
               </div>
               <div className="flex items-center gap-1.5 bg-black/30 px-3 py-1 rounded-lg border border-white/5">
                 <Star className={cn("w-3 h-3", pointsNeeded === 0 ? "text-green-400" : "text-yellow-400")} />
-                {pointsNeeded === 0 ? "Points Goal Met" : `${pointsNeeded.toLocaleString()} Pts Needed`}
+                {pointsNeeded === 0 ? "Points Requirement Met" : `${pointsNeeded.toLocaleString()} Pts Needed`}
               </div>
             </div>
           </div>
@@ -128,7 +140,7 @@ export default function StudentDashboardPage() {
             <div className="h-3 w-full bg-white/10 rounded-full p-0.5 shadow-inner">
               <div className="h-full bg-gradient-to-r from-blue-500 to-sky-400 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(56,189,248,0.5)]" style={{ width: `${progress}%` }} />
             </div>
-            <p className="text-[8px] font-bold text-center text-slate-500 italic tracking-wide">Must meet both Days and Points to rank up</p>
+            <p className="text-[8px] font-bold text-center text-slate-500 italic tracking-wide">Must meet BOTH Days and Points to level up</p>
           </div>
         </CardContent>
       </Card>
@@ -147,7 +159,7 @@ export default function StudentDashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <h2 className="text-2xl font-black flex items-center gap-3"><CalendarDays className="text-primary w-7 h-7" /> Consistency Challenge</h2>
+          <h2 className="text-2xl font-black flex items-center gap-3"><CalendarDays className="text-primary w-7 h-7" /> Training Milestone</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map(w => {
               const startDay = (w - 1) * 7;
@@ -175,7 +187,7 @@ export default function StudentDashboardPage() {
             })}
           </div>
           <Button onClick={() => router.push('/tests')} className="w-full h-24 bg-primary hover:bg-primary/90 rounded-3xl shadow-xl flex items-center justify-center gap-4 group">
-            <span className="text-2xl font-black uppercase tracking-widest leading-none">Start Practice</span>
+            <span className="text-2xl font-black uppercase tracking-widest leading-none">Start Training</span>
             <ChevronRight className="w-10 h-10 group-hover:translate-x-2 transition-transform stroke-[4px]" />
           </Button>
         </div>
@@ -184,12 +196,12 @@ export default function StudentDashboardPage() {
           {!profile.fcmToken && (
             <Card className="bg-primary/5 rounded-2xl border-primary/20 border-2">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-black flex items-center gap-2 uppercase tracking-tight text-primary"><Bell className="w-5 h-5" /> Training Alerts</CardTitle>
-                <CardDescription className="text-xs font-bold text-muted-foreground">Get a motivational nudge every evening at 7 PM IST.</CardDescription>
+                <CardTitle className="text-lg font-black flex items-center gap-2 uppercase tracking-tight text-primary"><Bell className="w-5 h-5" /> Push Alerts</CardTitle>
+                <CardDescription className="text-xs font-bold text-muted-foreground">Receive a practice reminder every day at 7 PM IST.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Button onClick={handleEnableNotifications} disabled={isRequestingNotifications} className="w-full rounded-xl h-12 font-black uppercase text-xs">
-                  {isRequestingNotifications ? <Loader2 className="animate-spin" /> : "Activate Reminders"}
+                  {isRequestingNotifications ? <Loader2 className="animate-spin" /> : "Allow Notifications"}
                 </Button>
               </CardContent>
             </Card>
@@ -226,7 +238,7 @@ export default function StudentDashboardPage() {
                   <TrendingUp className="w-4 h-4 text-primary" />
                   <p className="text-[11px] font-bold text-foreground uppercase tracking-tight">Your Performance</p>
                 </div>
-                <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">Calculate your potential today and climb the ranks!</p>
+                <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">Calculate your potential today and reach for the top spot!</p>
               </div>
             </CardContent>
           </Card>

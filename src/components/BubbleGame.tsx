@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -42,9 +43,9 @@ const MouthBubbles = ({ className }: { className?: string }) => (
     <div className="absolute bottom-0 left-0 w-1 h-1 bg-white/60 rounded-full animate-[mouth-bubble_2s_ease-in_infinite]" />
     <div className="absolute bottom-[-5px] left-2 w-1.5 h-1.5 bg-white/40 rounded-full animate-[mouth-bubble_2.5s_ease-in_infinite_0.3s]" />
     <div className="absolute bottom-[-10px] left-[-3px] w-1 h-1 bg-white/30 rounded-full animate-[mouth-bubble_3s_ease-in_infinite_0.6s]" />
-    <div className="absolute bottom-[-15px] left-4 w-1.5 h-1.5 bg-white/50 rounded-full animate-[mouth-bubble_2.2s_ease-in_infinite_0.9s]" />
-    <div className="absolute bottom-[-20px] left-1 w-1 h-1 bg-white/40 rounded-full animate-[mouth-bubble_2.8s_ease-in_infinite_1.2s]" />
-    <div className="absolute bottom-[-25px] left-[-5px] w-1.5 h-1.5 bg-white/20 rounded-full animate-[mouth-bubble_3.5s_ease-in_infinite_1.5s]" />
+    <div className="absolute bottom-[-15px] left-4 w-1 h-1 bg-white/50 rounded-full animate-[mouth-bubble_2.2s_ease-in_infinite_0.9s]" />
+    <div className="absolute bottom-[-20px] left-1 w-1.5 h-1.5 bg-white/40 rounded-full animate-[mouth-bubble_2.8s_ease-in_infinite_1.2s]" />
+    <div className="absolute bottom-[-25px] left-[-5px] w-1 h-1 bg-white/20 rounded-full animate-[mouth-bubble_3.5s_ease-in_infinite_1.5s]" />
   </div>
 );
 
@@ -79,7 +80,7 @@ const FishWithBubbles = ({ speed, delay, top, reverse }: { speed: number, delay:
     <div className="relative w-full h-full animate-[wiggle_2s_ease-in-out_infinite]">
       <div className={cn("w-full h-full relative", reverse && "transform -scale-x-100")}>
         <Image 
-          src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish.png?alt=media&token=a2ce6964-2653-489b-9e2e-7f6e1c36c00b" 
+          src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media&token=870ea1d9-54e8-4b02-81ee-324662339f71" 
           alt="fish" 
           width={96} 
           height={96} 

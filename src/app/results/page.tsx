@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useEffect, useState, useMemo } from 'react';
@@ -63,7 +64,7 @@ const FloatingParticle = ({ index }: { index: number }) => {
 };
 
 function ResultsComponent() {
-  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/results_bg.jpg?alt=media&token=c4d5e6f7-g8h9-i0j1-k2l3-m4n5o6p7q8r9');
+  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/results_bg.jpg?alt=media');
   const searchParams = useSearchParams();
   const router = useRouter();
   const { playSound } = useSound();
@@ -259,7 +260,7 @@ function ResultsComponent() {
             </div>
           </CardContent>
            <CardFooter className="flex-col sm:flex-row gap-4 p-8 bg-muted/30 border-t">
-              <Button onClick={() => router.push('/tests')} className="flex-1 h-12 text-base font-bold">New Test</Button>
+              <Button onClick={() => router.push('/tests')} className="flex-1 h-12 text-base font-bold">New Training</Button>
               <Button onClick={() => router.push('/dashboard')} variant="secondary" className="flex-1 h-12 text-base font-bold">My Dashboard</Button>
               <Button onClick={() => router.push('/')} variant="outline" className="flex-1 h-12 text-base font-bold">Home</Button>
           </CardFooter>
@@ -268,8 +269,8 @@ function ResultsComponent() {
         {resultsData && (
           <Card className="border-none shadow-lg">
             <CardHeader className="bg-muted/30">
-              <CardTitle className="text-xl font-black uppercase tracking-tight">Step-by-Step Review</CardTitle>
-              <CardDescription>Click 'Solution' on any question to see the visual abacus breakdown.</CardDescription>
+              <CardTitle className="text-xl font-black uppercase tracking-tight">Visual Breakdown</CardTitle>
+              <CardDescription>Click 'Solution' on any question to see the step-by-step abacus logic.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <ScrollArea className="w-full whitespace-nowrap">
@@ -287,10 +288,10 @@ function ResultsComponent() {
        <DialogContent className="max-w-2xl p-0 overflow-hidden border-none rounded-3xl shadow-2xl flex flex-col h-[90vh] sm:h-auto max-h-[90vh]">
           <DialogHeader className="p-6 bg-primary text-primary-foreground shrink-0">
             <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-center">
-                Solution Breakdown
+                Abacus Logic
             </DialogTitle>
              <DialogDescription className="text-primary-foreground/80 font-bold text-center">
-              Question: <span className="text-white text-2xl font-mono ml-2">{modalQuestion?.text || modalQuestion?.answer}</span>
+              Target Value: <span className="text-white text-2xl font-mono ml-2">{modalQuestion?.text || modalQuestion?.answer}</span>
             </DialogDescription>
           </DialogHeader>
           
@@ -334,7 +335,7 @@ function ResultsComponent() {
                   </div>
                 ) : (
                   <span className="text-[10px] sm:text-xs font-black text-muted-foreground uppercase tracking-widest">
-                      Press Next to Continue
+                      Press Next
                   </span>
                 )}
               </div>

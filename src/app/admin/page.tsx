@@ -198,13 +198,13 @@ export default function AdminDashboardPage() {
         </CardHeader>
         <CardContent className="space-y-6">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <StatCard title="Students" value={summaryStats.totalStudents} icon={GraduationCap} />
+                <StatCard title="Total Students" value={summaryStats.totalStudents} icon={GraduationCap} />
                 <StatCard title="Pro Accounts" value={summaryStats.proUsers} icon={Crown} />
-                <StatCard title="Staff" value={summaryStats.totalTeachers} icon={Briefcase} />
+                <StatCard title="Active Staff" value={summaryStats.totalTeachers} icon={Briefcase} />
             </div>
             <div className="relative group max-w-2xl">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input placeholder="Search users..." className="pl-10 h-12" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}/>
+                <Input placeholder="Search users by name or email..." className="pl-10 h-12" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}/>
             </div>
         </CardContent>
       </Card>
@@ -214,7 +214,7 @@ export default function AdminDashboardPage() {
             <Tabs defaultValue="students" className="w-full">
                 <TabsList className="bg-muted p-1 mb-8 overflow-x-auto justify-start h-auto flex-wrap">
                     <TabsTrigger value="students" className="h-10">Students</TabsTrigger>
-                    {profile?.role === 'admin' && <TabsTrigger value="teachers" className="h-10">Staff</TabsTrigger>}
+                    {profile?.role === 'admin' && <TabsTrigger value="teachers" className="h-10">Staff List</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="moderation" className="h-10">Moderation</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="marketing" className="h-10">Marketing</TabsTrigger>}
                 </TabsList>
@@ -241,21 +241,18 @@ export default function AdminDashboardPage() {
 
                 <TabsContent value="teachers">
                     <Card>
-                        <CardHeader><CardTitle className="font-headline">Teacher Staff</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="font-headline">Staff Breakdown</CardTitle></CardHeader>
                         <CardContent>
                             <Table>
-                                <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Students Breakdown</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                                <TableHeader><TableRow><TableHead>Teacher</TableHead><TableHead>Students (Pro/Free)</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
                                 <TableBody>
                                     {filteredTeachers.length > 0 ? filteredTeachers.map((t) => (
                                         <TableRow key={t.uid}>
                                             <TableCell><p className="text-sm font-bold">{t.firstName} {t.surname}</p><p className="text-[10px] text-muted-foreground">{t.email}</p></TableCell>
                                             <TableCell>
-                                                <div className="flex flex-col gap-1">
-                                                    <span className="text-xs font-bold">{t.stats.total} Total</span>
-                                                    <div className="flex items-center gap-2">
-                                                        <Badge variant="outline" className="h-5 text-[9px] bg-green-50 text-green-700 border-green-200">Pro: {t.stats.pro}</Badge>
-                                                        <Badge variant="outline" className="h-5 text-[9px] bg-slate-50 text-slate-600">Free: {t.stats.free}</Badge>
-                                                    </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="h-6 font-bold bg-green-50 text-green-700 border-green-200">Pro: {t.stats.pro}</Badge>
+                                                    <Badge variant="outline" className="h-6 font-bold bg-slate-50 text-slate-600">Free: {t.stats.free}</Badge>
                                                 </div>
                                             </TableCell>
                                             <TableCell><Badge variant={t.status === 'approved' || t.role === 'admin' ? 'default' : 'secondary'}>{t.status || 'Active'}</Badge></TableCell>
@@ -275,10 +272,10 @@ export default function AdminDashboardPage() {
 
                 <TabsContent value="moderation">
                     <Card className="border-red-200">
-                        <CardHeader><CardTitle className="text-red-700">Flagged Accounts</CardTitle><CardDescription>Users needing verification or monitoring.</CardDescription></CardHeader>
+                        <CardHeader><CardTitle className="text-red-700">Flagged Accounts</CardTitle><CardDescription>Potential fake accounts or unverified users.</CardDescription></CardHeader>
                         <CardContent>
                             <Table>
-                                <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Flag Reason</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
+                                <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Reason</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
                                 <TableBody>
                                     {filteredSuspicious.length > 0 ? filteredSuspicious.map((u) => (
                                         <TableRow key={u.uid}>
@@ -308,12 +305,12 @@ export default function AdminDashboardPage() {
 
                 <TabsContent value="marketing">
                     <Card>
-                        <CardHeader><CardTitle>Campaign Manager</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>Communication Hub</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="space-y-2"><Label>Audience</Label><Select value={targetAudience} onValueChange={setTargetAudience}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Users</SelectItem><SelectItem value="pro">Pro Only</SelectItem><SelectItem value="free">Free Only</SelectItem><SelectItem value="teachers">Staff Only</SelectItem></SelectContent></Select></div>
-                            <div className="space-y-2"><Label>Subject</Label><Input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} /></div>
-                            <div className="space-y-2"><Label>Message (HTML allowed)</Label><Textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} className="min-h-[200px]" /></div>
-                            <div className="flex gap-4"><Button onClick={() => handleSendPromo(true)} variant="outline" disabled={isSendingPromo}>Send Test Email</Button><Button onClick={() => handleSendPromo(false)} className="flex-1" disabled={isSendingPromo}>Launch Campaign</Button></div>
+                            <div className="space-y-2"><Label>Target Audience</Label><Select value={targetAudience} onValueChange={setTargetAudience}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Every Student</SelectItem><SelectItem value="pro">Pro Members Only</SelectItem><SelectItem value="free">Free Members Only</SelectItem><SelectItem value="teachers">Teaching Staff Only</SelectItem></SelectContent></Select></div>
+                            <div className="space-y-2"><Label>Email Subject</Label><Input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} /></div>
+                            <div className="space-y-2"><Label>HTML Content</Label><Textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} className="min-h-[200px]" /></div>
+                            <div className="flex gap-4"><Button onClick={() => handleSendPromo(true)} variant="outline" disabled={isSendingPromo}>Send Test</Button><Button onClick={() => handleSendPromo(false)} className="flex-1" disabled={isSendingPromo}>Blast Campaign</Button></div>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -328,8 +325,8 @@ export default function AdminDashboardPage() {
                         <div className="divide-y">
                             {upcomingBirthdays.map((u) => (
                                 <div key={u.uid} className="flex items-center justify-between p-4 hover:bg-muted/30">
-                                    <div>
-                                        <p className="text-sm font-bold">{u.firstName} {u.surname}</p>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-bold truncate">{u.firstName} {u.surname}</p>
                                         <p className="text-[10px] text-muted-foreground capitalize">{u.role}</p>
                                     </div>
                                     {isBirthdayToday(u.dob) ? <Badge className="bg-pink-500/20 text-pink-700 border-pink-400">Today!</Badge> : <p className="text-xs font-medium text-muted-foreground">{new Date(u.dob).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>}
@@ -342,7 +339,7 @@ export default function AdminDashboardPage() {
 
             <Card className="rounded-2xl overflow-hidden border-border shadow-sm">
                 <CardHeader className="bg-muted/30 border-b pb-0">
-                    <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2 font-headline uppercase tracking-tight mb-4"><Trophy className="text-yellow-500 w-6 h-6" /> Hall of Fame</CardTitle>
+                    <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2 font-headline uppercase tracking-tight mb-4"><Trophy className="text-yellow-500 w-6 h-6" /> Top Performers</CardTitle>
                     <Tabs defaultValue="totalPoints" onValueChange={setLeaderboardTab} className="w-full">
                         <TabsList className="grid grid-cols-3 bg-slate-200/50 mb-2 h-10">
                             <TabsTrigger value="weeklyPoints" className="text-[10px] font-bold">Weekly</TabsTrigger>
@@ -362,7 +359,7 @@ export default function AdminDashboardPage() {
                                 </div>
                                 <div className="text-right"><span className="text-sm font-bold text-primary block">{s.points.toLocaleString()}</span><span className="text-[8px] font-bold text-muted-foreground uppercase">Points</span></div>
                             </div>
-                        )) : <div className="p-8 text-center text-muted-foreground">Loading leaderboard...</div>}
+                        )) : <div className="p-8 text-center text-muted-foreground">Updating records...</div>}
                     </div>
                 </CardContent>
             </Card>

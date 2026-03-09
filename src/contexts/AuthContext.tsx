@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -16,7 +17,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp, getFirestore, collection, getDocs, query, where, arrayUnion, updateDoc, increment, orderBy, limit, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, getFirestore, collection, getDocs, query, where, arrayUnion, updateDoc, increment, orderBy, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, getStorage } from 'firebase/storage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload } from '@/types';

@@ -6,13 +6,13 @@
     "hint": "abacus education"
   },
   "aboutStory": {
-    "src": "https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/student_learning.jpg?alt=media&token=b1d2de9d-db75-4e10-9667-26befc8211fb",
+    "src": "https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/student_learning.webp?alt=media&token=43bb747c-e72d-4f87-a724-41125f7af26e",
     "width": 600,
     "height": 400,
     "hint": "student learning"
   },
   "contactHero": {
-    "src": "https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/customer_support.jpg?alt=media&token=651855df-5fca-474d-ad7e-6aaf28defa38",
+    "src": "https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/customer_support.webp?alt=media&token=32812d2d-4a7a-4a97-b8a3-5fcf85469d24",
     "width": 600,
     "height": 400,
     "hint": "support contact"

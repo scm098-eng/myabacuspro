@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -134,12 +135,14 @@ export default function SignupPage() {
     const subscription = watch((value, { name }) => {
       if (name === 'country') {
         const code = countryCodes[value.country || 'India'] || "+91 ";
-        setValue('mobileNo', code);
-        setValue('whatsappNo', code);
+        const currentM = form.getValues('mobileNo');
+        if (!currentM || Object.values(countryCodes).some(c => currentM === c)) setValue('mobileNo', code);
+        const currentW = form.getValues('whatsappNo');
+        if (!currentW || Object.values(countryCodes).some(c => currentW === c)) setValue('whatsappNo', code);
       }
     });
     return () => subscription.unsubscribe();
-  }, [watch, setValue]);
+  }, [watch, setValue, form]);
 
   useEffect(() => {
     getApprovedTeachers().then(setTeachers);

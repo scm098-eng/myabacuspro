@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
@@ -128,8 +129,8 @@ export default function ProfilePage() {
   });
 
   const { watch, setValue } = form;
-  const dob = watch('dob');
-  const age = calculateAge(dob);
+  const dobValue = watch('dob');
+  const age = calculateAge(dobValue);
   const selectedCountry = watch('country');
   const selectedInstCountry = watch('instituteCountry');
 
@@ -275,12 +276,10 @@ export default function ProfilePage() {
                                   <FormLabel>Date of Birth *</FormLabel>
                                     <Popover>
                                       <PopoverTrigger asChild>
-                                        <FormControl>
-                                          <Button variant={"outline"} className={cn("w-full justify-between text-left font-normal", !field.value && "text-muted-foreground")}>
-                                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                            <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
-                                          </Button>
-                                        </FormControl>
+                                        <Button variant={"outline"} className={cn("w-full justify-between text-left font-normal", !field.value && "text-muted-foreground")}>
+                                          {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                          <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
+                                        </Button>
                                       </PopoverTrigger>
                                       <PopoverContent className="w-auto p-0" align="start">
                                           <Calendar mode="single" captionLayout="dropdown-buttons" fromYear={1950} toYear={new Date().getFullYear()} selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
