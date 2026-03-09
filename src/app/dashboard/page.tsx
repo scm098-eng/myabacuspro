@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, Clock, Zap, Crown, Quote } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, doc, updateDoc } from 'firebase/firestore';
@@ -112,6 +112,16 @@ export default function StudentDashboardPage() {
     } finally { setIsRequestingNotifications(false); }
   };
 
+  const trialTimeRemainingText = useMemo(() => {
+    if (trialDaysRemaining >= 1) {
+      const days = Math.floor(trialDaysRemaining);
+      return `${days} ${days === 1 ? 'Day' : 'Days'}`;
+    } else {
+      const hours = Math.floor(trialDaysRemaining * 24);
+      return `${Math.max(1, hours)} ${hours === 1 ? 'Hour' : 'Hours'}`;
+    }
+  }, [trialDaysRemaining]);
+
   if (isLoading || !mounted) return <div className="space-y-8 p-8"><Skeleton className="h-[200px] w-full rounded-3xl" /><div className="grid grid-cols-1 md:grid-cols-4 gap-6"><Skeleton className="h-32" /></div></div>;
   if (!user || !profile) return null;
 
@@ -177,7 +187,7 @@ export default function StudentDashboardPage() {
               </div>
               <div>
                 <p className="font-black uppercase tracking-tight text-sm">Free Trial Ending Soon</p>
-                <p className="text-xs opacity-90 font-bold">You have <span className="underline decoration-2">{trialDaysRemaining.toFixed(1)} days</span> left. Upgrade to keep your progress!</p>
+                <p className="text-xs opacity-90 font-bold">You have <span className="underline decoration-2">{trialTimeRemainingText}</span> left. Upgrade to keep your progress!</p>
               </div>
             </div>
             <Button onClick={() => router.push('/pricing')} className="bg-white text-orange-600 hover:bg-orange-50 font-black rounded-xl px-6 h-10 shadow-lg shrink-0">
@@ -200,7 +210,7 @@ export default function StudentDashboardPage() {
             <div className="flex flex-wrap gap-4 justify-center md:justify-start text-[10px] font-black uppercase tracking-widest text-slate-400 pt-2">
               <div className="flex items-center gap-1.5 bg-black/30 px-3 py-1 rounded-lg border border-white/5">
                 <CalendarDays className={cn("w-3 h-3", daysNeeded === 0 ? "text-green-400" : "text-blue-400")} />
-                {daysNeeded === 0 ? "Days Requirement Met" : `${daysNeeded} More Days Needed`}
+                {daysNeeded === 0 ? "Days Requirement Met" : `${daysNeeded} More Day${daysNeeded === 1 ? '' : 's'} Needed`}
               </div>
               <div className="flex items-center gap-1.5 bg-black/30 px-3 py-1 rounded-lg border border-white/5">
                 <Star className={cn("w-3 h-3", pointsNeeded === 0 ? "text-green-400" : "text-yellow-400")} />
