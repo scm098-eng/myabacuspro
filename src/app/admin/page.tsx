@@ -24,6 +24,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { isWithinInterval, add, parseISO, getDate, getMonth } from 'date-fns';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 const StatCard = ({ title, value, icon: Icon, subValue }: { title: string, value: string | number, icon: React.ElementType, subValue?: string }) => (
     <Card>
@@ -100,13 +102,24 @@ export default function AdminDashboardPage() {
     if (profile?.role === 'admin' || profile?.role === 'teacher') {
       const db = getFirestore(firebaseApp);
       const q = query(collection(db, "users"), where("role", "==", "student"), orderBy(leaderboardTab, "desc"), limit(10));
-      return onSnapshot(q, (snapshot) => {
-        const data = snapshot.docs.map(doc => {
-          const ud = doc.data() as ProfileData;
-          return { uid: doc.id, name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: ud[leaderboardTab as keyof ProfileData] || 0, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
-        });
-        setLeaderboard(data);
-      });
+      return onSnapshot(q, 
+        (snapshot) => {
+          const data = snapshot.docs.map(doc => {
+            const ud = doc.data() as ProfileData;
+            return { uid: doc.id, name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: ud[leaderboardTab as keyof ProfileData] || 0, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
+          });
+          setLeaderboard(data);
+        },
+        async (error) => {
+          if (error.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+              path: 'users',
+              operation: 'list',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          }
+        }
+      );
     }
   }, [profile, leaderboardTab, getStudentTitle]);
 

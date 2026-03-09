@@ -19,6 +19,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RANK_CRITERIA } from '@/lib/constants';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 export default function StudentDashboardPage() {
   usePageBackground('');
@@ -40,32 +42,55 @@ export default function StudentDashboardPage() {
   useEffect(() => {
     if (mounted) {
       const db = getFirestore(firebaseApp);
-      const unsub = onSnapshot(doc(db, "stats", "leaderboard"), (doc) => {
-        if (doc.exists()) {
-          setLastWinner(doc.data().lastWeeklyWinner);
+      const unsub = onSnapshot(doc(db, "stats", "leaderboard"), 
+        (doc) => {
+          if (doc.exists()) {
+            setLastWinner(doc.data().lastWeeklyWinner);
+          }
+        },
+        async (error) => {
+          if (error.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+              path: 'stats/leaderboard',
+              operation: 'get',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          }
         }
-      });
+      );
       return () => unsub();
     }
   }, [mounted]);
 
+  // Leaderboard Listener
   useEffect(() => {
     if (mounted && user) {
       const db = getFirestore(firebaseApp);
       const q = query(collection(db, "users"), where("role", "==", "student"), orderBy(leaderboardTab, "desc"), limit(10));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const data = snapshot.docs.map(doc => {
-          const ud = doc.data() as ProfileData;
-          return { 
-            uid: doc.id, 
-            name: `${ud.firstName} ${ud.surname}`, 
-            photo: ud.profilePhoto, 
-            points: ud[leaderboardTab as keyof ProfileData] || 0, 
-            title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) 
-          };
-        });
-        setLeaderboard(data);
-      });
+      const unsubscribe = onSnapshot(q, 
+        (snapshot) => {
+          const data = snapshot.docs.map(doc => {
+            const ud = doc.data() as ProfileData;
+            return { 
+              uid: doc.id, 
+              name: `${ud.firstName} ${ud.surname}`, 
+              photo: ud.profilePhoto, 
+              points: ud[leaderboardTab as keyof ProfileData] || 0, 
+              title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) 
+            };
+          });
+          setLeaderboard(data);
+        },
+        async (error) => {
+          if (error.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+              path: 'users',
+              operation: 'list',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          }
+        }
+      );
       return () => unsubscribe();
     }
   }, [mounted, user, getStudentTitle, leaderboardTab]);
@@ -106,7 +131,7 @@ export default function StudentDashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
-      {/* 👑 HALL OF FAME ANNOUNCEMENT */}
+      {/* Weekly Winner Announcement */}
       {lastWinner && (
         <Card className="bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 border-none shadow-xl rounded-2xl overflow-hidden animate-in fade-in zoom-in duration-700">
           <CardContent className="p-0">

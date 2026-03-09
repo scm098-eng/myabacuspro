@@ -24,6 +24,8 @@ import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayloa
 import { useRouter, usePathname } from 'next/navigation';
 import { format, startOfWeek, startOfMonth } from 'date-fns';
 import { RANK_CRITERIA } from '@/lib/constants';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 interface AuthContextType {
   user: User | null;
@@ -86,8 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   
   const fetchProfile = useCallback(async (authUser: User): Promise<ProfileData | null> => {
+    const userDocRef = doc(firestore, 'users', authUser.uid);
     try {
-      const userDocRef = doc(firestore, 'users', authUser.uid);
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
@@ -118,7 +120,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return null;
     } catch (error: any) {
-        console.error('Error fetching profile:', error);
+        if (error.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'get',
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        }
         return null;
     }
   }, [firestore, pathname, router]);
@@ -200,7 +208,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
       };
 
-      await setDoc(userDocRef, sanitizeForFirestore(rawData));
+      await setDoc(userDocRef, sanitizeForFirestore(rawData)).catch(async (error) => {
+        if (error.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'create',
+            requestResourceData: rawData,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        }
+      });
       await fetchProfile(user);
   }, [auth, firestore, storage, fetchProfile]);
 
@@ -216,7 +233,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userEmail = user.email?.toLowerCase() || '';
       const isAdmin = ADMIN_EMAILS.includes(userEmail);
       
-       await setDoc(userDocRef, sanitizeForFirestore({
+      const rawData = {
         email: user.email,
         emailVerified: user.emailVerified || isAdmin,
         firstName: firstName || '',
@@ -236,7 +253,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         totalPoints: 0,
         lastWeeklyReset: format(startOfWeek(new Date()), 'yyyy-ww'),
         lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
-      }));
+      };
+
+       await setDoc(userDocRef, sanitizeForFirestore(rawData)).catch(async (error) => {
+        if (error.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'create',
+            requestResourceData: rawData,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        }
+      });
     }
     return await fetchProfile(user);
   }, [auth, firestore, fetchProfile]);
@@ -275,22 +303,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         payload.profilePhoto = await getDownloadURL(storageRef);
     }
     
-    await updateDoc(userDocRef, payload);
+    await updateDoc(userDocRef, payload).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'update',
+          requestResourceData: payload,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    });
   }, [firestore, storage]);
 
   const toggleUserSuspension = useCallback(async (uid: string, isSuspended: boolean) => {
     if (profile?.role !== 'admin') throw new Error("Unauthorized");
-    await updateDoc(doc(firestore, 'users', uid), { isSuspended, updatedAt: serverTimestamp() });
+    const userDocRef = doc(firestore, 'users', uid);
+    await updateDoc(userDocRef, { isSuspended, updatedAt: serverTimestamp() }).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'update',
+          requestResourceData: { isSuspended },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    });
   }, [profile, firestore]);
 
   const deleteUserAccount = useCallback(async (uid: string) => {
     if (profile?.role !== 'admin') throw new Error("Unauthorized");
-    await deleteDoc(doc(firestore, 'users', uid));
+    const userDocRef = doc(firestore, 'users', uid);
+    await deleteDoc(userDocRef).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    });
   }, [profile, firestore]);
 
   const upgradeToPro = useCallback(async () => {
     if (!user) throw new Error("User not logged in");
-    await updateDoc(doc(firestore, 'users', user.uid), { subscriptionStatus: 'pro' });
+    const userDocRef = doc(firestore, 'users', user.uid);
+    await updateDoc(userDocRef, { subscriptionStatus: 'pro' }).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'update',
+          requestResourceData: { subscriptionStatus: 'pro' },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    });
     await fetchProfile(user);
   }, [user, firestore, fetchProfile]);
 
@@ -301,80 +367,190 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getAllUsers = useCallback(async (role?: UserRole): Promise<ProfileData[]> => {
     const usersCol = collection(firestore, 'users');
     const q = role ? query(usersCol, where("role", "==", role)) : query(usersCol);
-    const snap = await getDocs(q);
-    return snap.docs.map(doc => ({ ...doc.data(), uid: doc.id } as ProfileData));
+    try {
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ ...doc.data(), uid: doc.id } as ProfileData));
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: usersCol.path,
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+      return [];
+    }
   }, [firestore]);
 
   const getApprovedTeachers = useCallback(async (): Promise<ProfileData[]> => {
     const usersCol = collection(firestore, 'users');
     const q = query(usersCol, where("role", "in", ["teacher", "admin"]));
-    const snap = await getDocs(q);
-    return snap.docs
-        .map(doc => ({ ...doc.data(), uid: doc.id } as ProfileData))
-        .filter(u => !EXCLUDED_FROM_TEACHER_LIST.includes(u.email?.toLowerCase()))
-        .filter(u => u.role === 'admin' || u.status === 'approved');
+    try {
+      const snap = await getDocs(q);
+      return snap.docs
+          .map(doc => ({ ...doc.data(), uid: doc.id } as ProfileData))
+          .filter(u => !EXCLUDED_FROM_TEACHER_LIST.includes(u.email?.toLowerCase()))
+          .filter(u => u.role === 'admin' || u.status === 'approved');
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: usersCol.path,
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+      return [];
+    }
   }, [firestore]);
 
   const getUserTestHistory = useCallback(async (userId: string): Promise<TestResult[]> => {
-    const q = query(collection(firestore, 'testResults'), where("userId", "==", userId), orderBy('createdAt', 'desc'));
-    const snap = await getDocs(q); 
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
+    const testCol = collection(firestore, 'testResults');
+    const q = query(testCol, where("userId", "==", userId), orderBy('createdAt', 'desc'));
+    try {
+      const snap = await getDocs(q); 
+      return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: testCol.path,
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+      return [];
+    }
   }, [firestore]);
 
   const getUserTestHistoryByDateRange = useCallback(async (userId: string, start: Date, end: Date): Promise<TestResult[]> => {
-    const q = query(collection(firestore, 'testResults'), where("userId", "==", userId), where("createdAt", ">=", start), where("createdAt", "<=", end));
-    const snap = await getDocs(q); 
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
+    const testCol = collection(firestore, 'testResults');
+    const q = query(testCol, where("userId", "==", userId), where("createdAt", ">=", start), where("createdAt", "<=", end));
+    try {
+      const snap = await getDocs(q); 
+      return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: testCol.path,
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+      return [];
+    }
   }, [firestore]);
 
   const getUserProfile = useCallback(async (userId: string): Promise<ProfileData | null> => {
-    const snap = await getDoc(doc(firestore, 'users', userId));
-    return snap.exists() ? { ...snap.data(), uid: snap.id } as ProfileData : null;
+    const userDocRef = doc(firestore, 'users', userId);
+    try {
+      const snap = await getDoc(userDocRef);
+      return snap.exists() ? { ...snap.data(), uid: snap.id } as ProfileData : null;
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+      return null;
+    }
   }, [firestore]);
   
   const approveTeacher = useCallback(async (teacherId: string, callback?: () => void) => {
     if (profile?.role !== 'admin') throw new Error('Unauthorized');
-    await updateDoc(doc(firestore, 'users', teacherId), { status: 'approved', updatedAt: serverTimestamp() });
+    const userDocRef = doc(firestore, 'users', teacherId);
+    await updateDoc(userDocRef, { status: 'approved', updatedAt: serverTimestamp() }).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'update',
+          requestResourceData: { status: 'approved' },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    });
     if(callback) callback();
   }, [profile, firestore]);
 
   const getCompletedGameLevels = useCallback(async (): Promise<number[]> => {
     if (!user) return [];
-    const snap = await getDoc(doc(firestore, "gameProgress", user.uid));
-    return snap.exists() ? snap.data().completedLevels || [] : [];
+    const gameProgDocRef = doc(firestore, "gameProgress", user.uid);
+    try {
+      const snap = await getDoc(gameProgDocRef);
+      return snap.exists() ? snap.data().completedLevels || [] : [];
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: gameProgDocRef.path,
+          operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+      return [];
+    }
   }, [user, firestore]);
 
   const saveCompletedGameLevel = useCallback(async (levelId: number) => {
     if (!user) return;
-    await setDoc(doc(firestore, "gameProgress", user.uid), { completedLevels: arrayUnion(levelId) }, { merge: true });
+    const gameProgDocRef = doc(firestore, "gameProgress", user.uid);
+    await setDoc(gameProgDocRef, { completedLevels: arrayUnion(levelId) }, { merge: true }).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: gameProgDocRef.path,
+          operation: 'update',
+          requestResourceData: { completedLevels: arrayUnion(levelId) },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    });
   }, [user, firestore]);
 
   const addPoints = useCallback(async (userId: string, points: number) => {
     const userRef = doc(firestore, "users", userId);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) return;
-    const data = userSnap.data() as ProfileData;
-    const now = new Date();
-    const currentWeekKey = format(startOfWeek(now), 'yyyy-ww');
-    const currentMonthKey = format(startOfMonth(now), 'yyyy-MM');
-    const updateData: any = { totalPoints: increment(points), updatedAt: serverTimestamp() };
-    if (data.lastWeeklyReset !== currentWeekKey) { updateData.weeklyPoints = points; updateData.lastWeeklyReset = currentWeekKey; } else { updateData.weeklyPoints = increment(points); }
-    if (data.lastMonthlyReset !== currentMonthKey) { updateData.monthlyPoints = points; updateData.lastMonthlyReset = currentMonthKey; } else { updateData.monthlyPoints = increment(points); }
-    await updateDoc(userRef, updateData);
+    try {
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) return;
+      const data = userSnap.data() as ProfileData;
+      const now = new Date();
+      const currentWeekKey = format(startOfWeek(now), 'yyyy-ww');
+      const currentMonthKey = format(startOfMonth(now), 'yyyy-MM');
+      const updateData: any = { totalPoints: increment(points), updatedAt: serverTimestamp() };
+      if (data.lastWeeklyReset !== currentWeekKey) { updateData.weeklyPoints = points; updateData.lastWeeklyReset = currentWeekKey; } else { updateData.weeklyPoints = increment(points); }
+      if (data.lastMonthlyReset !== currentMonthKey) { updateData.monthlyPoints = points; updateData.lastMonthlyReset = currentMonthKey; } else { updateData.monthlyPoints = increment(points); }
+      await updateDoc(userRef, updateData);
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'update',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    }
   }, [firestore]);
 
   const recordDailyPractice = useCallback(async (userId: string) => {
     const userRef = doc(firestore, "users", userId);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) return;
-    const data = userSnap.data() as ProfileData;
-    const today = new Date().toISOString().split('T')[0];
-    if (data.lastPracticeDate === today) return;
-    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-    const newStreak = data.lastPracticeDate === yesterdayStr ? (data.currentStreak || 0) + 1 : 1;
-    await updateDoc(userRef, { lastPracticeDate: today, currentStreak: newStreak, totalDaysPracticed: increment(1), updatedAt: serverTimestamp() });
-    await addPoints(userId, 25);
+    try {
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) return;
+      const data = userSnap.data() as ProfileData;
+      const today = new Date().toISOString().split('T')[0];
+      if (data.lastPracticeDate === today) return;
+      const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      const newStreak = data.lastPracticeDate === yesterdayStr ? (data.currentStreak || 0) + 1 : 1;
+      await updateDoc(userRef, { lastPracticeDate: today, currentStreak: newStreak, totalDaysPracticed: increment(1), updatedAt: serverTimestamp() });
+      await addPoints(userId, 25);
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'update',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    }
   }, [firestore, addPoints]);
 
   const getStudentTitle = useCallback((totalDays: number, totalPoints: number) => {
