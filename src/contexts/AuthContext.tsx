@@ -64,6 +64,20 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 const ADMIN_EMAILS = ['pallavib202@gmail.com', 'myabacuspro@gmail.com'];
 const EXCLUDED_FROM_TEACHER_LIST = ['scm098@gmail.com', 'satishmane@gmail.com'];
 
+/**
+ * Clean data for Firestore: remove undefined and convert empty strings to null
+ */
+const sanitizeForFirestore = (data: any) => {
+  const clean: any = {};
+  Object.keys(data).forEach(key => {
+    const val = data[key];
+    if (val !== undefined) {
+      clean[key] = (val === '' || val === null) ? null : val;
+    }
+  });
+  return clean;
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -164,11 +178,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const userDocRef = doc(firestore, 'users', user.uid);
-      const { password, confirmPassword, ...rest } = values;
+      const { password, confirmPassword, profilePhoto, ...rest } = values;
       const userEmail = user.email?.toLowerCase() || '';
       const isAdmin = ADMIN_EMAILS.includes(userEmail);
       
-      const dataToSave: Omit<ProfileData, 'uid'> = {
+      const rawData = {
           ...rest,
           email: user.email!,
           emailVerified: isAdmin,
@@ -189,7 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
       };
 
-      await setDoc(userDocRef, dataToSave);
+      await setDoc(userDocRef, sanitizeForFirestore(rawData));
       await fetchProfile(user);
   }, [auth, firestore, storage, fetchProfile]);
 
@@ -205,7 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userEmail = user.email?.toLowerCase() || '';
       const isAdmin = ADMIN_EMAILS.includes(userEmail);
       
-       await setDoc(userDocRef, {
+       await setDoc(userDocRef, sanitizeForFirestore({
         email: user.email,
         emailVerified: user.emailVerified || isAdmin,
         firstName: firstName || '',
@@ -225,7 +239,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         totalPoints: 0,
         lastWeeklyReset: format(startOfWeek(new Date()), 'yyyy-ww'),
         lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
-      });
+      }));
     }
     return await fetchProfile(user);
   }, [auth, firestore, fetchProfile]);
@@ -254,12 +268,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUserProfile = useCallback(async (uid: string, data: UpdateProfilePayload) => {
     const { profilePhoto, ...profileData } = data;
     const userDocRef = doc(firestore, 'users', uid);
-    const payload: any = { ...profileData, updatedAt: serverTimestamp() };
+    
+    // Sanitize data: remove undefined and convert empty strings to null
+    const sanitizedData = sanitizeForFirestore(profileData);
+    const payload: any = { ...sanitizedData, updatedAt: serverTimestamp() };
+    
     if (profilePhoto) {
         const storageRef = ref(storage, `profile_photos/${uid}`);
         await uploadBytes(storageRef, profilePhoto);
         payload.profilePhoto = await getDownloadURL(storageRef);
     }
+    
     await updateDoc(userDocRef, payload);
   }, [firestore, storage]);
 

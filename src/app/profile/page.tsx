@@ -171,12 +171,30 @@ export default function ProfilePage() {
   useEffect(() => {
     if (profile && (teachers.length > 0 || profile.role !== 'student')) {
       form.reset({
-        ...profile,
+        firstName: profile.firstName || '',
+        middleName: profile.middleName || '',
+        surname: profile.surname || '',
         dob: profile.dob ? new Date(profile.dob) : new Date(),
-        grade: profile.grade || '',
-        teacherId: profile.teacherId || '',
         country: profile.country || 'India',
+        addressLine1: profile.addressLine1 || '',
+        city: profile.city || '',
+        taluka: profile.taluka || '',
+        district: profile.district || '',
+        state: profile.state || '',
+        pincode: profile.pincode || '',
+        schoolName: profile.schoolName || '',
+        grade: profile.grade || '',
+        mobileNo: profile.mobileNo || '',
+        whatsappNo: profile.whatsappNo || '',
+        teacherId: profile.teacherId || '',
+        instituteName: profile.instituteName || '',
         instituteCountry: profile.instituteCountry || 'India',
+        instituteAddressLine1: profile.instituteAddressLine1 || '',
+        instituteCity: profile.instituteCity || '',
+        instituteTaluka: profile.instituteTaluka || '',
+        instituteDistrict: profile.instituteDistrict || '',
+        instituteState: profile.instituteState || '',
+        institutePincode: profile.institutePincode || '',
       });
       if(profile.profilePhoto) setAvatarPreview(profile.profilePhoto);
     }
@@ -218,12 +236,30 @@ export default function ProfilePage() {
   const handleCancelEdit = () => {
       if (profile) {
         form.reset({
-            ...profile,
+            firstName: profile.firstName || '',
+            middleName: profile.middleName || '',
+            surname: profile.surname || '',
             dob: profile.dob ? new Date(profile.dob) : new Date(),
-            grade: profile.grade || '',
-            teacherId: profile.teacherId || '',
             country: profile.country || 'India',
+            addressLine1: profile.addressLine1 || '',
+            city: profile.city || '',
+            taluka: profile.taluka || '',
+            district: profile.district || '',
+            state: profile.state || '',
+            pincode: profile.pincode || '',
+            schoolName: profile.schoolName || '',
+            grade: profile.grade || '',
+            mobileNo: profile.mobileNo || '',
+            whatsappNo: profile.whatsappNo || '',
+            teacherId: profile.teacherId || '',
+            instituteName: profile.instituteName || '',
             instituteCountry: profile.instituteCountry || 'India',
+            instituteAddressLine1: profile.instituteAddressLine1 || '',
+            instituteCity: profile.instituteCity || '',
+            instituteTaluka: profile.instituteTaluka || '',
+            instituteDistrict: profile.instituteDistrict || '',
+            instituteState: profile.instituteState || '',
+            institutePincode: profile.institutePincode || '',
         });
       }
       setIsEditing(false);
@@ -279,9 +315,7 @@ export default function ProfilePage() {
                                     <Popover>
                                       <PopoverTrigger asChild>
                                         <Button variant={"outline"} className={cn("w-full justify-between text-left font-normal", !field.value && "text-muted-foreground")}>
-                                          <FormControl>
-                                            <span>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}</span>
-                                          </FormControl>
+                                          <span>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}</span>
                                           <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
                                         </Button>
                                       </PopoverTrigger>
@@ -312,7 +346,7 @@ export default function ProfilePage() {
                               )} />
                           {profile.role === 'student' && (
                             <FormField control={form.control} name="grade" render={({ field }) => (
-                                <FormItem><FormLabel>Grade/Std.</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                <FormItem><FormLabel>Grade/Std.</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></FormItem>
                             )} />
                           )}
                         </div>
@@ -340,7 +374,7 @@ export default function ProfilePage() {
                             <FormItem>
                               <FormLabel>State</FormLabel>
                               {selectedCountry === 'India' ? (
-                                <Select onValueChange={field.onChange} value={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value || ''}>
                                   <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                   <SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                                 </Select>

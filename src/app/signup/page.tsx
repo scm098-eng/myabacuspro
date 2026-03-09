@@ -123,7 +123,7 @@ export default function SignupPage() {
     defaultValues: {
       email: '', password: '', confirmPassword: '', firstName: '', middleName: '', surname: '',
       country: 'India', addressLine1: '', city: '', taluka: '', district: '', state: '', pincode: '',
-      schoolName: '', mobileNo: '', whatsappNo: '', dob: '', grade: '', role: 'student',
+      schoolName: '', mobileNo: '', whatsappNo: '', dob: '', grade: '', role: 'student', teacherId: '',
     },
   });
 
