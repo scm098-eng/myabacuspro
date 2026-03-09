@@ -8,11 +8,16 @@ export function Footer() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="md:flex md:justify-between">
           <div className="mb-6 md:mb-0">
-             <Link href="/" className="flex items-end gap-2 pb-1">
-                <Brain className="h-8 w-8 text-primary" />
-                <Logo />
+             <Link href="/" className="flex flex-col items-start group">
+                <div className="flex items-end gap-2 pb-1">
+                  <Brain className="h-8 w-8 text-primary" />
+                  <Logo />
+                </div>
+                <p className="text-[0.55rem] text-muted-foreground tracking-widest mt-1 uppercase font-bold">
+                  LEARN • PRACTICE • SUCCEED
+                </p>
              </Link>
-             <p className="mt-2 text-sm text-muted-foreground max-w-xs">Sharpen your mind and boost your calculation speed with My Abacus Pro.</p>
+             <p className="mt-4 text-sm text-muted-foreground max-w-xs">Sharpen your mind and boost your calculation speed with My Abacus Pro.</p>
           </div>
           <div className="grid grid-cols-2 gap-8 sm:gap-6 sm:grid-cols-3">
               <div>

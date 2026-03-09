@@ -144,11 +144,14 @@ export function Header() {
     <header className="bg-card/90 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex flex-col items-center">
             <div className="flex items-end gap-2">
               <Brain className="h-8 w-8 text-primary" />
               <Logo />
             </div>
+            <p className="text-[0.55rem] text-muted-foreground tracking-widest mt-1 uppercase font-bold hidden sm:block">
+              LEARN • PRACTICE • SUCCEED
+            </p>
           </Link>
           
           <div className="hidden md:flex items-center gap-6">
