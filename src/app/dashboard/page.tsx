@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, AlertCircle, Clock, Zap } from 'lucide-react';
+import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, Clock, Zap, Crown, Quote } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,11 +29,25 @@ export default function StudentDashboardPage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
   const [isRequestingNotifications, setIsRequestingNotifications] = useState(false);
+  const [lastWinner, setLastWinner] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
     if (!isLoading && !user) router.push('/login');
   }, [isLoading, user, router]);
+
+  // Global Hall of Fame Listener
+  useEffect(() => {
+    if (mounted) {
+      const db = getFirestore(firebaseApp);
+      const unsub = onSnapshot(doc(db, "stats", "leaderboard"), (doc) => {
+        if (doc.exists()) {
+          setLastWinner(doc.data().lastWeeklyWinner);
+        }
+      });
+      return () => unsub();
+    }
+  }, [mounted]);
 
   useEffect(() => {
     if (mounted && user) {
@@ -92,6 +106,43 @@ export default function StudentDashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
+      {/* 👑 HALL OF FAME ANNOUNCEMENT */}
+      {lastWinner && (
+        <Card className="bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 border-none shadow-xl rounded-2xl overflow-hidden animate-in fade-in zoom-in duration-700">
+          <CardContent className="p-0">
+            <div className="flex flex-col md:flex-row items-center">
+              <div className="bg-black/10 p-6 flex items-center justify-center">
+                <div className="relative">
+                  <Avatar className="h-20 w-20 border-4 border-white shadow-2xl">
+                    <AvatarImage src={lastWinner.photo} />
+                    <AvatarFallback className="bg-yellow-100 text-yellow-700 font-black">{lastWinner.name?.[0]}</AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -top-3 -right-3 bg-white p-1.5 rounded-full shadow-lg">
+                    <Crown className="w-6 h-6 text-yellow-500 fill-yellow-500 animate-bounce" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 p-6 text-center md:text-left text-yellow-950">
+                <div className="flex flex-col sm:flex-row items-center gap-2 mb-1">
+                  <Badge className="bg-black/20 text-yellow-950 border-none font-black text-[10px] tracking-widest uppercase">Weekly Champion</Badge>
+                  <span className="text-[10px] font-bold opacity-70">RESET JUST HAPPENED!</span>
+                </div>
+                <h2 className="text-2xl font-black uppercase tracking-tighter">Congratulate {lastWinner.name}!</h2>
+                <p className="text-sm font-bold opacity-90 leading-relaxed max-w-lg">
+                  They conquered the leaderboard with <span className="underline decoration-2">{lastWinner.points.toLocaleString()} Points</span> last week. 
+                  Now it's your turn—the race has been reset! Can you claim the throne?
+                </p>
+              </div>
+              <div className="p-6">
+                <Button onClick={() => router.push('/tests')} className="bg-yellow-950 text-yellow-400 hover:bg-black font-black rounded-xl px-8 h-12 shadow-2xl transition-transform hover:scale-105">
+                  CHALLENGE NOW
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {isTrialActive && profile.subscriptionStatus !== 'pro' && (
         <Card className="bg-orange-500 text-white border-none shadow-lg rounded-2xl overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
           <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">

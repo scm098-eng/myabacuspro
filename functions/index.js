@@ -39,6 +39,77 @@ function getTransporter() {
 }
 
 /**
+ * Scheduled: Every Sunday at 00:00
+ * Declares the winner and resets weekly points for ALL students.
+ */
+exports.resetWeeklyPoints = onSchedule("0 0 * * 0", async (event) => {
+    logger.info("Starting Weekly Points Reset");
+    
+    try {
+        // 1. Find the leader
+        const topUserSnap = await db.collection('users')
+            .where('role', '==', 'student')
+            .orderBy('weeklyPoints', 'desc')
+            .limit(1)
+            .get();
+
+        if (!topUserSnap.empty) {
+            const winner = topUserSnap.docs[0].data();
+            await db.collection('stats').doc('leaderboard').set({
+                lastWeeklyWinner: {
+                    uid: topUserSnap.docs[0].id,
+                    name: `${winner.firstName} ${winner.surname}`,
+                    photo: winner.profilePhoto || '',
+                    points: winner.weeklyPoints || 0,
+                    declaredAt: admin.firestore.FieldValue.serverTimestamp()
+                }
+            }, { merge: true });
+            logger.info(`Weekly Winner Declared: ${winner.firstName}`);
+        }
+
+        // 2. Reset everyone (Batch update)
+        const usersSnap = await db.collection('users').where('role', '==', 'student').get();
+        const batch = db.batch();
+        
+        usersSnap.forEach(userDoc => {
+            batch.update(userDoc.ref, {
+                weeklyPoints: 0,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        });
+
+        await batch.commit();
+        logger.info(`Successfully reset weekly points for ${usersSnap.size} students.`);
+    } catch (err) {
+        logger.error("Weekly reset failed", err);
+    }
+});
+
+/**
+ * Scheduled: 1st of every month at 00:00
+ * Resets monthly points for ALL students.
+ */
+exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
+    logger.info("Starting Monthly Points Reset");
+    try {
+        const usersSnap = await db.collection('users').where('role', '==', 'student').get();
+        const batch = db.batch();
+        
+        usersSnap.forEach(userDoc => {
+            batch.update(userDoc.ref, {
+                monthlyPoints: 0,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        });
+
+        await batch.commit();
+        logger.info(`Successfully reset monthly points for ${usersSnap.size} students.`);
+    } catch (err) {
+        logger.error("Monthly reset failed", err);
+    }
+});
+
+/**
  * Generates a 6-digit OTP and sends it via email.
  */
 exports.sendVerificationOTP = onCall({
