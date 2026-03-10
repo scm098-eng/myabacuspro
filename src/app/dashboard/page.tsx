@@ -20,6 +20,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RANK_CRITERIA } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
+import confetti from 'canvas-confetti';
 
 export default function StudentDashboardPage() {
   usePageBackground('');
@@ -36,6 +37,26 @@ export default function StudentDashboardPage() {
     setMounted(true);
     if (!isLoading && !user) router.push('/login');
   }, [isLoading, user, router]);
+
+  // Milestone Celebration Logic
+  useEffect(() => {
+    if (mounted && profile?.totalDaysPracticed) {
+      const days = profile.totalDaysPracticed;
+      // Celebrate every 7 days (Weekly Trophy)
+      if (days > 0 && days % 7 === 0) {
+        const lastCelebrated = localStorage.getItem(`celebrated_day_${days}`);
+        if (!lastCelebrated) {
+          confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#fbbf24', '#f97316', '#ffffff']
+          });
+          localStorage.setItem(`celebrated_day_${days}`, 'true');
+        }
+      }
+    }
+  }, [mounted, profile?.totalDaysPracticed]);
 
   // Global Hall of Fame Listener
   useEffect(() => {
@@ -249,6 +270,9 @@ export default function StudentDashboardPage() {
             {[1, 2, 3, 4].map(w => {
               const startDay = (w - 1) * 7;
               const wp = Math.max(0, Math.min(7, currentDays - startDay));
+              const isWeekCompleted = currentDays >= (startDay + 7);
+              const isExactlyOnTrophyDay = currentDays === (startDay + 7);
+
               return (
                 <Card key={w} className="overflow-hidden border-border rounded-2xl shadow-sm bg-card/30">
                   <CardHeader className="bg-muted/30 border-b p-4 flex flex-row items-center justify-between">
@@ -262,7 +286,11 @@ export default function StudentDashboardPage() {
                           {currentDays >= (startDay + d) ? <Check className="w-5 h-5 stroke-[4px]" /> : <span className="text-[10px] sm:text-sm font-black">{d}</span>}
                         </div>
                       ))}
-                      <div className={cn("w-9 h-9 sm:w-11 sm:h-11 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all", currentDays >= (startDay + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale")}>
+                      <div className={cn(
+                        "w-9 h-9 sm:w-11 sm:h-11 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all", 
+                        isWeekCompleted ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale",
+                        isExactlyOnTrophyDay && "animate-trophy-pop"
+                      )}>
                         <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
                     </div>
