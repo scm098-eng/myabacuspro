@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, Clock, Zap, Crown, Quote } from 'lucide-react';
+import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, Clock, Zap, Crown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
