@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -68,7 +67,6 @@ export default function StudentDashboardPage() {
         }
       },
       (error) => {
-        // Log instead of emitting high-level errors during boot/readiness checks
         console.warn("Leaderboard status listener error:", error.code);
       }
     );

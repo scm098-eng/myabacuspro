@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -144,8 +143,8 @@ export function Header() {
     <header className="bg-card/90 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link href="/" className="group">
-            <div className="flex flex-col items-center">
+          <Link href="/">
+            <div className="flex flex-col items-center group">
               <div className="flex items-end gap-2">
                 <Brain className="h-8 w-8 text-primary" />
                 <Logo />
@@ -182,7 +181,7 @@ export function Header() {
                     <div className="flex flex-col h-full">
                         <div className="p-6 border-b">
                             <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
-                                <div className="flex flex-col items-center">
+                                <div className="flex flex-col items-center group">
                                     <div className="flex items-end gap-2 pb-1">
                                         <Brain className="h-8 w-8 text-primary" />
                                         <Logo />
