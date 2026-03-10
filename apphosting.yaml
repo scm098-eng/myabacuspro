@@ -1,8 +1,10 @@
+
 kind: "AppStack"
 schemaVersion: "v1"
 
 runConfig:
   maxInstances: 1
+  memoryMiB: 1024
 
 env:
   # Razorpay Public Key (for the browser/frontend)
@@ -19,7 +21,7 @@ env:
       - RUNTIME
 
   # Gmail App Password (server-side only)
-  # Pinning to Version 1 as Version 2 was destroyed
+  # Strictly pinned to Version 1 as Version 2 was destroyed
   - variable: GMAIL_APP_PASSWORD
     secret: GMAIL_APP_PASSWORD@1
     availability:

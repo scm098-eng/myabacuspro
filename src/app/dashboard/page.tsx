@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -18,8 +19,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RANK_CRITERIA } from '@/lib/constants';
-import { errorEmitter } from '@/lib/error-emitter';
-import { FirestorePermissionError } from '@/lib/errors';
 import confetti from 'canvas-confetti';
 
 export default function StudentDashboardPage() {
@@ -42,7 +41,6 @@ export default function StudentDashboardPage() {
   useEffect(() => {
     if (mounted && profile?.totalDaysPracticed) {
       const days = profile.totalDaysPracticed;
-      // Celebrate milestones (Every 7 days)
       if (days > 0 && days % 7 === 0) {
         const lastCelebrated = localStorage.getItem(`celebrated_day_${days}`);
         if (!lastCelebrated) {
@@ -58,61 +56,50 @@ export default function StudentDashboardPage() {
     }
   }, [mounted, profile?.totalDaysPracticed]);
 
-  // Global Hall of Fame Listener
+  // Optimized Global Hall of Fame Listener
   useEffect(() => {
-    if (mounted) {
-      const db = getFirestore(firebaseApp);
-      const unsub = onSnapshot(doc(db, "stats", "leaderboard"), 
-        (doc) => {
-          if (doc.exists()) {
-            setLastWinner(doc.data().lastWeeklyWinner);
-          }
-        },
-        async (error) => {
-          if (error.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-              path: 'stats/leaderboard',
-              operation: 'get',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-          }
-        }
-      );
-      return () => unsub();
-    }
-  }, [mounted]);
+    if (!mounted || !user) return;
 
-  // Leaderboard Listener
-  useEffect(() => {
-    if (mounted && user) {
-      const db = getFirestore(firebaseApp);
-      const q = query(collection(db, "users"), where("role", "==", "student"), orderBy(leaderboardTab, "desc"), limit(10));
-      const unsubscribe = onSnapshot(q, 
-        (snapshot) => {
-          const data = snapshot.docs.map(doc => {
-            const ud = doc.data() as ProfileData;
-            return { 
-              uid: doc.id, 
-              name: `${ud.firstName} ${ud.surname}`, 
-              photo: ud.profilePhoto, 
-              points: ud[leaderboardTab as keyof ProfileData] || 0, 
-              title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) 
-            };
-          });
-          setLeaderboard(data);
-        },
-        async (error) => {
-          if (error.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-              path: 'users',
-              operation: 'list',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-          }
+    const db = getFirestore(firebaseApp);
+    const unsub = onSnapshot(doc(db, "stats", "leaderboard"), 
+      (doc) => {
+        if (doc.exists()) {
+          setLastWinner(doc.data().lastWeeklyWinner);
         }
-      );
-      return () => unsubscribe();
-    }
+      },
+      (error) => {
+        // Log instead of emitting high-level errors during boot/readiness checks
+        console.warn("Leaderboard status listener error:", error.code);
+      }
+    );
+    return () => unsub();
+  }, [mounted, user]);
+
+  // Optimized Leaderboard Listener
+  useEffect(() => {
+    if (!mounted || !user) return;
+
+    const db = getFirestore(firebaseApp);
+    const q = query(collection(db, "users"), where("role", "==", "student"), orderBy(leaderboardTab, "desc"), limit(10));
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
+        const data = snapshot.docs.map(doc => {
+          const ud = doc.data() as ProfileData;
+          return { 
+            uid: doc.id, 
+            name: `${ud.firstName} ${ud.surname}`, 
+            photo: ud.profilePhoto, 
+            points: ud[leaderboardTab as keyof ProfileData] || 0, 
+            title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) 
+          };
+        });
+        setLeaderboard(data);
+      },
+      (error) => {
+        console.warn("Leaderboard list listener error:", error.code);
+      }
+    );
+    return () => unsubscribe();
   }, [mounted, user, getStudentTitle, leaderboardTab]);
 
   const handleEnableNotifications = async () => {
@@ -372,4 +359,3 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
