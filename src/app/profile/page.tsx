@@ -133,8 +133,6 @@ export default function ProfilePage() {
   const { watch, setValue } = form;
   const dobValue = watch('dob');
   const age = calculateAge(dobValue);
-  const selectedCountry = watch('country');
-  const selectedInstCountry = watch('instituteCountry');
 
   useEffect(() => {
     if (isEditing) {

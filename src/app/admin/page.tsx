@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, ShieldAlert, GraduationCap, Search, X, Ban, ShieldCheck, AlertCircle, Cake } from 'lucide-react';
+import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, ShieldAlert, GraduationCap, Search, X, Ban, ShieldCheck, AlertCircle, Cake, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit } from 'firebase/firestore';
@@ -375,6 +375,13 @@ export default function AdminDashboardPage() {
                         )) : <div className="p-8 text-center text-muted-foreground">Updating records...</div>}
                     </div>
                 </CardContent>
+                <div className="bg-primary/5 p-4 border-t border-border/50">
+                    <div className="flex items-center gap-3 mb-2">
+                        <TrendingUp className="w-4 h-4 text-primary" />
+                        <p className="text-[11px] font-bold text-foreground uppercase tracking-tight">System Performance</p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">Global student engagement is reaching new heights!</p>
+                </div>
             </Card>
         </div>
       </div>
