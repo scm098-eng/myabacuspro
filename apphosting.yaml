@@ -20,9 +20,8 @@ env:
     availability:
       - RUNTIME
 
-  # Gmail App Password (server-side only)
-  # Strictly pinned to Version 1 as Version 2 was destroyed
+  
   - variable: GMAIL_APP_PASSWORD
-    secret: GMAIL_APP_PASSWORD@1
+    secret: GMAIL_APP_PASSWORD/versions/latest
     availability:
       - RUNTIME
