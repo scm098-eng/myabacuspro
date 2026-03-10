@@ -373,7 +373,7 @@ export default function ProfilePage() {
                           <FormField control={form.control} name="state" render={({ field }) => (
                             <FormItem>
                               <FormLabel>State</FormLabel>
-                              {selectedCountry === 'India' ? (
+                              {watch('country') === 'India' ? (
                                 <Select onValueChange={field.onChange} value={field.value || ''}>
                                   <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                   <SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
@@ -412,7 +412,7 @@ export default function ProfilePage() {
                         <FormField control={form.control} name="instituteState" render={({ field }) => ( 
                           <FormItem>
                             <FormLabel>State</FormLabel>
-                            {selectedInstCountry === 'India' ? (
+                            {watch('instituteCountry') === 'India' ? (
                               <Select onValueChange={field.onChange} value={field.value || ''}>
                                 <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                 <SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>

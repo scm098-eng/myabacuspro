@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, Clock, Zap, Crown, Quote } from 'lucide-react';
+import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, Clock, Zap, Crown, Quote, ArrowUpTrendUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -321,7 +321,7 @@ export default function StudentDashboardPage() {
               </div>
               <div className="bg-primary/5 p-4 border-t border-border/50">
                 <div className="flex items-center gap-3 mb-2">
-                  <TrendingUp className="w-4 h-4 text-primary" />
+                  <ArrowUpTrendUp className="w-4 h-4 text-primary" />
                   <p className="text-[11px] font-bold text-foreground uppercase tracking-tight">Your Performance</p>
                 </div>
                 <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">Calculate your potential today and reach for the top spot!</p>
