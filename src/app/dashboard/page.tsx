@@ -42,7 +42,7 @@ export default function StudentDashboardPage() {
   useEffect(() => {
     if (mounted && profile?.totalDaysPracticed) {
       const days = profile.totalDaysPracticed;
-      // Celebrate every 7 days (Weekly Trophy)
+      // Celebrate milestones (Every 7 days)
       if (days > 0 && days % 7 === 0) {
         const lastCelebrated = localStorage.getItem(`celebrated_day_${days}`);
         if (!lastCelebrated) {
@@ -142,7 +142,21 @@ export default function StudentDashboardPage() {
     }
   }, [trialDaysRemaining]);
 
-  if (isLoading || !mounted) return <div className="space-y-8 p-8"><Skeleton className="h-[200px] w-full rounded-3xl" /><div className="grid grid-cols-1 md:grid-cols-4 gap-6"><Skeleton className="h-32" /></div></div>;
+  if (isLoading || !mounted) {
+    return (
+      <div className="space-y-8 max-w-6xl mx-auto p-4 sm:p-8">
+        <Skeleton className="h-[120px] w-full rounded-2xl" />
+        <Skeleton className="h-[220px] w-full rounded-3xl" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="h-32 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
   if (!user || !profile) return null;
 
   const currentPoints = profile.totalPoints || 0;
@@ -180,12 +194,12 @@ export default function StudentDashboardPage() {
               <div className="flex-1 p-6 text-center md:text-left text-yellow-950">
                 <div className="flex flex-col sm:flex-row items-center gap-2 mb-1">
                   <Badge className="bg-black/20 text-yellow-950 border-none font-black text-[10px] tracking-widest uppercase">Weekly Champion</Badge>
-                  <span className="text-[10px] font-bold opacity-70">RESET JUST HAPPENED!</span>
+                  <span className="text-[10px] font-bold opacity-70">RACE HAS RESET!</span>
                 </div>
-                <h2 className="text-2xl font-black uppercase tracking-tighter">Congratulate {lastWinner.name}!</h2>
+                <h2 className="text-2xl font-black uppercase tracking-tighter">Hail {lastWinner.name}!</h2>
                 <p className="text-sm font-bold opacity-90 leading-relaxed max-w-lg">
-                  They conquered the leaderboard with <span className="underline decoration-2">{lastWinner.points.toLocaleString()} Points</span> last week. 
-                  Now it's your turn—the race has been reset! Can you claim the throne?
+                  They took the crown with <span className="underline decoration-2">{lastWinner.points.toLocaleString()} Points</span> last week. 
+                  The leaderboard is fresh—can you reach #1 this week?
                 </p>
               </div>
               <div className="p-6">
@@ -246,7 +260,7 @@ export default function StudentDashboardPage() {
             <div className="h-3 w-full bg-white/10 rounded-full p-0.5 shadow-inner">
               <div className="h-full bg-gradient-to-r from-blue-500 to-sky-400 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(56,189,248,0.5)]" style={{ width: `${progress}%` }} />
             </div>
-            <p className="text-[8px] font-bold text-center text-slate-500 italic tracking-wide">Must meet BOTH Days and Points to level up</p>
+            <p className="text-[8px] font-bold text-center text-slate-500 italic tracking-wide">Meet both requirements to unlock rank</p>
           </div>
         </CardContent>
       </Card>
@@ -271,7 +285,6 @@ export default function StudentDashboardPage() {
               const startDay = (w - 1) * 7;
               const wp = Math.max(0, Math.min(7, currentDays - startDay));
               const isWeekCompleted = currentDays >= (startDay + 7);
-              const isExactlyOnTrophyDay = currentDays === (startDay + 7);
 
               return (
                 <Card key={w} className="overflow-hidden border-border rounded-2xl shadow-sm bg-card/30">
@@ -287,9 +300,8 @@ export default function StudentDashboardPage() {
                         </div>
                       ))}
                       <div className={cn(
-                        "w-9 h-9 sm:w-11 sm:h-11 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all", 
-                        isWeekCompleted ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale",
-                        isExactlyOnTrophyDay && "animate-trophy-pop"
+                        "w-9 h-9 sm:w-11 sm:h-11 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all duration-500", 
+                        isWeekCompleted ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg animate-trophy-pop" : "bg-muted border-border opacity-50 grayscale"
                       )}>
                         <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
@@ -310,7 +322,7 @@ export default function StudentDashboardPage() {
             <Card className="bg-primary/5 rounded-2xl border-primary/20 border-2">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-black flex items-center gap-2 uppercase tracking-tight text-primary"><Bell className="w-5 h-5" /> Push Alerts</CardTitle>
-                <CardDescription className="text-xs font-bold text-muted-foreground">Receive a practice reminder every day at 7 PM IST.</CardDescription>
+                <CardDescription className="text-xs font-bold text-muted-foreground">Get daily reminders at 7 PM IST.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Button onClick={handleEnableNotifications} disabled={isRequestingNotifications} className="w-full rounded-xl h-12 font-black uppercase text-xs">
@@ -351,7 +363,7 @@ export default function StudentDashboardPage() {
                   <TrendingUp className="w-4 h-4 text-primary" />
                   <p className="text-[11px] font-bold text-foreground uppercase tracking-tight">Your Performance</p>
                 </div>
-                <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">Calculate your potential today and reach for the top spot!</p>
+                <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">Keep practicing to climb the global ranks!</p>
               </div>
             </CardContent>
           </Card>

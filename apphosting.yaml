@@ -19,7 +19,7 @@ env:
       - RUNTIME
 
   # Gmail App Password (server-side only)
-  # Version 2 was destroyed, pinning explicitly to Version 1
+  # Pinning to Version 1 as Version 2 was destroyed
   - variable: GMAIL_APP_PASSWORD
     secret: GMAIL_APP_PASSWORD@1
     availability:
