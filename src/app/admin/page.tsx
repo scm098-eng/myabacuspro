@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { isWithinInterval, add, parseISO, getDate, getMonth } from 'date-fns';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
+import { cn } from "@/lib/utils";
 
 const StatCard = ({ title, value, icon: Icon, subValue }: { title: string, value: string | number, icon: React.ElementType, subValue?: string }) => (
     <Card>
@@ -366,7 +367,7 @@ export default function AdminDashboardPage() {
                         {leaderboard.length > 0 ? leaderboard.map((s, idx) => (
                             <div key={s.uid} className="flex items-center justify-between p-4">
                                 <div className="flex items-center gap-4">
-                                    <span className="w-6 text-sm font-bold text-muted-foreground">#{idx + 1}</span>
+                                <span className={cn("w-6 text-sm font-bold", idx === 0 ? "text-yellow-500" : idx === 1 ? "text-slate-400" : idx === 2 ? "text-amber-600" : "text-muted-foreground")}>#{idx + 1}</span>
                                     <Avatar className="h-10 w-10"><AvatarImage src={s.photo} /></Avatar>
                                     <div className="flex flex-col"><span className="text-sm font-bold">{s.name}</span><span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: s.title.color + '20', color: s.title.color }}>{s.title.name}</span></div>
                                 </div>

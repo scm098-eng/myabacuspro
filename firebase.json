@@ -1,4 +1,3 @@
-
 {
   "hosting": {
     "source": ".",
@@ -23,6 +22,19 @@
       "RAZORPAY_WEBHOOK_SECRET",
       "RAZORPAY_KEY_SECRET",
       "GMAIL_APP_PASSWORD"
-    ]
+    ],
+    "source": "functions"
+  },
+  "apphosting": {
+    "backendId": "studio",
+    "rootDir": "/",
+    "ignore": [
+      "node_modules",
+      ".git",
+      "firebase-debug.log",
+      "firebase-debug.*.log",
+      "functions"
+    ],
+    "alwaysDeployFromSource": true
   }
 }
