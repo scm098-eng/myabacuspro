@@ -172,7 +172,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     const currentQuestion = questions[currentQuestionIndex];
     const newBubbles: Bubble[] = [];
     let maxDuration = 0;
-    const batchId = `${Date.now()}-${currentQuestionIndex}`;
+    const batchId = `${Date.now()}-${currentQuestionIndex}-${Math.random().toString(36).substr(2, 9)}`;
 
     newBubbles.push({
       id: `q-${batchId}`,
@@ -276,30 +276,30 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         </div>
 
         {/* HUD */}
-        <div className="absolute top-0 left-0 right-0 p-4 sm:p-6 bg-black/30 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50 animate-in slide-in-from-top duration-500">
-            <div className="flex items-center gap-4 sm:gap-8 text-white">
-                <div>
-                    <h2 className="text-[10px] font-black uppercase tracking-widest text-sky-200">Level</h2>
-                    <p className="text-base sm:text-xl font-black uppercase leading-none truncate max-w-[180px] sm:max-w-none">{levelName}</p>
+        <div className="absolute top-0 left-0 right-0 p-2 sm:p-6 bg-black/30 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50 animate-in slide-in-from-top duration-500">
+            <div className="flex items-center gap-2 sm:gap-8 text-white min-w-0 flex-1">
+                <div className="min-w-0 flex-1 sm:flex-none">
+                    <h2 className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-sky-200 leading-tight">Level</h2>
+                    <p className="text-xs sm:text-xl font-black uppercase leading-none truncate max-w-full">{levelName}</p>
                 </div>
-                <div className="h-10 w-px bg-white/20 hidden sm:block" />
-                <div>
-                    <h2 className="text-[10px] font-black uppercase tracking-widest text-sky-200">Points</h2>
-                    <div className="flex items-center gap-2">
-                        <Flame className="w-4 h-4 text-orange-400 fill-orange-400" />
-                        <p className="text-xl sm:text-2xl font-black leading-none">{score}</p>
+                <div className="h-8 w-px bg-white/20 hidden sm:block shrink-0" />
+                <div className="shrink-0 text-right sm:text-left">
+                    <h2 className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-sky-200 leading-tight">Points</h2>
+                    <div className="flex items-center justify-end sm:justify-start gap-1">
+                        <Flame className="w-3 h-3 sm:w-4 sm:h-4 text-orange-400 fill-orange-400" />
+                        <p className="text-sm sm:text-2xl font-black leading-none">{score}</p>
                     </div>
                 </div>
             </div>
             
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-2xl border border-white/5">
+            <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-white/10 rounded-xl sm:rounded-2xl border border-white/5 mx-2 shrink-0">
                 {Array.from({length: MAX_LIVES}).map((_, i) => (
-                    <Heart key={i} className={cn("w-4 h-4 sm:w-6 sm:h-6 transition-all duration-300 drop-shadow-lg", i < lives ? "text-red-500 fill-red-500" : "text-white/10")} />
+                    <Heart key={i} className={cn("w-3 h-3 sm:w-6 sm:h-6 transition-all duration-300 drop-shadow-lg", i < lives ? "text-red-500 fill-red-500" : "text-white/10")} />
                 ))}
             </div>
             
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full h-10 w-10 sm:h-12 sm:w-12" onClick={() => router.push('/game')}>
-                <X className="w-6 h-6 sm:w-8 sm:h-8" />
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full h-8 w-8 sm:h-12 sm:w-12 shrink-0" onClick={() => router.push('/game')}>
+                <X className="w-5 h-5 sm:w-8 sm:h-8" />
             </Button>
         </div>
 
