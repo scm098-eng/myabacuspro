@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -144,12 +145,12 @@ export function Header() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link href="/">
-            <div className="flex flex-col items-center group">
+            <div className="flex flex-col items-start group">
               <div className="flex items-end gap-2">
                 <Brain className="h-8 w-8 text-primary" />
                 <Logo />
               </div>
-              <p className="text-[0.55rem] text-muted-foreground tracking-widest mt-1 uppercase font-bold hidden sm:block">
+              <p className="text-[0.55rem] text-muted-foreground tracking-widest mt-1 uppercase font-bold">
                 LEARN • PRACTICE • SUCCEED
               </p>
             </div>
@@ -181,7 +182,7 @@ export function Header() {
                     <div className="flex flex-col h-full">
                         <div className="p-6 border-b">
                             <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
-                                <div className="flex flex-col items-center group">
+                                <div className="flex flex-col items-start group">
                                     <div className="flex items-end gap-2 pb-1">
                                         <Brain className="h-8 w-8 text-primary" />
                                         <Logo />
