@@ -67,6 +67,10 @@
     to { transform: translate(-50%, -130vh); }
   }
 
+  .animate-bubble-rise {
+    animation: bubble-rise linear forwards;
+  }
+
   @keyframes bubble-rise-bg {
     0% { transform: translateY(0) scale(0.5); opacity: 0; }
     10% { opacity: 0.4; }

@@ -1,13 +1,12 @@
-
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { GameLevel, Question } from '@/types';
 import { generateGameQuestions } from '@/lib/questions';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
-import { Heart, X, Flame, Trophy, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Heart, X, Flame, CheckCircle2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
@@ -16,7 +15,7 @@ import { calculatePoints } from '@/lib/scoring';
 import { useSound } from '@/hooks/useSound';
 
 interface Bubble {
-  id: number;
+  id: string;
   value: number;
   isCorrect: boolean;
   left: number;
@@ -173,9 +172,10 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     const currentQuestion = questions[currentQuestionIndex];
     const newBubbles: Bubble[] = [];
     let maxDuration = 0;
+    const batchId = `${Date.now()}-${currentQuestionIndex}`;
 
     newBubbles.push({
-      id: Date.now(),
+      id: `q-${batchId}`,
       value: -1, 
       isCorrect: false,
       isQuestion: true,
@@ -197,7 +197,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         }
 
       newBubbles.push({
-        id: Date.now() + index + 1,
+        id: `a-${batchId}-${index}`,
         value: option,
         isCorrect: option === currentQuestion.answer,
         left: startLeft + index * bubbleSpacingPercent + (bubbleSpacingPercent / 2),
@@ -210,10 +210,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
     questionTimeoutRef.current = setTimeout(() => {
         if (gameState === 'playing') {
-            setLives(l => {
-              const nextLives = l - 1;
-              return nextLives;
-            });
+            setLives(l => l - 1);
             playSound('wrong');
             advanceQuestion(false);
         }
@@ -283,7 +280,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             <div className="flex items-center gap-4 sm:gap-8 text-white">
                 <div>
                     <h2 className="text-[10px] font-black uppercase tracking-widest text-sky-200">Level</h2>
-                    <p className="text-base sm:text-xl font-black uppercase leading-none truncate max-w-[120px] sm:max-w-none">{levelName}</p>
+                    <p className="text-base sm:text-xl font-black uppercase leading-none truncate max-w-[180px] sm:max-w-none">{levelName}</p>
                 </div>
                 <div className="h-10 w-px bg-white/20 hidden sm:block" />
                 <div>
@@ -314,7 +311,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                         <div
                             key={bubble.id}
                             className={cn(
-                                "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-2xl transition-transform active:scale-95 z-10",
+                                "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise transform-gpu border-4 shadow-2xl transition-transform active:scale-95 z-10",
                                 bubble.isQuestion 
                                     ? 'w-64 h-24 sm:w-96 sm:h-36 bg-yellow-400 border-yellow-500 rounded-[2.5rem] ring-8 ring-yellow-400/20' 
                                     : 'w-24 h-24 sm:w-32 sm:h-32 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
