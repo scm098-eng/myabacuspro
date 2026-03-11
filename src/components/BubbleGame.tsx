@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { calculatePoints } from '@/lib/scoring';
 import { useSound } from '@/hooks/useSound';
+import confetti from 'canvas-confetti';
 
 interface Bubble {
   id: string;
@@ -98,6 +99,7 @@ const FloatingParticle = ({ index }: { index: number }) => {
   useEffect(() => {
     const randomOffsetX = (Math.random() - 0.5) * 100;
     const randomOffsetY = (Math.random() - 0.5) * 100;
+    // Animation targets the top-right corner (where the profile is in the header)
     const targetX = 400 + Math.random() * 400;
     const targetY = -800 - Math.random() * 400;
     const duration = 1.2 + Math.random() * 0.8;
@@ -180,6 +182,14 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         recordDailyPractice(user.uid);
         playSound('success');
         setGameState('levelComplete');
+        
+        // Trigger confetti for level clear
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#f97316', '#fbbf24', '#ffffff']
+        });
       } else {
         setGameState('gameOver');
       }
