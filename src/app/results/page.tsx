@@ -34,21 +34,28 @@ const FloatingParticle = ({ index }: { index: number }) => {
   const [style, setStyle] = useState<React.CSSProperties>({ opacity: 0 });
 
   useEffect(() => {
-    const randomX = (Math.random() - 0.5) * 400;
-    const randomY = -600 - Math.random() * 400;
-    const duration = 1.5 + Math.random() * 1;
-    const delay = Math.random() * 0.5;
+    // Animation targets the top-right corner (where the profile is in the header)
+    const randomOffsetX = (Math.random() - 0.5) * 100;
+    const randomOffsetY = (Math.random() - 0.5) * 100;
+    
+    // Target X: Large positive (right)
+    // Target Y: Large negative (up)
+    const targetX = 400 + Math.random() * 400;
+    const targetY = -800 - Math.random() * 400;
+    
+    const duration = 1.2 + Math.random() * 0.8;
+    const delay = Math.random() * 0.4;
 
     setStyle({
       position: 'absolute',
       left: '50%',
       top: '50%',
-      transform: `translate(-50%, -50%)`,
-      zIndex: 50,
+      transform: `translate(calc(-50% + ${randomOffsetX}px), calc(-50% + ${randomOffsetY}px))`,
+      zIndex: 100,
       pointerEvents: 'none',
-      animation: `float-particle ${duration}s ease-out ${delay}s forwards`,
-      '--target-x': `${randomX}px`,
-      '--target-y': `${randomY}px`,
+      animation: `float-to-profile ${duration}s cubic-bezier(0.4, 0, 0.2, 1) ${delay}s forwards`,
+      '--target-x': `${targetX}px`,
+      '--target-y': `${targetY}px`,
     } as any);
   }, []);
 
@@ -57,7 +64,7 @@ const FloatingParticle = ({ index }: { index: number }) => {
       {index % 2 === 0 ? (
         <Star className="w-6 h-6 text-yellow-400 fill-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
       ) : (
-        <div className="w-5 h-5 bg-orange-400 rounded-full border-2 border-orange-600 shadow-lg flex items-center justify-center text-[10px] font-bold text-orange-900">₹</div>
+        <div className="w-5 h-5 bg-orange-400 rounded-full border-2 border-orange-600 shadow-lg flex items-center justify-center text-[10px] font-bold text-orange-900 shadow-orange-500/50">₹</div>
       )}
     </div>
   );
@@ -199,10 +206,10 @@ function ResultsComponent() {
   return (
     <>
       <style jsx global>{`
-        @keyframes float-particle {
+        @keyframes float-to-profile {
           0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-          80% { opacity: 0.8; }
-          100% { transform: translate(calc(-50% + var(--target-x)), calc(-50% + var(--target-y))) scale(0.2); opacity: 0; }
+          20% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+          100% { transform: translate(calc(-50% + var(--target-x)), calc(-50% + var(--target-y))) scale(0.1); opacity: 0; }
         }
       `}</style>
 
@@ -218,7 +225,7 @@ function ResultsComponent() {
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-2">Mastery Points Earned</p>
                     <div className="relative inline-block">
                       <p className="text-7xl font-black text-primary drop-shadow-sm">{earnedPoints}</p>
-                      {showSubmissionAnim && Array.from({ length: 15 }).map((_, i) => (
+                      {showSubmissionAnim && Array.from({ length: 20 }).map((_, i) => (
                         <FloatingParticle key={i} index={i} />
                       ))}
                     </div>

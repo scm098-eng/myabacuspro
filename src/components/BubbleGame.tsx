@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -6,7 +7,7 @@ import type { GameLevel, Question } from '@/types';
 import { generateGameQuestions } from '@/lib/questions';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
-import { Heart, X, Flame, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Heart, X, Flame, CheckCircle2, AlertCircle, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
@@ -91,6 +92,41 @@ const FishWithBubbles = ({ speed, delay, top, reverse }: { speed: number, delay:
   </div>
 );
 
+const FloatingParticle = ({ index }: { index: number }) => {
+  const [style, setStyle] = useState<React.CSSProperties>({ opacity: 0 });
+
+  useEffect(() => {
+    const randomOffsetX = (Math.random() - 0.5) * 100;
+    const randomOffsetY = (Math.random() - 0.5) * 100;
+    const targetX = 400 + Math.random() * 400;
+    const targetY = -800 - Math.random() * 400;
+    const duration = 1.2 + Math.random() * 0.8;
+    const delay = Math.random() * 0.4;
+
+    setStyle({
+      position: 'absolute',
+      left: '50%',
+      top: '50%',
+      transform: `translate(calc(-50% + ${randomOffsetX}px), calc(-50% + ${randomOffsetY}px))`,
+      zIndex: 2000,
+      pointerEvents: 'none',
+      animation: `float-to-profile ${duration}s cubic-bezier(0.4, 0, 0.2, 1) ${delay}s forwards`,
+      '--target-x': `${targetX}px`,
+      '--target-y': `${targetY}px`,
+    } as any);
+  }, []);
+
+  return (
+    <div style={style}>
+      {index % 2 === 0 ? (
+        <Star className="w-6 h-6 text-yellow-400 fill-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
+      ) : (
+        <div className="w-5 h-5 bg-orange-400 rounded-full border-2 border-orange-600 shadow-lg flex items-center justify-center text-[10px] font-bold text-orange-900 shadow-orange-500/50">₹</div>
+      )}
+    </div>
+  );
+};
+
 export function BubbleGame({ levelId, level, levelName }: { levelId: number, level: GameLevel, levelName: string }) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -99,6 +135,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const [lives, setLives] = useState(MAX_LIVES);
   const [gameState, setGameState] = useState<'playing' | 'levelComplete' | 'gameOver'>('playing');
   const [finalMasteryPoints, setFinalMasteryPoints] = useState(0);
+  const [showSubmissionAnim, setShowSubmissionAnim] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   const questionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -145,6 +182,11 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         setGameState('levelComplete');
       } else {
         setGameState('gameOver');
+      }
+      
+      // Trigger submission animation toward profile corner
+      if (earnedPoints > 0) {
+        setTimeout(() => setShowSubmissionAnim(true), 600);
       }
     }
   }, [questions.length, user, levelId, saveCompletedGameLevel, recordDailyPractice, addPoints, playSound, gameState]);
@@ -258,6 +300,14 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-cyan-400 to-blue-600 flex flex-col items-center justify-center overflow-hidden touch-none">
+        <style jsx global>{`
+          @keyframes float-to-profile {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+            100% { transform: translate(calc(-50% + var(--target-x)), calc(-50% + var(--target-y))) scale(0.1); opacity: 0; }
+          }
+        `}</style>
+
         {/* Environment Background */}
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
             <BackgroundBubbles />
@@ -350,9 +400,14 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="p-10 text-center space-y-8">
-                        <div className="space-y-2">
+                        <div className="space-y-2 relative">
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Mastery Points Earned</p>
-                            <p className="text-7xl font-black text-primary drop-shadow-sm">{finalMasteryPoints}</p>
+                            <div className="relative inline-block">
+                              <p className="text-7xl font-black text-primary drop-shadow-sm">{finalMasteryPoints}</p>
+                              {showSubmissionAnim && Array.from({ length: 20 }).map((_, i) => (
+                                <FloatingParticle key={i} index={i} />
+                              ))}
+                            </div>
                         </div>
                         
                         <div className="grid gap-4">
@@ -366,6 +421,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                                 setScore(0);
                                 setLives(MAX_LIVES);
                                 setFinalMasteryPoints(0);
+                                setShowSubmissionAnim(false);
                                 setGameState('playing');
                             }} variant="outline" className="h-14 text-lg font-bold border-2 border-primary/20 rounded-2xl">
                                 TRY AGAIN
