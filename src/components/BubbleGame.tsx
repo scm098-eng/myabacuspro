@@ -110,7 +110,7 @@ const FloatingParticle = ({ index }: { index: number }) => {
       left: '50%',
       top: '50%',
       transform: `translate(calc(-50% + ${randomOffsetX}px), calc(-50% + ${randomOffsetY}px))`,
-      zIndex: 2000,
+      zIndex: 10005,
       pointerEvents: 'none',
       animation: `float-to-profile ${duration}s cubic-bezier(0.4, 0, 0.2, 1) ${delay}s forwards`,
       '--target-x': `${targetX}px`,
@@ -183,13 +183,34 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         playSound('success');
         setGameState('levelComplete');
         
-        // Trigger confetti for level clear
+        // Trigger high-z-index confetti for level clear
         confetti({
-          particleCount: 150,
-          spread: 70,
+          particleCount: 200,
+          spread: 80,
           origin: { y: 0.6 },
-          colors: ['#f97316', '#fbbf24', '#ffffff']
+          colors: ['#f97316', '#fbbf24', '#ffffff'],
+          zIndex: 10001,
         });
+        
+        // Extra blast for more energy
+        setTimeout(() => {
+          confetti({
+            particleCount: 100,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 },
+            colors: ['#f97316', '#fbbf24'],
+            zIndex: 10001,
+          });
+          confetti({
+            particleCount: 100,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 },
+            colors: ['#f97316', '#fbbf24'],
+            zIndex: 10001,
+          });
+        }, 300);
       } else {
         setGameState('gameOver');
       }
