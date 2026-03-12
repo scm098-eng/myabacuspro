@@ -93,7 +93,7 @@ const LevelNode = ({ level, isLocked, isCompleted }: { level: Level; isLocked: b
     )}>
       <div className="absolute inset-1 rounded-full bg-black/10"></div>
       <div className="absolute top-2 left-4 h-4 w-8 rounded-full bg-white/30 transform -rotate-45"></div>
-        <span className="relative text-4xl font-bold [text-shadow:2px_2px_2px_rgba(0,0,0,0.4)]">{level.id}</span>
+        <span className="relative text-4xl font-bold [text-shadow:2px_2px_4px_rgba(0,0,0,0.4)]">{level.id}</span>
         {isCompleted && !isLocked && (
             <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full p-1 border-2 border-white">
                 <Check className="w-4 h-4 text-white" />
@@ -126,7 +126,7 @@ const LevelNode = ({ level, isLocked, isCompleted }: { level: Level; isLocked: b
 
 export default function GameHomePage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/game_bg.jpg?alt=media');
-  const { user, getCompletedGameLevels } = useAuth();
+  const { user, profile, getCompletedGameLevels } = useAuth();
   const [completedLevels, setCompletedLevels] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -158,18 +158,21 @@ export default function GameHomePage() {
     );
   }
 
+  const isAdmin = profile?.role === 'admin';
+
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h1 className="text-5xl font-extrabold tracking-tight text-pink-600 font-headline drop-shadow-lg sm:text-6xl">Level Map</h1>
-        <p className="mt-4 max-w-2xl mx-auto text-lg text-pink-800/80">
+        <h1 className="text-5xl font-extrabold tracking-tight text-pink-600 font-headline drop-shadow-lg sm:text-6xl uppercase">Level Map</h1>
+        <p className="mt-4 max-w-2xl mx-auto text-lg text-pink-800/80 font-bold">
           Follow the candy road to master your abacus skills!
         </p>
       </div>
 
       <div className="relative w-full max-w-sm mx-auto">
         {gameLevels.map((level, index) => {
-            const isLocked = user ? level.id > 1 && !completedLevels.includes(level.id - 1) : level.id > 1;
+            // Unlock all levels for Admin role
+            const isLocked = isAdmin ? false : (user ? level.id > 1 && !completedLevels.includes(level.id - 1) : level.id > 1);
             const isCompleted = completedLevels.includes(level.id);
             const isLeft = index % 2 === 0;
 
