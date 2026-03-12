@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -14,7 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2, Camera, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import type { SignupData, ProfileData } from '@/types';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -98,7 +99,7 @@ async function getCroppedImg(image: HTMLImageElement, crop: Crop, fileName: stri
 export default function SignupPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/signup_bg.jpg?alt=media');
   const router = useRouter();
-  const { signup, sendOTP, verifyOTP, loginWithGoogle, getApprovedTeachers } = useAuth();
+  const { signup, sendVerificationEmail, loginWithGoogle, getApprovedTeachers } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -112,10 +113,6 @@ export default function SignupPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [step, setStep] = useState<'form' | 'otp'>('form');
-  const [otpValue, setOtpValue] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -162,27 +159,12 @@ export default function SignupPage() {
     try {
       const signupData: SignupData = { ...values, profilePhoto: croppedImageFile };
       await signup(signupData);
-      await sendOTP();
-      setStep('otp');
-      toast({ title: "Account Created", description: "Verification code sent to your email." });
+      await sendVerificationEmail();
+      toast({ title: "Account Created", description: "Verification email sent. Please check your inbox." });
+      router.push('/dashboard');
     } catch (e: any) {
       toast({ title: 'Sign-up Failed', description: e.message, variant: "destructive" });
     } finally { setIsSubmitting(false); }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (otpValue.length !== 6) {
-        toast({ title: "Invalid OTP", description: "Please enter the 6-digit code.", variant: "destructive" });
-        return;
-    }
-    setIsVerifying(true);
-    try {
-        await verifyOTP(otpValue);
-        toast({ title: "Email Verified!", description: "Welcome to My Abacus Pro." });
-        router.push('/');
-    } catch (e: any) {
-        toast({ title: "Verification Failed", description: e.message, variant: "destructive" });
-    } finally { setIsVerifying(false); }
   };
 
   const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,38 +184,6 @@ export default function SignupPage() {
       setIsPhotoDialogOpen(false);
     }
   };
-
-  if (step === 'otp') {
-    return (
-        <div className="flex flex-col items-center justify-center py-12">
-            <Card className="w-full max-w-md mx-auto shadow-xl">
-                <CardHeader className="text-center">
-                    <ShieldCheck className="w-12 h-12 text-primary mx-auto mb-2" />
-                    <CardTitle className="text-2xl font-headline">Verify Email</CardTitle>
-                    <CardDescription>Enter the 6-digit code sent to your inbox.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                        <Label>OTP Code</Label>
-                        <Input 
-                            value={otpValue} 
-                            onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                            className="text-center text-3xl font-black tracking-[0.5em] h-16"
-                            placeholder="000000"
-                        />
-                    </div>
-                    <Button onClick={handleVerifyOTP} className="w-full h-12 font-bold" disabled={isVerifying}>
-                        {isVerifying && <Loader2 className="animate-spin mr-2" />}
-                        Verify & Complete Signup
-                    </Button>
-                </CardContent>
-                <CardFooter className="justify-center">
-                    <Button variant="link" onClick={() => sendOTP()} className="text-sm">Resend Code</Button>
-                </CardFooter>
-            </Card>
-        </div>
-    );
-  }
 
   return (
     <>
@@ -297,7 +247,10 @@ export default function SignupPage() {
                 <FormField control={form.control} name="state" render={({ field }) => (
                   <FormItem><FormLabel>State</FormLabel>
                     {selectedCountry === 'India' ? (
-                      <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Pick a Teacher" /></SelectTrigger></FormControl><SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="State" /></SelectTrigger></FormControl>
+                        <SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                      </Select>
                     ) : (<FormControl><Input {...field} /></FormControl>)}
                   <FormMessage /></FormItem>
                 )} />

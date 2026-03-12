@@ -19,7 +19,6 @@ import {
 import { firebaseApp } from '@/lib/firebase';
 import { doc, setDoc, getDoc, serverTimestamp, getFirestore, collection, getDocs, query, where, arrayUnion, updateDoc, increment, orderBy, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, getStorage } from 'firebase/storage';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload } from '@/types';
 import { useRouter, usePathname } from 'next/navigation';
 import { format, startOfWeek, startOfMonth } from 'date-fns';
@@ -34,8 +33,7 @@ interface AuthContextType {
   signup: (values: SignupData) => Promise<void>;
   loginWithGoogle: () => Promise<ProfileData | null>;
   sendPasswordReset: (email: string) => Promise<void>;
-  sendOTP: () => Promise<void>;
-  verifyOTP: (code: string) => Promise<void>;
+  sendVerificationEmail: () => Promise<void>;
   updateUserProfile: (uid: string, data: UpdateProfilePayload) => Promise<void>;
   toggleUserSuspension: (uid: string, isSuspended: boolean) => Promise<void>;
   deleteUserAccount: (uid: string) => Promise<void>;
@@ -269,19 +267,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return await fetchProfile(user);
   }, [auth, firestore, fetchProfile]);
   
-  const sendOTP = useCallback(async () => {
-    const functions = getFunctions(firebaseApp);
-    const sendFn = httpsCallable(functions, 'sendVerificationOTP');
-    await sendFn();
-  }, []);
-
-  const verifyOTP = useCallback(async (otp: string) => {
-    const functions = getFunctions(firebaseApp);
-    const verifyFn = httpsCallable(functions, 'verifyEmailWithOTP');
-    await verifyFn({ otp });
-    if (user) await fetchProfile(user);
-  }, [user, fetchProfile]);
-
   const sendPasswordReset = useCallback(async (email: string) => {
     await sendPasswordResetEmail(auth, email);
   }, [auth]);
@@ -559,7 +544,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { 
     user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
-    sendPasswordReset, sendVerificationEmail, sendOTP, verifyOTP, updateUserProfile, toggleUserSuspension, deleteUserAccount, getAllUsers, getApprovedTeachers, 
+    sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, getAllUsers, getApprovedTeachers, 
     getUserTestHistory, getUserTestHistoryByDateRange, getUserProfile, approveTeacher, getCompletedGameLevels, 
     saveCompletedGameLevel, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining
   };

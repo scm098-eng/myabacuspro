@@ -15,11 +15,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import type { ProfileData, UserRole } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Label } from '@/components/ui/label';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -32,13 +31,10 @@ const forgotPasswordSchema = z.object({
 
 function LoginForm({ role }: { role: UserRole }) {
   const router = useRouter();
-  const { login, loginWithGoogle, sendOTP, verifyOTP } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
-  
-  const [needsVerification, setNeedsVerification] = useState(false);
-  const [otpValue, setOtpValue] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -47,11 +43,6 @@ function LoginForm({ role }: { role: UserRole }) {
 
   const handleRedirect = (profile: ProfileData | null) => {
     if (profile) {
-        if (!profile.emailVerified && profile.role !== 'admin') {
-            sendOTP();
-            setNeedsVerification(true);
-            return;
-        }
         if(profile.role === 'admin' || (profile.role === 'teacher' && profile.status === 'approved')) {
             router.push('/admin');
         } else {
@@ -63,6 +54,7 @@ function LoginForm({ role }: { role: UserRole }) {
   };
 
   async function onLoginSubmit(values: z.infer<typeof loginSchema>) {
+    setIsSubmitting(true);
     try {
       const loggedInProfile = await login(values.email, values.password);
        if (loggedInProfile?.role !== role) {
@@ -71,6 +63,8 @@ function LoginForm({ role }: { role: UserRole }) {
       handleRedirect(loggedInProfile);
     } catch (error: any) {
       toast({ title: 'Login Failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -83,41 +77,6 @@ function LoginForm({ role }: { role: UserRole }) {
     }
   }
 
-  const handleVerifyOTP = async () => {
-    setIsVerifying(true);
-    try {
-        await verifyOTP(otpValue);
-        toast({ title: "Email Verified!" });
-        router.push('/dashboard');
-    } catch (e: any) {
-        toast({ title: "Verification Failed", description: e.message, variant: "destructive" });
-    } finally { setIsVerifying(false); }
-  };
-
-  if (needsVerification) {
-    return (
-        <div className="space-y-6">
-            <div className="text-center">
-                <ShieldCheck className="w-10 h-10 text-primary mx-auto mb-2" />
-                <p className="text-sm font-medium">Verify your email to continue.</p>
-            </div>
-            <div className="space-y-2">
-                <Label>Enter 6-digit Code</Label>
-                <Input 
-                    value={otpValue} 
-                    onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="text-center text-3xl font-black tracking-widest h-14"
-                />
-            </div>
-            <Button onClick={handleVerifyOTP} className="w-full" disabled={isVerifying}>
-                {isVerifying && <Loader2 className="animate-spin mr-2" />}
-                Verify Email
-            </Button>
-            <Button variant="ghost" onClick={() => sendOTP()} className="w-full text-xs">Resend Code</Button>
-        </div>
-    );
-  }
-  
   return (
       <div className="space-y-4">
         <Form {...form}>
@@ -128,7 +87,10 @@ function LoginForm({ role }: { role: UserRole }) {
                 <FormField control={form.control} name="password" render={({ field }) => (
                     <FormItem><FormLabel>Password</FormLabel><FormControl><div className="relative"><Input type={showPassword ? 'text' : 'password'} {...field} /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></FormControl><FormMessage /></FormItem>
                 )} />
-                <Button type="submit" className="w-full">Login as {role.charAt(0).toUpperCase() + role.slice(1)}</Button>
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Login as {role.charAt(0).toUpperCase() + role.slice(1)}
+                </Button>
             </form>
             </Form>
             <Separator className="my-4" /><Button variant="outline" className="w-full" onClick={handleGoogleLogin}>Sign in with Google</Button>
