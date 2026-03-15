@@ -343,8 +343,8 @@ export function generateOptions(correctAnswer: number): number[] {
 
   while (options.size < 4) {
     let wrongAnswer;
-    if (correctAnswer < 10 && correctAnswer >= 0) {
-        wrongAnswer = getRandomInt(0, 9);
+    if (correctAnswer < 10 && correctAnswer >= -10) {
+        wrongAnswer = getRandomInt(-10, 20);
     } else {
         const minOption = Math.max(0, correctAnswer - range);
         const maxOption = correctAnswer + range;
@@ -358,7 +358,79 @@ export function generateOptions(correctAnswer: number): number[] {
   return shuffleArray(Array.from(options));
 }
 
-export function generateGameQuestions(level: GameLevel): Question[] {
+function generateInfiniteEliteMath(levelId: number): Question[] {
+    const questions: Question[] = [];
+    const count = 20;
+    
+    for (let i = 0; i < count; i++) {
+        let text = "";
+        let answer = 0;
+        
+        // Multi-digit scaling based on level progress
+        if (levelId < 150) {
+            // Level 51-150: Double digit addition/subtraction
+            const n1 = getRandomInt(10, 99);
+            const n2 = getRandomInt(10, 99);
+            const op = getRandomInt(0, 1) === 0 ? '+' : '-';
+            text = `${n1} ${op} ${n2}`;
+            answer = op === '+' ? n1 + n2 : n1 - n2;
+        } else if (levelId < 300) {
+            // Level 151-300: Complex Double/Triple mix
+            const type = getRandomInt(0, 3);
+            if (type === 0) {
+                const n1 = getRandomInt(100, 500);
+                const n2 = getRandomInt(10, 99);
+                text = `${n1} + ${n2}`;
+                answer = n1 + n2;
+            } else if (type === 1) {
+                const n1 = getRandomInt(10, 99);
+                const n2 = getRandomInt(2, 9);
+                text = `${n1} × ${n2}`;
+                answer = n1 * n2;
+            } else {
+                const n1 = getRandomInt(100, 999);
+                const n2 = getRandomInt(100, 999);
+                const op = getRandomInt(0, 1) === 0 ? '+' : '-';
+                text = `${n1} ${op} ${n2}`;
+                answer = op === '+' ? n1 + n2 : n1 - n2;
+            }
+        } else {
+            // Level 301+: Triple digit arithmetic master
+            const type = getRandomInt(0, 2);
+            if (type === 0) {
+                const n1 = getRandomInt(100, 999);
+                const n2 = getRandomInt(100, 999);
+                text = `${n1} + ${n2}`;
+                answer = n1 + n2;
+            } else if (type === 1) {
+                const n1 = getRandomInt(100, 999);
+                const n2 = getRandomInt(100, 999);
+                text = `${n1} - ${n2}`;
+                answer = n1 - n2;
+            } else {
+                const n1 = getRandomInt(100, 999);
+                const n2 = getRandomInt(2, 12);
+                text = `${n1} × ${n2}`;
+                answer = n1 * n2;
+            }
+        }
+        
+        questions.push({
+            text,
+            answer,
+            options: generateOptions(answer)
+        });
+    }
+    
+    return questions;
+}
+
+export function generateGameQuestions(level: GameLevel, levelId?: number): Question[] {
+    // If level is 51+, generate dynamic math instead of cycling mastery mix
+    if (levelId && levelId > 50) {
+        return generateInfiniteEliteMath(levelId);
+    }
+
     const questionKeys = gameQuestionMap[level];
     let allQuestions: Question[] = [];
 
@@ -372,7 +444,7 @@ export function generateGameQuestions(level: GameLevel): Question[] {
         });
     }
 
-    return shuffleArray(allQuestions).slice(0, 20); // Limit to 20 questions per game level
+    return shuffleArray(allQuestions).slice(0, 20); 
 }
 
 export function generateTest(testId: TestType, difficulty: Difficulty): Question[] {
@@ -383,7 +455,6 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
 
   if (preDefinedQuestions[testId]) {
       const allQuestions = preDefinedQuestions[testId];
-      // For formula tests, we want to ensure variety by shuffling.
       return shuffleArray([...allQuestions]).slice(0, settings.numQuestions);
   }
 
@@ -391,14 +462,9 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
   
   if (testId === 'beads-identify' || testId === 'beads-set') {
     const questionType = testId === 'beads-identify' ? 'identify' : 'set';
-    
-    // 5 questions from 1-9
     for(let i=0; i<5; i++) questions.push({ text: '', answer: getRandomInt(1,9), options: [], questionType });
-    // 5 questions from 10-99
     for(let i=0; i<5; i++) questions.push({ text: '', answer: getRandomInt(10,99), options: [], questionType });
-    // 10 questions from 100-999
     for(let i=0; i<10; i++) questions.push({ text: '', answer: getRandomInt(100,999), options: [], questionType });
-
     return shuffleArray(questions);
   }
 
@@ -418,19 +484,11 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
           for (let j = 0; j < numTerms - 1; j++) {
               let op: '+' | '-' = getRandomInt(0, 1) === 0 ? '+' : '-';
               const nextNum = getRandomInt(min, max);
-              
-              if (op === '-' && tempResult < nextNum) {
-                  op = '+';
-              }
-              
+              if (op === '-' && tempResult < nextNum) op = '+';
               numbers.push(op);
               numbers.push(nextNum);
-
-              if (op === '+') {
-                  tempResult += nextNum;
-              } else {
-                  tempResult -= nextNum;
-              }
+              if (op === '+') tempResult += nextNum;
+              else tempResult -= nextNum;
           }
           questionText = numbers.join(' ');
           answer = tempResult;
@@ -455,7 +513,6 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
           break;
 
         default:
-          // Fallback for any formula tests without predefined questions yet
           questionText = "1 + 1";
           answer = 2;
           break;

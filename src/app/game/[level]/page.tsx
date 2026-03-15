@@ -9,8 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
-// Helper to determine GameLevel string based on level ID
-const getLevelType = (id: number): { type: GameLevel, name: string } => {
+// Helper to determine GameLevel string based on level ID for 1000 levels
+const getLevelType = (id: number): { type: GameLevel, name: string } | null => {
+    if (id < 1) return null;
+
     if (id <= 8) {
         const types: GameLevel[] = [
             'small-sister-plus-4', 'small-sister-plus-3', 'small-sister-plus-2', 'small-sister-plus-1',
@@ -46,9 +48,9 @@ const getLevelType = (id: number): { type: GameLevel, name: string } => {
         return { type: `mastery-mix-${mixNum}` as GameLevel, name: `Level ${id}: Mastery Mix ${mixNum}` };
     }
 
-    // Elite levels (51+)
-    const eliteMix = ((id - 51) % 12) + 1;
-    return { type: `mastery-mix-${eliteMix}` as GameLevel, name: `Level ${id}: Elite Mastery Mix` };
+    // Elite levels (51-1000)
+    const eliteIndex = ((id - 51) % 12) + 1;
+    return { type: `mastery-mix-${eliteIndex}` as GameLevel, name: `Level ${id}: Elite Mastery Challenge` };
 };
 
 export default function GamePage() {
@@ -57,7 +59,9 @@ export default function GamePage() {
     const levelSlug = params.level as string;
     const levelId = parseInt(levelSlug.replace('level-', ''), 10);
 
-    if (isNaN(levelId) || levelId < 1) {
+    const levelInfo = getLevelType(levelId);
+
+    if (!levelInfo) {
         return (
             <Card>
                 <CardHeader>
@@ -72,8 +76,6 @@ export default function GamePage() {
             </Card>
         )
     }
-
-    const levelInfo = getLevelType(levelId);
 
     return <BubbleGame levelId={levelId} level={levelInfo.type} levelName={levelInfo.name} />
 }

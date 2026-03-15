@@ -11,7 +11,6 @@ import { Heart, X, Flame, CheckCircle2, AlertCircle, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { calculatePoints } from '@/lib/scoring';
 import { useSound } from '@/hooks/useSound';
 import confetti from 'canvas-confetti';
@@ -109,15 +108,14 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const { playSound } = useSound();
   const router = useRouter();
 
-  // Dynamic configuration based on level
   const config = useMemo(() => {
-    // Speed increases as level increases
-    const baseDuration = Math.max(3, 10 - (levelId / 20));
+    // Difficulty speed scaling
+    const baseDuration = Math.max(3, 9 - (levelId / 50));
     return {
       speed: baseDuration,
-      answerRange: [28, 42, 58, 72], // Narrow lanes for tight cluster
-      qDelay: 1.2, // Question head start
-      variance: 0.1 // Tight pack drifting
+      answerRange: [12, 37, 63, 88], // Widely spaced lanes to prevent overlapping
+      qDelay: 1.2, // Time head start for the question
+      variance: 0.1 // Tight synchronized vertical range
     };
   }, [levelId]);
 
@@ -130,9 +128,9 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   }, []);
 
   useEffect(() => {
-    const newQuestions = generateGameQuestions(level);
+    const newQuestions = generateGameQuestions(level, levelId);
     setQuestions(newQuestions);
-  }, [level]);
+  }, [level, levelId]);
   
   const finishGame = useCallback(async (finalScore: number, finalLives: number) => {
     if (gameState !== 'playing') return;
@@ -207,13 +205,13 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
       isCorrect: false,
       isQuestion: true,
       left: 50,
-      duration: config.speed, // Fastest
+      duration: config.speed, 
       delay: 0,
     });
     
     // 2. ANSWER BUBBLES (TIGHT PACK)
     currentQuestion.options.forEach((option, index) => {
-      // Very slight duration difference for subtle drift
+      // Near identical duration for synchronized rising
       const duration = (config.speed + 1.5) + (Math.random() * config.variance);
 
       newBubbles.push({
@@ -222,13 +220,12 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         isCorrect: option === currentQuestion.answer,
         left: config.answerRange[index],
         duration: duration,
-        delay: config.qDelay, // Answers enter after the question leads
+        delay: config.qDelay,
       });
     });
 
     setBubbles(newBubbles);
 
-    // Timeout based on slowest bubble
     const maxTime = (config.speed + 1.5 + config.variance + config.qDelay) * 1000;
     questionTimeoutRef.current = setTimeout(() => {
         if (gameState === 'playing') {
@@ -336,8 +333,8 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                             className={cn(
                                 "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise transform-gpu border-4 shadow-2xl transition-transform active:scale-95 z-10",
                                 bubble.isQuestion 
-                                    ? 'w-64 h-24 sm:w-96 sm:h-36 bg-yellow-400 border-yellow-500 rounded-[2.5rem] ring-8 ring-yellow-400/20' 
-                                    : 'w-24 h-24 sm:w-32 sm:h-32 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
+                                    ? 'w-64 h-20 sm:w-80 sm:h-28 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20' 
+                                    : 'w-18 h-18 sm:w-28 sm:h-28 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
                             )}
                             style={{
                                 left: `${bubble.left}%`,
@@ -347,7 +344,10 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                             }}
                             onClick={() => handleBubbleClick(bubble)}
                         >
-                            <span className="text-white text-3xl sm:text-5xl font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none text-center px-4">
+                            <span className={cn(
+                                "text-white font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none text-center px-2",
+                                bubble.isQuestion ? "text-xl sm:text-3xl" : "text-2xl sm:text-4xl"
+                            )}>
                                 {bubble.isQuestion ? (questions[currentQuestionIndex]?.text) : bubble.value}
                             </span>
                         </div>
