@@ -337,21 +337,27 @@ function shuffleArray<T>(array: T[]): T[] {
   return array;
 }
 
+/**
+ * Generates four options for a math question.
+ * Ensures all generated options are strictly positive (>= 0).
+ */
 export function generateOptions(correctAnswer: number): number[] {
   const options = new Set<number>([correctAnswer]);
-  const range = Math.max(10, Math.abs(Math.floor(correctAnswer * 0.2)));
+  const range = Math.max(5, Math.abs(Math.floor(correctAnswer * 0.3)));
 
   while (options.size < 4) {
     let wrongAnswer;
-    if (correctAnswer < 10 && correctAnswer >= -10) {
-        wrongAnswer = getRandomInt(-10, 20);
+    // For small numbers, keep wrong options in a tight positive range
+    if (correctAnswer < 10) {
+        wrongAnswer = getRandomInt(0, 15);
     } else {
         const minOption = Math.max(0, correctAnswer - range);
         const maxOption = correctAnswer + range;
         wrongAnswer = getRandomInt(minOption, maxOption);
     }
     
-    if (wrongAnswer !== correctAnswer) {
+    // Ensure uniqueness and that it's never negative
+    if (wrongAnswer !== correctAnswer && wrongAnswer >= 0) {
       options.add(wrongAnswer);
     }
   }
@@ -369,11 +375,20 @@ function generateInfiniteEliteMath(levelId: number): Question[] {
         // Multi-digit scaling based on level progress
         if (levelId < 150) {
             // Level 51-150: Double digit addition/subtraction
-            const n1 = getRandomInt(10, 99);
-            const n2 = getRandomInt(10, 99);
+            let n1 = getRandomInt(10, 99);
+            let n2 = getRandomInt(10, 99);
             const op = getRandomInt(0, 1) === 0 ? '+' : '-';
-            text = `${n1} ${op} ${n2}`;
-            answer = op === '+' ? n1 + n2 : n1 - n2;
+            
+            if (op === '-') {
+                // Ensure result is always positive by putting larger number first
+                const max = Math.max(n1, n2);
+                const min = Math.min(n1, n2);
+                text = `${max} - ${min}`;
+                answer = max - min;
+            } else {
+                text = `${n1} + ${n2}`;
+                answer = n1 + n2;
+            }
         } else if (levelId < 300) {
             // Level 151-300: Complex Double/Triple mix
             const type = getRandomInt(0, 3);
@@ -388,11 +403,19 @@ function generateInfiniteEliteMath(levelId: number): Question[] {
                 text = `${n1} × ${n2}`;
                 answer = n1 * n2;
             } else {
-                const n1 = getRandomInt(100, 999);
-                const n2 = getRandomInt(100, 999);
+                let n1 = getRandomInt(100, 999);
+                let n2 = getRandomInt(100, 999);
                 const op = getRandomInt(0, 1) === 0 ? '+' : '-';
-                text = `${n1} ${op} ${n2}`;
-                answer = op === '+' ? n1 + n2 : n1 - n2;
+                
+                if (op === '-') {
+                    const max = Math.max(n1, n2);
+                    const min = Math.min(n1, n2);
+                    text = `${max} - ${min}`;
+                    answer = max - min;
+                } else {
+                    text = `${n1} + ${n2}`;
+                    answer = n1 + n2;
+                }
             }
         } else {
             // Level 301+: Triple digit arithmetic master
@@ -403,8 +426,8 @@ function generateInfiniteEliteMath(levelId: number): Question[] {
                 text = `${n1} + ${n2}`;
                 answer = n1 + n2;
             } else if (type === 1) {
-                const n1 = getRandomInt(100, 999);
-                const n2 = getRandomInt(100, 999);
+                const n1 = getRandomInt(500, 999);
+                const n2 = getRandomInt(100, 499);
                 text = `${n1} - ${n2}`;
                 answer = n1 - n2;
             } else {
@@ -426,7 +449,6 @@ function generateInfiniteEliteMath(levelId: number): Question[] {
 }
 
 export function generateGameQuestions(level: GameLevel, levelId?: number): Question[] {
-    // If level is 51+, generate dynamic math instead of cycling mastery mix
     if (levelId && levelId > 50) {
         return generateInfiniteEliteMath(levelId);
     }
@@ -444,7 +466,10 @@ export function generateGameQuestions(level: GameLevel, levelId?: number): Quest
         });
     }
 
-    return shuffleArray(allQuestions).slice(0, 20); 
+    // ENSURE POSITIVE ANSWERS ONLY: Filter out any predefined question that resulted in a negative answer
+    const positiveOnlyQuestions = allQuestions.filter(q => q.answer >= 0);
+
+    return shuffleArray(positiveOnlyQuestions).slice(0, 20); 
 }
 
 export function generateTest(testId: TestType, difficulty: Difficulty): Question[] {
@@ -454,7 +479,8 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
   }
 
   if (preDefinedQuestions[testId]) {
-      const allQuestions = preDefinedQuestions[testId];
+      // ENSURE POSITIVE ANSWERS ONLY
+      const allQuestions = preDefinedQuestions[testId].filter(q => q.answer >= 0);
       return shuffleArray([...allQuestions]).slice(0, settings.numQuestions);
   }
 
@@ -484,6 +510,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
           for (let j = 0; j < numTerms - 1; j++) {
               let op: '+' | '-' = getRandomInt(0, 1) === 0 ? '+' : '-';
               const nextNum = getRandomInt(min, max);
+              // Safety check to ensure we never go negative during calculation
               if (op === '-' && tempResult < nextNum) op = '+';
               numbers.push(op);
               numbers.push(nextNum);
