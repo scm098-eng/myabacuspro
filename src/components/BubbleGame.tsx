@@ -113,7 +113,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     const baseDuration = Math.max(3, 9 - (levelId / 50));
     return {
       speed: baseDuration,
-      answerRange: [12, 37, 63, 88], // Widely spaced lanes to prevent overlapping
+      answerRange: [15, 38, 62, 85], // Wider lanes for larger bubbles
       qDelay: 1.2, // Time head start for the question
       variance: 0.1 // Tight synchronized vertical range
     };
@@ -334,7 +334,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                                 "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise transform-gpu border-4 shadow-2xl transition-transform active:scale-95 z-10",
                                 bubble.isQuestion 
                                     ? 'w-64 h-20 sm:w-80 sm:h-28 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20' 
-                                    : 'w-18 h-18 sm:w-28 sm:h-28 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
+                                    : 'w-24 h-24 sm:w-36 sm:h-36 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
                             )}
                             style={{
                                 left: `${bubble.left}%`,
@@ -346,7 +346,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                         >
                             <span className={cn(
                                 "text-white font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none text-center px-2",
-                                bubble.isQuestion ? "text-xl sm:text-3xl" : "text-2xl sm:text-4xl"
+                                bubble.isQuestion ? "text-xl sm:text-3xl" : "text-xl sm:text-2xl"
                             )}>
                                 {bubble.isQuestion ? (questions[currentQuestionIndex]?.text) : bubble.value}
                             </span>
