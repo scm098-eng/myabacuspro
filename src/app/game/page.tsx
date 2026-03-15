@@ -7,7 +7,7 @@ import { usePageBackground } from '@/hooks/usePageBackground';
 import { cn } from '@/lib/utils';
 import { Star, Check } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Level {
@@ -17,58 +17,51 @@ interface Level {
   isHard?: boolean;
 }
 
-const gameLevels: Level[] = [
-    { id: 1, title: 'Small Sister: +4 Formula', category: 'Small Sister' },
-    { id: 2, title: 'Small Sister: +3 Formula', category: 'Small Sister' },
-    { id: 3, title: 'Small Sister: +2 Formula', category: 'Small Sister' },
-    { id: 4, title: 'Small Sister: +1 Formula', category: 'Small Sister' },
-    { id: 5, title: 'Small Sister: -4 Formula', category: 'Small Sister' },
-    { id: 6, title: 'Small Sister: -3 Formula', category: 'Small Sister' },
-    { id: 7, title: 'Small Sister: -2 Formula', category: 'Small Sister' },
-    { id: 8, title: 'Small Sister: -1 Formula', category: 'Small Sister' },
-    { id: 9, title: 'Small Sister Challenge', category: 'Small Sister', isHard: true },
-    { id: 10, title: 'Big Brother: +9 Formula', category: 'Big Brother' },
-    { id: 11, title: 'Big Brother: +8 Formula', category: 'Big Brother' },
-    { id: 12, title: 'Big Brother: +7 Formula', category: 'Big Brother' },
-    { id: 13, title: 'Big Brother: +6 Formula', category: 'Big Brother' },
-    { id: 14, title: 'Big Brother: +5 Formula', category: 'Big Brother' },
-    { id: 15, title: 'Big Brother: +4 Formula', category: 'Big Brother' },
-    { id: 16, title: 'Big Brother: +3 Formula', category: 'Big Brother' },
-    { id: 17, title: 'Big Brother: +2 Formula', category: 'Big Brother' },
-    { id: 18, title: 'Big Brother: +1 Formula', category: 'Big Brother' },
-    { id: 19, title: 'Big Brother: -9 Formula', category: 'Big Brother' },
-    { id: 20, title: 'Big Brother: -8 Formula', category: 'Big Brother' },
-    { id: 21, title: 'Big Brother: -7 Formula', category: 'Big Brother' },
-    { id: 22, title: 'Big Brother: -6 Formula', category: 'Big Brother' },
-    { id: 23, title: 'Big Brother: -5 Formula', category: 'Big Brother' },
-    { id: 24, title: 'Big Brother: -4 Formula', category: 'Big Brother' },
-    { id: 25, title: 'Big Brother: -3 Formula', category: 'Big Brother' },
-    { id: 26, title: 'Big Brother: -2 Formula', category: 'Big Brother' },
-    { id: 27, title: 'Big Brother: -1 Formula', category: 'Big Brother' },
-    { id: 28, title: 'Big Brother Challenge', category: 'Big Brother', isHard: true },
-    { id: 29, title: 'Combination: +9 Formula', category: 'Combination' },
-    { id: 30, title: 'Combination: +8 Formula', category: 'Combination' },
-    { id: 31, title: 'Combination: +7 Formula', category: 'Combination' },
-    { id: 32, title: 'Combination: +6 Formula', category: 'Combination' },
-    { id: 33, title: 'Combination: -9 Formula', category: 'Combination' },
-    { id: 34, title: 'Combination: -8 Formula', category: 'Combination' },
-    { id: 35, title: 'Combination: -7 Formula', category: 'Combination' },
-    { id: 36, title: 'Combination: -6 Formula', category: 'Combination' },
-    { id: 37, title: 'Combination Challenge', category: 'Combination', isHard: true },
-    { id: 38, title: 'Final Challenge', category: 'Final Challenge', isHard: true },
-    { id: 39, title: 'Mastery Mix 1', category: 'Mastery Mix' },
-    { id: 40, title: 'Mastery Mix 2', category: 'Mastery Mix' },
-    { id: 41, title: 'Mastery Mix 3', category: 'Mastery Mix' },
-    { id: 42, title: 'Mastery Mix 4', category: 'Mastery Mix' },
-    { id: 43, title: 'Mastery Mix 5', category: 'Mastery Mix' },
-    { id: 44, title: 'Mastery Mix 6', category: 'Mastery Mix' },
-    { id: 45, title: 'Mastery Mix 7', category: 'Mastery Mix' },
-    { id: 46, title: 'Mastery Mix 8', category: 'Mastery Mix' },
-    { id: 47, title: 'Mastery Mix 9', category: 'Mastery Mix' },
-    { id: 48, title: 'Mastery Mix 10', category: 'Mastery Mix' },
-    { id: 49, title: 'Mastery Mix 11', category: 'Mastery Mix' },
-    { id: 50, title: 'Grandmaster Challenge', category: 'Mastery Mix', isHard: true },
-];
+// Generate 1000 levels dynamically
+const generateLevels = (): Level[] => {
+  const levels: Level[] = [];
+  
+  // Specific curriculums for the first 50 levels as defined previously
+  const titles = [
+    'Small Sister: +4 Formula', 'Small Sister: +3 Formula', 'Small Sister: +2 Formula', 'Small Sister: +1 Formula',
+    'Small Sister: -4 Formula', 'Small Sister: -3 Formula', 'Small Sister: -2 Formula', 'Small Sister: -1 Formula',
+    'Small Sister Challenge',
+    'Big Brother: +9 Formula', 'Big Brother: +8 Formula', 'Big Brother: +7 Formula', 'Big Brother: +6 Formula', 'Big Brother: +5 Formula', 'Big Brother: +4 Formula', 'Big Brother: +3 Formula', 'Big Brother: +2 Formula', 'Big Brother: +1 Formula',
+    'Big Brother: -9 Formula', 'Big Brother: -8 Formula', 'Big Brother: -7 Formula', 'Big Brother: -6 Formula', 'Big Brother: -5 Formula', 'Big Brother: -4 Formula', 'Big Brother: -3 Formula', 'Big Brother: -2 Formula', 'Big Brother: -1 Formula',
+    'Big Brother Challenge',
+    'Combination: +9 Formula', 'Combination: +8 Formula', 'Combination: +7 Formula', 'Combination: +6 Formula',
+    'Combination: -9 Formula', 'Combination: -8 Formula', 'Combination: -7 Formula', 'Combination: -6 Formula',
+    'Combination Challenge', 'Final Challenge',
+    'Mastery Mix 1', 'Mastery Mix 2', 'Mastery Mix 3', 'Mastery Mix 4', 'Mastery Mix 5', 'Mastery Mix 6', 'Mastery Mix 7', 'Mastery Mix 8', 'Mastery Mix 9', 'Mastery Mix 10', 'Mastery Mix 11', 'Mastery Mix 12'
+  ];
+
+  for (let i = 1; i <= 1000; i++) {
+    if (i <= 50) {
+      let category = 'Mastery Mix';
+      if (i <= 9) category = 'Small Sister';
+      else if (i <= 28) category = 'Big Brother';
+      else if (i <= 37) category = 'Combination';
+      else if (i === 38) category = 'Final Challenge';
+
+      levels.push({
+        id: i,
+        title: titles[i - 1],
+        category,
+        isHard: i % 9 === 0 || i === 38 || i === 50
+      });
+    } else {
+      levels.push({
+        id: i,
+        title: `Elite Mastery: Mix ${((i - 51) % 12) + 1}`,
+        category: 'Elite Mastery',
+        isHard: i % 10 === 0
+      });
+    }
+  }
+  return levels;
+};
+
+const gameLevels = generateLevels();
 
 const PathLine = ({ reverse = false, className }: { reverse?: boolean; className?: string }) => (
     <svg className={cn("h-full w-full", className)} viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -81,7 +74,6 @@ const PathLine = ({ reverse = false, className }: { reverse?: boolean; className
         />
     </svg>
 );
-
 
 const LevelNode = ({ level, isLocked, isCompleted }: { level: Level; isLocked: boolean; isCompleted: boolean; }) => {
   const linkContent = (
@@ -122,7 +114,6 @@ const LevelNode = ({ level, isLocked, isCompleted }: { level: Level; isLocked: b
     )
   );
 };
-
 
 export default function GameHomePage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/game_bg.jpg?alt=media');
@@ -169,12 +160,15 @@ export default function GameHomePage() {
         </p>
       </div>
 
-      <div className="relative w-full max-w-sm mx-auto">
+      <div className="relative w-full max-w-sm mx-auto pb-20">
         {gameLevels.map((level, index) => {
-            // Unlock all levels for Admin role
             const isLocked = isAdmin ? false : (user ? level.id > 1 && !completedLevels.includes(level.id - 1) : level.id > 1);
             const isCompleted = completedLevels.includes(level.id);
             const isLeft = index % 2 === 0;
+
+            // Only show levels the user has reached or is about to reach to keep the UI clean
+            const maxReachable = Math.max(...completedLevels, 0) + 5;
+            if (level.id > maxReachable && !isAdmin) return null;
 
             return (
                 <div key={level.id} className="relative h-32 flex items-center">
@@ -192,6 +186,11 @@ export default function GameHomePage() {
                 </div>
             )
         })}
+        {!isAdmin && completedLevels.length > 0 && (
+          <div className="text-center mt-12">
+            <p className="text-muted-foreground font-medium italic">Complete current levels to reveal more of the road...</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import type { GameLevel, Question } from '@/types';
 import { generateGameQuestions } from '@/lib/questions';
@@ -39,17 +39,6 @@ const Seaweed = ({ className }: { className: string }) => (
     </div>
 );
 
-const MouthBubbles = ({ className }: { className?: string }) => (
-  <div className={cn("absolute pointer-events-none", className)}>
-    <div className="absolute bottom-0 left-0 w-1 h-1 bg-white/60 rounded-full animate-[mouth-bubble_2s_ease-in_infinite]" />
-    <div className="absolute bottom-[-5px] left-2 w-1.5 h-1.5 bg-white/40 rounded-full animate-[mouth-bubble_2.5s_ease-in_infinite_0.3s]" />
-    <div className="absolute bottom-[-10px] left-[-3px] w-1 h-1 bg-white/30 rounded-full animate-[mouth-bubble_3s_ease-in_infinite_0.6s]" />
-    <div className="absolute bottom-[-15px] left-4 w-1 h-1 bg-white/50 rounded-full animate-[mouth-bubble_2.2s_ease-in_infinite_0.9s]" />
-    <div className="absolute bottom-[-20px] left-1 w-1.5 h-1.5 bg-white/40 rounded-full animate-[mouth-bubble_2.8s_ease-in_infinite_1.2s]" />
-    <div className="absolute bottom-[-25px] left-[-5px] w-1 h-1 bg-white/20 rounded-full animate-[mouth-bubble_3.5s_ease-in_infinite_1.5s]" />
-  </div>
-);
-
 const BackgroundBubbles = () => (
   <div className="absolute inset-0 pointer-events-none overflow-hidden">
     {[...Array(20)].map((_, i) => (
@@ -69,37 +58,12 @@ const BackgroundBubbles = () => (
   </div>
 );
 
-const FishWithBubbles = ({ speed, delay, top, reverse }: { speed: number, delay: number, top: string, reverse?: boolean }) => (
-  <div 
-    className="absolute w-24 h-24 pointer-events-none select-none z-0 opacity-70"
-    style={{ 
-        top,
-        [reverse ? 'right' : 'left']: '-300px',
-        animation: `${reverse ? 'swimLeft' : 'swimRight'} ${speed}s linear infinite ${delay}s`
-    }}
-  >
-    <div className="relative w-full h-full animate-[wiggle_2s_ease-in-out_infinite]">
-      <div className={cn("w-full h-full relative", reverse && "transform -scale-x-100")}>
-        <Image 
-          src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media&token=870ea1d9-54e8-4b02-81ee-324662339f71" 
-          alt="fish" 
-          width={96} 
-          height={96} 
-          className="object-contain" 
-        />
-        <MouthBubbles className="top-[45%] right-0" />
-      </div>
-    </div>
-  </div>
-);
-
 const FloatingParticle = ({ index }: { index: number }) => {
   const [style, setStyle] = useState<React.CSSProperties>({ opacity: 0 });
 
   useEffect(() => {
     const randomOffsetX = (Math.random() - 0.5) * 100;
     const randomOffsetY = (Math.random() - 0.5) * 100;
-    // Animation targets the top-right corner (where the profile is in the header)
     const targetX = 400 + Math.random() * 400;
     const targetY = -800 - Math.random() * 400;
     const duration = 1.2 + Math.random() * 0.8;
@@ -145,6 +109,18 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const { playSound } = useSound();
   const router = useRouter();
 
+  // Dynamic configuration based on level
+  const config = useMemo(() => {
+    // Speed increases as level increases
+    const baseDuration = Math.max(3, 10 - (levelId / 20));
+    return {
+      speed: baseDuration,
+      answerRange: [28, 42, 58, 72], // Narrow lanes for tight cluster
+      qDelay: 1.2, // Question head start
+      variance: 0.1 // Tight pack drifting
+    };
+  }, [levelId]);
+
   useEffect(() => {
     setMounted(true);
     document.body.style.overflow = 'hidden';
@@ -183,7 +159,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         playSound('success');
         setGameState('levelComplete');
         
-        // Trigger high-z-index confetti for level clear
         confetti({
           particleCount: 200,
           spread: 80,
@@ -191,31 +166,10 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
           colors: ['#f97316', '#fbbf24', '#ffffff'],
           zIndex: 10001,
         });
-        
-        // Extra blast for more energy
-        setTimeout(() => {
-          confetti({
-            particleCount: 100,
-            angle: 60,
-            spread: 55,
-            origin: { x: 0 },
-            colors: ['#f97316', '#fbbf24'],
-            zIndex: 10001,
-          });
-          confetti({
-            particleCount: 100,
-            angle: 120,
-            spread: 55,
-            origin: { x: 1 },
-            colors: ['#f97316', '#fbbf24'],
-            zIndex: 10001,
-          });
-        }, 300);
       } else {
         setGameState('gameOver');
       }
       
-      // Trigger submission animation toward profile corner
       if (earnedPoints > 0) {
         setTimeout(() => setShowSubmissionAnim(true), 600);
       }
@@ -244,52 +198,47 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
     const currentQuestion = questions[currentQuestionIndex];
     const newBubbles: Bubble[] = [];
-    let maxDuration = 0;
-    const batchId = `${Date.now()}-${currentQuestionIndex}-${Math.random().toString(36).substr(2, 9)}`;
+    const batchId = `${Date.now()}-${currentQuestionIndex}`;
 
+    // 1. LEADING QUESTION PILL (FASTEST)
     newBubbles.push({
       id: `q-${batchId}`,
       value: -1, 
       isCorrect: false,
       isQuestion: true,
       left: 50,
-      duration: 7,
+      duration: config.speed, // Fastest
       delay: 0,
     });
     
-    const numAnswerBubbles = currentQuestion.options.length;
-    const bubbleSpacingPercent = 20;
-    const totalBubbleWidth = numAnswerBubbles * bubbleSpacingPercent;
-    const startLeft = 50 - totalBubbleWidth / 2;
-
+    // 2. ANSWER BUBBLES (TIGHT PACK)
     currentQuestion.options.forEach((option, index) => {
-        const duration = Math.random() * 3 + 8; 
-        const delay = Math.random() * 1.5;
-        if (duration + delay > maxDuration) {
-            maxDuration = duration + delay;
-        }
+      // Very slight duration difference for subtle drift
+      const duration = (config.speed + 1.5) + (Math.random() * config.variance);
 
       newBubbles.push({
         id: `a-${batchId}-${index}`,
         value: option,
         isCorrect: option === currentQuestion.answer,
-        left: startLeft + index * bubbleSpacingPercent + (bubbleSpacingPercent / 2),
+        left: config.answerRange[index],
         duration: duration,
-        delay: delay,
+        delay: config.qDelay, // Answers enter after the question leads
       });
     });
 
     setBubbles(newBubbles);
 
+    // Timeout based on slowest bubble
+    const maxTime = (config.speed + 1.5 + config.variance + config.qDelay) * 1000;
     questionTimeoutRef.current = setTimeout(() => {
         if (gameState === 'playing') {
             setLives(l => l - 1);
             playSound('wrong');
             advanceQuestion(false);
         }
-    }, (maxDuration + 1) * 1000);
+    }, maxTime);
 
-  }, [questions, currentQuestionIndex, lives, advanceQuestion, playSound, gameState]);
+  }, [questions, currentQuestionIndex, lives, advanceQuestion, playSound, gameState, config]);
 
   useEffect(() => {
     if (gameState === 'playing' && questions.length > 0) {
@@ -342,18 +291,11 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         {/* Environment Background */}
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
             <BackgroundBubbles />
-            <FishWithBubbles speed={25} delay={1} top="15%" />
-            <FishWithBubbles speed={30} delay={5} top="35%" reverse />
-            <FishWithBubbles speed={20} delay={8} top="55%" />
-            
             <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-yellow-300 to-yellow-200/80 opacity-80" style={{clipPath: 'polygon(0 60%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
-            <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-yellow-200 to-yellow-100/60 opacity-90" style={{clipPath: 'polygon(0 70%, 100% 40%, 100% 100%, 0% 100%)'}}></div>
-            
             <Seaweed className="left-[5%] bottom-[-5px] scale-90" />
             <Seaweed className="left-[15%] bottom-[-10px] scale-110" />
             <Seaweed className="right-[10%] bottom-[-5px] scale-100" />
             <Seaweed className="right-[25%] bottom-[-15px] scale-75" />
-            <Seaweed className="left-[50%] -translate-x-1/2 bottom-[-20px] scale-60" />
         </div>
 
         {/* HUD */}
@@ -442,7 +384,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                         </div>
                         
                         <div className="grid gap-4">
-                            {gameState === 'levelComplete' && levelId < 50 ? (
+                            {gameState === 'levelComplete' && levelId < 1000 ? (
                                 <Button onClick={() => router.push(`/game/level-${levelId + 1}`)} className="h-16 text-xl font-black rounded-2xl shadow-xl hover:scale-[1.02] transition-transform">
                                     NEXT LEVEL
                                 </Button>
