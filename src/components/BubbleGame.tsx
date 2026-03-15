@@ -112,9 +112,9 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     const baseDuration = Math.max(3, 9 - (levelId / 50));
     return {
       speed: baseDuration,
-      answerRange: [12, 37, 63, 88], // Maximized horizontal spread to prevent overlapping
+      answerRange: [12, 37, 63, 88], // Balanced lanes to accommodate drifting
       qDelay: 1.2, // Consistent head start for question
-      variance: 0.1 // Tight synchronized vertical range for pack movement
+      variance: 1.5 // Increased variance for distinct drift speeds
     };
   }, [levelId]);
 
@@ -208,10 +208,10 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
       delay: 0,
     });
     
-    // 2. ANSWER BUBBLES (TIGHT PACK)
+    // 2. ANSWER BUBBLES (STAGGERED PACK FOR NATURAL DRIFT)
     currentQuestion.options.forEach((option, index) => {
-      // Unified duration for synchronized rising with tiny variance
-      const duration = (config.speed + 1.5) + (Math.random() * config.variance);
+      // Different durations for independent vertical drifting
+      const duration = (config.speed + 3) + (Math.random() * config.variance);
 
       newBubbles.push({
         id: `a-${batchId}-${index}`,
@@ -219,13 +219,14 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         isCorrect: option === currentQuestion.answer,
         left: config.answerRange[index],
         duration: duration,
-        delay: config.qDelay,
+        delay: config.qDelay + (Math.random() * 0.8), // Staggered entry delay
       });
     });
 
     setBubbles(newBubbles);
 
-    const maxTime = (config.speed + 1.5 + config.variance + config.qDelay) * 1000;
+    // Calculate maximum time any bubble might take to finish
+    const maxTime = (config.speed + 3 + config.variance + config.qDelay + 0.8) * 1000;
     questionTimeoutRef.current = setTimeout(() => {
         if (gameState === 'playing') {
             setLives(l => l - 1);
@@ -345,7 +346,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                         >
                             <span className={cn(
                                 "text-white font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none text-center px-2",
-                                bubble.isQuestion ? "text-xl sm:text-3xl" : "text-sm sm:text-2xl"
+                                bubble.isQuestion ? "text-xl sm:text-3xl" : "text-xs sm:text-lg"
                             )}>
                                 {bubble.isQuestion ? (questions[currentQuestionIndex]?.text) : bubble.value}
                             </span>
