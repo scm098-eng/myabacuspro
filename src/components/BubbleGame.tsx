@@ -38,6 +38,28 @@ const getAnswerFontSize = (val: number) => {
     return "text-sm sm:text-2xl";
 };
 
+const Fish = ({ className, color, duration }: { className: string, color: string, duration: string }) => (
+  <div 
+    className={cn("absolute pointer-events-none select-none z-0 opacity-60", className)}
+    style={{ animationDuration: duration }}
+  >
+    <svg 
+      width="60" 
+      height="40" 
+      viewBox="0 0 60 40" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg" 
+      className="animate-[wiggle_1s_ease-in-out_infinite] drop-shadow-md"
+      style={{ color }}
+    >
+      <path d="M50 20C50 30 40 38 25 38C10 38 0 30 0 20C0 10 10 2 25 2C40 2 50 10 50 20Z" fill="currentColor" />
+      <path d="M45 20L60 10V30L45 20Z" fill="currentColor" />
+      <circle cx="15" cy="15" r="3" fill="white" />
+      <circle cx="15" cy="15" r="1" fill="black" />
+    </svg>
+  </div>
+);
+
 const Seaweed = ({ className }: { className: string }) => (
     <div className={cn("absolute bottom-0 w-12 h-40 origin-bottom select-none pointer-events-none opacity-30", className)}>
         <div className="relative w-full h-full transform-gpu animate-[sway_8s_ease-in-out_infinite]">
@@ -297,11 +319,17 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         {/* Underwater Decor */}
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
             <BackgroundBubbles />
-            <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-yellow-300 to-yellow-200/80 opacity-80" style={{clipPath: 'polygon(0 60%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
             <Seaweed className="left-[5%] bottom-[-5px] scale-90" />
             <Seaweed className="left-[15%] bottom-[-10px] scale-110" />
             <Seaweed className="right-[10%] bottom-[-5px] scale-100" />
             <Seaweed className="right-[25%] bottom-[-15px] scale-75" />
+            
+            {/* Restored Fish School */}
+            <Fish className="top-[20%] animate-[swimRight_12s_linear_infinite]" color="#fb7185" duration="12s" />
+            <Fish className="top-[45%] animate-[swimLeft_15s_linear_infinite] scale-x-[-1]" color="#f472b6" duration="15s" />
+            <Fish className="top-[70%] animate-[swimRight_18s_linear_infinite]" color="#38bdf8" duration="18s" />
+
+            <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-yellow-300 to-yellow-200/80 opacity-80" style={{clipPath: 'polygon(0 60%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
         </div>
 
         {/* HUD */}
@@ -341,7 +369,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                             className={cn(
                                 "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise transform-gpu border-4 shadow-2xl transition-all active:scale-95 z-10",
                                 bubble.isQuestion 
-                                    ? 'min-w-[200px] px-8 h-16 sm:min-w-[300px] sm:h-24 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20' 
+                                    ? 'w-max max-w-[95vw] px-6 sm:px-10 h-16 sm:h-24 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20 whitespace-nowrap overflow-hidden' 
                                     : 'w-20 h-20 sm:w-32 sm:h-32 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
                             )}
                             style={{
@@ -353,9 +381,9 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                             onClick={() => handleBubbleClick(bubble)}
                         >
                             <span className={cn(
-                                "text-white font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none text-center px-2",
+                                "text-white font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none text-center block whitespace-nowrap",
                                 bubble.isQuestion 
-                                    ? (questions[currentQuestionIndex]?.text.length > 15 ? "text-lg sm:text-2xl" : "text-xl sm:text-4xl")
+                                    ? (questions[currentQuestionIndex]?.text.length > 25 ? "text-base sm:text-xl" : questions[currentQuestionIndex]?.text.length > 15 ? "text-lg sm:text-2xl" : "text-xl sm:text-4xl")
                                     : getAnswerFontSize(bubble.value)
                             )}>
                                 {bubble.isQuestion ? (questions[currentQuestionIndex]?.text) : bubble.value}
