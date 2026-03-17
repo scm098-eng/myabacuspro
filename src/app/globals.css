@@ -84,13 +84,13 @@
   }
 
   @keyframes swimRight {
-    from { left: -250px; }
-    to { left: calc(100% + 250px); }
+    0% { transform: translateX(-300px); }
+    100% { transform: translateX(calc(100vw + 300px)); }
   }
 
   @keyframes swimLeft {
-    from { right: -250px; }
-    to { right: calc(100% + 250px); }
+    0% { transform: translateX(calc(100vw + 300px)); }
+    100% { transform: translateX(-300px); }
   }
 
   @keyframes wiggle {

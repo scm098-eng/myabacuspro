@@ -1,14 +1,13 @@
-
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import type { GameLevel, Question } from '@/types';
 import { generateGameQuestions } from '@/lib/questions';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
-import { Heart, X, Flame, CheckCircle2, AlertCircle, Star } from 'lucide-react';
+import { Heart, X, Star, CheckCircle2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
@@ -43,22 +42,25 @@ const getQuestionFontSize = (text: string) => {
   return "text-xl sm:text-4xl";
 };
 
-const Fish = ({ className, duration }: { className: string, duration: string }) => (
+const Fish = memo(({ className, duration, flip = false }: { className: string, duration: string, flip?: boolean }) => (
   <div 
-    className={cn("absolute pointer-events-none select-none z-0 opacity-80", className)}
+    className={cn("absolute pointer-events-none select-none z-0 opacity-80 left-0", className)}
     style={{ animationDuration: duration }}
   >
-    <Image 
-      src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media&token=870ea1d9-54e8-4b02-81ee-324662339f71"
-      alt="Swimming fish"
-      width={100}
-      height={60}
-      className="animate-[wiggle_1s_ease-in-out_infinite] drop-shadow-md"
-    />
+    <div className={cn(flip && "scale-x-[-1]")}>
+      <Image 
+        src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media&token=870ea1d9-54e8-4b02-81ee-324662339f71"
+        alt="Swimming fish"
+        width={100}
+        height={60}
+        className="animate-[wiggle_1s_ease-in-out_infinite] drop-shadow-md"
+      />
+    </div>
   </div>
-);
+));
+Fish.displayName = 'Fish';
 
-const Seaweed = ({ className }: { className: string }) => (
+const Seaweed = memo(({ className }: { className: string }) => (
     <div className={cn("absolute bottom-0 w-12 h-40 origin-bottom select-none pointer-events-none opacity-30", className)}>
         <div className="relative w-full h-full transform-gpu animate-[sway_8s_ease-in-out_infinite]">
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-full bg-green-600 rounded-t-full" />
@@ -66,9 +68,10 @@ const Seaweed = ({ className }: { className: string }) => (
             <div className="absolute bottom-0 right-0 w-2 h-2/3 bg-green-700 rounded-t-full transform rotate-[15deg] origin-bottom" />
         </div>
     </div>
-);
+));
+Seaweed.displayName = 'Seaweed';
 
-const BackgroundBubbles = () => (
+const BackgroundBubbles = memo(() => (
   <div className="absolute inset-0 pointer-events-none overflow-hidden">
     {[...Array(20)].map((_, i) => (
       <div
@@ -85,7 +88,8 @@ const BackgroundBubbles = () => (
       />
     ))}
   </div>
-);
+));
+BackgroundBubbles.displayName = 'BackgroundBubbles';
 
 const FloatingParticle = ({ index }: { index: number }) => {
   const [style, setStyle] = useState<React.CSSProperties>({ opacity: 0 });
@@ -319,7 +323,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             <Seaweed className="right-[25%] bottom-[-15px] scale-75" />
             
             <Fish className="top-[20%] animate-[swimRight_12s_linear_infinite]" duration="12s" />
-            <Fish className="top-[45%] animate-[swimLeft_15s_linear_infinite] scale-x-[-1]" duration="15s" />
+            <Fish className="top-[45%] animate-[swimLeft_15s_linear_infinite]" duration="15s" flip />
             <Fish className="top-[70%] animate-[swimRight_18s_linear_infinite]" duration="18s" />
 
             <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-yellow-300 to-yellow-200/80 opacity-80" style={{clipPath: 'polygon(0 60%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
