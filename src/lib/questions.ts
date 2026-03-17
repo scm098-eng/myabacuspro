@@ -44,210 +44,74 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
     medium: { numQuestions: 100, timeLimit: 600, title: 'Division (Medium)', icon: 'divide' },
     hard: { numQuestions: 150, timeLimit: 900, title: 'Division (Hard)', icon: 'divide' },
   },
-  'basic-addition-plus-4': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +4 = +5 - 1', icon: 'puzzle' },
-  },
-  'basic-addition-plus-40': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +40 = +50 - 10', icon: 'puzzle' },
-  },
-  'basic-addition-plus-3': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +3 = +5 - 2', icon: 'puzzle' },
-  },
-  'basic-addition-plus-30': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +30 = +50 - 20', icon: 'puzzle' },
-  },
-  'basic-addition-plus-2': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +2 = +5 - 3', icon: 'puzzle' },
-  },
-  'basic-addition-plus-20': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +20 = +50 - 30', icon: 'puzzle' },
-  },
-  'basic-addition-plus-1': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +1 = +5 - 4', icon: 'puzzle' },
-  },
-  'basic-addition-plus-10': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +10 = +50 - 40', icon: 'puzzle' },
-  },
-  'basic-subtraction-minus-4': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -4 = -5 + 1', icon: 'puzzle' },
-  },
-  'basic-subtraction-minus-40': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -40 = -50 + 10', icon: 'puzzle' },
-  },
-  'basic-subtraction-minus-3': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -3 = -5 + 2', icon: 'puzzle' },
-  },
-  'basic-subtraction-minus-30': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -30 = -50 + 20', icon: 'puzzle' },
-  },
-  'basic-subtraction-minus-2': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -2 = -5 + 3', icon: 'puzzle' },
-  },
-  'basic-subtraction-minus-20': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -20 = -50 + 30', icon: 'puzzle' },
-  },
-  'basic-subtraction-minus-1': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -1 = -5 + 4', icon: 'puzzle' },
-  },
-  'basic-subtraction-minus-10': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -10 = -50 + 40', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-9': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +9 = +10 - 1', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-90': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +90 = +100 - 10', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-8': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +8 = +10 - 2', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-80': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +80 = +100 - 20', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-7': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +7 = +10 - 3', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-70': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +70 = +100 - 30', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-6': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +6 = +10 - 4', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-60': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +60 = +100 - 40', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-5': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +5 = +10 - 5', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-50': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +50 = +100 - 50', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-4': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +4 = +10 - 6', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-40': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +40 = +100 - 60', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-3': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +3 = +10 - 7', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-30': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +30 = +100 - 70', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-2': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +2 = +10 - 8', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-20': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +20 = +100 - 80', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-1': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +1 = +10 - 9', icon: 'puzzle' },
-  },
-  'big-brother-addition-plus-10': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +10 = +100 - 90', icon: 'puzzle' },
-  },
-   'big-brother-subtraction-minus-9': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -9 = -10 + 1', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-90': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -90 = -100 + 10', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-8': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -8 = -10 + 2', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-80': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -80 = -100 + 20', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-7': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -7 = -10 + 3', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-70': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -70 = -100 + 30', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-6': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -6 = -10 + 4', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-60': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -60 = -100 + 40', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-5': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -5 = -10 + 5', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-50': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -50 = -100 + 50', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-4': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -4 = -10 + 6', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-40': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -40 = -100 + 60', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-3': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -3 = -10 + 7', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-30': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -30 = -100 + 70', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-2': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -2 = -10 + 8', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-20': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -20 = -100 + 80', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-1': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -1 = -10 + 9', icon: 'puzzle' },
-  },
-  'big-brother-subtraction-minus-10': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -10 = -100 + 90', icon: 'puzzle' },
-  },
-   'combination-plus-6': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +6 = +10 - 5 + 1', icon: 'puzzle' },
-  },
-  'combination-plus-60': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +60 = +100 - 50 + 10', icon: 'puzzle' },
-  },
-  'combination-plus-7': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +7 = +10 - 5 + 2', icon: 'puzzle' },
-  },
-  'combination-plus-70': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +70 = +100 - 50 + 20', icon: 'puzzle' },
-  },
-  'combination-plus-8': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +8 = +10 - 5 + 3', icon: 'puzzle' },
-  },
-  'combination-plus-80': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +80 = +100 - 50 + 30', icon: 'puzzle' },
-  },
-  'combination-plus-9': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +9 = +10 - 5 + 4', icon: 'puzzle' },
-  },
-  'combination-plus-90': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +90 = +100 - 50 + 40', icon: 'puzzle' },
-  },
-  'combination-minus-6': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -6 = -10 + 5 - 1', icon: 'puzzle' },
-  },
-  'combination-minus-60': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -60 = -100 + 50 - 10', icon: 'puzzle' },
-  },
-  'combination-minus-7': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -7 = -10 + 5 - 2', icon: 'puzzle' },
-  },
-  'combination-minus-70': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -70 = -100 + 50 - 20', icon: 'puzzle' },
-  },
-  'combination-minus-8': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -8 = -10 + 5 - 3', icon: 'puzzle' },
-  },
-  'combination-minus-80': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -80 = -100 + 50 - 30', icon: 'puzzle' },
-  },
-  'combination-minus-9': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -9 = -10 + 5 - 4', icon: 'puzzle' },
-  },
-  'combination-minus-90': {
-    easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -90 = -100 + 50 - 40', icon: 'puzzle' },
-  },
+  'basic-addition-plus-4': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +4 = +5 - 1', icon: 'puzzle' } },
+  'basic-addition-plus-40': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +40 = +50 - 10', icon: 'puzzle' } },
+  'basic-addition-plus-3': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +3 = +5 - 2', icon: 'puzzle' } },
+  'basic-addition-plus-30': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +30 = +50 - 20', icon: 'puzzle' } },
+  'basic-addition-plus-2': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +2 = +5 - 3', icon: 'puzzle' } },
+  'basic-addition-plus-20': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +20 = +50 - 30', icon: 'puzzle' } },
+  'basic-addition-plus-1': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +1 = +5 - 4', icon: 'puzzle' } },
+  'basic-addition-plus-10': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +10 = +50 - 40', icon: 'puzzle' } },
+  'basic-subtraction-minus-4': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -4 = -5 + 1', icon: 'puzzle' } },
+  'basic-subtraction-minus-40': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -40 = -50 + 10', icon: 'puzzle' } },
+  'basic-subtraction-minus-3': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -3 = -5 + 2', icon: 'puzzle' } },
+  'basic-subtraction-minus-30': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -30 = -50 + 20', icon: 'puzzle' } },
+  'basic-subtraction-minus-2': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -2 = -5 + 3', icon: 'puzzle' } },
+  'basic-subtraction-minus-20': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -20 = -50 + 30', icon: 'puzzle' } },
+  'basic-subtraction-minus-1': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -1 = -5 + 4', icon: 'puzzle' } },
+  'basic-subtraction-minus-10': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -10 = -50 + 40', icon: 'puzzle' } },
+  'big-brother-addition-plus-9': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +9 = +10 - 1', icon: 'puzzle' } },
+  'big-brother-addition-plus-90': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +90 = +100 - 10', icon: 'puzzle' } },
+  'big-brother-addition-plus-8': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +8 = +10 - 2', icon: 'puzzle' } },
+  'big-brother-addition-plus-80': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +80 = +100 - 20', icon: 'puzzle' } },
+  'big-brother-addition-plus-7': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +7 = +10 - 3', icon: 'puzzle' } },
+  'big-brother-addition-plus-70': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +70 = +100 - 30', icon: 'puzzle' } },
+  'big-brother-addition-plus-6': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +6 = +10 - 4', icon: 'puzzle' } },
+  'big-brother-addition-plus-60': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +60 = +100 - 40', icon: 'puzzle' } },
+  'big-brother-addition-plus-5': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +5 = +10 - 5', icon: 'puzzle' } },
+  'big-brother-addition-plus-50': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +50 = +100 - 50', icon: 'puzzle' } },
+  'big-brother-addition-plus-4': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +4 = +10 - 6', icon: 'puzzle' } },
+  'big-brother-addition-plus-40': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +40 = +100 - 60', icon: 'puzzle' } },
+  'big-brother-addition-plus-3': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +3 = +10 - 7', icon: 'puzzle' } },
+  'big-brother-addition-plus-30': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +30 = +100 - 70', icon: 'puzzle' } },
+  'big-brother-addition-plus-2': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +2 = +10 - 8', icon: 'puzzle' } },
+  'big-brother-addition-plus-20': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +20 = +100 - 80', icon: 'puzzle' } },
+  'big-brother-addition-plus-1': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +1 = +10 - 9', icon: 'puzzle' } },
+  'big-brother-addition-plus-10': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +10 = +100 - 90', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-9': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -9 = -10 + 1', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-90': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -90 = -100 + 10', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-8': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -8 = -10 + 2', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-80': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -80 = -100 + 20', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-7': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -7 = -10 + 3', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-70': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -70 = -100 + 30', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-6': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -6 = -10 + 4', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-60': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -60 = -100 + 40', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-5': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -5 = -10 + 5', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-50': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -50 = -100 + 50', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-4': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -4 = -10 + 6', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-40': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -40 = -100 + 60', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-3': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -3 = -10 + 7', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-30': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -30 = -100 + 70', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-2': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -2 = -10 + 8', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-20': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -20 = -100 + 80', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-1': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -1 = -10 + 9', icon: 'puzzle' } },
+  'big-brother-subtraction-minus-10': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -10 = -100 + 90', icon: 'puzzle' } },
+  'combination-plus-6': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +6 = +10 - 5 + 1', icon: 'puzzle' } },
+  'combination-plus-60': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +60 = +100 - 50 + 10', icon: 'puzzle' } },
+  'combination-plus-7': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +7 = +10 - 5 + 2', icon: 'puzzle' } },
+  'combination-plus-70': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +70 = +100 - 50 + 20', icon: 'puzzle' } },
+  'combination-plus-8': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +8 = +10 - 5 + 3', icon: 'puzzle' } },
+  'combination-plus-80': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +80 = +100 - 50 + 30', icon: 'puzzle' } },
+  'combination-plus-9': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +9 = +10 - 5 + 4', icon: 'puzzle' } },
+  'combination-plus-90': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +90 = +100 - 50 + 40', icon: 'puzzle' } },
+  'combination-minus-6': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -6 = -10 + 5 - 1', icon: 'puzzle' } },
+  'combination-minus-60': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -60 = -100 + 50 - 10', icon: 'puzzle' } },
+  'combination-minus-7': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -7 = -10 + 5 - 2', icon: 'puzzle' } },
+  'combination-minus-70': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -70 = -100 + 50 - 20', icon: 'puzzle' } },
+  'combination-minus-8': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -8 = -10 + 5 - 3', icon: 'puzzle' } },
+  'combination-minus-80': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -80 = -100 + 50 - 30', icon: 'puzzle' } },
+  'combination-minus-9': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -9 = -10 + 5 - 4', icon: 'puzzle' } },
+  'combination-minus-90': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -90 = -100 + 50 - 40', icon: 'puzzle' } },
 };
 
 const preDefinedQuestions: Record<string, Question[]> = {
@@ -274,7 +138,6 @@ const gameQuestionMap: Record<GameLevel, string[]> = {
     'small-sister-minus-2': ['basic-subtraction-minus-2'],
     'small-sister-minus-1': ['basic-subtraction-minus-1'],
     'small-sister-all': smallSisterKeys,
-
     'big-brother-plus-9': ['big-brother-addition-plus-9'],
     'big-brother-plus-8': ['big-brother-addition-plus-8'],
     'big-brother-plus-7': ['big-brother-addition-plus-7'],
@@ -294,7 +157,6 @@ const gameQuestionMap: Record<GameLevel, string[]> = {
     'big-brother-minus-2': ['big-brother-subtraction-minus-2'],
     'big-brother-minus-1': ['big-brother-subtraction-minus-1'],
     'big-brother-all': bigBrotherKeys,
-
     'combination-plus-9': ['combination-plus-9'],
     'combination-plus-8': ['combination-plus-8'],
     'combination-plus-7': ['combination-plus-7'],
@@ -304,9 +166,7 @@ const gameQuestionMap: Record<GameLevel, string[]> = {
     'combination-minus-7': ['combination-minus-7'],
     'combination-minus-6': ['combination-minus-6'],
     'combination-all': combinationKeys,
-
     'general-practice': [], 
-
     'mastery-mix-1': ['mastery-mix-1'],
     'mastery-mix-2': ['mastery-mix-2'],
     'mastery-mix-3': ['mastery-mix-3'],
@@ -337,26 +197,19 @@ function shuffleArray<T>(array: T[]): T[] {
   return array;
 }
 
-/**
- * Generates four options for a math question.
- * Ensures all generated options are strictly positive (>= 0).
- */
 export function generateOptions(correctAnswer: number): number[] {
   const options = new Set<number>([correctAnswer]);
-  const range = Math.max(5, Math.abs(Math.floor(correctAnswer * 0.3)));
+  const range = Math.max(10, Math.abs(Math.floor(correctAnswer * 0.4)));
 
   while (options.size < 4) {
     let wrongAnswer;
-    // For small numbers, keep wrong options in a tight positive range
     if (correctAnswer < 10) {
-        wrongAnswer = getRandomInt(0, 15);
+        wrongAnswer = getRandomInt(0, 20);
     } else {
         const minOption = Math.max(0, correctAnswer - range);
         const maxOption = correctAnswer + range;
         wrongAnswer = getRandomInt(minOption, maxOption);
     }
-    
-    // Ensure uniqueness and that it's never negative
     if (wrongAnswer !== correctAnswer && wrongAnswer >= 0) {
       options.add(wrongAnswer);
     }
@@ -364,84 +217,41 @@ export function generateOptions(correctAnswer: number): number[] {
   return shuffleArray(Array.from(options));
 }
 
-function generateInfiniteEliteMath(levelId: number): Question[] {
+function generateEliteMultiStepMath(levelId: number): Question[] {
     const questions: Question[] = [];
     const count = 20;
     
+    // Scaling steps: 3 steps for level 51-150, 4 steps for 151-300, 5 steps for 301+
+    const stepsCount = levelId < 150 ? 3 : (levelId < 300 ? 4 : 5);
+
     for (let i = 0; i < count; i++) {
-        let text = "";
-        let answer = 0;
+        let currentTotal = getRandomInt(10, 50);
+        let text = `${currentTotal}`;
         
-        // Multi-digit scaling based on level progress
-        if (levelId < 150) {
-            // Level 51-150: Double digit addition/subtraction
-            let n1 = getRandomInt(10, 99);
-            let n2 = getRandomInt(10, 99);
-            const op = getRandomInt(0, 1) === 0 ? '+' : '-';
+        for (let s = 1; s < stepsCount; s++) {
+            // Randomly choose single or double digit
+            const isDouble = Math.random() > 0.5;
+            const nextVal = isDouble ? getRandomInt(10, 50) : getRandomInt(1, 9);
+            const op = Math.random() > 0.5 ? '+' : '-';
             
             if (op === '-') {
-                // Ensure result is always positive by putting larger number first
-                const max = Math.max(n1, n2);
-                const min = Math.min(n1, n2);
-                text = `${max} - ${min}`;
-                answer = max - min;
-            } else {
-                text = `${n1} + ${n2}`;
-                answer = n1 + n2;
-            }
-        } else if (levelId < 300) {
-            // Level 151-300: Complex Double/Triple mix
-            const type = getRandomInt(0, 3);
-            if (type === 0) {
-                const n1 = getRandomInt(100, 500);
-                const n2 = getRandomInt(10, 99);
-                text = `${n1} + ${n2}`;
-                answer = n1 + n2;
-            } else if (type === 1) {
-                const n1 = getRandomInt(10, 99);
-                const n2 = getRandomInt(2, 9);
-                text = `${n1} × ${n2}`;
-                answer = n1 * n2;
-            } else {
-                let n1 = getRandomInt(100, 999);
-                let n2 = getRandomInt(100, 999);
-                const op = getRandomInt(0, 1) === 0 ? '+' : '-';
-                
-                if (op === '-') {
-                    const max = Math.max(n1, n2);
-                    const min = Math.min(n1, n2);
-                    text = `${max} - ${min}`;
-                    answer = max - min;
+                if (currentTotal >= nextVal) {
+                    currentTotal -= nextVal;
+                    text += ` - ${nextVal}`;
                 } else {
-                    text = `${n1} + ${n2}`;
-                    answer = n1 + n2;
+                    currentTotal += nextVal;
+                    text += ` + ${nextVal}`;
                 }
-            }
-        } else {
-            // Level 301+: Triple digit arithmetic master
-            const type = getRandomInt(0, 2);
-            if (type === 0) {
-                const n1 = getRandomInt(100, 999);
-                const n2 = getRandomInt(100, 999);
-                text = `${n1} + ${n2}`;
-                answer = n1 + n2;
-            } else if (type === 1) {
-                const n1 = getRandomInt(500, 999);
-                const n2 = getRandomInt(100, 499);
-                text = `${n1} - ${n2}`;
-                answer = n1 - n2;
             } else {
-                const n1 = getRandomInt(100, 999);
-                const n2 = getRandomInt(2, 12);
-                text = `${n1} × ${n2}`;
-                answer = n1 * n2;
+                currentTotal += nextVal;
+                text += ` + ${nextVal}`;
             }
         }
         
         questions.push({
             text,
-            answer,
-            options: generateOptions(answer)
+            answer: currentTotal,
+            options: generateOptions(currentTotal)
         });
     }
     
@@ -450,7 +260,7 @@ function generateInfiniteEliteMath(levelId: number): Question[] {
 
 export function generateGameQuestions(level: GameLevel, levelId?: number): Question[] {
     if (levelId && levelId > 50) {
-        return generateInfiniteEliteMath(levelId);
+        return generateEliteMultiStepMath(levelId);
     }
 
     const questionKeys = gameQuestionMap[level];
@@ -466,20 +276,15 @@ export function generateGameQuestions(level: GameLevel, levelId?: number): Quest
         });
     }
 
-    // ENSURE POSITIVE ANSWERS ONLY: Filter out any predefined question that resulted in a negative answer
     const positiveOnlyQuestions = allQuestions.filter(q => q.answer >= 0);
-
     return shuffleArray(positiveOnlyQuestions).slice(0, 20); 
 }
 
 export function generateTest(testId: TestType, difficulty: Difficulty): Question[] {
   const settings = getTestSettings(testId, difficulty);
-  if (!settings) {
-    return [];
-  }
+  if (!settings) return [];
 
   if (preDefinedQuestions[testId]) {
-      // ENSURE POSITIVE ANSWERS ONLY
       const allQuestions = preDefinedQuestions[testId].filter(q => q.answer >= 0);
       return shuffleArray([...allQuestions]).slice(0, settings.numQuestions);
   }
@@ -503,14 +308,12 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
       switch (testId) {
         case 'addition-subtraction': {
           const numTerms = 4;
-          let numbers: (number | string)[] = [];
           let tempResult = getRandomInt(min, max);
-          numbers.push(tempResult);
+          let numbers: (number | string)[] = [tempResult];
 
           for (let j = 0; j < numTerms - 1; j++) {
               let op: '+' | '-' = getRandomInt(0, 1) === 0 ? '+' : '-';
               const nextNum = getRandomInt(min, max);
-              // Safety check to ensure we never go negative during calculation
               if (op === '-' && tempResult < nextNum) op = '+';
               numbers.push(op);
               numbers.push(nextNum);
@@ -521,7 +324,6 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
           answer = tempResult;
           break;
         }
-        
         case 'multiplication':
           const m1_max = difficulty === 'easy' ? 9 : (difficulty === 'medium' ? 99 : 999);
           const m2_max = difficulty === 'hard' ? 99 : 9;
@@ -530,7 +332,6 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
           answer = m1 * m2;
           questionText = `${m1} × ${m2}`;
           break;
-
         case 'division':
           const divisor = getRandomInt(2, 9);
           const [answer_min, answer_max] = getNumberRange(difficulty);
@@ -538,7 +339,6 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
           const dividend = divisor * answer;
           questionText = `${dividend} ÷ ${divisor}`;
           break;
-
         default:
           questionText = "1 + 1";
           answer = 2;
@@ -551,7 +351,6 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
         answer: answer,
       });
   }
-
   return questions;
 }
 

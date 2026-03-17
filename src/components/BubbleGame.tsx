@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -26,6 +27,13 @@ interface Bubble {
 
 const MAX_LIVES = 5;
 const MIN_SCORE_TO_PASS = 90;
+
+const getAnswerFontSize = (val: number) => {
+    const s = val.toString().length;
+    if (s <= 2) return "text-3xl sm:text-6xl";
+    if (s === 3) return "text-2xl sm:text-5xl";
+    return "text-xl sm:text-3xl";
+};
 
 const Seaweed = ({ className }: { className: string }) => (
     <div className={cn("absolute bottom-0 w-12 h-40 origin-bottom select-none pointer-events-none opacity-30", className)}>
@@ -108,13 +116,12 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const router = useRouter();
 
   const config = useMemo(() => {
-    // Difficulty speed scaling
-    const baseDuration = Math.max(3, 9 - (levelId / 50));
+    const baseDuration = Math.max(4, 10 - (levelId / 40));
     return {
       speed: baseDuration,
-      answerRange: [12, 37, 63, 88], // Balanced lanes to accommodate drifting
-      qDelay: 1.2, // Consistent head start for question
-      variance: 1.5 // Increased variance for distinct drift speeds
+      answerRange: [10, 36, 64, 90], 
+      qDelay: 1.2,
+      variance: 1.2 
     };
   }, [levelId]);
 
@@ -135,7 +142,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     if (gameState !== 'playing') return;
 
     const correctAnswers = finalScore / 10;
-    const accuracy = (correctAnswers / questions.length) * 100;
+    const accuracy = (correctAnswers / (questions.length || 1)) * 100;
     
     if (user) {
       const { earnedPoints } = calculatePoints({
@@ -197,7 +204,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     const newBubbles: Bubble[] = [];
     const batchId = `${Date.now()}-${currentQuestionIndex}`;
 
-    // 1. LEADING QUESTION PILL (FASTEST)
     newBubbles.push({
       id: `q-${batchId}`,
       value: -1, 
@@ -208,9 +214,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
       delay: 0,
     });
     
-    // 2. ANSWER BUBBLES (STAGGERED PACK FOR NATURAL DRIFT)
     currentQuestion.options.forEach((option, index) => {
-      // Different durations for independent vertical drifting
       const duration = (config.speed + 3) + (Math.random() * config.variance);
 
       newBubbles.push({
@@ -219,14 +223,13 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         isCorrect: option === currentQuestion.answer,
         left: config.answerRange[index],
         duration: duration,
-        delay: config.qDelay + (Math.random() * 0.8), // Staggered entry delay
+        delay: config.qDelay + (Math.random() * 0.6), 
       });
     });
 
     setBubbles(newBubbles);
 
-    // Calculate maximum time any bubble might take to finish
-    const maxTime = (config.speed + 3 + config.variance + config.qDelay + 0.8) * 1000;
+    const maxTime = (config.speed + 3 + config.variance + config.qDelay + 0.6) * 1000;
     questionTimeoutRef.current = setTimeout(() => {
         if (gameState === 'playing') {
             setLives(l => l - 1);
@@ -285,7 +288,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
           }
         `}</style>
 
-        {/* Environment Background */}
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
             <BackgroundBubbles />
             <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-yellow-300 to-yellow-200/80 opacity-80" style={{clipPath: 'polygon(0 60%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
@@ -295,7 +297,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             <Seaweed className="right-[25%] bottom-[-15px] scale-75" />
         </div>
 
-        {/* HUD */}
         <div className="absolute top-0 left-0 right-0 p-2 sm:p-6 bg-black/30 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50 animate-in slide-in-from-top duration-500">
             <div className="flex items-center gap-2 sm:gap-8 text-white min-w-0 flex-1">
                 <div className="min-w-0 flex-1 sm:flex-none">
@@ -323,7 +324,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             </Button>
         </div>
 
-        {/* Game Stage (Bubbles) */}
         <div className="relative w-full h-full max-w-7xl z-10 flex items-center justify-center">
             {gameState === 'playing' && (
                 <>
@@ -331,10 +331,10 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                         <div
                             key={bubble.id}
                             className={cn(
-                                "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise transform-gpu border-4 shadow-2xl transition-transform active:scale-95 z-10",
+                                "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise transform-gpu border-4 shadow-2xl transition-all active:scale-95 z-10",
                                 bubble.isQuestion 
-                                    ? 'w-64 h-20 sm:w-80 sm:h-28 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20' 
-                                    : 'w-20 h-20 sm:w-36 sm:h-36 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
+                                    ? 'min-w-[240px] px-8 h-20 sm:min-w-[320px] sm:h-28 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20' 
+                                    : 'w-24 h-24 sm:w-40 sm:h-40 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
                             )}
                             style={{
                                 left: `${bubble.left}%`,
@@ -346,7 +346,9 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                         >
                             <span className={cn(
                                 "text-white font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none text-center px-2",
-                                bubble.isQuestion ? "text-xl sm:text-3xl" : "text-xs sm:text-lg"
+                                bubble.isQuestion 
+                                    ? (questions[currentQuestionIndex]?.text.length > 15 ? "text-lg sm:text-2xl" : "text-xl sm:text-4xl")
+                                    : getAnswerFontSize(bubble.value)
                             )}>
                                 {bubble.isQuestion ? (questions[currentQuestionIndex]?.text) : bubble.value}
                             </span>
@@ -356,7 +358,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             )}
         </div>
 
-        {/* Final Results Overlays */}
         {(gameState === 'levelComplete' || gameState === 'gameOver') && (
             <div className="absolute inset-0 flex items-center justify-center p-4 z-[1000] animate-in fade-in zoom-in-95 duration-500">
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
