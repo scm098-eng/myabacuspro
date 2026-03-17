@@ -48,6 +48,7 @@ interface AuthContextType {
   approveTeacher: (teacherId: string, callback?: () => void) => Promise<void>;
   getCompletedGameLevels: () => Promise<number[]>;
   saveCompletedGameLevel: (levelId: number) => Promise<void>;
+  setLastLevelAttended: (levelId: number) => Promise<void>;
   fetchProfile: (user: User) => Promise<ProfileData | null>;
   recordDailyPractice: (userId: string) => Promise<void>;
   addPoints: (userId: string, points: number) => Promise<void>;
@@ -490,6 +491,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, [user, firestore]);
 
+  const setLastLevelAttended = useCallback(async (levelId: number) => {
+    if (!user) return;
+    const userRef = doc(firestore, "users", user.uid);
+    await updateDoc(userRef, { lastLevelAttended: levelId, updatedAt: serverTimestamp() }).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'update',
+          requestResourceData: { lastLevelAttended: levelId },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    });
+  }, [user, firestore]);
+
   const addPoints = useCallback(async (userId: string, points: number) => {
     const userRef = doc(firestore, "users", userId);
     try {
@@ -546,7 +562,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
     sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, getAllUsers, getApprovedTeachers, 
     getUserTestHistory, getUserTestHistoryByDateRange, getUserProfile, approveTeacher, getCompletedGameLevels, 
-    saveCompletedGameLevel, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining
+    saveCompletedGameLevel, setLastLevelAttended, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

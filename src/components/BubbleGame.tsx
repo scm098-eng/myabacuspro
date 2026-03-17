@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -29,7 +30,8 @@ const MIN_SCORE_TO_PASS = 90;
 
 const getAnswerFontSize = (val: number) => {
     const s = val.toString().length;
-    // Matching the question appearance font sizes
+    // Consistent with question appearance: text-xl (mobile), text-4xl (desktop)
+    // Scale down if 3+ digits to fit perfectly
     if (s <= 2) return "text-xl sm:text-4xl";
     if (s === 3) return "text-lg sm:text-3xl";
     return "text-sm sm:text-2xl";
@@ -215,7 +217,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     });
     
     currentQuestion.options.forEach((option, index) => {
-      // Varied duration for vertical drift
       const duration = (config.speed + 2) + (Math.random() * config.variance);
 
       newBubbles.push({
@@ -224,7 +225,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         isCorrect: option === currentQuestion.answer,
         left: config.answerRange[index],
         duration: duration,
-        delay: config.qDelay + (Math.random() * 0.8), // Staggered entry
+        delay: config.qDelay + (Math.random() * 0.8),
       });
     });
 
@@ -308,7 +309,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                 <div className="shrink-0 text-right sm:text-left">
                     <h2 className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-sky-200 leading-tight">Points</h2>
                     <div className="flex items-center justify-end sm:justify-start gap-1">
-                        <Flame className="w-3 h-3 sm:w-4 sm:h-4 text-orange-400 fill-orange-400" />
                         <p className="text-sm sm:text-2xl font-black leading-none">{score}</p>
                     </div>
                 </div>

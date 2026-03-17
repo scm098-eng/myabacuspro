@@ -245,6 +245,7 @@ export interface ProfileData {
   lastMarketingEmailSent?: any;
   marketingCampaignClicked?: boolean;
   lastCampaignClicked?: string;
+  lastLevelAttended?: number;
 }
 
 export type UpdateProfilePayload = {
@@ -278,6 +279,7 @@ export type UpdateProfilePayload = {
   isSuspended?: boolean;
   trialStartDate?: any;
   emailVerified?: boolean;
+  lastLevelAttended?: number;
 };
 
 

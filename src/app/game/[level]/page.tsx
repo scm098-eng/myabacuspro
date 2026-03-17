@@ -1,5 +1,7 @@
+
 'use client';
 
+import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { BubbleGame } from '@/components/BubbleGame';
 import type { GameLevel } from '@/types';
@@ -7,6 +9,7 @@ import { usePageBackground } from '@/hooks/usePageBackground';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 
 // Refactored dynamic level info resolver for 1,000 levels
 const getLevelInfo = (levelSlug: string): { type: GameLevel, name: string } | null => {
@@ -56,10 +59,17 @@ const getLevelInfo = (levelSlug: string): { type: GameLevel, name: string } | nu
 export default function GamePage() {
     usePageBackground('');
     const params = useParams();
+    const { user, setLastLevelAttended } = useAuth();
     const levelSlug = params.level as string;
     
     const levelInfo = getLevelInfo(levelSlug);
     const levelId = parseInt(levelSlug.replace('level-', ''), 10);
+
+    useEffect(() => {
+        if (user && levelId > 0) {
+            setLastLevelAttended(levelId);
+        }
+    }, [user, levelId, setLastLevelAttended]);
 
     if (!levelInfo) {
         return (

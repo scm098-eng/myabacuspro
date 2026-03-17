@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { cn } from '@/lib/utils';
-import { Star, Check } from 'lucide-react';
+import { Star, Check, MapPin } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,7 +21,7 @@ interface Level {
 const generateLevels = (): Level[] => {
   const levels: Level[] = [];
   
-  // Specific curriculums for the first 50 levels as defined previously
+  // Specific curriculums for the first 50 levels
   const titles = [
     'Small Sister: +4 Formula', 'Small Sister: +3 Formula', 'Small Sister: +2 Formula', 'Small Sister: +1 Formula',
     'Small Sister: -4 Formula', 'Small Sister: -3 Formula', 'Small Sister: -2 Formula', 'Small Sister: -1 Formula',
@@ -75,24 +75,32 @@ const PathLine = ({ reverse = false, className }: { reverse?: boolean; className
     </svg>
 );
 
-const LevelNode = ({ level, isLocked, isCompleted }: { level: Level; isLocked: boolean; isCompleted: boolean; }) => {
+const LevelNode = ({ level, isLocked, isCompleted, isLastAttended }: { level: Level; isLocked: boolean; isCompleted: boolean; isLastAttended: boolean; }) => {
   const linkContent = (
     <div className={cn(
         "relative w-24 h-24 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-300 transform hover:scale-110",
         isLocked ? "bg-gray-400 cursor-not-allowed" : "bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700",
         isCompleted && "bg-gradient-to-br from-yellow-400 to-yellow-600",
+        isLastAttended && "ring-4 ring-pink-500 ring-offset-4 ring-offset-background animate-pulse",
         "border-4 border-white/50"
     )}>
       <div className="absolute inset-1 rounded-full bg-black/10"></div>
       <div className="absolute top-2 left-4 h-4 w-8 rounded-full bg-white/30 transform -rotate-45"></div>
         <span className="relative text-4xl font-bold [text-shadow:2px_2px_4px_rgba(0,0,0,0.4)]">{level.id}</span>
+        
+        {isLastAttended && (
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-pink-500 text-white text-[10px] font-black px-2 py-1 rounded-full whitespace-nowrap shadow-lg animate-bounce">
+                YOU ARE HERE
+            </div>
+        )}
+
         {isCompleted && !isLocked && (
-            <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full p-1 border-2 border-white">
+            <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full p-1 border-2 border-white shadow-md">
                 <Check className="w-4 h-4 text-white" />
             </div>
         )}
         {level.isHard && !isLocked && (
-             <div className="absolute -bottom-2 -right-2 bg-purple-700 rounded-full p-1 border-2 border-white">
+             <div className="absolute -bottom-2 -right-2 bg-purple-700 rounded-full p-1 border-2 border-white shadow-md">
                 <Star className="w-4 h-4 text-yellow-300" />
             </div>
         )}
@@ -150,6 +158,7 @@ export default function GameHomePage() {
   }
 
   const isAdmin = profile?.role === 'admin';
+  const lastAttendedId = profile?.lastLevelAttended || 0;
 
   return (
     <div className="space-y-8">
@@ -164,10 +173,13 @@ export default function GameHomePage() {
         {gameLevels.map((level, index) => {
             const isLocked = isAdmin ? false : (user ? level.id > 1 && !completedLevels.includes(level.id - 1) : level.id > 1);
             const isCompleted = completedLevels.includes(level.id);
+            const isLastAttended = level.id === lastAttendedId;
             const isLeft = index % 2 === 0;
 
-            // Only show levels the user has reached or is about to reach to keep the UI clean
-            const maxReachable = Math.max(...completedLevels, 0) + 5;
+            // Only show levels reachable or recently attended to keep UI clean
+            const maxCompleted = Math.max(...completedLevels, 0);
+            const maxReachable = Math.max(maxCompleted + 5, lastAttendedId + 3);
+            
             if (level.id > maxReachable && !isAdmin) return null;
 
             return (
@@ -181,7 +193,7 @@ export default function GameHomePage() {
 
                     {/* Level Node */}
                     <div className={cn("absolute z-10", isLeft ? "left-0" : "right-0")}>
-                        <LevelNode level={level} isLocked={isLocked} isCompleted={isCompleted} />
+                        <LevelNode level={level} isLocked={isLocked} isCompleted={isCompleted} isLastAttended={isLastAttended} />
                     </div>
                 </div>
             )
