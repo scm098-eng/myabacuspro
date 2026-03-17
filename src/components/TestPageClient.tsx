@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -142,15 +141,14 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       setTimeLeft((prev) => {
         const nextTime = prev - 1;
         
-        // Timer sound logic for a professional testing environment
         if (nextTime === 60) {
-          // Exactly 1 minute remaining: Soft Double-Beep Alert
+          // Exactly 1 minute remaining: Triple-Beep Alert
           playSound('timerWarning');
+          setTimeout(() => playSound('timerWarning'), 200);
+          setTimeout(() => playSound('timerWarning'), 400);
         } else if (nextTime <= 10 && nextTime > 0) {
-          // Last 10 seconds: Rhythmic Electronic Ticking
           playSound('timerUrgent');
         } else if (nextTime > 60 && nextTime % 60 === 0) {
-          // Subtle minute tick for long tests
           playSound('timerTick');
         }
 

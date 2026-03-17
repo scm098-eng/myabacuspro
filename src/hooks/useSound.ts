@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useCallback } from 'react';
@@ -13,9 +12,9 @@ const sounds = {
   success: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
   points: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3',
   timerTick: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
-  // Professional digital double-beep for 1-minute warning
+  // Professional digital beep for alerts
   timerWarning: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3', 
-  // Rhythmic electronic ticking for final 10-second countdown
+  // Rhythmic electronic ticking for final countdown
   timerUrgent: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
 };
 
@@ -24,13 +23,13 @@ export const useSound = () => {
     try {
       const audio = new Audio(sounds[type]);
       
-      // Fine-tuned volume levels for a balanced professional experience
+      // Fine-tuned volume levels for a prominent professional experience
       if (type === 'timerTick') {
-        audio.volume = 0.05; // Extremely subtle background tick
+        audio.volume = 0.7; // Loud enough to be a clear anchor
       } else if (type === 'timerWarning') {
-        audio.volume = 0.5; // Clear "heads-up" notification
+        audio.volume = 0.9; // High-priority "heads-up" notification
       } else if (type === 'timerUrgent') {
-        audio.volume = 0.3; // Rhythmic countdown tension
+        audio.volume = 0.5; // Rhythmic countdown tension
       } else if (type === 'wrong') {
         audio.volume = 0.4;
       } else {

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -7,20 +6,25 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Send, Loader2, AlertCircle } from 'lucide-react';
+import { Mail, Send, Loader2, AlertCircle, Phone } from 'lucide-react';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import Image from 'next/image';
 import placeholderImages from '@/lib/placeholder-images.json';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
-  email: z.string().email({ message: 'Please enter a valid email address.' }),
+  email: z.string().email({ message: 'Please enter a valid email address.' }).refine(
+    (email) => !email.endsWith('@example.com'),
+    { message: 'Please use a real email address, not a test domain.' }
+  ),
+  whatsapp: z.string().min(10, { message: 'Please enter a valid 10-digit WhatsApp number.' }),
   message: z.string().min(10, { message: 'Message must be at least 10 characters.' }),
+  captchaAnswer: z.string().min(1, { message: 'Please solve the math challenge.' }),
 });
 
 export default function ContactPage() {
@@ -28,17 +32,36 @@ export default function ContactPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
+  const [captcha, setCaptcha] = useState({ q: '', a: 0 });
   
+  const generateCaptcha = () => {
+    const num1 = Math.floor(Math.random() * 9) + 1;
+    const num2 = Math.floor(Math.random() * 9) + 1;
+    setCaptcha({ q: `${num1} + ${num2}`, a: num1 + num2 });
+  };
+
+  useEffect(() => {
+    generateCaptcha();
+  }, []);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       email: '',
+      whatsapp: '',
       message: '',
+      captchaAnswer: '',
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (parseInt(values.captchaAnswer) !== captcha.a) {
+      form.setError('captchaAnswer', { message: 'Incorrect answer. Please try again.' });
+      generateCaptcha();
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorDetails(null);
     try {
@@ -47,7 +70,10 @@ export default function ContactPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          ...values,
+          message: `WhatsApp: ${values.whatsapp}\n\n${values.message}`
+        }),
       });
 
       const data = await response.json();
@@ -58,9 +84,10 @@ export default function ContactPage() {
 
       toast({
         title: 'Message Sent!',
-        description: "Thanks for reaching out. We'll get back to you soon.",
+        description: "Thanks for reaching out. We'll get back to you soon on WhatsApp or Email.",
       });
       form.reset();
+      generateCaptcha();
     } catch (error: any) {
       setErrorDetails(error.message);
       toast({
@@ -78,7 +105,7 @@ export default function ContactPage() {
       <div className="text-center mb-10">
         <h1 className="text-4xl font-bold tracking-tight text-foreground font-headline sm:text-5xl">Get in Touch</h1>
         <p className="mt-4 max-w-xl mx-auto text-lg text-muted-foreground">
-          Have a question or feedback? We'd love to hear from you.
+          Real parents and teachers only. Bots will be blocked.
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
@@ -89,9 +116,6 @@ export default function ContactPage() {
               <AlertTitle className="font-bold">Message Failed</AlertTitle>
               <AlertDescription className="text-xs">
                 {errorDetails}
-                <div className="mt-2 p-2 bg-white/50 rounded border border-red-100 font-mono">
-                  Check Secret Manager: GMAIL_APP_PASSWORD
-                </div>
               </AlertDescription>
             </Alert>
           )}
@@ -116,19 +140,34 @@ export default function ContactPage() {
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="your.email@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="your.email@example.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="whatsapp"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>WhatsApp Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="10-digit mobile" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <FormField
                     control={form.control}
                     name="message"
@@ -136,15 +175,36 @@ export default function ContactPage() {
                       <FormItem>
                         <FormLabel>Message</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Your message..." {...field} rows={5} />
+                          <Textarea placeholder="How can we help you?" {...field} rows={4} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  
+                  <FormField
+                    control={form.control}
+                    name="captchaAnswer"
+                    render={({ field }) => (
+                      <FormItem className="bg-muted/50 p-4 rounded-lg border border-primary/10">
+                        <FormLabel className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-primary" />
+                          Human Verification
+                        </FormLabel>
+                        <FormDescription>
+                          What is {captcha.q} ?
+                        </FormDescription>
+                        <FormControl>
+                          <Input type="number" placeholder="Enter answer" {...field} className="bg-white" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <Button type="submit" className="w-full h-12 text-lg font-bold" disabled={isSubmitting}>
                     {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}
-                    {isSubmitting ? 'Sending...' : 'Submit Message'}
+                    {isSubmitting ? 'Verifying...' : 'Submit Message'}
                   </Button>
                 </form>
               </Form>
@@ -169,6 +229,16 @@ export default function ContactPage() {
                     <h4 className="font-semibold text-lg">Email Us</h4>
                     <p className="text-muted-foreground">Our support team is available 24/7.</p>
                     <a href="mailto:myabacuspro@gmail.com" className="text-primary font-medium hover:underline">myabacuspro@gmail.com</a>
+                </div>
+            </div>
+            <div className="flex items-start gap-4">
+                <div className="p-3 bg-green-50 rounded-full">
+                    <Phone className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                    <h4 className="font-semibold text-lg">WhatsApp Support</h4>
+                    <p className="text-muted-foreground">Message us directly for faster response.</p>
+                    <span className="text-green-600 font-bold">Priority for Pro Members</span>
                 </div>
             </div>
         </div>
