@@ -1,4 +1,3 @@
-
 import type { Question, Difficulty, TestType, TestSettings, GameLevel } from '@/types';
 import { basicAdditionQuestions } from './question-data/basic-addition';
 import { basicSubtractionQuestions } from './question-data/basic-subtraction';
@@ -217,11 +216,14 @@ export function generateOptions(correctAnswer: number): number[] {
   return shuffleArray(Array.from(options));
 }
 
+/**
+ * Generates elite multi-step mixed arithmetic for levels 51+
+ */
 function generateEliteMultiStepMath(levelId: number): Question[] {
     const questions: Question[] = [];
     const count = 20;
     
-    // Scaling steps: 3 steps for level 51-150, 4 steps for 151-300, 5 steps for 301+
+    // Steps count scales with level
     const stepsCount = levelId < 150 ? 3 : (levelId < 300 ? 4 : 5);
 
     for (let i = 0; i < count; i++) {
@@ -229,12 +231,13 @@ function generateEliteMultiStepMath(levelId: number): Question[] {
         let text = `${currentTotal}`;
         
         for (let s = 1; s < stepsCount; s++) {
-            // Randomly choose single or double digit
+            // Mix single and double digits
             const isDouble = Math.random() > 0.5;
             const nextVal = isDouble ? getRandomInt(10, 50) : getRandomInt(1, 9);
             const op = Math.random() > 0.5 ? '+' : '-';
             
             if (op === '-') {
+                // Guaranteed positive intermediate results
                 if (currentTotal >= nextVal) {
                     currentTotal -= nextVal;
                     text += ` - ${nextVal}`;
@@ -276,6 +279,7 @@ export function generateGameQuestions(level: GameLevel, levelId?: number): Quest
         });
     }
 
+    // Ensure only non-negative answers
     const positiveOnlyQuestions = allQuestions.filter(q => q.answer >= 0);
     return shuffleArray(positiveOnlyQuestions).slice(0, 20); 
 }

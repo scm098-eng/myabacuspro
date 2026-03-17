@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -30,9 +29,10 @@ const MIN_SCORE_TO_PASS = 90;
 
 const getAnswerFontSize = (val: number) => {
     const s = val.toString().length;
-    if (s <= 2) return "text-3xl sm:text-6xl";
-    if (s === 3) return "text-2xl sm:text-5xl";
-    return "text-xl sm:text-3xl";
+    // Matching the question appearance font sizes
+    if (s <= 2) return "text-xl sm:text-4xl";
+    if (s === 3) return "text-lg sm:text-3xl";
+    return "text-sm sm:text-2xl";
 };
 
 const Seaweed = ({ className }: { className: string }) => (
@@ -119,9 +119,9 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     const baseDuration = Math.max(4, 10 - (levelId / 40));
     return {
       speed: baseDuration,
-      answerRange: [10, 36, 64, 90], 
+      answerRange: [12, 37, 63, 88], 
       qDelay: 1.2,
-      variance: 1.2 
+      variance: 1.5 
     };
   }, [levelId]);
 
@@ -215,7 +215,8 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     });
     
     currentQuestion.options.forEach((option, index) => {
-      const duration = (config.speed + 3) + (Math.random() * config.variance);
+      // Varied duration for vertical drift
+      const duration = (config.speed + 2) + (Math.random() * config.variance);
 
       newBubbles.push({
         id: `a-${batchId}-${index}`,
@@ -223,13 +224,13 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         isCorrect: option === currentQuestion.answer,
         left: config.answerRange[index],
         duration: duration,
-        delay: config.qDelay + (Math.random() * 0.6), 
+        delay: config.qDelay + (Math.random() * 0.8), // Staggered entry
       });
     });
 
     setBubbles(newBubbles);
 
-    const maxTime = (config.speed + 3 + config.variance + config.qDelay + 0.6) * 1000;
+    const maxTime = (config.speed + 3 + config.variance + config.qDelay + 0.8) * 1000;
     questionTimeoutRef.current = setTimeout(() => {
         if (gameState === 'playing') {
             setLives(l => l - 1);
@@ -333,8 +334,8 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                             className={cn(
                                 "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise transform-gpu border-4 shadow-2xl transition-all active:scale-95 z-10",
                                 bubble.isQuestion 
-                                    ? 'min-w-[240px] px-8 h-20 sm:min-w-[320px] sm:h-28 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20' 
-                                    : 'w-24 h-24 sm:w-40 sm:h-40 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
+                                    ? 'min-w-[200px] px-8 h-16 sm:min-w-[300px] sm:h-24 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20' 
+                                    : 'w-20 h-20 sm:w-32 sm:h-32 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
                             )}
                             style={{
                                 left: `${bubble.left}%`,

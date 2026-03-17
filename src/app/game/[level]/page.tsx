@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -49,7 +48,7 @@ const getLevelInfo = (levelSlug: string): { type: GameLevel, name: string } | nu
         return { type: `mastery-mix-${mixNum}` as GameLevel, name: `Level ${levelId}: Mastery Mix ${mixNum}` };
     }
 
-    // Elite levels (51-1000) cycle through advanced mastery mixes or dynamic generation
+    // Elite levels (51-1000) cycle through advanced mixed arithmetic
     const eliteIndex = ((levelId - 51) % 12) + 1;
     return { type: `mastery-mix-${eliteIndex}` as GameLevel, name: `Level ${levelId}: Elite Mastery Challenge` };
 };
