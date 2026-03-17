@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -7,14 +8,14 @@ import BirthdayWish from '@/components/BirthdayWish';
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    // Prevent right-click across the entire application
+    // Prevent right-click across the entire application to protect data
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();
     };
 
-    // Prevent text selection (optional, but requested for data protection)
+    // Prevent text selection to discourage data copying
     const handleSelectStart = (e: Event) => {
-      // Allow selection inside input and textarea
+      // Allow selection inside input and textarea for usability
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
       e.preventDefault();

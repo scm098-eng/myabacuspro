@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -9,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Send, Loader2, AlertCircle, Phone } from 'lucide-react';
+import { Mail, Send, Loader2, AlertCircle, Phone, CheckCircle2 } from 'lucide-react';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import Image from 'next/image';
 import placeholderImages from '@/lib/placeholder-images.json';

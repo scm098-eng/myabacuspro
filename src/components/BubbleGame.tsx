@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -33,6 +34,13 @@ const getAnswerFontSize = (val: number) => {
     if (s <= 2) return "text-xl sm:text-4xl";
     if (s === 3) return "text-lg sm:text-3xl";
     return "text-sm sm:text-2xl";
+};
+
+const getQuestionFontSize = (text: string) => {
+  if (text.length > 35) return "text-sm sm:text-base";
+  if (text.length > 25) return "text-base sm:text-xl";
+  if (text.length > 15) return "text-lg sm:text-3xl";
+  return "text-xl sm:text-4xl";
 };
 
 const Fish = ({ className, duration }: { className: string, duration: string }) => (
@@ -352,7 +360,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                             className={cn(
                                 "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise transform-gpu border-4 shadow-2xl transition-all active:scale-95 z-10",
                                 bubble.isQuestion 
-                                    ? 'w-max max-w-[90vw] px-6 sm:px-10 h-16 sm:h-24 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20 whitespace-nowrap overflow-hidden' 
+                                    ? 'w-max max-w-[95vw] px-6 sm:px-10 h-16 sm:h-24 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20 whitespace-nowrap overflow-hidden' 
                                     : 'w-20 h-20 sm:w-32 sm:h-32 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
                             )}
                             style={{
@@ -366,7 +374,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                             <span className={cn(
                                 "text-white font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none text-center block whitespace-nowrap",
                                 bubble.isQuestion 
-                                    ? (questions[currentQuestionIndex]?.text.length > 25 ? "text-base sm:text-lg" : questions[currentQuestionIndex]?.text.length > 15 ? "text-lg sm:text-2xl" : "text-xl sm:text-4xl")
+                                    ? getQuestionFontSize(questions[currentQuestionIndex]?.text || "")
                                     : getAnswerFontSize(bubble.value)
                             )}>
                                 {bubble.isQuestion ? (questions[currentQuestionIndex]?.text) : bubble.value}
