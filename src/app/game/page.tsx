@@ -73,25 +73,18 @@ const PathLine = ({ reverse = false, className }: { reverse?: boolean; className
     </svg>
 );
 
-const LevelNode = ({ level, isLocked, isCompleted, isLastAttended }: { level: Level; isLocked: boolean; isCompleted: boolean; isLastAttended: boolean; }) => {
+const LevelNode = ({ level, isLocked, isCompleted }: { level: Level; isLocked: boolean; isCompleted: boolean; }) => {
   const linkContent = (
     <div className={cn(
         "relative w-24 h-24 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-300 transform hover:scale-110",
         isLocked ? "bg-gray-400 cursor-not-allowed" : "bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700",
         isCompleted && "bg-gradient-to-br from-yellow-400 to-yellow-600",
-        isLastAttended && "ring-4 ring-pink-500 ring-offset-4 ring-offset-background animate-pulse",
         "border-4 border-white/50"
     )}>
       <div className="absolute inset-1 rounded-full bg-black/10"></div>
       <div className="absolute top-2 left-4 h-4 w-8 rounded-full bg-white/30 transform -rotate-45"></div>
         <span className="relative text-4xl font-bold [text-shadow:2px_2px_4px_rgba(0,0,0,0.4)]">{level.id}</span>
         
-        {isLastAttended && (
-            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-pink-500 text-white text-[10px] font-black px-2 py-1 rounded-full whitespace-nowrap shadow-lg animate-bounce">
-                YOU ARE HERE
-            </div>
-        )}
-
         {isCompleted && !isLocked && (
             <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full p-1 border-2 border-white shadow-md">
                 <Check className="w-4 h-4 text-white" />
@@ -185,7 +178,6 @@ export default function GameHomePage() {
         {gameLevels.map((level, index) => {
             const isLocked = isAdmin ? false : (user ? level.id > 1 && !completedLevels.includes(level.id - 1) : level.id > 1);
             const isCompleted = completedLevels.includes(level.id);
-            const isLastAttended = level.id === lastAttendedId;
             const isLeft = index % 2 === 0;
 
             // Only show reachable levels to keep UI performance high
@@ -205,7 +197,7 @@ export default function GameHomePage() {
 
                     {/* Level Node */}
                     <div className={cn("absolute z-10", isLeft ? "left-0" : "right-0")}>
-                        <LevelNode level={level} isLocked={isLocked} isCompleted={isCompleted} isLastAttended={isLastAttended} />
+                        <LevelNode level={level} isLocked={isLocked} isCompleted={isCompleted} />
                     </div>
                 </div>
             )
