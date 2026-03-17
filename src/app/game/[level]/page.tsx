@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -11,11 +10,15 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
-// Refactored dynamic level info resolver for 1,000 levels
+/**
+ * Resolves level information dynamically for up to 1,000 levels.
+ * Maps ranges to curriculum types and generates unique names.
+ */
 const getLevelInfo = (levelSlug: string): { type: GameLevel, name: string } | null => {
     const levelId = parseInt(levelSlug.replace('level-', ''), 10);
     if (isNaN(levelId) || levelId < 1) return null;
 
+    // Levels 1-8: Specific Small Sister Formulas
     if (levelId <= 8) {
         const types: GameLevel[] = [
             'small-sister-plus-4', 'small-sister-plus-3', 'small-sister-plus-2', 'small-sister-plus-1',
@@ -25,6 +28,7 @@ const getLevelInfo = (levelSlug: string): { type: GameLevel, name: string } | nu
     }
     if (levelId === 9) return { type: 'small-sister-all', name: 'Level 9: Small Sister Challenge' };
     
+    // Levels 10-27: Specific Big Brother Formulas
     if (levelId >= 10 && levelId <= 27) {
         const bigBrotherTypes: GameLevel[] = [
             'big-brother-plus-9', 'big-brother-plus-8', 'big-brother-plus-7', 'big-brother-plus-6', 'big-brother-plus-5',
@@ -36,6 +40,7 @@ const getLevelInfo = (levelSlug: string): { type: GameLevel, name: string } | nu
     }
     if (levelId === 28) return { type: 'big-brother-all', name: 'Level 28: Big Brother Challenge' };
 
+    // Levels 29-36: Specific Combination Formulas
     if (levelId >= 29 && levelId <= 36) {
         const combiTypes: GameLevel[] = [
             'combination-plus-9', 'combination-plus-8', 'combination-plus-7', 'combination-plus-6',
@@ -46,14 +51,15 @@ const getLevelInfo = (levelSlug: string): { type: GameLevel, name: string } | nu
     if (levelId === 37) return { type: 'combination-all', name: 'Level 37: Combination Challenge' };
     if (levelId === 38) return { type: 'general-practice', name: 'Level 38: Final Challenge' };
 
+    // Levels 39-50: Mastery Mix cycles
     if (levelId >= 39 && levelId <= 50) {
-        const mixNum = levelId - 38;
-        return { type: `mastery-mix-${mixNum}` as GameLevel, name: `Level ${levelId}: Mastery Mix ${mixNum}` };
+        const mixNum = ((levelId - 39) % 12) + 1;
+        return { type: `mastery-mix-${mixNum}` as GameLevel, name: `Level ${levelId}: Mastery Mix` };
     }
 
-    // Elite levels (51-1000) cycle through advanced mixed arithmetic
+    // Elite levels (51-1000): Advanced mixed arithmetic
     const eliteIndex = ((levelId - 51) % 12) + 1;
-    return { type: `mastery-mix-${eliteIndex}` as GameLevel, name: `Level ${levelId}: Elite Mastery Challenge` };
+    return { type: `mastery-mix-${eliteIndex}` as GameLevel, name: `Level ${levelId}: Elite Mastery` };
 };
 
 export default function GamePage() {

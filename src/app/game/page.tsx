@@ -1,13 +1,12 @@
-
 'use client';
 
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { cn } from '@/lib/utils';
-import { Star, Check, MapPin } from 'lucide-react';
+import { Star, Check } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Level {
@@ -21,7 +20,6 @@ interface Level {
 const generateLevels = (): Level[] => {
   const levels: Level[] = [];
   
-  // Specific curriculums for the first 50 levels
   const titles = [
     'Small Sister: +4 Formula', 'Small Sister: +3 Formula', 'Small Sister: +2 Formula', 'Small Sister: +1 Formula',
     'Small Sister: -4 Formula', 'Small Sister: -3 Formula', 'Small Sister: -2 Formula', 'Small Sister: -1 Formula',
@@ -141,6 +139,21 @@ export default function GameHomePage() {
     }
   }, [user, getCompletedGameLevels]);
 
+  const lastAttendedId = profile?.lastLevelAttended || 0;
+
+  // Auto-scroll to last attended level
+  useEffect(() => {
+    if (!isLoading && lastAttendedId > 0) {
+      const timer = setTimeout(() => {
+        const element = document.getElementById(`level-node-${lastAttendedId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, lastAttendedId]);
+
   if (isLoading) {
     return (
       <Card>
@@ -158,7 +171,6 @@ export default function GameHomePage() {
   }
 
   const isAdmin = profile?.role === 'admin';
-  const lastAttendedId = profile?.lastLevelAttended || 0;
 
   return (
     <div className="space-y-8">
@@ -176,14 +188,14 @@ export default function GameHomePage() {
             const isLastAttended = level.id === lastAttendedId;
             const isLeft = index % 2 === 0;
 
-            // Only show levels reachable or recently attended to keep UI clean
+            // Only show reachable levels to keep UI performance high
             const maxCompleted = Math.max(...completedLevels, 0);
             const maxReachable = Math.max(maxCompleted + 5, lastAttendedId + 3);
             
             if (level.id > maxReachable && !isAdmin) return null;
 
             return (
-                <div key={level.id} className="relative h-32 flex items-center">
+                <div key={level.id} id={`level-node-${level.id}`} className="relative h-32 flex items-center">
                     {/* Path */}
                     {index < gameLevels.length - 1 && (
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-32 h-full z-0">
@@ -198,7 +210,7 @@ export default function GameHomePage() {
                 </div>
             )
         })}
-        {!isAdmin && completedLevels.length > 0 && (
+        {!isAdmin && (
           <div className="text-center mt-12">
             <p className="text-muted-foreground font-medium italic">Complete current levels to reveal more of the road...</p>
           </div>

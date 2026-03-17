@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -28,10 +27,12 @@ interface Bubble {
 const MAX_LIVES = 5;
 const MIN_SCORE_TO_PASS = 90;
 
+/**
+ * Dynamically scales font size based on the number of digits.
+ * Matches the scale of the question text but shrinks for 3+ digits.
+ */
 const getAnswerFontSize = (val: number) => {
     const s = val.toString().length;
-    // Consistent with question appearance: text-xl (mobile), text-4xl (desktop)
-    // Scale down if 3+ digits to fit perfectly
     if (s <= 2) return "text-xl sm:text-4xl";
     if (s === 3) return "text-lg sm:text-3xl";
     return "text-sm sm:text-2xl";
@@ -117,11 +118,12 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const { playSound } = useSound();
   const router = useRouter();
 
+  // Dynamic difficulty configuration
   const config = useMemo(() => {
     const baseDuration = Math.max(4, 10 - (levelId / 40));
     return {
       speed: baseDuration,
-      answerRange: [12, 37, 63, 88], 
+      answerRange: [12, 37, 63, 88], // Widened lanes to prevent overlapping
       qDelay: 1.2,
       variance: 1.5 
     };
@@ -206,6 +208,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     const newBubbles: Bubble[] = [];
     const batchId = `${Date.now()}-${currentQuestionIndex}`;
 
+    // Math Question Pill (Leader)
     newBubbles.push({
       id: `q-${batchId}`,
       value: -1, 
@@ -216,6 +219,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
       delay: 0,
     });
     
+    // Answer Bubbles
     currentQuestion.options.forEach((option, index) => {
       const duration = (config.speed + 2) + (Math.random() * config.variance);
 
@@ -290,6 +294,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
           }
         `}</style>
 
+        {/* Underwater Decor */}
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
             <BackgroundBubbles />
             <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-yellow-300 to-yellow-200/80 opacity-80" style={{clipPath: 'polygon(0 60%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
@@ -299,6 +304,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             <Seaweed className="right-[25%] bottom-[-15px] scale-75" />
         </div>
 
+        {/* HUD */}
         <div className="absolute top-0 left-0 right-0 p-2 sm:p-6 bg-black/30 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50 animate-in slide-in-from-top duration-500">
             <div className="flex items-center gap-2 sm:gap-8 text-white min-w-0 flex-1">
                 <div className="min-w-0 flex-1 sm:flex-none">
@@ -325,6 +331,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             </Button>
         </div>
 
+        {/* Game Stage */}
         <div className="relative w-full h-full max-w-7xl z-10 flex items-center justify-center">
             {gameState === 'playing' && (
                 <>
@@ -359,6 +366,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             )}
         </div>
 
+        {/* Modals */}
         {(gameState === 'levelComplete' || gameState === 'gameOver') && (
             <div className="absolute inset-0 flex items-center justify-center p-4 z-[1000] animate-in fade-in zoom-in-95 duration-500">
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />

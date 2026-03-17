@@ -1,4 +1,3 @@
-
 import type { Question, Difficulty, TestType, TestSettings, GameLevel } from '@/types';
 import { basicAdditionQuestions } from './question-data/basic-addition';
 import { basicSubtractionQuestions } from './question-data/basic-subtraction';
@@ -199,18 +198,20 @@ function shuffleArray<T>(array: T[]): T[] {
 
 export function generateOptions(correctAnswer: number): number[] {
   const options = new Set<number>([correctAnswer]);
-  const range = Math.max(10, Math.abs(Math.floor(correctAnswer * 0.4)));
+  // Handle 0 answers and ensure all options are non-negative
+  const safeAnswer = Math.max(0, correctAnswer);
+  const range = Math.max(10, Math.abs(Math.floor(safeAnswer * 0.4)));
 
   while (options.size < 4) {
     let wrongAnswer;
-    if (correctAnswer < 10) {
+    if (safeAnswer < 10) {
         wrongAnswer = getRandomInt(0, 20);
     } else {
-        const minOption = Math.max(0, correctAnswer - range);
-        const maxOption = correctAnswer + range;
+        const minOption = Math.max(0, safeAnswer - range);
+        const maxOption = safeAnswer + range;
         wrongAnswer = getRandomInt(minOption, maxOption);
     }
-    if (wrongAnswer !== correctAnswer && wrongAnswer >= 0) {
+    if (wrongAnswer !== safeAnswer && wrongAnswer >= 0) {
       options.add(wrongAnswer);
     }
   }
@@ -219,15 +220,17 @@ export function generateOptions(correctAnswer: number): number[] {
 
 /**
  * Generates elite multi-step mixed arithmetic for levels 51+
+ * Steps: 3, 4, or 5 based on progress
  */
 function generateEliteMultiStepMath(levelId: number): Question[] {
     const questions: Question[] = [];
     const count = 20;
     
-    // Steps count scales with level
+    // Steps count scales with level range
     const stepsCount = levelId < 150 ? 3 : (levelId < 300 ? 4 : 5);
 
     for (let i = 0; i < count; i++) {
+        // Start with a positive seed
         let currentTotal = getRandomInt(10, 50);
         let text = `${currentTotal}`;
         
@@ -238,11 +241,12 @@ function generateEliteMultiStepMath(levelId: number): Question[] {
             const op = Math.random() > 0.5 ? '+' : '-';
             
             if (op === '-') {
-                // Guaranteed positive intermediate results
+                // Check if subtraction would result in negative value
                 if (currentTotal >= nextVal) {
                     currentTotal -= nextVal;
                     text += ` - ${nextVal}`;
                 } else {
+                    // Safe-fallback: add instead to maintain positivity
                     currentTotal += nextVal;
                     text += ` + ${nextVal}`;
                 }
@@ -263,6 +267,7 @@ function generateEliteMultiStepMath(levelId: number): Question[] {
 }
 
 export function generateGameQuestions(level: GameLevel, levelId?: number): Question[] {
+    // Branch to elite generator for levels 51+
     if (levelId && levelId > 50) {
         return generateEliteMultiStepMath(levelId);
     }
@@ -280,7 +285,7 @@ export function generateGameQuestions(level: GameLevel, levelId?: number): Quest
         });
     }
 
-    // Ensure only non-negative answers
+    // Ensure strictly non-negative questions for children
     const positiveOnlyQuestions = allQuestions.filter(q => q.answer >= 0);
     return shuffleArray(positiveOnlyQuestions).slice(0, 20); 
 }
