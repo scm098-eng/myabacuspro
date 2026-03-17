@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -72,7 +71,8 @@ export default function ContactPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...values,
+          name: values.name,
+          email: values.email,
           message: `WhatsApp: ${values.whatsapp}\n\n${values.message}`
         }),
       });
@@ -85,7 +85,7 @@ export default function ContactPage() {
 
       toast({
         title: 'Message Sent!',
-        description: "Thanks for reaching out. We'll get back to you soon on WhatsApp or Email.",
+        description: "Thank you! Check your email for a message from MyAbacusPro.",
       });
       form.reset();
       generateCaptcha();
