@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -15,7 +16,6 @@ import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, Graduati
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from '@/components/ui/textarea';
@@ -130,14 +130,37 @@ export default function AdminDashboardPage() {
     }
     setIsSendingPromo(true);
     try {
-        const functions = getFunctions(firebaseApp);
-        const sendPromo = httpsCallable(functions, 'sendCustomPromotionalEmail');
-        await sendPromo({ subject: emailSubject, message: emailMessage, targetAudience: isTest ? 'none' : targetAudience, isTest, testEmail: profile?.email });
-        toast({ title: isTest ? "Test Sent" : "Success", description: "Campaign processed successfully." });
-        if (!isTest) { setEmailSubject(''); setEmailMessage(''); }
+        const response = await fetch('/api/admin/blast', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subject: emailSubject,
+            message: emailMessage,
+            targetAudience: isTest ? 'none' : targetAudience,
+            isTest,
+            testEmail: profile?.email
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to process campaign');
+        }
+
+        const data = await response.json();
+        toast({ 
+          title: isTest ? "Test Sent" : "Campaign Sent", 
+          description: `Successfully reached ${data.count} recipients.` 
+        });
+        
+        if (!isTest) { 
+          setEmailSubject(''); 
+          setEmailMessage(''); 
+        }
     } catch (error: any) {
         toast({ title: "Failed", description: error.message, variant: "destructive" });
-    } finally { setIsSendingPromo(false); }
+    } finally { 
+      setIsSendingPromo(false); 
+    }
   };
 
   const handleApprove = async (tid: string) => {
@@ -323,7 +346,13 @@ export default function AdminDashboardPage() {
                             <div className="space-y-2"><Label>Target Audience</Label><Select value={targetAudience} onValueChange={setTargetAudience}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Every Student</SelectItem><SelectItem value="pro">Pro Members Only</SelectItem><SelectItem value="free">Free Members Only</SelectItem><SelectItem value="teachers">Teaching Staff Only</SelectItem></SelectContent></Select></div>
                             <div className="space-y-2"><Label>Email Subject</Label><Input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} /></div>
                             <div className="space-y-2"><Label>HTML Content</Label><Textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} className="min-h-[200px]" /></div>
-                            <div className="flex gap-4"><Button onClick={() => handleSendPromo(true)} variant="outline" disabled={isSendingPromo}>Send Test</Button><Button onClick={() => handleSendPromo(false)} className="flex-1" disabled={isSendingPromo}>Blast Campaign</Button></div>
+                            <div className="flex gap-4">
+                              <Button onClick={() => handleSendPromo(true)} variant="outline" disabled={isSendingPromo}>Send Test</Button>
+                              <Button onClick={() => handleSendPromo(false)} className="flex-1" disabled={isSendingPromo}>
+                                {isSendingPromo ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2 h-4 w-4" />}
+                                Blast Campaign
+                              </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
