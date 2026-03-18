@@ -33,17 +33,13 @@ export async function POST(req: NextRequest) {
         
         <div style="padding: 30px; line-height: 1.6; color: #333;">
           <h2 style="color: #0070f3;">Hi ${name},</h2>
-          <p>Thank you for reaching out! We've received your message and our team will get back to you within 24 hours.</p>
+          <p>Thank you for reaching out to us! We have received your message and our team will get back to you within 24 hours.</p>
           
-          <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-          
-          <p><b>Platform Updates:</b> We have updated our timer sounds for a better practice experience and added <b>new game levels</b>!</p>
-          
-          <p>Since your 3-day free trial has ended, we encourage you to upgrade to a <b>Pro Account</b> to unlock these new levels and continue your speed building.</p>
+          <p>We are committed to providing the best mental math experience for our students. Feel free to explore our advanced modules while you wait for our reply.</p>
           
           <div style="text-align: center; margin-top: 30px;">
             <a href="https://myabacuspro.com/pricing" style="background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
-              Get MyAbacusPro PRO
+              Unlock Full Access
             </a>
           </div>
         </div>
