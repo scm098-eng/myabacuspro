@@ -221,7 +221,7 @@ export default function AdminUserDetailsPage() {
                             <span className="text-sm text-muted-foreground">{userProfile.schoolName}, {userProfile.grade}</span>
                         </div>
                     )}
-                     {userProfile.role === 'teacher' && userProfile.instituteName && (
+                     {(userProfile.role === 'teacher' || userProfile.role === 'admin') && userProfile.instituteName && (
                         <div className="flex items-center gap-2 pt-1">
                             <Building className="w-4 h-4 text-muted-foreground" />
                             <span className="text-sm text-muted-foreground">{userProfile.instituteName}</span>
@@ -268,9 +268,9 @@ export default function AdminUserDetailsPage() {
             </CardHeader>
         </Card>
 
-        {userProfile.role === 'teacher' && (
+        {(userProfile.role === 'teacher' || userProfile.role === 'admin') && (
             <Card>
-                <CardHeader><CardTitle>Teacher Details</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{userProfile.role === 'admin' ? 'Admin Details' : 'Teacher Details'}</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                         <div className="flex items-start gap-3"><Calendar className="w-5 h-5 text-primary mt-1" /><div className="grid gap-0.5"><span className="text-muted-foreground">Date of Birth</span><span className="font-semibold">{userProfile.dob ? format(new Date(userProfile.dob), 'PP') : 'N/A'} ({age} years)</span></div></div>

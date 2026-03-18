@@ -6,7 +6,20 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 export async function POST(req: NextRequest) {
   try {
-    const { subject, message, targetAudience, isTest, testEmail } = await req.json();
+    // Check if the request is actually JSON
+    const contentType = req.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      return NextResponse.json({ error: "Invalid request format" }, { status: 400 });
+    }
+
+    // Safely parse JSON or default to null
+    const body = await req.json().catch(() => null);
+    
+    if (!body) {
+      return NextResponse.json({ error: "No data provided" }, { status: 400 });
+    }
+
+    const { subject, message, targetAudience, isTest, testEmail } = body;
 
     const GMAIL_USER = 'myabacuspro@gmail.com';
     const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
@@ -59,7 +72,7 @@ export async function POST(req: NextRequest) {
           ${content.replace(/\n/g, '<br>')}
           <div style="text-align: center; margin-top: 30px;">
             <a href="https://myabacuspro.com/pricing" style="background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
-              Upgrade to Premium
+              Unlock Full Access
             </a>
           </div>
         </div>
