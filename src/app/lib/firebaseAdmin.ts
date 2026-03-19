@@ -1,29 +1,22 @@
-import * as admin from "firebase-admin";
+import * as admin from 'firebase-admin';
 
 /**
- * Standardized Firebase Admin initialization used across the app.
- * Moved logic inside the getter to prevent SyntaxErrors during global module evaluation.
+ * Standardized Firebase Admin initialization using Application Default Credentials.
+ * This version removes the risky manual parsing of service account JSONs
+ * to prevent SyntaxErrors during initialization.
  */
-export const getFirebaseAdmin = () => {
+export function getFirebaseAdmin() {
   if (admin.apps.length > 0) {
     return admin.apps[0]!;
   }
 
-  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.FIREBASE_SERVICE_ACCOUNT;
-  
-  if (!serviceAccount || serviceAccount === "undefined") {
-    return admin.initializeApp();
-  }
-
   try {
-    const config = typeof serviceAccount === 'object' ? serviceAccount : JSON.parse(serviceAccount);
-    return admin.initializeApp({
-      credential: admin.credential.cert(config),
-    });
-  } catch (e) {
-    console.error("Firebase Admin initialization failed, using default credentials.");
+    console.log("Admin Init: Using Application Default Credentials...");
     return admin.initializeApp();
+  } catch (e) {
+    console.error("Firebase Admin Init Error:", e);
+    throw e;
   }
-};
+}
 
 export const getFirestore = () => getFirebaseAdmin().firestore();
