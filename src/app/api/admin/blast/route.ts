@@ -5,44 +5,32 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Smart Parse Logic: Safely retrieve the body
-    let body;
-    try {
-      // Try to get JSON directly first
-      body = await req.json();
-    } catch (e) {
-      // If that fails, the body might be empty or raw text
-      const rawText = await req.text();
-      if (!rawText) {
-        return NextResponse.json({ error: "No data sent from frontend" }, { status: 400 });
-      }
-      try {
-        body = JSON.parse(rawText);
-      } catch (jsonErr) {
-        console.error("JSON Parse Error:", jsonErr);
-        return NextResponse.json({ error: "Invalid JSON format" }, { status: 400 });
-      }
-    }
+    // 1. Let Next.js handle the JSON parsing automatically
+    // This replaces the manual JSON.parse that was causing your error
+    const body = await req.json();
 
-    // 2. DEBUG LOG: Monitor the incoming data structure
-    console.log("--- MyAbacusPro Blast Debug ---");
-    console.log("Final Body Object:", body);
+    // 2. Log for verification
+    console.log("--- MyAbacusPro Blast Triggered ---");
+    console.log("Target:", body.targetAudience);
+    console.log("Is Test:", body.isTest);
 
+    // 3. Extract your variables
     const { subject, message, targetAudience, isTest, testEmail } = body;
 
-    // 3. Validate essential fields
+    // 4. Validation
     if (!subject || !message) {
-      return NextResponse.json({ error: "Subject and Message are required" }, { status: 400 });
+      return NextResponse.json({ error: "Missing subject or message" }, { status: 400 });
     }
 
     const GMAIL_USER = 'myabacuspro@gmail.com';
     const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
 
     if (!GMAIL_PASS) {
-      console.error("CRITICAL: GMAIL_APP_PASSWORD missing in environment.");
-      return NextResponse.json({ error: 'Mail server not configured.' }, { status: 500 });
+      console.error("CRITICAL: GMAIL_APP_PASSWORD is not set in environment variables");
+      return NextResponse.json({ error: 'Mail server configuration missing.' }, { status: 500 });
     }
 
+    // 5. Setup Transporter
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -56,6 +44,7 @@ export async function POST(req: NextRequest) {
 
     let emailList: string[] = [];
 
+    // 6. Logic to build email list
     if (isTest && testEmail) {
       emailList = [testEmail];
     } else {
@@ -79,7 +68,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (emailList.length === 0) {
-      return NextResponse.json({ success: true, count: 0, message: "No recipients found for the selected audience." });
+      return NextResponse.json({ error: "No recipients found." }, { status: 404 });
     }
 
     const htmlTemplate = (content: string) => `
@@ -101,7 +90,7 @@ export async function POST(req: NextRequest) {
       </div>
     `;
 
-    // Process in parallel
+    // 7. Send Emails
     const sendPromises = emailList.map((email) =>
       transporter.sendMail({
         from: `"MyAbacusPro" <${GMAIL_USER}>`,
