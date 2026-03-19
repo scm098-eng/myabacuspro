@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
@@ -6,29 +5,35 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Read the raw text first to avoid the "undefined JSON" crash
-    const rawText = await req.text();
-    
-    // 2. LOG IT: This will show up in your server logs
-    console.log("--- DEBUG: Blast Request Received ---");
-    console.log("Raw Body Text:", rawText || "EMPTY BODY");
-    console.log("Headers:", Object.fromEntries(req.headers.entries()));
-
-    if (!rawText) {
-      return NextResponse.json({ error: "No data sent from frontend" }, { status: 400 });
-    }
-
-    // 3. Try to parse the JSON manually
+    // 1. Smart Parse Logic: Safely retrieve the body
     let body;
     try {
-      body = JSON.parse(rawText);
-      console.log("Parsed JSON Object:", body);
+      // Try to get JSON directly first
+      body = await req.json();
     } catch (e) {
-      console.error("JSON Parse Error:", e);
-      return NextResponse.json({ error: "Invalid JSON format" }, { status: 400 });
+      // If that fails, the body might be empty or raw text
+      const rawText = await req.text();
+      if (!rawText) {
+        return NextResponse.json({ error: "No data sent from frontend" }, { status: 400 });
+      }
+      try {
+        body = JSON.parse(rawText);
+      } catch (jsonErr) {
+        console.error("JSON Parse Error:", jsonErr);
+        return NextResponse.json({ error: "Invalid JSON format" }, { status: 400 });
+      }
     }
 
+    // 2. DEBUG LOG: Monitor the incoming data structure
+    console.log("--- MyAbacusPro Blast Debug ---");
+    console.log("Final Body Object:", body);
+
     const { subject, message, targetAudience, isTest, testEmail } = body;
+
+    // 3. Validate essential fields
+    if (!subject || !message) {
+      return NextResponse.json({ error: "Subject and Message are required" }, { status: 400 });
+    }
 
     const GMAIL_USER = 'myabacuspro@gmail.com';
     const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
