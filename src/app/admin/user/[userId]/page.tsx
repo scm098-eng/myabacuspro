@@ -84,12 +84,12 @@ export default function AdminUserDetailsPage() {
               setTestHistory(history);
               setIsLoading(false);
             });
-          } else if (profile.role === 'teacher') {
+          } else if (profile.role === 'teacher' || profile.role === 'admin') {
             getAllUsers('student').then(allStudents => {
               setAssignedStudents(allStudents.filter(s => s.teacherId === userId));
               setIsLoading(false);
             });
-          } else { // Admin
+          } else {
              setIsLoading(false);
           }
         });
@@ -312,11 +312,11 @@ export default function AdminUserDetailsPage() {
           </>
         )}
 
-         {userProfile.role === 'teacher' && (
+         {(userProfile.role === 'teacher' || userProfile.role === 'admin') && (
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Users className="w-6 h-6 text-primary"/>Assigned Students</CardTitle>
-                    <CardDescription>A list of all students assigned to this teacher.</CardDescription>
+                    <CardDescription>A list of all students assigned to this {userProfile.role}.</CardDescription>
                 </CardHeader>
                 <CardContent>
                      <Table>
@@ -353,7 +353,7 @@ export default function AdminUserDetailsPage() {
                                 </TableRow>
                                 ))
                             ) : (
-                                <TableRow><TableCell colSpan={4} className="text-center">No students assigned to this teacher.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={4} className="text-center">No students assigned to this {userProfile.role}.</TableCell></TableRow>
                             )}
                         </TableBody>
                     </Table>
