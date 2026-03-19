@@ -1,4 +1,3 @@
-
 import type { Question, Difficulty, TestType, TestSettings, GameLevel } from '@/types';
 import { basicAdditionQuestions } from './question-data/basic-addition';
 import { basicSubtractionQuestions } from './question-data/basic-subtraction';
@@ -186,16 +185,10 @@ export function getTestSettings(testId: TestType, difficulty: Difficulty): TestS
     const isBeadTest = testId === 'beads-identify' || testId === 'beads-set';
     if (isBeadTest) {
       const levelNum = parseInt(difficulty.replace('level-', ''), 10);
-      let title = `Beads Practice - Level ${levelNum}`;
-      if (levelNum <= 10) title += ' (Single Digit)';
-      else if (levelNum <= 20) title += ' (Double Digit)';
-      else if (levelNum <= 30) title += ' (Triple Digit)';
-      else title += ' (4-Digit)';
-
       return {
         numQuestions: 20,
         timeLimit: 0,
-        title: title,
+        title: `Beads Practice - Level ${levelNum} (Mixed)`,
         icon: testId === 'beads-identify' ? 'eye' : 'puzzle'
       };
     }
@@ -315,27 +308,23 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
     const questionType = testId === 'beads-identify' ? 'identify' : 'set';
     const levelNum = difficulty.startsWith('level-') ? parseInt(difficulty.replace('level-', ''), 10) : 1;
     
-    let minRange = 1;
-    let maxRange = 9;
-
-    if (levelNum <= 10) {
-      // Single Digits
-      if (levelNum <= 3) maxRange = 4; // Lower beads only
-      else if (levelNum <= 6) { minRange = 5; maxRange = 9; } // Upper beads priority
-      else maxRange = 9;
-    } else if (levelNum <= 20) {
-      // Double Digits
-      minRange = 10; maxRange = 99;
-    } else if (levelNum <= 30) {
-      // Triple Digits
-      minRange = 100; maxRange = 999;
-    } else {
-      // 4-Digit
-      minRange = 1000; maxRange = 9999;
-    }
-
     for(let i=0; i<settings.numQuestions; i++) {
-      questions.push({ text: '', answer: getRandomInt(minRange, maxRange), options: [], questionType });
+      let maxDigits = 1;
+      if (levelNum <= 2) maxDigits = 1; 
+      else if (levelNum <= 4) maxDigits = 2;
+      else if (levelNum <= 7) maxDigits = 3;
+      else maxDigits = 4;
+
+      const digits = getRandomInt(1, maxDigits);
+      const minRange = Math.pow(10, digits - 1);
+      const maxRange = Math.pow(10, digits) - 1;
+      
+      questions.push({ 
+        text: '', 
+        answer: getRandomInt(minRange, maxRange), 
+        options: [], 
+        questionType 
+      });
     }
     return shuffleArray(questions);
   }
