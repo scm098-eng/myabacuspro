@@ -185,10 +185,17 @@ export function getTestSettings(testId: TestType, difficulty: Difficulty): TestS
     const isBeadTest = testId === 'beads-identify' || testId === 'beads-set';
     if (isBeadTest) {
       const levelNum = parseInt(difficulty.replace('level-', ''), 10);
+      let subTitle = "Mixed Training";
+      if (levelNum <= 2) subTitle = "Single Digit";
+      else if (levelNum <= 4) subTitle = "Double Digit";
+      else if (levelNum <= 6) subTitle = "Triple Digit";
+      else if (levelNum <= 8) subTitle = "4-Digit Advanced";
+      else subTitle = "Grand Master Mix";
+
       return {
         numQuestions: 20,
         timeLimit: 0,
-        title: `Beads Practice - Level ${levelNum} (Mixed)`,
+        title: `Beads Practice - Level ${levelNum} (${subTitle})`,
         icon: testId === 'beads-identify' ? 'eye' : 'puzzle'
       };
     }
@@ -312,10 +319,17 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
       let maxDigits = 1;
       if (levelNum <= 2) maxDigits = 1; 
       else if (levelNum <= 4) maxDigits = 2;
-      else if (levelNum <= 7) maxDigits = 3;
-      else maxDigits = 4;
+      else if (levelNum <= 6) maxDigits = 3;
+      else if (levelNum <= 8) maxDigits = 4;
+      else maxDigits = 4; // Mix logic
 
-      const digits = getRandomInt(1, maxDigits);
+      let digits = 1;
+      if (levelNum <= 8) {
+          digits = maxDigits; // Fixed digit count for levels 1-8
+      } else {
+          digits = getRandomInt(1, 4); // Full mix for 9-12
+      }
+
       const minRange = Math.pow(10, digits - 1);
       const maxRange = Math.pow(10, digits) - 1;
       

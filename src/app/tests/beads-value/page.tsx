@@ -9,15 +9,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
-import { MousePointerClick, Eye, Lock, Zap } from 'lucide-react';
+import { MousePointerClick, Eye, Lock, Zap, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const LevelGrid = ({ mode, isLocked }: { mode: 'beads-identify' | 'beads-set', isLocked: boolean }) => {
   const router = useRouter();
-  const levels = Array.from({ length: 10 }, (_, i) => i + 1);
+  const levels = Array.from({ length: 12 }, (_, i) => i + 1);
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 py-4">
+    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 py-4">
       {levels.map((level) => (
         <Button
           key={level}
@@ -25,12 +25,12 @@ const LevelGrid = ({ mode, isLocked }: { mode: 'beads-identify' | 'beads-set', i
           disabled={isLocked}
           onClick={() => router.push(`/tests/${mode}/level-${level}`)}
           className={cn(
-            "h-20 text-xl font-black transition-all hover:scale-105 rounded-2xl",
+            "h-20 text-xl font-black transition-all hover:scale-105 rounded-2xl flex flex-col items-center justify-center gap-1",
             isLocked ? "opacity-50 grayscale" : "border-primary/20 hover:border-primary bg-card hover:bg-primary/5 shadow-sm"
           )}
         >
-          {isLocked ? <Lock className="w-4 h-4 mr-2" /> : null}
-          Level {level}
+          {isLocked ? <Lock className="w-4 h-4" /> : <span className="text-[10px] uppercase text-muted-foreground font-bold">Level</span>}
+          <span className="leading-none">{level}</span>
         </Button>
       ))}
     </div>
@@ -66,7 +66,7 @@ export default function BeadsValuePage() {
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-black tracking-tight text-foreground font-headline sm:text-6xl uppercase">Beads Mastery</h1>
         <p className="max-w-2xl mx-auto text-lg text-muted-foreground font-medium">
-          10 levels of progressive training. Each level features a dynamic mixture of digits to sharpen your mental visualization.
+          Progressive training from single digits to 4-digit complexity. 12 levels designed to build perfect mental visualization.
         </p>
       </div>
 
@@ -83,7 +83,7 @@ export default function BeadsValuePage() {
         <div className="mt-10">
           <TabsContent value="identify" className="animate-in fade-in slide-in-from-left-4">
             <Card className="border-none shadow-xl bg-card/50 backdrop-blur-sm rounded-[2rem] overflow-hidden">
-              <CardHeader className="bg-yellow-500 text-white py-10 text-center">
+              <CardHeader className="bg-indigo-600 text-white py-10 text-center">
                 <div className="mx-auto bg-white/20 p-4 rounded-full w-fit mb-4">
                   <Eye className="w-10 h-10" />
                 </div>
@@ -91,10 +91,24 @@ export default function BeadsValuePage() {
                   Visual Recognition
                 </CardTitle>
                 <CardDescription className="text-white/80 font-bold text-lg">
-                  Can you read the abacus? Select a level to start.
+                  Read the abacus values. Starts with 1-digit, ends with a grand mix!
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-8">
+                <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-center">
+                        <p className="text-[10px] font-black text-indigo-600 uppercase">Levels 1-8</p>
+                        <p className="text-xs font-bold text-indigo-900">Digit-Specific Training</p>
+                    </div>
+                    <div className="p-3 bg-purple-50 border border-purple-100 rounded-xl text-center">
+                        <p className="text-[10px] font-black text-purple-600 uppercase">Levels 9-12</p>
+                        <p className="text-xs font-bold text-purple-900">The Grand Mix</p>
+                    </div>
+                    <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-center">
+                        <p className="text-[10px] font-black text-blue-600 uppercase">Goal</p>
+                        <p className="text-xs font-bold text-blue-900">Perfect Visualization</p>
+                    </div>
+                </div>
                 <LevelGrid mode="beads-identify" isLocked={isLocked} />
               </CardContent>
             </Card>
@@ -114,6 +128,20 @@ export default function BeadsValuePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-8">
+                 <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-center">
+                        <p className="text-[10px] font-black text-blue-600 uppercase">Steps 1-8</p>
+                        <p className="text-xs font-bold text-blue-900">Targeted Digit Practice</p>
+                    </div>
+                    <div className="p-3 bg-cyan-50 border border-cyan-100 rounded-xl text-center">
+                        <p className="text-[10px] font-black text-cyan-600 uppercase">Steps 9-12</p>
+                        <p className="text-xs font-bold text-cyan-900">Mixed Digit Mastery</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-center">
+                        <p className="text-[10px] font-black text-slate-600 uppercase">Reward</p>
+                        <p className="text-xs font-bold text-slate-900">Precision Building</p>
+                    </div>
+                </div>
                 <LevelGrid mode="beads-set" isLocked={isLocked} />
               </CardContent>
             </Card>
