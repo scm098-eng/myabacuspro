@@ -175,6 +175,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
       const { earnedPoints } = calculatePoints({
         correct: correctAnswers,
         total: questions.length,
+        answered: questions.length,
         timeInSeconds: 0,
         targetTime: 0,
         level: levelId,

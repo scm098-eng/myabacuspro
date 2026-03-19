@@ -73,6 +73,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         return acc;
     }, 0);
 
+    const answeredCount = userAnswers.filter(a => a !== null).length;
     let earnedPointsTotal = 0;
 
     if (user) {
@@ -84,6 +85,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       const pointsCalculation = calculatePoints({
         correct: score,
         total: questions.length,
+        answered: answeredCount,
         timeInSeconds: timeSpent,
         targetTime: settings.timeLimit,
         level: difficultyLevel,

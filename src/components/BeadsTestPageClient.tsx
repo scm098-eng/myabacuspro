@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -84,6 +83,7 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
         return acc;
     }, 0);
 
+    const answeredCount = finalAnswers.filter(a => a !== null).length;
     let earnedPointsTotal = 0;
 
     if (user) {
@@ -93,6 +93,7 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
       const { earnedPoints } = calculatePoints({
         correct: score,
         total: questions.length,
+        answered: answeredCount,
         timeInSeconds: 0,
         targetTime: 0,
         level: 1, 
