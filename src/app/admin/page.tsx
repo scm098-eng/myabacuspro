@@ -132,7 +132,9 @@ export default function AdminDashboardPage() {
     try {
         const response = await fetch('/api/admin/blast', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json' 
+          },
           body: JSON.stringify({
             subject: emailSubject,
             message: emailMessage,
@@ -142,11 +144,12 @@ export default function AdminDashboardPage() {
           }),
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-          throw new Error('Failed to process campaign');
+          throw new Error(data.error || 'Failed to process campaign');
         }
 
-        const data = await response.json();
         toast({ 
           title: isTest ? "Test Sent" : "Campaign Sent", 
           description: `Successfully reached ${data.count} recipients.` 
@@ -157,6 +160,7 @@ export default function AdminDashboardPage() {
           setEmailMessage(''); 
         }
     } catch (error: any) {
+        console.error("Blast Frontend Error:", error);
         toast({ title: "Failed", description: error.message, variant: "destructive" });
     } finally { 
       setIsSendingPromo(false); 

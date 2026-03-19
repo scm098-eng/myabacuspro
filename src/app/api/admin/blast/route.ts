@@ -6,17 +6,26 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 export async function POST(req: NextRequest) {
   try {
-    // Check if the request is actually JSON
-    const contentType = req.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      return NextResponse.json({ error: "Invalid request format" }, { status: 400 });
+    // 1. Read the raw text first to avoid the "undefined JSON" crash
+    const rawText = await req.text();
+    
+    // 2. LOG IT: This will show up in your server logs
+    console.log("--- DEBUG: Blast Request Received ---");
+    console.log("Raw Body Text:", rawText || "EMPTY BODY");
+    console.log("Headers:", Object.fromEntries(req.headers.entries()));
+
+    if (!rawText) {
+      return NextResponse.json({ error: "No data sent from frontend" }, { status: 400 });
     }
 
-    // Safely parse JSON or default to null
-    const body = await req.json().catch(() => null);
-    
-    if (!body) {
-      return NextResponse.json({ error: "No data provided" }, { status: 400 });
+    // 3. Try to parse the JSON manually
+    let body;
+    try {
+      body = JSON.parse(rawText);
+      console.log("Parsed JSON Object:", body);
+    } catch (e) {
+      console.error("JSON Parse Error:", e);
+      return NextResponse.json({ error: "Invalid JSON format" }, { status: 400 });
     }
 
     const { subject, message, targetAudience, isTest, testEmail } = body;
@@ -25,6 +34,7 @@ export async function POST(req: NextRequest) {
     const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
 
     if (!GMAIL_PASS) {
+      console.error("CRITICAL: GMAIL_APP_PASSWORD missing in environment.");
       return NextResponse.json({ error: 'Mail server not configured.' }, { status: 500 });
     }
 
@@ -63,6 +73,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    if (emailList.length === 0) {
+      return NextResponse.json({ success: true, count: 0, message: "No recipients found for the selected audience." });
+    }
+
     const htmlTemplate = (content: string) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
         <div style="background-color: #0070f3; padding: 20px; text-align: center; color: white;">
@@ -96,7 +110,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, count: emailList.length });
   } catch (error: any) {
-    console.error('Blast API Error:', error);
+    console.error('Blast API Global Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
