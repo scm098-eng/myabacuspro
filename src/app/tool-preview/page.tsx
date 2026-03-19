@@ -179,11 +179,8 @@ function ToolPreviewContent() {
                 </div>
               </div>
               
-              {/* Horizontal Scrollable Container */}
-              <div className="w-full overflow-x-auto py-4">
-                <div className="flex justify-start sm:justify-center min-w-max px-4">
+              <div className="w-full">
                   <BeadDisplay value={value} onChange={setValue} rodCount={7} />
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -261,23 +258,18 @@ function ToolPreviewContent() {
                   </div>
                 </CardHeader>
                 <CardContent className="py-10">
-                  {/* Horizontal Scrollable Container */}
-                  <div className="w-full overflow-x-auto">
-                    <div className="flex justify-start sm:justify-center min-w-max px-4">
-                      <BeadDisplay 
-                        value={currentLabValue} 
-                        rodCount={7} 
-                        activeRodIndex={activeRodIndex}
-                      />
-                    </div>
-                  </div>
+                  <BeadDisplay 
+                    value={currentLabValue} 
+                    rodCount={7} 
+                    activeRodIndex={activeRodIndex}
+                  />
                 </CardContent>
-                <CardFooter className="bg-muted/30 border-t flex items-center justify-between p-6">
+                <CardFooter className="bg-muted/30 border-t flex flex-col sm:flex-row items-center justify-between p-6 gap-4">
                   <Button 
                     variant="outline" 
                     onClick={() => setCurrentStepIndex(p => Math.max(-1, p - 1))}
                     disabled={currentStepIndex < 0}
-                    className="h-12 px-6"
+                    className="h-12 px-6 w-full sm:w-auto"
                   >
                     <ChevronLeft className="w-5 h-5 mr-2" /> Previous Step
                   </Button>
@@ -289,7 +281,7 @@ function ToolPreviewContent() {
                   <Button 
                     onClick={() => setCurrentStepIndex(p => Math.min(multiplicationSteps.length - 1, p + 1))}
                     disabled={currentStepIndex >= multiplicationSteps.length - 1}
-                    className="h-12 px-6"
+                    className="h-12 px-6 w-full sm:w-auto"
                   >
                     Next Step <ChevronRight className="w-5 h-5 ml-2" />
                   </Button>

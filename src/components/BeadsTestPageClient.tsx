@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -71,6 +72,16 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
   }, [currentQuestionIndex, testId]);
 
   const currentQuestion = useMemo(() => questions[currentQuestionIndex], [questions, currentQuestionIndex]);
+
+  // Determine dynamic rod count based on the question's target answer
+  const dynamicRodCount = useMemo(() => {
+    if (!currentQuestion) return 3;
+    const ans = currentQuestion.answer;
+    if (ans < 100) return 3;
+    if (ans < 1000) return 4;
+    if (ans < 10000) return 5;
+    return 7;
+  }, [currentQuestion]);
 
   const finishTest = useCallback(async (finalAnswers: (number | null)[]) => {
     if (isFinished) return;
@@ -189,10 +200,8 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
       return (
         <div className="flex flex-col items-center w-full">
             <p className="mb-4 text-lg font-semibold">What is the value shown?</p>
-            <div className="w-full overflow-x-auto py-4">
-                <div className="flex justify-start sm:justify-center min-w-max px-4">
-                    <BeadDisplay value={currentQuestion.answer} />
-                </div>
+            <div className="w-full">
+                <BeadDisplay value={currentQuestion.answer} rodCount={dynamicRodCount} />
             </div>
             <Input
                 ref={inputRef}
@@ -211,10 +220,8 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
         <div className="flex flex-col items-center w-full">
             <p className="mb-4 text-lg font-semibold">Set this value on the abacus:</p>
             <p className="text-4xl font-bold mb-4 text-primary">{currentQuestion.answer}</p>
-            <div className="w-full overflow-x-auto py-4">
-                <div className="flex justify-start sm:justify-center min-w-max px-4">
-                    <BeadDisplay value={abacusValue} onChange={setAbacusValue} />
-                </div>
+            <div className="w-full">
+                <BeadDisplay value={abacusValue} onChange={setAbacusValue} rodCount={dynamicRodCount} />
             </div>
         </div>
       );
@@ -254,7 +261,7 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
             {renderQuestion()}
           </div>
 
-          <div className="flex items-center justify-center gap-4 mt-auto">
+          <div className="flex items-center justify-center gap-4 mt-auto pt-8">
             <Button onClick={handleAnswerSubmit} className="h-14 text-lg px-8">
               <Check className="mr-2 h-5 w-5"/>
               Submit and Next

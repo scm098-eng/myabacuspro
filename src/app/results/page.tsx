@@ -147,6 +147,16 @@ function ResultsComponent() {
   const abacusValue = currentStep?.value ?? 0;
   const activeRodIndex = currentStep?.atRodFromRight ? 7 - currentStep.atRodFromRight : -1;
 
+  // Determine dynamic rod count for the solution modal based on the answer
+  const dynamicRodCount = useMemo(() => {
+    if (!modalQuestion) return 7;
+    const ans = modalQuestion.answer;
+    if (ans < 100) return 3;
+    if (ans < 1000) return 4;
+    if (ans < 10000) return 5;
+    return 7;
+  }, [modalQuestion]);
+
   const questionCards = useMemo(() => {
     if (!resultsData) return null;
 
@@ -312,14 +322,12 @@ function ResultsComponent() {
                   )}
               </div>
 
-              <div className="w-full overflow-x-auto py-6 scrollbar-thin scrollbar-thumb-primary/20">
-                  <div className="flex justify-start sm:justify-center min-w-max px-6 mx-auto">
-                      <BeadDisplay 
-                          value={abacusValue} 
-                          rodCount={7} 
-                          activeRodIndex={activeRodIndex}
-                      />
-                  </div>
+              <div className="w-full py-6">
+                  <BeadDisplay 
+                      value={abacusValue} 
+                      rodCount={dynamicRodCount} 
+                      activeRodIndex={activeRodIndex >= 0 ? dynamicRodCount - (7 - activeRodIndex) : -1}
+                  />
               </div>
             </div>
             <ScrollBar orientation="vertical" />

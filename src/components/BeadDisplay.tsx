@@ -58,14 +58,14 @@ const AbacusRod = ({
            {isUnitRod && <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 bg-black rounded-full shadow-inner border border-black ring-1 ring-white/20"></div>}
         </div>
 
-        {/* Upper Section (Heavenly Bead) - Spacing fixed to sit flush with bar */}
+        {/* Upper Section (Heavenly Bead) */}
         <div className="w-full h-[30%] flex flex-col items-center justify-end pb-[6.5px] z-20">
            <div className={cn("transition-all duration-300", !upperBeadActive && "-translate-y-12")}>
               <Bead onClick={() => onBeadClick(5)} />
            </div>
         </div>
 
-         {/* Lower Section (Earthly Beads) - Spacing fixed to sit flush with bar */}
+         {/* Lower Section (Earthly Beads) */}
         <div className="w-full h-[70%] flex flex-col items-center justify-start pt-[6.5px] z-20">
               <div className="flex flex-col items-center">
                   {Array.from({ length: lowerBeadsValue }).map((_, i) => (
@@ -90,7 +90,7 @@ const AbacusRod = ({
   );
 };
 
-const ROD_LABELS = ['T.L', 'L', 'T.Th', 'Th', 'H', 'T', 'U'];
+const ALL_LABELS = ['T.L', 'L', 'T.Th', 'Th', 'H', 'T', 'U'];
 
 export default function BeadDisplay({ 
   value, 
@@ -108,6 +108,9 @@ export default function BeadDisplay({
   };
   
   const digits = getDigits(value || 0);
+
+  // Map labels based on rodCount relative to the unit rod (which is always at the end)
+  const currentLabels = ALL_LABELS.slice(ALL_LABELS.length - rodCount);
 
   const handleBeadClick = (rodIndex: number, beadValue: number) => {
     if (!onChange) return;
@@ -145,19 +148,21 @@ export default function BeadDisplay({
   };
 
   return (
-    <div className="inline-flex justify-center items-center p-2 sm:p-4 rounded-xl border-[6px] sm:border-[8px] border-[#4a2c19] shadow-xl bg-[#c6a47f] shrink-0" 
-         style={{boxShadow: 'inset 0 0 15px rgba(0,0,0,0.4), 0 8px 20px rgba(0,0,0,0.5)'}}>
-      <div className="flex flex-row bg-[#a6866a] p-1.5 sm:p-2.5 rounded-lg shadow-[inset_0_2px_6px_rgba(0,0,0,0.3)] gap-x-0.5 sm:gap-x-1 border-2 border-[#3d241a]/30 shrink-0">
-        {digits.map((digit, index) => (
-          <AbacusRod 
-            key={index}
-            digit={digit} 
-            isUnitRod={index === rodCount - 1 || (rodCount > 3 && (index === Math.floor(rodCount / 2) || index === rodCount - 4))}
-            onBeadClick={(beadValue) => handleBeadClick(index, beadValue)}
-            isActive={activeRodIndex === index}
-            label={ROD_LABELS[ROD_LABELS.length - rodCount + index]}
-          />
-        ))}
+    <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-primary/20">
+      <div className="inline-flex justify-center items-center p-2 sm:p-4 rounded-xl border-[6px] sm:border-[8px] border-[#4a2c19] shadow-xl bg-[#c6a47f] min-w-max mx-auto" 
+           style={{boxShadow: 'inset 0 0 15px rgba(0,0,0,0.4), 0 8px 20px rgba(0,0,0,0.5)'}}>
+        <div className="flex flex-row bg-[#a6866a] p-1.5 sm:p-2.5 rounded-lg shadow-[inset_0_2px_6px_rgba(0,0,0,0.3)] gap-x-0.5 sm:gap-x-1 border-2 border-[#3d241a]/30">
+          {digits.map((digit, index) => (
+            <AbacusRod 
+              key={index}
+              digit={digit} 
+              isUnitRod={index === rodCount - 1}
+              onBeadClick={(beadValue) => handleBeadClick(index, beadValue)}
+              isActive={activeRodIndex === index}
+              label={currentLabels[index]}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
