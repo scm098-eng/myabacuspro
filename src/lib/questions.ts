@@ -182,7 +182,25 @@ const gameQuestionMap: Record<GameLevel, string[]> = {
 };
 
 export function getTestSettings(testId: TestType, difficulty: Difficulty): TestSettings | undefined {
-  return TEST_CONFIG[testId]?.[difficulty] as TestSettings | undefined;
+  if (difficulty.startsWith('level-')) {
+    const isBeadTest = testId === 'beads-identify' || testId === 'beads-set';
+    if (isBeadTest) {
+      const levelNum = parseInt(difficulty.replace('level-', ''), 10);
+      let title = `Beads Practice - Level ${levelNum}`;
+      if (levelNum <= 10) title += ' (Single Digit)';
+      else if (levelNum <= 20) title += ' (Double Digit)';
+      else if (levelNum <= 30) title += ' (Triple Digit)';
+      else title += ' (4-Digit)';
+
+      return {
+        numQuestions: 20,
+        timeLimit: 0,
+        title: title,
+        icon: testId === 'beads-identify' ? 'eye' : 'puzzle'
+      };
+    }
+  }
+  return TEST_CONFIG[testId]?.[difficulty as keyof Partial<Record<Difficulty, TestSettings>>] as TestSettings | undefined;
 }
 
 function getRandomInt(min: number, max: number): number {
@@ -295,9 +313,30 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
   
   if (testId === 'beads-identify' || testId === 'beads-set') {
     const questionType = testId === 'beads-identify' ? 'identify' : 'set';
-    for(let i=0; i<5; i++) questions.push({ text: '', answer: getRandomInt(1,9), options: [], questionType });
-    for(let i=0; i<5; i++) questions.push({ text: '', answer: getRandomInt(10,99), options: [], questionType });
-    for(let i=0; i<10; i++) questions.push({ text: '', answer: getRandomInt(100,999), options: [], questionType });
+    const levelNum = difficulty.startsWith('level-') ? parseInt(difficulty.replace('level-', ''), 10) : 1;
+    
+    let minRange = 1;
+    let maxRange = 9;
+
+    if (levelNum <= 10) {
+      // Single Digits
+      if (levelNum <= 3) maxRange = 4; // Lower beads only
+      else if (levelNum <= 6) { minRange = 5; maxRange = 9; } // Upper beads priority
+      else maxRange = 9;
+    } else if (levelNum <= 20) {
+      // Double Digits
+      minRange = 10; maxRange = 99;
+    } else if (levelNum <= 30) {
+      // Triple Digits
+      minRange = 100; maxRange = 999;
+    } else {
+      // 4-Digit
+      minRange = 1000; maxRange = 9999;
+    }
+
+    for(let i=0; i<settings.numQuestions; i++) {
+      questions.push({ text: '', answer: getRandomInt(minRange, maxRange), options: [], questionType });
+    }
     return shuffleArray(questions);
   }
 

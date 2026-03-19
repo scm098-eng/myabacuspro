@@ -138,7 +138,7 @@ export type GameLevel =
   | 'mastery-mix-11'
   | 'mastery-mix-12';
 
-export type Difficulty = 'easy' | 'medium' | 'hard';
+export type Difficulty = 'easy' | 'medium' | 'hard' | string;
 
 export type BeadQuestionType = 'identify' | 'set';
 
