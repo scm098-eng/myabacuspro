@@ -5,51 +5,46 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Let Next.js handle the JSON parsing automatically
-    // This replaces the manual JSON.parse that was causing your error
+    // 1. Next.js 14+ standard way to get JSON. 
+    // Do NOT use JSON.parse(await req.text()) anywhere.
     const body = await req.json();
 
-    // 2. Log for verification
-    console.log("--- MyAbacusPro Blast Triggered ---");
-    console.log("Target:", body.targetAudience);
-    console.log("Is Test:", body.isTest);
+    // 2. Immediate Logging to confirm we have the data
+    console.log("--- BLAST START ---", { 
+      target: body.targetAudience, 
+      isTest: body.isTest 
+    });
 
-    // 3. Extract your variables
     const { subject, message, targetAudience, isTest, testEmail } = body;
 
-    // 4. Validation
+    // 3. Validation
     if (!subject || !message) {
-      return NextResponse.json({ error: "Missing subject or message" }, { status: 400 });
+      return NextResponse.json({ error: "Subject and Message are required" }, { status: 400 });
     }
 
-    const GMAIL_USER = 'myabacuspro@gmail.com';
     const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
-
     if (!GMAIL_PASS) {
-      console.error("CRITICAL: GMAIL_APP_PASSWORD is not set in environment variables");
-      return NextResponse.json({ error: 'Mail server configuration missing.' }, { status: 500 });
+      throw new Error("GMAIL_APP_PASSWORD is not defined in environment");
     }
 
-    // 5. Setup Transporter
+    // 4. Setup Nodemailer
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: GMAIL_USER,
+        user: 'myabacuspro@gmail.com',
         pass: GMAIL_PASS,
       },
     });
 
     const adminApp = getFirebaseAdmin();
     const db = getFirestore(adminApp);
-
     let emailList: string[] = [];
 
-    // 6. Logic to build email list
+    // 5. Target Logic
     if (isTest && testEmail) {
       emailList = [testEmail];
     } else {
       let query: any = db.collection('users');
-      
       if (targetAudience === 'teachers') {
         query = query.where('role', '==', 'teacher').where('status', '==', 'approved');
       } else if (targetAudience === 'pro') {
@@ -68,43 +63,45 @@ export async function POST(req: NextRequest) {
     }
 
     if (emailList.length === 0) {
-      return NextResponse.json({ error: "No recipients found." }, { status: 404 });
+      return NextResponse.json({ error: "No recipients found" }, { status: 404 });
     }
 
-    const htmlTemplate = (content: string) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
-        <div style="background-color: #0070f3; padding: 20px; text-align: center; color: white;">
-          <h1 style="margin: 0; font-size: 24px;">MyAbacusPro</h1>
+    // 6. Template & Send
+    const html = `
+      <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 600px; margin: auto;">
+        <h2 style="color: #0070f3; text-align: center;">MyAbacusPro</h2>
+        <div style="line-height: 1.6; color: #333;">
+          ${message.replace(/\n/g, '<br>')}
         </div>
-        <div style="padding: 30px; line-height: 1.6; color: #333;">
-          ${content.replace(/\n/g, '<br>')}
-          <div style="text-align: center; margin-top: 30px;">
+        <div style="text-align: center; margin-top: 30px;">
             <a href="https://myabacuspro.com/pricing" style="background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
               Unlock Full Access
             </a>
-          </div>
         </div>
-        <div style="background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 12px; color: #777;">
-          © 2026 MyAbacusPro. All rights reserved.
-        </div>
+        <hr style="margin-top: 30px; border: 0; border-top: 1px solid #eee;" />
+        <p style="font-size: 12px; color: #666; text-align: center;">© 2026 MyAbacusPro. All rights reserved.</p>
       </div>
     `;
 
-    // 7. Send Emails
-    const sendPromises = emailList.map((email) =>
-      transporter.sendMail({
-        from: `"MyAbacusPro" <${GMAIL_USER}>`,
-        to: email,
-        subject: isTest ? `[TEST] ${subject}` : subject,
-        html: htmlTemplate(message),
-      })
+    await Promise.all(
+      emailList.map(email => 
+        transporter.sendMail({
+          from: '"MyAbacusPro" <myabacuspro@gmail.com>',
+          to: email,
+          subject: isTest ? `[TEST] ${subject}` : subject,
+          html: html
+        })
+      )
     );
 
-    await Promise.all(sendPromises);
-
     return NextResponse.json({ success: true, count: emailList.length });
+
   } catch (error: any) {
-    console.error('Blast API Global Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // This will catch the "SyntaxError" specifically if it happens
+    console.error("CRITICAL BLAST ERROR:", error.name, error.message);
+    return NextResponse.json(
+      { error: error.message || "Internal Server Error" }, 
+      { status: 500 }
+    );
   }
 }
