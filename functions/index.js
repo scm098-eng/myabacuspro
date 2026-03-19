@@ -6,7 +6,7 @@
 
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
@@ -19,9 +19,6 @@ if (admin.apps.length === 0) {
 setGlobalOptions({ maxInstances: 10 });
 const db = admin.firestore();
 
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID; 
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
-const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET;
 const GMAIL_USER = 'myabacuspro@gmail.com';
 
 function getTransporter() {
@@ -67,18 +64,30 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 0", async (event) => {
             logger.info(`Weekly Winner Declared: ${winner.firstName}`);
         }
 
-        // 2. Reset everyone (Batch update)
+        // 2. Reset everyone (Chunked Batch update to handle > 500 users)
         const usersSnap = await db.collection('users').where('role', '==', 'student').get();
-        const batch = db.batch();
-        
-        usersSnap.forEach(userDoc => {
+        let batch = db.batch();
+        let count = 0;
+
+        for (const userDoc of usersSnap.docs) {
             batch.update(userDoc.ref, {
                 weeklyPoints: 0,
+                lastWeeklyReset: null, // Force frontend sync
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
-        });
+            count++;
 
-        await batch.commit();
+            if (count === 500) {
+                await batch.commit();
+                batch = db.batch();
+                count = 0;
+            }
+        }
+
+        if (count > 0) {
+            await batch.commit();
+        }
+        
         logger.info(`Successfully reset weekly points for ${usersSnap.size} students.`);
     } catch (err) {
         logger.error("Weekly reset failed", err);
@@ -93,16 +102,28 @@ exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
     logger.info("Starting Monthly Points Reset");
     try {
         const usersSnap = await db.collection('users').where('role', '==', 'student').get();
-        const batch = db.batch();
-        
-        usersSnap.forEach(userDoc => {
+        let batch = db.batch();
+        let count = 0;
+
+        for (const userDoc of usersSnap.docs) {
             batch.update(userDoc.ref, {
                 monthlyPoints: 0,
+                lastMonthlyReset: null, // Force frontend sync
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
-        });
+            count++;
 
-        await batch.commit();
+            if (count === 500) {
+                await batch.commit();
+                batch = db.batch();
+                count = 0;
+            }
+        }
+
+        if (count > 0) {
+            await batch.commit();
+        }
+        
         logger.info(`Successfully reset monthly points for ${usersSnap.size} students.`);
     } catch (err) {
         logger.error("Monthly reset failed", err);
@@ -119,11 +140,9 @@ exports.sendVerificationOTP = onCall({
     const userId = request.auth.uid;
     const email = request.auth.token.email;
     
-    // Generate 6-digit code
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
     try {
-        // Store OTP in Firestore with expiration (10 minutes)
         await db.collection('users').doc(userId).set({
             pendingOTP: otp,
             otpExpiresAt: admin.firestore.Timestamp.fromDate(new Date(Date.now() + 10 * 60 * 1000))
@@ -174,10 +193,8 @@ exports.verifyEmailWithOTP = onCall(async (request) => {
     }
 
     try {
-        // Update Auth User
         await admin.auth().updateUser(userId, { emailVerified: true });
         
-        // Update Firestore
         await db.collection('users').doc(userId).update({
             emailVerified: true,
             pendingOTP: admin.firestore.FieldValue.delete(),
@@ -189,134 +206,4 @@ exports.verifyEmailWithOTP = onCall(async (request) => {
         logger.error("OTP Verification failed", err);
         throw new HttpsError('internal', "Verification process failed.");
     }
-});
-
-exports.sendCustomPromotionalEmail = onCall({
-    secrets: ["GMAIL_APP_PASSWORD"]
-}, async (request) => {
-    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
-    try {
-        const userDoc = await db.collection('users').doc(request.auth.uid).get();
-        if (!userDoc.exists || userDoc.data().role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
-        
-        const { subject, message, isTest, testEmail, targetAudience } = request.data;
-        const transporter = getTransporter();
-        
-        if (isTest && testEmail) {
-            await transporter.sendMail({ from: `"My Abacus Pro" <${GMAIL_USER}>`, to: testEmail, subject: `[TEST] ${subject}`, html: message });
-            return { status: "success" };
-        }
-        
-        let query = db.collection('users');
-        if (targetAudience === 'teachers') {
-            query = query.where('role', '==', 'teacher').where('status', '==', 'approved');
-        } else if (targetAudience === 'pro') {
-            query = query.where('subscriptionStatus', '==', 'pro');
-        } else if (targetAudience === 'free') {
-            query = query.where('subscriptionStatus', '==', 'free');
-        }
-        
-        const targets = await query.get();
-        let count = 0;
-        const sendPromises = [];
-
-        for (const doc of targets.docs) {
-            const data = doc.data();
-            if (!data.email) continue;
-            sendPromises.push(
-                transporter.sendMail({ from: `"My Abacus Pro" <${GMAIL_USER}>`, to: data.email, subject, html: message })
-                .then(() => { count++; })
-                .catch(e => { logger.error(`Email failed for ${data.email}`, e); })
-            );
-        }
-        
-        await Promise.all(sendPromises);
-        await db.collection('stats').doc('marketing').set({
-            emailsSent: admin.firestore.FieldValue.increment(count),
-            lastCampaignAt: admin.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-
-        return { status: "success", recipients: count };
-    } catch (err) { 
-        logger.error("Failed to send promo email", err);
-        throw new HttpsError('internal', err.message); 
-    }
-});
-
-exports.razorpaywebhook = onRequest(async (request, response) => {
-    const signature = request.headers['x-razorpay-signature'];
-    const rawBodyBuffer = request.rawBody; 
-    const expectedSignature = crypto.createHmac('sha256', WEBHOOK_SECRET).update(rawBodyBuffer).digest('hex');
-    if (expectedSignature !== signature) return response.status(200).send('Validation Failed'); 
-    const payload = request.body;
-    const eventType = payload.event;
-    const eventId = request.headers['x-razorpay-event-id']; 
-    const eventRef = db.collection('processedWebhooks').doc(eventId);
-    const eventDoc = await eventRef.get();
-    if (eventDoc.exists) return response.status(200).send('Already processed');
-    try {
-        const notes = payload.payload?.order?.entity?.notes || payload.payload?.subscription?.entity?.notes || payload.payload?.payment?.entity?.notes || {};
-        let userId = notes.userId || 'UNKNOWN';
-        if (eventType === 'subscription.activated' || eventType === 'order.paid') {
-            if (userId !== 'UNKNOWN') {
-                await db.collection('users').doc(userId).set({ subscriptionStatus: 'pro', updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-                await admin.auth().setCustomUserClaims(userId, { subscription: 'pro' });
-            } 
-        }
-        await eventRef.set({ timestamp: admin.firestore.FieldValue.serverTimestamp(), event: eventType, userId });
-        return response.status(200).send("OK");
-    } catch (error) { return response.status(200).send("Error logged"); }
-});
-
-exports.sendDailyReminders = onSchedule("30 13 * * *", async (event) => {
-    const today = new Date().toISOString().split('T')[0];
-    const usersSnapshot = await db.collection('users').where('fcmToken', '!=', null).get();
-    const notifications = [];
-    usersSnapshot.forEach(doc => {
-        const user = doc.data();
-        if (user.lastPracticeDate !== today) {
-            notifications.push({ token: user.fcmToken, notification: { title: "Time to Practice! 🧮", body: "Keep your streak alive!" } });
-        }
-    });
-    if (notifications.length > 0) await admin.messaging().sendEach(notifications);
-});
-
-exports.createRazorpaySubscription = onCall(async (request) => {
-    if (!request.auth || !request.auth.uid) throw new HttpsError('unauthenticated', "Auth required.");
-    const userId = request.auth.uid;
-    const planId = request.data.planId;
-    const amountInPaise = request.data.amountInRupees * 100;
-    const authHeader = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
-    try {
-        const orderRes = await fetch('https://api.razorpay.com/v1/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${authHeader}` },
-            body: JSON.stringify({ amount: amountInPaise, currency: "INR", receipt: userId, notes: { userId: userId } })
-        });
-        const orderData = await orderRes.json();
-        const subRes = await fetch('https://api.razorpay.com/v1/subscriptions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${authHeader}` },
-            body: JSON.stringify({ plan_id: planId, customer_notify: 1, total_count: 12, notes: { userId: userId } })
-        });
-        const subData = await subRes.json();
-        return { status: "success", subscriptionId: subData.id, orderId: orderData.id, amount: amountInPaise };
-    } catch (error) { throw new HttpsError('internal', error.message); }
-});
-
-exports.createOneTimeOrder = onCall(async (request) => {
-    if (!request.auth || !request.auth.uid) throw new HttpsError('unauthenticated', "Auth required.");
-    const { amountInRupees, planDuration } = request.data;
-    const userId = request.auth.uid;
-    const amountInPaise = amountInRupees * 100;
-    const authHeader = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
-    try {
-        const response = await fetch('https://api.razorpay.com/v1/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${authHeader}` },
-            body: JSON.stringify({ amount: amountInPaise, currency: "INR", receipt: `ot_${userId.substring(0, 8)}_${Date.now()}`, notes: { userId: userId, planDuration: planDuration.toString(), paymentType: "one_time" } })
-        });
-        const orderData = await response.json();
-        return { status: "success", orderId: orderData.id, amount: orderData.amount };
-    } catch (error) { throw new HttpsError('internal', error.message); }
 });
