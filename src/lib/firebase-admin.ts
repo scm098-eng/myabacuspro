@@ -2,39 +2,42 @@
 import * as admin from 'firebase-admin';
 
 /**
- * Initializes the Firebase Admin SDK.
- * Uses applicationDefault() which is the recommended approach for 
- * Google Cloud environments like Firebase App Hosting.
+ * Initializes the Firebase Admin SDK with extreme safety.
+ * Handles cases where the service account variable might be 
+ * missing, empty, or set to the literal string "undefined".
  */
 export function getFirebaseAdmin() {
-  // 1. If already initialized, return the existing app
+  // 1. If already initialized, return the first app instance
   if (admin.apps.length > 0) {
-    return admin.app();
+    return admin.apps[0]!;
   }
 
   // 2. Check for service account key in environment variables
-  // Supporting both common naming conventions
-  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.FIREBASE_SERVICE_ACCOUNT;
+  // Supporting common naming conventions
+  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.FIREBASE_SERVICE_ACCOUNT;
   
-  if (serviceAccountKey && serviceAccountKey !== 'undefined') {
-    try {
-      const serviceAccount = JSON.parse(serviceAccountKey);
+  // 3. Fallback to default credentials if variable is missing or literal "undefined"
+  if (!serviceAccount || serviceAccount === "undefined") {
+    console.log("Admin Init: No service account found, using default environment credentials.");
+    return admin.initializeApp(); 
+  }
+
+  try {
+    // 4. Handle case where it might already be an object
+    if (typeof serviceAccount === 'object') {
       return admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });
-    } catch (e) {
-      console.error("Failed to parse Firebase Service Account Key:", e);
-      // Fall through to default credentials if parsing fails
     }
-  }
 
-  /**
-   * 3. Default Fallback
-   * On Firebase App Hosting or Google Cloud, this will automatically use the 
-   * environment's default service account. This is the most reliable method
-   * and avoids "undefined" parsing errors.
-   */
-  return admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-  });
+    // 5. Try to parse the string
+    const parsedAccount = JSON.parse(serviceAccount);
+    return admin.initializeApp({
+      credential: admin.credential.cert(parsedAccount),
+    });
+  } catch (error) {
+    // 6. Final safety: If parsing fails, fall back to default instead of crashing
+    console.error("CRITICAL: Failed to parse FIREBASE_SERVICE_ACCOUNT JSON. Falling back to default credentials.");
+    return admin.initializeApp();
+  }
 }

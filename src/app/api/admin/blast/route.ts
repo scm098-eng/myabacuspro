@@ -7,7 +7,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 export async function POST(req: NextRequest) {
   try {
     // 1. Next.js 14+ standard way to get JSON. 
-    // Do NOT use JSON.parse(await req.text()) anywhere.
+    // This leverages built-in parsing and avoids manual JSON.parse conflicts.
     const body = await req.json();
 
     // 2. Immediate Logging to confirm we have the data
@@ -98,7 +98,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, count: emailList.length });
 
   } catch (error: any) {
-    // This will catch the "SyntaxError" specifically if it happens
     console.error("CRITICAL BLAST ERROR:", error.name, error.message);
     return NextResponse.json(
       { error: error.message || "Internal Server Error" }, 
