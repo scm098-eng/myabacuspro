@@ -1,20 +1,22 @@
-
 import * as admin from 'firebase-admin';
 
-// This function initializes the Firebase Admin SDK.
-// It checks if the SDK has already been initialized to prevent errors.
+/**
+ * Standardized Firebase Admin initialization using Application Default Credentials.
+ * This version removes manual parsing of service account JSONs to prevent
+ * SyntaxErrors when environment variables are missing or malformed.
+ */
 export function getFirebaseAdmin() {
   if (admin.apps.length > 0) {
-    return admin.app();
+    return admin.apps[0]!;
   }
 
-  // When running in a server environment that is not a managed Firebase environment
-  // (like a Next.js Server Action), we need to provide the credentials manually.
-  const serviceAccount = JSON.parse(
-    process.env.FIREBASE_SERVICE_ACCOUNT_KEY as string
-  );
-
-  return admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
+  try {
+    console.log("Admin Init: Using Application Default Credentials...");
+    return admin.initializeApp();
+  } catch (e) {
+    console.error("Firebase Admin Init Error:", e);
+    throw e;
+  }
 }
+
+export const getFirestore = () => getFirebaseAdmin().firestore();

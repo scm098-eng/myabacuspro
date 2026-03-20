@@ -5,33 +5,38 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Use App Router's native JSON parsing
+    // 1. Diagnostics: Print first 3 chars of environment variables to find the "broken" one
+    console.log("--- BLAST DIAGNOSTICS ---");
+    console.log("GMAIL_PASS prefix:", process.env.GMAIL_APP_PASSWORD?.substring(0, 3) || "MISSING");
+    console.log("RAZORPAY_SECRET prefix:", process.env.RAZORPAY_KEY_SECRET?.substring(0, 3) || "MISSING");
+
+    // 2. Standard Next.js JSON parsing (No manual JSON.parse strings)
     const body = await req.json();
 
-    console.log("--- BLAST START ---", { 
+    console.log("--- BLAST DATA RECEIVED ---", { 
       target: body.targetAudience, 
       isTest: body.isTest 
     });
 
     const { subject, message, targetAudience, isTest, testEmail } = body;
 
-    // 2. Validation
+    // 3. Validation
     if (!subject || !message) {
       return NextResponse.json({ error: "Subject and Message are required" }, { status: 400 });
     }
 
     const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
-    if (!GMAIL_PASS) {
-      console.error("CRITICAL: GMAIL_APP_PASSWORD missing from Environment Variables");
+    if (!GMAIL_PASS || GMAIL_PASS === "undefined") {
+      console.error("CRITICAL: GMAIL_APP_PASSWORD is not set or is 'undefined'");
       return NextResponse.json({ error: "Mail server configuration missing" }, { status: 500 });
     }
 
-    // 3. Setup Firebase Admin & Firestore
+    // 4. Setup Firebase Admin & Firestore
     const adminApp = getFirebaseAdmin();
     const db = getFirestore(adminApp);
     let emailList: string[] = [];
 
-    // 4. Build Recipient List
+    // 5. Build Recipient List
     if (isTest && testEmail) {
       emailList = [testEmail];
     } else {
@@ -58,7 +63,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No recipients found for this target group" }, { status: 404 });
     }
 
-    // 5. Setup Nodemailer
+    // 6. Setup Nodemailer
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -83,7 +88,7 @@ export async function POST(req: NextRequest) {
       </div>
     `;
 
-    // 6. Send Emails
+    // 7. Send Emails
     await Promise.all(
       emailList.map(email => 
         transporter.sendMail({

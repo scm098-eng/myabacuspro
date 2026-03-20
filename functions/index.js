@@ -1,4 +1,3 @@
-
 /**
  * Firebase Cloud Functions v2 (Node.js) Code
  * filename: functions/index.js
@@ -8,7 +7,6 @@ const { setGlobalOptions } = require("firebase-functions/v2");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
-const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
 const admin = require('firebase-admin');
@@ -21,16 +19,22 @@ const db = admin.firestore();
 
 const GMAIL_USER = 'myabacuspro@gmail.com';
 
-function getTransporter() {
-    const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
-    if (!GMAIL_PASS) logger.error("CRITICAL: GMAIL_APP_PASSWORD missing.");
+/**
+ * Safely creates a transporter using the provided password.
+ * This prevents reliance on global process.env scope which can be unstable.
+ */
+function getTransporter(password) {
+    if (!password) {
+        logger.error("CRITICAL: GMAIL_APP_PASSWORD missing.");
+        throw new Error("SMTP Auth failed");
+    }
     return nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 465,
         secure: true, 
         auth: {
             user: GMAIL_USER,
-            pass: GMAIL_PASS,
+            pass: password,
         },
     });
 }
@@ -43,7 +47,6 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 0", async (event) => {
     logger.info("Starting Weekly Points Reset");
     
     try {
-        // 1. Find the leader
         const topUserSnap = await db.collection('users')
             .where('role', '==', 'student')
             .orderBy('weeklyPoints', 'desc')
@@ -64,7 +67,6 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 0", async (event) => {
             logger.info(`Weekly Winner Declared: ${winner.firstName}`);
         }
 
-        // 2. Reset everyone (Chunked Batch update to handle > 500 users)
         const usersSnap = await db.collection('users').where('role', '==', 'student').get();
         let batch = db.batch();
         let count = 0;
@@ -72,7 +74,7 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 0", async (event) => {
         for (const userDoc of usersSnap.docs) {
             batch.update(userDoc.ref, {
                 weeklyPoints: 0,
-                lastWeeklyReset: null, // Force frontend sync
+                lastWeeklyReset: null,
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
             count++;
@@ -108,7 +110,7 @@ exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
         for (const userDoc of usersSnap.docs) {
             batch.update(userDoc.ref, {
                 monthlyPoints: 0,
-                lastMonthlyReset: null, // Force frontend sync
+                lastMonthlyReset: null,
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
             count++;
@@ -148,7 +150,7 @@ exports.sendVerificationOTP = onCall({
             otpExpiresAt: admin.firestore.Timestamp.fromDate(new Date(Date.now() + 10 * 60 * 1000))
         }, { merge: true });
 
-        const transporter = getTransporter();
+        const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
         await transporter.sendMail({
             from: `"My Abacus Pro Verification" <${GMAIL_USER}>`,
             to: email,
