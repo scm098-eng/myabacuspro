@@ -256,9 +256,21 @@ export default function StudentDashboardPage() {
         <Card className="bg-card/50 border-border/50 shadow-sm"><CardContent className="p-6 flex items-center gap-4"><div className="bg-blue-100 p-3 rounded-2xl shrink-0"><CalendarDays className="text-blue-600 w-6 h-6" /></div><div><p className="text-3xl font-black leading-none">{currentDays}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Practice Days</p></div></CardContent></Card>
         <Card className="lg:col-span-2 shadow-md bg-white border-slate-100 border-2"><CardContent className="p-6 h-full flex flex-col justify-center">
             <div className="grid grid-cols-3 gap-2 sm:gap-4">
-              <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100"><p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Total</p><p className="text-base sm:text-xl font-black text-primary">{(profile.totalPoints || 0).toLocaleString()}</p></div>
-              <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100"><p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Weekly</p><p className="text-base sm:text-xl font-black">{(profile.weeklyPoints || 0).toLocaleString()}</p></div>
-              <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100"><p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Monthly</p><p className="text-base sm:text-xl font-black">{(profile.monthlyPoints || 0).toLocaleString()}</p></div>
+              <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
+                <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Weekly</p>
+                <p className="text-base sm:text-2xl font-black text-primary">{(profile.weeklyPoints || 0).toLocaleString()}</p>
+                <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-tight">Points</p>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
+                <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Monthly</p>
+                <p className="text-base sm:text-2xl font-black text-primary">{(profile.monthlyPoints || 0).toLocaleString()}</p>
+                <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-tight">Points</p>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
+                <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Total</p>
+                <p className="text-base sm:text-2xl font-black text-primary">{(profile.totalPoints || 0).toLocaleString()}</p>
+                <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-tight">Mastery Points</p>
+              </div>
             </div>
         </CardContent></Card>
       </div>
