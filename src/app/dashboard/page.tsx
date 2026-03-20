@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -258,12 +257,12 @@ export default function StudentDashboardPage() {
             <div className="grid grid-cols-3 gap-2 sm:gap-4">
               <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
                 <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Weekly</p>
-                <p className="text-base sm:text-2xl font-black text-primary">{(profile.weeklyPoints || 0).toLocaleString()}</p>
+                <p className="text-base sm:text-2xl font-black text-foreground">{(profile.weeklyPoints || 0).toLocaleString()}</p>
                 <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-tight">Points</p>
               </div>
               <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
                 <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Monthly</p>
-                <p className="text-base sm:text-2xl font-black text-primary">{(profile.monthlyPoints || 0).toLocaleString()}</p>
+                <p className="text-base sm:text-2xl font-black text-foreground">{(profile.monthlyPoints || 0).toLocaleString()}</p>
                 <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-tight">Points</p>
               </div>
               <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
