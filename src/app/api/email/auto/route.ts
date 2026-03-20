@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 
 /**
  * Transactional Email API
- * Handles: welcome, pro_welcome, achievement
+ * Handles: welcome, pro_welcome, achievement, weekly_report, monthly_report
  */
 export async function POST(req: NextRequest) {
   try {
@@ -35,6 +35,27 @@ export async function POST(req: NextRequest) {
         <p>If you have questions, reply to this email or contact support.</p>
       </div>
     `;
+
+    const statsBlock = metadata ? `
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 20px 0;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+          <tr>
+            <td align="center">
+              <p style="margin: 0; font-size: 10px; color: #64748b; font-weight: bold; text-transform: uppercase;">Streak</p>
+              <p style="margin: 5px 0 0; font-size: 18px; font-weight: bold; color: #f97316;">${metadata.streak || 0} Days</p>
+            </td>
+            <td align="center" style="border-left: 1px solid #e2e8f0;">
+              <p style="margin: 0; font-size: 10px; color: #64748b; font-weight: bold; text-transform: uppercase;">Practice Days</p>
+              <p style="margin: 5px 0 0; font-size: 18px; font-weight: bold; color: #2563eb;">${metadata.practiceDays || 0}</p>
+            </td>
+            <td align="center" style="border-left: 1px solid #e2e8f0;">
+              <p style="margin: 0; font-size: 10px; color: #64748b; font-weight: bold; text-transform: uppercase;">Points</p>
+              <p style="margin: 5px 0 0; font-size: 18px; font-weight: bold; color: #0f172a;">${(metadata.totalPoints || 0).toLocaleString()}</p>
+            </td>
+          </tr>
+        </table>
+      </div>
+    ` : '';
 
     switch (type) {
       case 'welcome':
@@ -96,7 +117,64 @@ export async function POST(req: NextRequest) {
               <h2 style="color: #16a34a; margin: 0; text-transform: uppercase; letter-spacing: 2px;">${metadata.rankName}</h2>
               <p style="color: #15803d; font-weight: bold; margin-top: 10px;">"${metadata.rankDesc}"</p>
             </div>
-            <p style="font-size: 14px; color: #666; text-align: center;">Share your success with your teacher and parents! Keep practicing to reach <strong>Human Calculator</strong> status.</p>
+            <p style="font-size: 14px; color: #666; text-align: center; margin-bottom: 20px;">Current Progress Snapshot:</p>
+            ${statsBlock}
+            <p style="font-size: 14px; color: #666; text-align: center;">Keep practicing to reach <strong>Human Calculator</strong> status.</p>
+            ${footer}
+          </div>
+        `;
+        break;
+
+      case 'weekly_report':
+      case 'monthly_report':
+        const isWeekly = type === 'weekly_report';
+        subject = `${isWeekly ? 'Weekly' : 'Monthly'} Mastery Report: ${userName} 📈`;
+        html = `
+          <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <span style="background: #f1f5f9; padding: 8px 16px; border-radius: 20px; font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Performance Summary</span>
+              <h1 style="color: #0f172a; margin-top: 10px;">${isWeekly ? 'Weekly' : 'Monthly'} Progress</h1>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="padding-right: 10px;">
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #f1f5f9;">
+                      <p style="margin: 0; font-size: 10px; color: #64748b; font-weight: bold; text-transform: uppercase;">Points Earned</p>
+                      <p style="margin: 5px 0 0; font-size: 24px; font-weight: 900; color: #2563eb;">+${metadata.periodPoints}</p>
+                    </div>
+                  </td>
+                  <td style="padding-left: 10px;">
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #f1f5f9;">
+                      <p style="margin: 0; font-size: 10px; color: #64748b; font-weight: bold; text-transform: uppercase;">Current Streak</p>
+                      <p style="margin: 5px 0 0; font-size: 24px; font-weight: 900; color: #f97316;">${metadata.streak} Days</p>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <div style="background: #0f172a; color: white; padding: 25px; border-radius: 20px; margin-bottom: 30px;">
+              <h3 style="margin-top: 0; color: #38bdf8; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Overall Standing</h3>
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 15px;">
+                <tr>
+                  <td>
+                    <p style="margin: 0; font-size: 11px; opacity: 0.7;">Total Mastery Points</p>
+                    <p style="margin: 5px 0 0; font-size: 20px; font-weight: bold;">${(metadata.totalPoints || 0).toLocaleString()}</p>
+                  </td>
+                  <td align="right">
+                    <p style="margin: 0; font-size: 11px; opacity: 0.7;">Total Practice Days</p>
+                    <p style="margin: 5px 0 0; font-size: 20px; font-weight: bold;">${metadata.practiceDays}</p>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <div style="text-align: center;">
+              <p style="color: #64748b; font-size: 14px; margin-bottom: 25px;">Consistency is the key to becoming a Human Calculator. Your dedication is paying off!</p>
+              <a href="https://myabacuspro.com/dashboard" style="background: #2563eb; color: white; padding: 14px 30px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);">Open My Dashboard</a>
+            </div>
             ${footer}
           </div>
         `;

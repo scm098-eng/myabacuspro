@@ -227,7 +227,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       // Trigger Welcome Auto-Email
-      triggerAutoEmail('welcome', user.email!, values.firstName);
+      triggerAutoEmail('welcome', user.email!, values.firstName, {
+        streak: 0,
+        practiceDays: 0,
+        totalPoints: 0
+      });
 
       await fetchProfile(user);
   }, [auth, firestore, storage, fetchProfile]);
@@ -280,7 +284,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
         // Trigger Welcome Auto-Email for new Google users
-        triggerAutoEmail('welcome', user.email!, firstName || 'Student');
+        triggerAutoEmail('welcome', user.email!, firstName || 'Student', {
+          streak: 0,
+          practiceDays: 0,
+          totalPoints: 0
+        });
       }
       return await fetchProfile(user);
     } catch (error: any) {
@@ -555,7 +563,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         triggerAutoEmail('achievement', data.email, data.firstName, {
           rankName: nextRank.name,
           rankIcon: nextRank.icon,
-          rankDesc: nextRank.description
+          rankDesc: nextRank.description,
+          streak: data.currentStreak || 0,
+          practiceDays: data.totalDaysPracticed || 0,
+          totalPoints: nextPoints
         });
       }
 
