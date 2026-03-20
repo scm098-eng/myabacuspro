@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -74,6 +73,14 @@ const sanitizeForFirestore = (data: any) => {
     }
   });
   return clean;
+};
+
+const triggerAutoEmail = (type: string, userEmail: string, userName: string, metadata?: any) => {
+  fetch('/api/email/auto', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type, userEmail, userName, metadata })
+  }).catch(e => console.warn("Failed to trigger auto-email:", e));
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -203,6 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           monthlyPoints: 0,
           weeklyPoints: 0,
           totalPoints: 0,
+          lastAwardedRank: 'Junior Calculator',
           lastWeeklyReset: format(startOfWeek(new Date()), 'yyyy-ww'),
           lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
       };
@@ -217,6 +225,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           errorEmitter.emit('permission-error', permissionError);
         }
       });
+
+      // Trigger Welcome Auto-Email
+      triggerAutoEmail('welcome', user.email!, values.firstName);
+
       await fetchProfile(user);
   }, [auth, firestore, storage, fetchProfile]);
 
@@ -251,6 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           monthlyPoints: 0,
           weeklyPoints: 0,
           totalPoints: 0,
+          lastAwardedRank: 'Junior Calculator',
           lastWeeklyReset: format(startOfWeek(new Date()), 'yyyy-ww'),
           lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
         };
@@ -265,11 +278,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             errorEmitter.emit('permission-error', permissionError);
           }
         });
+
+        // Trigger Welcome Auto-Email for new Google users
+        triggerAutoEmail('welcome', user.email!, firstName || 'Student');
       }
       return await fetchProfile(user);
     } catch (error: any) {
       console.error("Firebase Google Auth Error:", error);
-      throw error; // Propagate to caller
+      throw error;
     }
   }, [auth, firestore, fetchProfile]);
   
@@ -511,6 +527,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, [user, firestore]);
 
+  const getStudentTitle = useCallback((totalDays: number, totalPoints: number) => {
+    return RANK_CRITERIA.find(t => totalDays >= t.daysReq && totalPoints >= t.pointsReq) || RANK_CRITERIA[RANK_CRITERIA.length - 1];
+  }, []);
+
   const addPoints = useCallback(async (userId: string, points: number) => {
     const userRef = doc(firestore, "users", userId);
     try {
@@ -520,9 +540,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const now = new Date();
       const currentWeekKey = format(startOfWeek(now), 'yyyy-ww');
       const currentMonthKey = format(startOfMonth(now), 'yyyy-MM');
+      
+      const nextPoints = (data.totalPoints || 0) + points;
+      const nextDays = data.totalDaysPracticed || 0;
+      const nextRank = getStudentTitle(nextDays, nextPoints);
+
       const updateData: any = { totalPoints: increment(points), updatedAt: serverTimestamp() };
       if (data.lastWeeklyReset !== currentWeekKey) { updateData.weeklyPoints = points; updateData.lastWeeklyReset = currentWeekKey; } else { updateData.weeklyPoints = increment(points); }
       if (data.lastMonthlyReset !== currentMonthKey) { updateData.monthlyPoints = points; updateData.lastMonthlyReset = currentMonthKey; } else { updateData.monthlyPoints = increment(points); }
+      
+      // Auto-Email Trigger for Rank Achievement
+      if (nextRank.name !== data.lastAwardedRank) {
+        updateData.lastAwardedRank = nextRank.name;
+        triggerAutoEmail('achievement', data.email, data.firstName, {
+          rankName: nextRank.name,
+          rankIcon: nextRank.icon,
+          rankDesc: nextRank.description
+        });
+      }
+
       await updateDoc(userRef, updateData);
     } catch (error: any) {
       if (error.code === 'permission-denied') {
@@ -533,7 +569,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         errorEmitter.emit('permission-error', permissionError);
       }
     }
-  }, [firestore]);
+  }, [firestore, getStudentTitle]);
 
   const recordDailyPractice = useCallback(async (userId: string) => {
     const userRef = doc(firestore, "users", userId);
@@ -558,10 +594,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [firestore, addPoints]);
-
-  const getStudentTitle = useCallback((totalDays: number, totalPoints: number) => {
-    return RANK_CRITERIA.find(t => totalDays >= t.daysReq && totalPoints >= t.pointsReq) || RANK_CRITERIA[RANK_CRITERIA.length - 1];
-  }, []);
 
   const value = { 
     user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 

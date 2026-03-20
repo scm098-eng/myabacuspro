@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
@@ -38,11 +37,35 @@ export async function POST(req: NextRequest) {
 
       if (!querySnapshot.empty) {
         const userDoc = querySnapshot.docs[0];
+        const userData = userDoc.data();
+        
         await userDoc.ref.update({
           subscriptionStatus: 'pro',
           updatedAt: new Date(),
         });
+        
         console.log(`Upgraded user ${userDoc.id} to Pro.`);
+
+        // Trigger Pro Welcome Auto-Email
+        try {
+          // Note: Webhooks run server-side, we can call our local auto-email API or use nodemailer directly.
+          // Fetching the local route is safer for template consistency.
+          const protocol = req.headers.get('x-forwarded-proto') || 'https';
+          const host = req.headers.get('host');
+          
+          fetch(`${protocol}://${host}/api/email/auto`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'pro_welcome',
+              userEmail: userData.email,
+              userName: userData.firstName || 'Student'
+            })
+          }).catch(e => console.error("Webhook: Failed to trigger pro welcome email", e));
+        } catch (emailErr) {
+          console.error("Webhook: Email trigger block failed", emailErr);
+        }
+
       } else {
         console.warn(`No user found with Razorpay Customer ID: ${customerId}`);
       }
