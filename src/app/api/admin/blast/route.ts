@@ -3,17 +3,21 @@ import nodemailer from 'nodemailer';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
 
+/**
+ * Helper to pause execution for Gmail rate limiting
+ */
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export async function POST(req: NextRequest) {
   try {
-    // 1. Diagnostics: Print first 3 chars of environment variables to find the "broken" one
+    // 1. Diagnostics: Log environment health
     console.log("--- BLAST DIAGNOSTICS ---");
     console.log("GMAIL_PASS prefix:", process.env.GMAIL_APP_PASSWORD?.substring(0, 3) || "MISSING");
-    console.log("RAZORPAY_SECRET prefix:", process.env.RAZORPAY_KEY_SECRET?.substring(0, 3) || "MISSING");
 
-    // 2. Standard Next.js JSON parsing (No manual JSON.parse strings)
+    // 2. Safely parse the body using Next.js native JSON handling
     const body = await req.json();
 
-    console.log("--- BLAST DATA RECEIVED ---", { 
+    console.log("--- BLAST TRIGGERED ---", { 
       target: body.targetAudience, 
       isTest: body.isTest 
     });
@@ -27,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
     if (!GMAIL_PASS || GMAIL_PASS === "undefined") {
-      console.error("CRITICAL: GMAIL_APP_PASSWORD is not set or is 'undefined'");
+      console.error("CRITICAL: GMAIL_APP_PASSWORD is missing");
       return NextResponse.json({ error: "Mail server configuration missing" }, { status: 500 });
     }
 
@@ -60,7 +64,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (emailList.length === 0) {
-      return NextResponse.json({ error: "No recipients found for this target group" }, { status: 404 });
+      return NextResponse.json({ error: "No recipients found" }, { status: 404 });
     }
 
     // 6. Setup Nodemailer
@@ -88,19 +92,32 @@ export async function POST(req: NextRequest) {
       </div>
     `;
 
-    // 7. Send Emails
-    await Promise.all(
-      emailList.map(email => 
-        transporter.sendMail({
+    // 7. Sequential Sending with Delay (Gmail Rate Limit Protection)
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const email of emailList) {
+      try {
+        await transporter.sendMail({
           from: '"MyAbacusPro" <myabacuspro@gmail.com>',
           to: email,
           subject: isTest ? `[TEST] ${subject}` : subject,
           html: htmlContent
-        })
-      )
-    );
+        });
+        successCount++;
+        // Small delay to keep Gmail happy and avoid burst detection
+        await sleep(250); 
+      } catch (err) {
+        console.error(`FAILED to send to ${email}:`, err);
+        failCount++;
+      }
+    }
 
-    return NextResponse.json({ success: true, count: emailList.length });
+    return NextResponse.json({ 
+      success: true, 
+      count: successCount,
+      failed: failCount
+    });
 
   } catch (error: any) {
     console.error("BLAST API ERROR:", error.name, error.message);
