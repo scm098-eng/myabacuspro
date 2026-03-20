@@ -35,6 +35,7 @@ function LoginForm({ role }: { role: UserRole }) {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -69,11 +70,33 @@ function LoginForm({ role }: { role: UserRole }) {
   }
 
   async function handleGoogleLogin() {
+    setIsGoogleLoading(true);
     try {
       const loggedInProfile = await loginWithGoogle();
       handleRedirect(loggedInProfile);
-    } catch (error) {
-      toast({ title: 'Google Login Failed', description: 'Please try again.', variant: 'destructive' });
+    } catch (error: any) {
+      console.error("Google Auth Error Details:", error);
+      
+      let errorMessage = "Please try again.";
+      if (error.code === 'auth/popup-blocked') {
+        errorMessage = "The login popup was blocked by your browser. Please allow popups for this site.";
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = "The login window was closed before completion. Please try again.";
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        errorMessage = "A login request is already in progress.";
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = "This domain is not authorized for Google Login. Please contact support.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({ 
+        title: 'Google Login Failed', 
+        description: errorMessage, 
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsGoogleLoading(false);
     }
   }
 
@@ -87,13 +110,22 @@ function LoginForm({ role }: { role: UserRole }) {
                 <FormField control={form.control} name="password" render={({ field }) => (
                     <FormItem><FormLabel>Password</FormLabel><FormControl><div className="relative"><Input type={showPassword ? 'text' : 'password'} {...field} /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></FormControl><FormMessage /></FormItem>
                 )} />
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button type="submit" className="w-full" disabled={isSubmitting || isGoogleLoading}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Login as {role.charAt(0).toUpperCase() + role.slice(1)}
                 </Button>
             </form>
             </Form>
-            <Separator className="my-4" /><Button variant="outline" className="w-full" onClick={handleGoogleLogin}>Sign in with Google</Button>
+            <Separator className="my-4" />
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={handleGoogleLogin} 
+              disabled={isSubmitting || isGoogleLoading}
+            >
+              {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Sign in with Google
+            </Button>
     </div>
   );
 }

@@ -221,51 +221,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [auth, firestore, storage, fetchProfile]);
 
   const loginWithGoogle = useCallback(async (): Promise<ProfileData | null> => {
-    const result = await signInWithPopup(auth, googleProvider);
-    const user = result.user;
-    const userDocRef = doc(firestore, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
 
-    if (!userDoc.exists()) {
-      const [firstName, ...rest] = (user.displayName || '').split(' ');
-      const surname = rest.pop() || '';
-      const userEmail = user.email?.toLowerCase() || '';
-      const isAdmin = ADMIN_EMAILS.includes(userEmail);
-      
-      const rawData = {
-        email: user.email,
-        emailVerified: user.emailVerified || isAdmin,
-        firstName: firstName || '',
-        surname: surname,
-        profilePhoto: user.photoURL || '',
-        createdAt: serverTimestamp(),
-        trialStartDate: serverTimestamp(),
-        subscriptionStatus: isAdmin ? 'pro' : 'free',
-        role: isAdmin ? 'admin' : 'student',
-        teacherId: null,
-        isSuspended: false,
-        status: isAdmin ? 'approved' : null,
-        currentStreak: 0,
-        totalDaysPracticed: 0,
-        monthlyPoints: 0,
-        weeklyPoints: 0,
-        totalPoints: 0,
-        lastWeeklyReset: format(startOfWeek(new Date()), 'yyyy-ww'),
-        lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
-      };
+      if (!userDoc.exists()) {
+        const [firstName, ...rest] = (user.displayName || '').split(' ');
+        const surname = rest.pop() || '';
+        const userEmail = user.email?.toLowerCase() || '';
+        const isAdmin = ADMIN_EMAILS.includes(userEmail);
+        
+        const rawData = {
+          email: user.email,
+          emailVerified: user.emailVerified || isAdmin,
+          firstName: firstName || '',
+          surname: surname,
+          profilePhoto: user.photoURL || '',
+          createdAt: serverTimestamp(),
+          trialStartDate: serverTimestamp(),
+          subscriptionStatus: isAdmin ? 'pro' : 'free',
+          role: isAdmin ? 'admin' : 'student',
+          teacherId: null,
+          isSuspended: false,
+          status: isAdmin ? 'approved' : null,
+          currentStreak: 0,
+          totalDaysPracticed: 0,
+          monthlyPoints: 0,
+          weeklyPoints: 0,
+          totalPoints: 0,
+          lastWeeklyReset: format(startOfWeek(new Date()), 'yyyy-ww'),
+          lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
+        };
 
-       await setDoc(userDocRef, sanitizeForFirestore(rawData)).catch(async (error) => {
-        if (error.code === 'permission-denied') {
-          const permissionError = new FirestorePermissionError({
-            path: userDocRef.path,
-            operation: 'create',
-            requestResourceData: rawData,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-        }
-      });
+        await setDoc(userDocRef, sanitizeForFirestore(rawData)).catch(async (error) => {
+          if (error.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+              path: userDocRef.path,
+              operation: 'create',
+              requestResourceData: rawData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          }
+        });
+      }
+      return await fetchProfile(user);
+    } catch (error: any) {
+      console.error("Firebase Google Auth Error:", error);
+      throw error; // Propagate to caller
     }
-    return await fetchProfile(user);
   }, [auth, firestore, fetchProfile]);
   
   const sendPasswordReset = useCallback(async (email: string) => {
