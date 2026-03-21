@@ -85,7 +85,7 @@ function LoginForm({ role }: { role: UserRole }) {
       } else if (error.code === 'auth/cancelled-popup-request') {
         errorMessage = "A login request is already in progress.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "This domain is not authorized for Google Login. Please contact support.";
+        errorMessage = "This domain (myabacuspro.com) is not authorized in Firebase Console > Authentication > Settings.";
       } else if (error.message) {
         errorMessage = error.message;
       }
