@@ -21,7 +21,6 @@ import { doc, setDoc, getDoc, serverTimestamp, getFirestore, collection, getDocs
 import { ref, uploadBytes, getDownloadURL, getStorage } from 'firebase/storage';
 import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload } from '@/types';
 import { useRouter, usePathname } from 'next/navigation';
-import { format, startOfWeek, startOfMonth } from 'date-fns';
 import { RANK_CRITERIA } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
@@ -84,6 +83,27 @@ const triggerAutoEmail = (type: string, userEmail: string, userName: string, met
   }).catch(e => console.warn("Failed to trigger auto-email:", e));
 };
 
+/**
+ * UTC standard Monday calculation (YYYY-MM-DD)
+ */
+function getUTCMondayKey() {
+    const now = new Date();
+    const day = now.getUTCDay();
+    const diff = (day === 0 ? 6 : day - 1); 
+    const monday = new Date(now);
+    monday.setUTCDate(now.getUTCDate() - diff);
+    monday.setUTCHours(0, 0, 0, 0);
+    return monday.toISOString().split('T')[0];
+}
+
+/**
+ * UTC standard Month calculation (YYYY-MM)
+ */
+function getUTCMonthKey() {
+    const now = new Date();
+    return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -103,11 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = userDoc.data();
         const profileData = { ...data, uid: authUser.uid } as ProfileData;
         
-        // --- CALENDAR-BASED AUTO RESET SYNC ---
-        // This ensures the current user is ALWAYS reset correctly upon login
-        const now = new Date();
-        const currentWeekKey = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-        const currentMonthKey = format(startOfMonth(now), 'yyyy-MM');
+        // --- UTC CALENDAR RESET SYNC ---
+        const currentWeekKey = getUTCMondayKey();
+        const currentMonthKey = getUTCMonthKey();
         
         let needsUpdate = false;
         const updatePayload: any = {};
@@ -130,7 +148,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (needsUpdate) {
             updateDoc(userDocRef, updatePayload).catch(e => console.error("Individual reset sync failed", e));
         }
-        // -----------------------------------------------------
 
         if (data.emailVerified !== authUser.emailVerified) {
           await updateDoc(userDocRef, { emailVerified: authUser.emailVerified });
@@ -222,7 +239,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { password, confirmPassword, profilePhoto, ...rest } = values;
       const userEmail = user.email?.toLowerCase() || '';
       const isAdmin = ADMIN_EMAILS.includes(userEmail);
-      const now = new Date();
       
       const rawData = {
           ...rest,
@@ -242,8 +258,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           weeklyPoints: 0,
           totalPoints: 0,
           lastAwardedRank: 'Junior Calculator',
-          lastWeeklyReset: format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd'),
-          lastMonthlyReset: format(startOfMonth(now), 'yyyy-MM')
+          lastWeeklyReset: getUTCMondayKey(),
+          lastMonthlyReset: getUTCMonthKey()
       };
 
       await setDoc(userDocRef, sanitizeForFirestore(rawData)).catch(async (error) => {
@@ -278,7 +294,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const surname = rest.pop() || '';
         const userEmail = user.email?.toLowerCase() || '';
         const isAdmin = ADMIN_EMAILS.includes(userEmail);
-        const now = new Date();
         
         const rawData = {
           email: user.email,
@@ -299,8 +314,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           weeklyPoints: 0,
           totalPoints: 0,
           lastAwardedRank: 'Junior Calculator',
-          lastWeeklyReset: format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd'),
-          lastMonthlyReset: format(startOfMonth(now), 'yyyy-MM')
+          lastWeeklyReset: getUTCMondayKey(),
+          lastMonthlyReset: getUTCMonthKey()
         };
 
         await setDoc(userDocRef, sanitizeForFirestore(rawData)).catch(async (error) => {
@@ -576,9 +591,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!userSnap.exists()) return;
       const data = userSnap.data() as ProfileData;
       
-      const now = new Date();
-      const currentWeekKey = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-      const currentMonthKey = format(startOfMonth(now), 'yyyy-MM');
+      const currentWeekKey = getUTCMondayKey();
+      const currentMonthKey = getUTCMonthKey();
       
       const nextPoints = (data.totalPoints || 0) + points;
       const nextDays = data.totalDaysPracticed || 0;

@@ -19,8 +19,28 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RANK_CRITERIA } from '@/lib/constants';
-import { format, startOfWeek, startOfMonth } from 'date-fns';
 import confetti from 'canvas-confetti';
+
+/**
+ * UTC standard Monday calculation (YYYY-MM-DD)
+ */
+function getUTCMondayKey() {
+    const now = new Date();
+    const day = now.getUTCDay();
+    const diff = (day === 0 ? 6 : day - 1); 
+    const monday = new Date(now);
+    monday.setUTCDate(now.getUTCDate() - diff);
+    monday.setUTCHours(0, 0, 0, 0);
+    return monday.toISOString().split('T')[0];
+}
+
+/**
+ * UTC standard Month calculation (YYYY-MM)
+ */
+function getUTCMonthKey() {
+    const now = new Date();
+    return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+}
 
 export default function StudentDashboardPage() {
   usePageBackground('');
@@ -33,8 +53,8 @@ export default function StudentDashboardPage() {
   const [isRequestingNotifications, setIsRequestingNotifications] = useState(false);
   const [lastWinner, setLastWinner] = useState<any>(null);
 
-  const currentWeekKey = useMemo(() => format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'), []);
-  const currentMonthKey = useMemo(() => format(startOfMonth(new Date()), 'yyyy-MM'), []);
+  const currentWeekKey = useMemo(() => getUTCMondayKey(), []);
+  const currentMonthKey = useMemo(() => getUTCMonthKey(), []);
 
   useEffect(() => {
     setMounted(true);
@@ -80,10 +100,8 @@ export default function StudentDashboardPage() {
     if (!mounted || !user) return;
 
     const db = getFirestore(firebaseApp);
-    
-    // Logic: Only show students reset for the CURRENT week/month
-    // We removed the "> 0" range filter to simplify the index requirement
     let q;
+    
     if (leaderboardTab === 'weeklyPoints') {
       q = query(
         collection(db, "users"), 
@@ -111,7 +129,6 @@ export default function StudentDashboardPage() {
     
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
-        // Filter out 0 point earners in the UI if we want a clean board
         const data = snapshot.docs
           .map(doc => {
             const ud = doc.data() as ProfileData;
@@ -127,8 +144,8 @@ export default function StudentDashboardPage() {
         setLeaderboard(data);
       },
       (error) => {
-        console.warn("Leaderboard filtered query error, falling back:", error.code);
-        // Fallback to simpler query while index builds
+        console.warn("Leaderboard snapshot error, falling back:", error.code);
+        // Fallback without strict date filtering if index is pending
         const qSimple = query(collection(db, "users"), where("role", "==", "student"), orderBy(leaderboardTab, "desc"), limit(10));
         onSnapshot(qSimple, (snap) => {
            const data = snap.docs
