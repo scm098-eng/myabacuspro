@@ -86,13 +86,12 @@ export default function StudentDashboardPage() {
 
     const db = getFirestore(firebaseApp);
     const unsub = onSnapshot(doc(db, "stats", "leaderboard"), 
-      (doc) => {
-        if (doc.exists()) {
-          setLastWinner(doc.data().lastWeeklyWinner);
+      (snapshot) => {
+        if (snapshot.exists()) {
+          setLastWinner(snapshot.data().lastWeeklyWinner);
         }
       },
       async (error) => {
-        // Only emit if it's an actual unexpected error, not standard unauth on restricted paths
         if (error.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
             path: 'stats/leaderboard',
@@ -111,6 +110,7 @@ export default function StudentDashboardPage() {
     const db = getFirestore(firebaseApp);
     let q;
     
+    // STRICT FILTERING: Only show people belonging to the current UTC period
     if (leaderboardTab === 'weeklyPoints') {
       q = query(
         collection(db, "users"), 

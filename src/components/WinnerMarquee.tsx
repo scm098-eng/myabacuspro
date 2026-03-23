@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import { Trophy, Megaphone, Star, Crown } from 'lucide-react';
@@ -11,34 +11,32 @@ import { FirestorePermissionError } from '@/lib/errors';
 
 export default function WinnerMarquee() {
   const [lastWinner, setLastWinner] = useState<any>(null);
-  const [isVisible, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const db = getFirestore(firebaseApp);
     const unsub = onSnapshot(doc(db, "stats", "leaderboard"), 
-      (doc) => {
-        if (doc.exists()) {
-          const data = doc.data();
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
           const winner = data.lastWeeklyWinner;
           
           if (winner && winner.declaredAt) {
             const declaredAt = winner.declaredAt.toDate();
             const now = new Date();
-            // Show for 24 hours (86,400,000 ms) after declaration
+            // Show for 24 hours after declaration
             if (now.getTime() - declaredAt.getTime() < 86400000) {
               setLastWinner(winner);
-              setIsOpen(true);
+              setIsVisible(true);
             } else {
-              setIsOpen(false);
+              setIsVisible(false);
             }
           }
         } else {
-          setIsOpen(false);
+          setIsVisible(false);
         }
       },
       async (error) => {
-        // Since this rule is now public (allow read: if true), 
-        // a permission error would only happen if something is fundamentally wrong.
         if (error.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
             path: 'stats/leaderboard',
@@ -54,17 +52,17 @@ export default function WinnerMarquee() {
   if (!isVisible || !lastWinner) return null;
 
   return (
-    <div className="bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 text-white h-10 flex items-center overflow-hidden shadow-md relative z-[100]">
+    <div className="bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 text-white h-10 flex items-center overflow-hidden shadow-md relative z-[100] border-b border-white/20">
       <div className="flex whitespace-nowrap animate-marquee items-center gap-12">
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 px-4 font-black uppercase tracking-tighter text-sm italic">
-            <Trophy className="w-5 h-5 fill-white animate-bounce" />
+          <div key={i} className="flex items-center gap-4 px-4 font-black uppercase tracking-tighter text-xs sm:text-sm italic">
+            <Trophy className="w-4 h-4 sm:w-5 sm:h-5 fill-white animate-bounce" />
             <span>WEEKLY CHAMPION: {lastWinner.name}</span>
-            <Star className="w-4 h-4 fill-white" />
+            <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-white" />
             <span>{lastWinner.points.toLocaleString()} Mastery Points!</span>
-            <Megaphone className="w-5 h-5 -rotate-12" />
+            <Megaphone className="w-4 h-4 sm:w-5 sm:h-5 -rotate-12" />
             <span className="text-yellow-100">THE RACE HAS RESET—START PRACTICING NOW!</span>
-            <Crown className="w-5 h-5 fill-white" />
+            <Crown className="w-4 h-4 sm:w-5 sm:h-5 fill-white" />
           </div>
         ))}
       </div>

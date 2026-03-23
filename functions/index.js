@@ -21,25 +21,6 @@ const db = admin.firestore();
 const GMAIL_USER = 'myabacuspro@gmail.com';
 
 /**
- * Safely creates a transporter using the provided password.
- */
-function getTransporter(password) {
-    if (!password) {
-        logger.error("CRITICAL: GMAIL_APP_PASSWORD missing.");
-        throw new Error("SMTP Auth failed");
-    }
-    return nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 465,
-        secure: true, 
-        auth: {
-            user: GMAIL_USER,
-            pass: password,
-        },
-    });
-}
-
-/**
  * Helper to get the UTC Monday key (YYYY-MM-DD)
  */
 function getUTCMondayKey() {
@@ -181,6 +162,25 @@ exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
         logger.error("Monthly reset failed", err);
     }
 });
+
+/**
+ * Transactional Email Transport
+ */
+function getTransporter(password) {
+    if (!password) {
+        logger.error("CRITICAL: GMAIL_APP_PASSWORD missing.");
+        throw new Error("SMTP Auth failed");
+    }
+    return nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true, 
+        auth: {
+            user: GMAIL_USER,
+            pass: password,
+        },
+    });
+}
 
 /**
  * Generates a 6-digit OTP and sends it via email.
