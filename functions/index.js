@@ -46,15 +46,17 @@ function getTransporter(password) {
 exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
     logger.info("Starting Weekly Points Reset & Winner Declaration");
     
+    // Robust Monday Key Calculation (YYYY-MM-DD)
     const now = new Date();
-    const monday = new Date(now);
     const day = now.getUTCDay();
-    const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1);
-    monday.setUTCDate(diff);
+    const diff = (day === 0 ? 6 : day - 1); // Distance to current Monday
+    const monday = new Date(now);
+    monday.setUTCDate(now.getUTCDate() - diff);
     const currentWeekKey = monday.toISOString().split('T')[0];
 
     try {
-        // 1. Declare Winner (Find student with highest weekly points)
+        // 1. Declare Winner (Find student with highest weekly points from the period JUST ENDING)
+        // We look for students who haven't been reset to 0 yet
         const topUserSnap = await db.collection('users')
             .where('role', '==', 'student')
             .orderBy('weeklyPoints', 'desc')
@@ -63,21 +65,23 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
 
         if (!topUserSnap.empty) {
             const winner = topUserSnap.docs[0].data();
-            await db.collection('stats').doc('leaderboard').set({
-                lastWeeklyWinner: {
-                    uid: topUserSnap.docs[0].id,
-                    name: `${winner.firstName} ${winner.surname}`,
-                    photo: winner.profilePhoto || '',
-                    points: winner.weeklyPoints || 0,
-                    declaredAt: admin.firestore.FieldValue.serverTimestamp(),
-                    weekKey: currentWeekKey
-                }
-            }, { merge: true });
-            logger.info(`Winner declared: ${winner.firstName} ${winner.surname}`);
+            // Only update if they actually have points
+            if ((winner.weeklyPoints || 0) > 0) {
+                await db.collection('stats').doc('leaderboard').set({
+                    lastWeeklyWinner: {
+                        uid: topUserSnap.docs[0].id,
+                        name: `${winner.firstName} ${winner.surname}`,
+                        photo: winner.profilePhoto || '',
+                        points: winner.weeklyPoints || 0,
+                        declaredAt: admin.firestore.FieldValue.serverTimestamp(),
+                        weekKey: currentWeekKey
+                    }
+                }, { merge: true });
+                logger.info(`Winner declared: ${winner.firstName} ${winner.surname} with ${winner.weeklyPoints} pts.`);
+            }
         }
 
-        // 2. Reset points for all students
-        // We use a batch process to ensure scalability
+        // 2. Reset points for all students in batches
         const usersSnap = await db.collection('users').where('role', '==', 'student').get();
         let batch = db.batch();
         let count = 0;
@@ -101,7 +105,7 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
             await batch.commit();
         }
         
-        logger.info(`Successfully reset weekly points for ${usersSnap.size} students.`);
+        logger.info(`Successfully reset weekly points for ${usersSnap.size} students for week ${currentWeekKey}.`);
     } catch (err) {
         logger.error("Weekly reset failed", err);
     }
@@ -140,7 +144,7 @@ exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
             await batch.commit();
         }
         
-        logger.info(`Successfully reset monthly points for ${usersSnap.size} students.`);
+        logger.info(`Successfully reset monthly points for ${usersSnap.size} students for ${currentMonthKey}.`);
     } catch (err) {
         logger.error("Monthly reset failed", err);
     }

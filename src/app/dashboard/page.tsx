@@ -4,7 +4,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardContent as CardBody, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, Clock, Zap, Crown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
@@ -82,14 +82,13 @@ export default function StudentDashboardPage() {
     const db = getFirestore(firebaseApp);
     
     // Logic: Only show students reset for the CURRENT week/month
-    // This prevents "ghost" points from demotivating students
+    // We removed the "> 0" range filter to simplify the index requirement
     let q;
     if (leaderboardTab === 'weeklyPoints') {
       q = query(
         collection(db, "users"), 
         where("role", "==", "student"), 
         where("lastWeeklyReset", "==", currentWeekKey),
-        where("weeklyPoints", ">", 0),
         orderBy("weeklyPoints", "desc"), 
         limit(10)
       );
@@ -98,7 +97,6 @@ export default function StudentDashboardPage() {
         collection(db, "users"), 
         where("role", "==", "student"), 
         where("lastMonthlyReset", "==", currentMonthKey),
-        where("monthlyPoints", ">", 0),
         orderBy("monthlyPoints", "desc"), 
         limit(10)
       );
@@ -106,7 +104,6 @@ export default function StudentDashboardPage() {
       q = query(
         collection(db, "users"), 
         where("role", "==", "student"), 
-        where("totalPoints", ">", 0),
         orderBy("totalPoints", "desc"), 
         limit(10)
       );
@@ -114,27 +111,32 @@ export default function StudentDashboardPage() {
     
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
-        const data = snapshot.docs.map(doc => {
-          const ud = doc.data() as ProfileData;
-          return { 
-            uid: doc.id, 
-            name: `${ud.firstName} ${ud.surname}`, 
-            photo: ud.profilePhoto, 
-            points: ud[leaderboardTab as keyof ProfileData] || 0, 
-            title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) 
-          };
-        });
+        // Filter out 0 point earners in the UI if we want a clean board
+        const data = snapshot.docs
+          .map(doc => {
+            const ud = doc.data() as ProfileData;
+            return { 
+              uid: doc.id, 
+              name: `${ud.firstName} ${ud.surname}`, 
+              photo: ud.profilePhoto, 
+              points: ud[leaderboardTab as keyof ProfileData] || 0, 
+              title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) 
+            };
+          })
+          .filter(s => s.points > 0);
         setLeaderboard(data);
       },
       (error) => {
-        console.warn("Leaderboard index missing or error, falling back to basic query:", error.code);
+        console.warn("Leaderboard filtered query error, falling back:", error.code);
         // Fallback to simpler query while index builds
         const qSimple = query(collection(db, "users"), where("role", "==", "student"), orderBy(leaderboardTab, "desc"), limit(10));
         onSnapshot(qSimple, (snap) => {
-           const data = snap.docs.map(doc => {
-            const ud = doc.data() as ProfileData;
-            return { uid: doc.id, name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: ud[leaderboardTab as keyof ProfileData] || 0, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
-          });
+           const data = snap.docs
+            .map(doc => {
+              const ud = doc.data() as ProfileData;
+              return { uid: doc.id, name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: ud[leaderboardTab as keyof ProfileData] || 0, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
+            })
+            .filter(s => s.points > 0);
           setLeaderboard(data);
         });
       }
