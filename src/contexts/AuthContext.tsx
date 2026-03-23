@@ -102,10 +102,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = userDoc.data();
         const profileData = { ...data, uid: authUser.uid } as ProfileData;
         
-        // --- AUTO RESET CHECK (Fail-safe for Monday resets) ---
+        // --- CALENDAR-BASED AUTO RESET CHECK (Monday and 1st of Month) ---
         const now = new Date();
-        const currentWeekKey = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-ww');
+        // Use Monday's date as the week key (yyyy-MM-dd)
+        const currentWeekKey = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
         const currentMonthKey = format(startOfMonth(now), 'yyyy-MM');
+        
         let needsUpdate = false;
         const updatePayload: any = {};
 
@@ -219,6 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { password, confirmPassword, profilePhoto, ...rest } = values;
       const userEmail = user.email?.toLowerCase() || '';
       const isAdmin = ADMIN_EMAILS.includes(userEmail);
+      const now = new Date();
       
       const rawData = {
           ...rest,
@@ -238,8 +241,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           weeklyPoints: 0,
           totalPoints: 0,
           lastAwardedRank: 'Junior Calculator',
-          lastWeeklyReset: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-ww'),
-          lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
+          lastWeeklyReset: format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd'),
+          lastMonthlyReset: format(startOfMonth(now), 'yyyy-MM')
       };
 
       await setDoc(userDocRef, sanitizeForFirestore(rawData)).catch(async (error) => {
@@ -275,6 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const surname = rest.pop() || '';
         const userEmail = user.email?.toLowerCase() || '';
         const isAdmin = ADMIN_EMAILS.includes(userEmail);
+        const now = new Date();
         
         const rawData = {
           email: user.email,
@@ -295,8 +299,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           weeklyPoints: 0,
           totalPoints: 0,
           lastAwardedRank: 'Junior Calculator',
-          lastWeeklyReset: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-ww'),
-          lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
+          lastWeeklyReset: format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd'),
+          lastMonthlyReset: format(startOfMonth(now), 'yyyy-MM')
         };
 
         await setDoc(userDocRef, sanitizeForFirestore(rawData)).catch(async (error) => {
@@ -572,8 +576,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userSnap = await getDoc(userRef);
       if (!userSnap.exists()) return;
       const data = userSnap.data() as ProfileData;
+      
+      // --- CALENDAR SYNC ---
       const now = new Date();
-      const currentWeekKey = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-ww');
+      const currentWeekKey = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
       const currentMonthKey = format(startOfMonth(now), 'yyyy-MM');
       
       const nextPoints = (data.totalPoints || 0) + points;

@@ -55,7 +55,7 @@ export default function StudentDashboardPage() {
     }
   }, [mounted, profile?.totalDaysPracticed]);
 
-  // Optimized Global Hall of Fame Listener
+  // Optimized Global Winner Listener
   useEffect(() => {
     if (!mounted || !user) return;
 
@@ -78,9 +78,30 @@ export default function StudentDashboardPage() {
     if (!mounted || !user) return;
 
     const db = getFirestore(firebaseApp);
-    const q = query(collection(db, "users"), where("role", "==", "student"), orderBy(leaderboardTab, "desc"), limit(10));
+    // Filter out users with 0 points in the weekly/monthly tabs to show a "fresh" board
+    const q = query(
+      collection(db, "users"), 
+      where("role", "==", "student"), 
+      where(leaderboardTab, ">", 0),
+      orderBy(leaderboardTab, "desc"), 
+      limit(10)
+    );
+    
+    // Fallback query if the board is empty (everyone at 0)
+    const emptyQ = query(
+      collection(db, "users"), 
+      where("role", "==", "student"), 
+      orderBy("totalPoints", "desc"), 
+      limit(10)
+    );
+
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
+        if (snapshot.empty && leaderboardTab !== "totalPoints") {
+          // If no one has practiced yet this period, show global leaders as placeholders or stay empty
+          setLeaderboard([]);
+          return;
+        }
         const data = snapshot.docs.map(doc => {
           const ud = doc.data() as ProfileData;
           return { 
@@ -94,7 +115,15 @@ export default function StudentDashboardPage() {
         setLeaderboard(data);
       },
       (error) => {
-        console.warn("Leaderboard list listener error:", error.code);
+        // If query fails (often due to index not ready for where > 0), fallback to standard limit query
+        const qStandard = query(collection(db, "users"), where("role", "==", "student"), orderBy(leaderboardTab, "desc"), limit(10));
+        onSnapshot(qStandard, (snap) => {
+           const data = snap.docs.map(doc => {
+            const ud = doc.data() as ProfileData;
+            return { uid: doc.id, name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: ud[leaderboardTab as keyof ProfileData] || 0, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
+          });
+          setLeaderboard(data);
+        });
       }
     );
     return () => unsubscribe();
@@ -155,7 +184,7 @@ export default function StudentDashboardPage() {
   const pointsNeeded = Math.max(0, nextRank.pointsReq - currentPoints);
   
   const pointsProg = Math.min(1, currentPoints / (nextRank.pointsReq || 1));
-  const daysProg = Math.min(1, currentDays / (nextRank.daysReq || 1));
+  const daysProg = Math.min(1, currentDays / (nextReq.daysReq || 1));
   const progress = ((pointsProg + daysProg) / 2) * 100;
 
   return (
@@ -341,7 +370,7 @@ export default function StudentDashboardPage() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border/50">
-                {leaderboard.map((s, i) => (
+                {leaderboard.length > 0 ? leaderboard.map((s, i) => (
                   <div key={s.uid} className={cn("flex items-center justify-between p-4", s.uid === profile.uid ? "bg-primary/5" : "hover:bg-muted/30")}>
                     <div className="flex items-center gap-4 min-w-0">
                       <span className={cn("w-6 text-sm font-black shrink-0", i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground")}>#{i + 1}</span>
@@ -353,7 +382,13 @@ export default function StudentDashboardPage() {
                     </div>
                     <div className="text-right shrink-0 ml-2"><p className="text-sm font-black text-primary">{s.points.toLocaleString()}</p><p className="text-[8px] font-black text-muted-foreground uppercase">Points</p></div>
                   </div>
-                ))}
+                )) : (
+                  <div className="p-12 text-center text-muted-foreground space-y-2">
+                    <Clock className="w-8 h-8 mx-auto opacity-20" />
+                    <p className="text-xs font-bold uppercase tracking-widest">Fresh Period</p>
+                    <p className="text-[10px] opacity-60">Practice now to be #1 this week!</p>
+                  </div>
+                )}
               </div>
               <div className="bg-primary/5 p-4 border-t border-border/50">
                 <div className="flex items-center gap-3 mb-2">

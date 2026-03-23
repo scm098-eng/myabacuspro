@@ -45,6 +45,12 @@ function getTransporter(password) {
 exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
     logger.info("Starting Weekly Points Reset & Winner Declaration");
     
+    // Generate the new week key (Monday's date)
+    const now = new Date();
+    const monday = new Date(now);
+    monday.setUTCDate(now.getUTCDate() - ((now.getUTCDay() + 6) % 7));
+    const currentWeekKey = monday.toISOString().split('T')[0];
+
     try {
         // 1. Declare Winner (Find student with highest weekly points)
         const topUserSnap = await db.collection('users')
@@ -67,6 +73,7 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
             logger.info(`Winner declared: ${winner.firstName} ${winner.surname}`);
         }
 
+        // 2. Reset points for all students
         const usersSnap = await db.collection('users').where('role', '==', 'student').get();
         let batch = db.batch();
         let count = 0;
@@ -74,6 +81,7 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
         for (const userDoc of usersSnap.docs) {
             batch.update(userDoc.ref, {
                 weeklyPoints: 0,
+                lastWeeklyReset: currentWeekKey,
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
             count++;
@@ -101,6 +109,9 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
  */
 exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
     logger.info("Starting Monthly Points Reset");
+    const now = new Date();
+    const currentMonthKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+
     try {
         const usersSnap = await db.collection('users').where('role', '==', 'student').get();
         let batch = db.batch();
@@ -109,6 +120,7 @@ exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
         for (const userDoc of usersSnap.docs) {
             batch.update(userDoc.ref, {
                 monthlyPoints: 0,
+                lastMonthlyReset: currentMonthKey,
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
             count++;
