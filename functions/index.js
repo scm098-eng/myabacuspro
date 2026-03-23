@@ -48,7 +48,10 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
     // Generate the new week key (Monday's date)
     const now = new Date();
     const monday = new Date(now);
-    monday.setUTCDate(now.getUTCDate() - ((now.getUTCDay() + 6) % 7));
+    // Find the Monday of the current week (ISO 1 is Monday)
+    const day = now.getUTCDay();
+    const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1);
+    monday.setUTCDate(diff);
     const currentWeekKey = monday.toISOString().split('T')[0];
 
     try {
@@ -61,13 +64,15 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
 
         if (!topUserSnap.empty) {
             const winner = topUserSnap.docs[0].data();
+            // Broadcast the winner to the public stats doc
             await db.collection('stats').doc('leaderboard').set({
                 lastWeeklyWinner: {
                     uid: topUserSnap.docs[0].id,
                     name: `${winner.firstName} ${winner.surname}`,
                     photo: winner.profilePhoto || '',
                     points: winner.weeklyPoints || 0,
-                    declaredAt: admin.firestore.FieldValue.serverTimestamp()
+                    declaredAt: admin.firestore.FieldValue.serverTimestamp(),
+                    weekKey: currentWeekKey
                 }
             }, { merge: true });
             logger.info(`Winner declared: ${winner.firstName} ${winner.surname}`);

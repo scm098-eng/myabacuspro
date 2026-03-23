@@ -106,7 +106,7 @@ export default function StudentDashboardPage() {
         setLeaderboard(data);
       },
       (error) => {
-        // If query fails (often due to index not ready for where > 0), fallback to standard limit query
+        // Fallback to standard limit query if index is building or filtering fails
         const qStandard = query(collection(db, "users"), where("role", "==", "student"), orderBy(leaderboardTab, "desc"), limit(10));
         onSnapshot(qStandard, (snap) => {
            const data = snap.docs.map(doc => {

@@ -111,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let needsUpdate = false;
         const updatePayload: any = {};
 
+        // Force reset if individual data is behind the calendar
         if (profileData.lastWeeklyReset !== currentWeekKey) {
             profileData.weeklyPoints = 0;
             profileData.lastWeeklyReset = currentWeekKey;
@@ -127,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (needsUpdate) {
-            updateDoc(userDocRef, updatePayload).catch(e => console.error("Auto-reset sync failed", e));
+            updateDoc(userDocRef, updatePayload).catch(e => console.error("Individual reset sync failed", e));
         }
         // -----------------------------------------------------
 
@@ -588,6 +589,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const updateData: any = { totalPoints: increment(points), updatedAt: serverTimestamp() };
       
+      // Secondary check: if individual reset hasn't happened yet, force it during point addition
       if (data.lastWeeklyReset !== currentWeekKey) { 
         updateData.weeklyPoints = points; 
         updateData.lastWeeklyReset = currentWeekKey; 
