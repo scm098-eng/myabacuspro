@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake } from 'lucide-react';
+import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit } from 'firebase/firestore';
@@ -26,6 +26,27 @@ import { isWithinInterval, add, parseISO, getDate, getMonth } from 'date-fns';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from "@/lib/utils";
+
+/**
+ * UTC standard Monday calculation (YYYY-MM-DD)
+ */
+function getUTCMondayKey() {
+    const now = new Date();
+    const day = now.getUTCDay();
+    const diff = (day === 0 ? 6 : day - 1); 
+    const monday = new Date(now);
+    monday.setUTCDate(now.getUTCDate() - diff);
+    monday.setUTCHours(0, 0, 0, 0);
+    return monday.toISOString().split('T')[0];
+}
+
+/**
+ * UTC standard Month calculation (YYYY-MM)
+ */
+function getUTCMonthKey() {
+    const now = new Date();
+    return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+}
 
 const StatCard = ({ title, value, icon: Icon, subValue }: { title: string, value: string | number, icon: React.ElementType, subValue?: string }) => (
     <Card>
@@ -74,6 +95,9 @@ export default function AdminDashboardPage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
 
+  const currentWeekKey = useMemo(() => getUTCMondayKey(), []);
+  const currentMonthKey = useMemo(() => getUTCMonthKey(), []);
+
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -101,12 +125,45 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     if (profile?.role === 'admin' || profile?.role === 'teacher') {
       const db = getFirestore(firebaseApp);
-      const q = query(collection(db, "users"), where("role", "==", "student"), orderBy(leaderboardTab, "desc"), limit(10));
+      let q;
+
+      // Apply the same calendar filters as the student dashboard to ensure resets are visible
+      if (leaderboardTab === 'weeklyPoints') {
+        q = query(
+          collection(db, "users"), 
+          where("role", "==", "student"), 
+          where("lastWeeklyReset", "==", currentWeekKey),
+          orderBy("weeklyPoints", "desc"), 
+          limit(10)
+        );
+      } else if (leaderboardTab === 'monthlyPoints') {
+        q = query(
+          collection(db, "users"), 
+          where("role", "==", "student"), 
+          where("lastMonthlyReset", "==", currentMonthKey),
+          orderBy("monthlyPoints", "desc"), 
+          limit(10)
+        );
+      } else {
+        q = query(
+          collection(db, "users"), 
+          where("role", "==", "student"), 
+          orderBy("totalPoints", "desc"), 
+          limit(10)
+        );
+      }
+
       return onSnapshot(q, 
         (snapshot) => {
           const data = snapshot.docs.map(doc => {
             const ud = doc.data() as ProfileData;
-            return { uid: doc.id, name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: ud[leaderboardTab as keyof ProfileData] || 0, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
+            return { 
+              uid: doc.id, 
+              name: `${ud.firstName} ${ud.surname}`, 
+              photo: ud.profilePhoto, 
+              points: ud[leaderboardTab as keyof ProfileData] || 0, 
+              title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) 
+            };
           });
           setLeaderboard(data);
         },
@@ -121,7 +178,7 @@ export default function AdminDashboardPage() {
         }
       );
     }
-  }, [profile, leaderboardTab, getStudentTitle]);
+  }, [profile, leaderboardTab, getStudentTitle, currentWeekKey, currentMonthKey]);
 
   const handleSendPromo = async (isTest = false) => {
     if (!emailSubject || !emailMessage) {
@@ -405,7 +462,13 @@ export default function AdminDashboardPage() {
                                 </div>
                                 <div className="text-right"><span className="text-sm font-bold text-primary block">{s.points.toLocaleString()}</span><span className="text-[8px] font-bold text-muted-foreground uppercase">Points</span></div>
                             </div>
-                        )) : <div className="p-8 text-center text-muted-foreground">Updating records...</div>}
+                        )) : (
+                          <div className="p-8 text-center text-muted-foreground space-y-2">
+                            <Clock className="w-8 h-8 mx-auto opacity-20" />
+                            <p className="text-xs font-bold uppercase tracking-widest">Fresh Period</p>
+                            <p className="text-[10px] opacity-60">Reset sync complete.</p>
+                          </div>
+                        )}
                     </div>
                 </CardContent>
                 <div className="bg-primary/5 p-4 border-t border-border/50">

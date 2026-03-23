@@ -21,19 +21,13 @@ export default function WinnerMarquee() {
           const data = snapshot.data();
           const winner = data.lastWeeklyWinner;
           
-          if (winner && winner.declaredAt) {
-            const declaredAt = winner.declaredAt.toDate();
-            const now = new Date();
-            const diffMs = now.getTime() - declaredAt.getTime();
-            
-            // Show the winner for 6.5 days (nearly the whole week) 
-            // so everyone has a chance to see the champion.
-            if (diffMs >= 0 && diffMs < 561600000) { 
-              setLastWinner(winner);
-              setIsVisible(true);
-            } else {
-              setIsVisible(false);
-            }
+          if (winner) {
+            // We now show the champion for the entire following week 
+            // until a new one is declared by the next Monday reset.
+            setLastWinner(winner);
+            setIsVisible(true);
+          } else {
+            setIsVisible(false);
           }
         } else {
           setIsVisible(false);
