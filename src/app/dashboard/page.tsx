@@ -110,7 +110,6 @@ export default function StudentDashboardPage() {
     const db = getFirestore(firebaseApp);
     let q;
     
-    // STRICT FILTERING: Only show people belonging to the current UTC period
     if (leaderboardTab === 'weeklyPoints') {
       q = query(
         collection(db, "users"), 

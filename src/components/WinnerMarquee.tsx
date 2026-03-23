@@ -24,8 +24,11 @@ export default function WinnerMarquee() {
           if (winner && winner.declaredAt) {
             const declaredAt = winner.declaredAt.toDate();
             const now = new Date();
-            // Show for 24 hours after declaration
-            if (now.getTime() - declaredAt.getTime() < 86400000) {
+            const diffMs = now.getTime() - declaredAt.getTime();
+            
+            // Show the winner for 6.5 days (nearly the whole week) 
+            // so everyone has a chance to see the champion.
+            if (diffMs >= 0 && diffMs < 561600000) { 
               setLastWinner(winner);
               setIsVisible(true);
             } else {
