@@ -87,18 +87,9 @@ export default function StudentDashboardPage() {
       limit(10)
     );
     
-    // Fallback query if the board is empty (everyone at 0)
-    const emptyQ = query(
-      collection(db, "users"), 
-      where("role", "==", "student"), 
-      orderBy("totalPoints", "desc"), 
-      limit(10)
-    );
-
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
         if (snapshot.empty && leaderboardTab !== "totalPoints") {
-          // If no one has practiced yet this period, show global leaders as placeholders or stay empty
           setLeaderboard([]);
           return;
         }
@@ -184,7 +175,7 @@ export default function StudentDashboardPage() {
   const pointsNeeded = Math.max(0, nextRank.pointsReq - currentPoints);
   
   const pointsProg = Math.min(1, currentPoints / (nextRank.pointsReq || 1));
-  const daysProg = Math.min(1, currentDays / (nextReq.daysReq || 1));
+  const daysProg = Math.min(1, currentDays / (nextRank.daysReq || 1));
   const progress = ((pointsProg + daysProg) / 2) * 100;
 
   return (
