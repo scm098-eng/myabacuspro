@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardContent as CardBody, CardDescription } from '@/components/ui/card';
 import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, Clock, Zap, Crown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
@@ -18,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RANK_CRITERIA } from '@/lib/constants';
+import { format, startOfWeek, startOfMonth } from 'date-fns';
 import confetti from 'canvas-confetti';
 
 export default function StudentDashboardPage() {
@@ -31,12 +33,14 @@ export default function StudentDashboardPage() {
   const [isRequestingNotifications, setIsRequestingNotifications] = useState(false);
   const [lastWinner, setLastWinner] = useState<any>(null);
 
+  const currentWeekKey = useMemo(() => format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'), []);
+  const currentMonthKey = useMemo(() => format(startOfMonth(new Date()), 'yyyy-MM'), []);
+
   useEffect(() => {
     setMounted(true);
     if (!isLoading && !user) router.push('/login');
   }, [isLoading, user, router]);
 
-  // Milestone Celebration Logic
   useEffect(() => {
     if (mounted && profile?.totalDaysPracticed) {
       const days = profile.totalDaysPracticed;
@@ -55,7 +59,6 @@ export default function StudentDashboardPage() {
     }
   }, [mounted, profile?.totalDaysPracticed]);
 
-  // Optimized Global Winner Listener
   useEffect(() => {
     if (!mounted || !user) return;
 
@@ -73,26 +76,44 @@ export default function StudentDashboardPage() {
     return () => unsub();
   }, [mounted, user]);
 
-  // Optimized Leaderboard Listener
   useEffect(() => {
     if (!mounted || !user) return;
 
     const db = getFirestore(firebaseApp);
-    // Filter out users with 0 points in the weekly/monthly tabs to show a "fresh" board
-    const q = query(
-      collection(db, "users"), 
-      where("role", "==", "student"), 
-      where(leaderboardTab, ">", 0),
-      orderBy(leaderboardTab, "desc"), 
-      limit(10)
-    );
+    
+    // Logic: Only show students reset for the CURRENT week/month
+    // This prevents "ghost" points from demotivating students
+    let q;
+    if (leaderboardTab === 'weeklyPoints') {
+      q = query(
+        collection(db, "users"), 
+        where("role", "==", "student"), 
+        where("lastWeeklyReset", "==", currentWeekKey),
+        where("weeklyPoints", ">", 0),
+        orderBy("weeklyPoints", "desc"), 
+        limit(10)
+      );
+    } else if (leaderboardTab === 'monthlyPoints') {
+      q = query(
+        collection(db, "users"), 
+        where("role", "==", "student"), 
+        where("lastMonthlyReset", "==", currentMonthKey),
+        where("monthlyPoints", ">", 0),
+        orderBy("monthlyPoints", "desc"), 
+        limit(10)
+      );
+    } else {
+      q = query(
+        collection(db, "users"), 
+        where("role", "==", "student"), 
+        where("totalPoints", ">", 0),
+        orderBy("totalPoints", "desc"), 
+        limit(10)
+      );
+    }
     
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
-        if (snapshot.empty && leaderboardTab !== "totalPoints") {
-          setLeaderboard([]);
-          return;
-        }
         const data = snapshot.docs.map(doc => {
           const ud = doc.data() as ProfileData;
           return { 
@@ -106,9 +127,10 @@ export default function StudentDashboardPage() {
         setLeaderboard(data);
       },
       (error) => {
-        // Fallback to standard limit query if index is building or filtering fails
-        const qStandard = query(collection(db, "users"), where("role", "==", "student"), orderBy(leaderboardTab, "desc"), limit(10));
-        onSnapshot(qStandard, (snap) => {
+        console.warn("Leaderboard index missing or error, falling back to basic query:", error.code);
+        // Fallback to simpler query while index builds
+        const qSimple = query(collection(db, "users"), where("role", "==", "student"), orderBy(leaderboardTab, "desc"), limit(10));
+        onSnapshot(qSimple, (snap) => {
            const data = snap.docs.map(doc => {
             const ud = doc.data() as ProfileData;
             return { uid: doc.id, name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: ud[leaderboardTab as keyof ProfileData] || 0, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
@@ -118,7 +140,7 @@ export default function StudentDashboardPage() {
       }
     );
     return () => unsubscribe();
-  }, [mounted, user, getStudentTitle, leaderboardTab]);
+  }, [mounted, user, getStudentTitle, leaderboardTab, currentWeekKey, currentMonthKey]);
 
   const handleEnableNotifications = async () => {
     if (!user) return;
@@ -180,7 +202,6 @@ export default function StudentDashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
-      {/* Weekly Winner Announcement */}
       {lastWinner && (
         <Card className="bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 border-none shadow-xl rounded-2xl overflow-hidden animate-in fade-in zoom-in duration-700">
           <CardContent className="p-0">

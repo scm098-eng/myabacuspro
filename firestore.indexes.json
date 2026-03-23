@@ -52,6 +52,10 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "lastWeeklyReset",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "weeklyPoints",
           "order": "DESCENDING"
         }
@@ -63,6 +67,10 @@
       "fields": [
         {
           "fieldPath": "role",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastMonthlyReset",
           "order": "ASCENDING"
         },
         {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -102,16 +103,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = userDoc.data();
         const profileData = { ...data, uid: authUser.uid } as ProfileData;
         
-        // --- CALENDAR-BASED AUTO RESET CHECK (Monday and 1st of Month) ---
+        // --- CALENDAR-BASED AUTO RESET SYNC ---
+        // This ensures the current user is ALWAYS reset correctly upon login
         const now = new Date();
-        // Use Monday's date as the week key (yyyy-MM-dd)
         const currentWeekKey = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
         const currentMonthKey = format(startOfMonth(now), 'yyyy-MM');
         
         let needsUpdate = false;
         const updatePayload: any = {};
 
-        // Force reset if individual data is behind the calendar
         if (profileData.lastWeeklyReset !== currentWeekKey) {
             profileData.weeklyPoints = 0;
             profileData.lastWeeklyReset = currentWeekKey;
@@ -257,7 +257,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
 
-      // Trigger Welcome Auto-Email
       triggerAutoEmail('welcome', user.email!, values.firstName, {
         streak: 0,
         practiceDays: 0,
@@ -315,7 +314,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         });
 
-        // Trigger Welcome Auto-Email for new Google users
         triggerAutoEmail('welcome', user.email!, firstName || 'Student', {
           streak: 0,
           practiceDays: 0,
@@ -578,7 +576,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!userSnap.exists()) return;
       const data = userSnap.data() as ProfileData;
       
-      // --- CALENDAR SYNC ---
       const now = new Date();
       const currentWeekKey = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
       const currentMonthKey = format(startOfMonth(now), 'yyyy-MM');
@@ -589,7 +586,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const updateData: any = { totalPoints: increment(points), updatedAt: serverTimestamp() };
       
-      // Secondary check: if individual reset hasn't happened yet, force it during point addition
       if (data.lastWeeklyReset !== currentWeekKey) { 
         updateData.weeklyPoints = points; 
         updateData.lastWeeklyReset = currentWeekKey; 
@@ -604,7 +600,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         updateData.monthlyPoints = increment(points); 
       }
       
-      // Auto-Email Trigger for Rank Achievement
       if (nextRank.name !== data.lastAwardedRank) {
         updateData.lastAwardedRank = nextRank.name;
         triggerAutoEmail('achievement', data.email, data.firstName, {

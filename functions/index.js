@@ -1,3 +1,4 @@
+
 /**
  * Firebase Cloud Functions v2 (Node.js) Code
  * filename: functions/index.js
@@ -14,7 +15,7 @@ if (admin.apps.length === 0) {
     admin.initializeApp();
 }
 
-setGlobalOptions({ maxInstances: 10 });
+setGlobalOptions({ maxInstances: 10, timeoutSeconds: 540, memory: '1GiB' });
 const db = admin.firestore();
 
 const GMAIL_USER = 'myabacuspro@gmail.com';
@@ -45,10 +46,8 @@ function getTransporter(password) {
 exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
     logger.info("Starting Weekly Points Reset & Winner Declaration");
     
-    // Generate the new week key (Monday's date)
     const now = new Date();
     const monday = new Date(now);
-    // Find the Monday of the current week (ISO 1 is Monday)
     const day = now.getUTCDay();
     const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1);
     monday.setUTCDate(diff);
@@ -64,7 +63,6 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
 
         if (!topUserSnap.empty) {
             const winner = topUserSnap.docs[0].data();
-            // Broadcast the winner to the public stats doc
             await db.collection('stats').doc('leaderboard').set({
                 lastWeeklyWinner: {
                     uid: topUserSnap.docs[0].id,
@@ -79,6 +77,7 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
         }
 
         // 2. Reset points for all students
+        // We use a batch process to ensure scalability
         const usersSnap = await db.collection('users').where('role', '==', 'student').get();
         let batch = db.batch();
         let count = 0;
