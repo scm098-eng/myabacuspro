@@ -20,6 +20,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RANK_CRITERIA } from '@/lib/constants';
 import confetti from 'canvas-confetti';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 /**
  * UTC standard Monday calculation (YYYY-MM-DD)
@@ -89,8 +91,14 @@ export default function StudentDashboardPage() {
           setLastWinner(doc.data().lastWeeklyWinner);
         }
       },
-      (error) => {
-        console.warn("Leaderboard status listener error:", error.code);
+      async (error) => {
+        if (error.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: 'stats/leaderboard',
+            operation: 'get',
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        }
       }
     );
     return () => unsub();
@@ -143,19 +151,14 @@ export default function StudentDashboardPage() {
           .filter(s => s.points > 0);
         setLeaderboard(data);
       },
-      (error) => {
-        console.warn("Leaderboard snapshot error, falling back:", error.code);
-        // Fallback without strict date filtering if index is pending
-        const qSimple = query(collection(db, "users"), where("role", "==", "student"), orderBy(leaderboardTab, "desc"), limit(10));
-        onSnapshot(qSimple, (snap) => {
-           const data = snap.docs
-            .map(doc => {
-              const ud = doc.data() as ProfileData;
-              return { uid: doc.id, name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: ud[leaderboardTab as keyof ProfileData] || 0, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
-            })
-            .filter(s => s.points > 0);
-          setLeaderboard(data);
-        });
+      async (error) => {
+        if (error.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: 'users',
+            operation: 'list',
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        }
       }
     );
     return () => unsubscribe();

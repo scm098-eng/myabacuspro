@@ -6,6 +6,8 @@ import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import { Trophy, Megaphone, Star, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 export default function WinnerMarquee() {
   const [lastWinner, setLastWinner] = useState<any>(null);
@@ -13,24 +15,35 @@ export default function WinnerMarquee() {
 
   useEffect(() => {
     const db = getFirestore(firebaseApp);
-    const unsub = onSnapshot(doc(db, "stats", "leaderboard"), (doc) => {
-      if (doc.exists()) {
-        const data = doc.data();
-        const winner = data.lastWeeklyWinner;
-        
-        if (winner && winner.declaredAt) {
-          const declaredAt = winner.declaredAt.toDate();
-          const now = new Date();
-          // Show for 24 hours (86,400,000 ms)
-          if (now.getTime() - declaredAt.getTime() < 86400000) {
-            setLastWinner(winner);
-            setIsOpen(true);
-          } else {
-            setIsOpen(false);
+    const unsub = onSnapshot(doc(db, "stats", "leaderboard"), 
+      (doc) => {
+        if (doc.exists()) {
+          const data = doc.data();
+          const winner = data.lastWeeklyWinner;
+          
+          if (winner && winner.declaredAt) {
+            const declaredAt = winner.declaredAt.toDate();
+            const now = new Date();
+            // Show for 24 hours (86,400,000 ms)
+            if (now.getTime() - declaredAt.getTime() < 86400000) {
+              setLastWinner(winner);
+              setIsOpen(true);
+            } else {
+              setIsOpen(false);
+            }
           }
         }
+      },
+      async (error) => {
+        if (error.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: 'stats/leaderboard',
+            operation: 'get',
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        }
       }
-    });
+    );
     return () => unsub();
   }, []);
 

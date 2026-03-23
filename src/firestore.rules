@@ -19,8 +19,7 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'student') == 'teacher';
     }
 
-    // Hardened helper to check if user is suspended
-    // Uses data.get() to handle missing fields gracefully
+    // Helper to check if user is suspended
     function isNotSuspended() {
       return request.auth != null && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isSuspended', false) != true;
@@ -68,7 +67,12 @@ service cloud.firestore {
       allow write: if isOwner(userId) && isNotSuspended();
     }
 
-    // --- ADMIN SYSTEM DATA ---
+    // --- SYSTEM DATA ---
+    match /stats/leaderboard {
+      // Students need to read the weekly winner announcement
+      allow read: if request.auth != null;
+    }
+
     match /stats/{statId} {
       allow read: if request.auth != null && (isAdmin() || isTeacher());
       allow write: if false;
