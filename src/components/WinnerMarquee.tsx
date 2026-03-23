@@ -24,7 +24,7 @@ export default function WinnerMarquee() {
           if (winner && winner.declaredAt) {
             const declaredAt = winner.declaredAt.toDate();
             const now = new Date();
-            // Show for 24 hours (86,400,000 ms)
+            // Show for 24 hours (86,400,000 ms) after declaration
             if (now.getTime() - declaredAt.getTime() < 86400000) {
               setLastWinner(winner);
               setIsOpen(true);
@@ -32,9 +32,13 @@ export default function WinnerMarquee() {
               setIsOpen(false);
             }
           }
+        } else {
+          setIsOpen(false);
         }
       },
       async (error) => {
+        // Since this rule is now public (allow read: if true), 
+        // a permission error would only happen if something is fundamentally wrong.
         if (error.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
             path: 'stats/leaderboard',

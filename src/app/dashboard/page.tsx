@@ -82,7 +82,7 @@ export default function StudentDashboardPage() {
   }, [mounted, profile?.totalDaysPracticed]);
 
   useEffect(() => {
-    if (!mounted || !user) return;
+    if (!mounted) return;
 
     const db = getFirestore(firebaseApp);
     const unsub = onSnapshot(doc(db, "stats", "leaderboard"), 
@@ -92,6 +92,7 @@ export default function StudentDashboardPage() {
         }
       },
       async (error) => {
+        // Only emit if it's an actual unexpected error, not standard unauth on restricted paths
         if (error.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
             path: 'stats/leaderboard',
@@ -102,7 +103,7 @@ export default function StudentDashboardPage() {
       }
     );
     return () => unsub();
-  }, [mounted, user]);
+  }, [mounted]);
 
   useEffect(() => {
     if (!mounted || !user) return;

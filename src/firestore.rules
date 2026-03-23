@@ -69,11 +69,12 @@ service cloud.firestore {
 
     // --- SYSTEM DATA ---
     match /stats/leaderboard {
-      // Students need to read the weekly winner announcement
-      allow read: if request.auth != null;
+      // Winner status is public so everyone can see the champion on the marquee
+      allow read: if true;
     }
 
     match /stats/{statId} {
+      // Internal stats are restricted
       allow read: if request.auth != null && (isAdmin() || isTeacher());
       allow write: if false;
     }
