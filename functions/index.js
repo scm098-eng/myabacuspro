@@ -39,25 +39,14 @@ function getTransporter(password) {
 }
 
 /**
- * Triggers the internal auto-email API.
- */
-async function triggerInternalEmail(type, userEmail, userName, metadata) {
-    // In production, we'd hit the real URL. In this prototype, we'll log the intention
-    // or use a direct trigger if possible. For stability, we'll log.
-    logger.info(`Intention: Send ${type} to ${userEmail}`);
-}
-
-/**
- * Scheduled: Every Sunday at 00:00
+ * Scheduled: Every Monday at 00:00 UTC
  * Declares the winner and resets weekly points for ALL students.
  */
-exports.resetWeeklyPoints = onSchedule("0 0 * * 0", async (event) => {
-    logger.info("Starting Weekly Points Reset & Reports");
+exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
+    logger.info("Starting Weekly Points Reset & Winner Declaration");
     
     try {
-        const usersSnap = await db.collection('users').where('role', '==', 'student').get();
-        
-        // 1. Declare Winner
+        // 1. Declare Winner (Find student with highest weekly points)
         const topUserSnap = await db.collection('users')
             .where('role', '==', 'student')
             .orderBy('weeklyPoints', 'desc')
@@ -75,20 +64,16 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 0", async (event) => {
                     declaredAt: admin.firestore.FieldValue.serverTimestamp()
                 }
             }, { merge: true });
+            logger.info(`Winner declared: ${winner.firstName} ${winner.surname}`);
         }
 
+        const usersSnap = await db.collection('users').where('role', '==', 'student').get();
         let batch = db.batch();
         let count = 0;
 
         for (const userDoc of usersSnap.docs) {
-            const data = userDoc.data();
-            
-            // 2. Queue Weekly Report Email (Logic only, actual trigger handled by backend or direct SMTP)
-            // In this prototype, we update the user and they'll see fresh stats on next login.
-            
             batch.update(userDoc.ref, {
                 weeklyPoints: 0,
-                lastWeeklyReset: null, // Forces a re-check on client
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
             count++;
@@ -104,18 +89,18 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 0", async (event) => {
             await batch.commit();
         }
         
-        logger.info(`Successfully reset and processed reports for ${usersSnap.size} students.`);
+        logger.info(`Successfully reset weekly points for ${usersSnap.size} students.`);
     } catch (err) {
         logger.error("Weekly reset failed", err);
     }
 });
 
 /**
- * Scheduled: 1st of every month at 00:00
+ * Scheduled: 1st of every month at 00:00 UTC
  * Resets monthly points for ALL students.
  */
 exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
-    logger.info("Starting Monthly Points Reset & Reports");
+    logger.info("Starting Monthly Points Reset");
     try {
         const usersSnap = await db.collection('users').where('role', '==', 'student').get();
         let batch = db.batch();
@@ -124,7 +109,6 @@ exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
         for (const userDoc of usersSnap.docs) {
             batch.update(userDoc.ref, {
                 monthlyPoints: 0,
-                lastMonthlyReset: null,
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
             count++;
@@ -140,7 +124,7 @@ exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
             await batch.commit();
         }
         
-        logger.info(`Successfully processed monthly reports for ${usersSnap.size} students.`);
+        logger.info(`Successfully reset monthly points for ${usersSnap.size} students.`);
     } catch (err) {
         logger.error("Monthly reset failed", err);
     }

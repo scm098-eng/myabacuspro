@@ -102,6 +102,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = userDoc.data();
         const profileData = { ...data, uid: authUser.uid } as ProfileData;
         
+        // --- AUTO RESET CHECK (Fail-safe for Monday resets) ---
+        const now = new Date();
+        const currentWeekKey = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-ww');
+        const currentMonthKey = format(startOfMonth(now), 'yyyy-MM');
+        let needsUpdate = false;
+        const updatePayload: any = {};
+
+        if (profileData.lastWeeklyReset !== currentWeekKey) {
+            profileData.weeklyPoints = 0;
+            profileData.lastWeeklyReset = currentWeekKey;
+            updatePayload.weeklyPoints = 0;
+            updatePayload.lastWeeklyReset = currentWeekKey;
+            needsUpdate = true;
+        }
+        if (profileData.lastMonthlyReset !== currentMonthKey) {
+            profileData.monthlyPoints = 0;
+            profileData.lastMonthlyReset = currentMonthKey;
+            updatePayload.monthlyPoints = 0;
+            updatePayload.lastMonthlyReset = currentMonthKey;
+            needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+            updateDoc(userDocRef, updatePayload).catch(e => console.error("Auto-reset sync failed", e));
+        }
+        // -----------------------------------------------------
+
         if (data.emailVerified !== authUser.emailVerified) {
           await updateDoc(userDocRef, { emailVerified: authUser.emailVerified });
           profileData.emailVerified = authUser.emailVerified;
@@ -211,7 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           weeklyPoints: 0,
           totalPoints: 0,
           lastAwardedRank: 'Junior Calculator',
-          lastWeeklyReset: format(startOfWeek(new Date()), 'yyyy-ww'),
+          lastWeeklyReset: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-ww'),
           lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
       };
 
@@ -268,7 +295,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           weeklyPoints: 0,
           totalPoints: 0,
           lastAwardedRank: 'Junior Calculator',
-          lastWeeklyReset: format(startOfWeek(new Date()), 'yyyy-ww'),
+          lastWeeklyReset: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-ww'),
           lastMonthlyReset: format(startOfMonth(new Date()), 'yyyy-MM')
         };
 
@@ -546,7 +573,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!userSnap.exists()) return;
       const data = userSnap.data() as ProfileData;
       const now = new Date();
-      const currentWeekKey = format(startOfWeek(now), 'yyyy-ww');
+      const currentWeekKey = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-ww');
       const currentMonthKey = format(startOfMonth(now), 'yyyy-MM');
       
       const nextPoints = (data.totalPoints || 0) + points;
@@ -554,8 +581,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const nextRank = getStudentTitle(nextDays, nextPoints);
 
       const updateData: any = { totalPoints: increment(points), updatedAt: serverTimestamp() };
-      if (data.lastWeeklyReset !== currentWeekKey) { updateData.weeklyPoints = points; updateData.lastWeeklyReset = currentWeekKey; } else { updateData.weeklyPoints = increment(points); }
-      if (data.lastMonthlyReset !== currentMonthKey) { updateData.monthlyPoints = points; updateData.lastMonthlyReset = currentMonthKey; } else { updateData.monthlyPoints = increment(points); }
+      
+      if (data.lastWeeklyReset !== currentWeekKey) { 
+        updateData.weeklyPoints = points; 
+        updateData.lastWeeklyReset = currentWeekKey; 
+      } else { 
+        updateData.weeklyPoints = increment(points); 
+      }
+      
+      if (data.lastMonthlyReset !== currentMonthKey) { 
+        updateData.monthlyPoints = points; 
+        updateData.lastMonthlyReset = currentMonthKey; 
+      } else { 
+        updateData.monthlyPoints = increment(points); 
+      }
       
       // Auto-Email Trigger for Rank Achievement
       if (nextRank.name !== data.lastAwardedRank) {
