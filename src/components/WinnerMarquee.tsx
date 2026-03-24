@@ -4,8 +4,7 @@
 import { useEffect, useState } from 'react';
 import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
-import { Trophy, Megaphone, Star, Crown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Trophy, Star, Crown, Megaphone } from 'lucide-react';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 
@@ -33,7 +32,6 @@ export default function WinnerMarquee() {
         }
       },
       async (error) => {
-        // Standard Firebase error handling
         if (error.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
             path: 'stats/leaderboard',

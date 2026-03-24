@@ -19,7 +19,6 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'student') == 'teacher';
     }
 
-    // Helper to check if user is suspended
     function isNotSuspended() {
       return request.auth != null && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isSuspended', false) != true;
@@ -27,14 +26,11 @@ service cloud.firestore {
 
     // --- USER PROFILE RULES ---
     match /users/{userId} {
-      // Allow users to read profiles for leaderboards
+      // Allow authenticated users to read profiles for leaderboards
       allow read: if request.auth != null;
       
       allow create: if isOwner(userId);
 
-      // Rule for Profile Updates:
-      // Owners can update points/streaks only if NOT suspended.
-      // Owners CANNOT change their role, status, or subscription.
       allow update: if isAdmin() || (isOwner(userId) && 
         resource.data.get('isSuspended', false) != true &&
         !request.resource.data.diff(resource.data).affectedKeys()
@@ -42,15 +38,7 @@ service cloud.firestore {
 
       allow delete: if isAdmin();
       
-      // --- LEADERBOARD & FILTERING ---
-      allow list: if request.auth != null && (
-        isAdmin() || 
-        isTeacher() || 
-        // Allow standard leaderboard queries
-        (request.query.limit <= 20) ||
-        // Allow teacher lookup during signup
-        (request.query.where.role == 'teacher' && request.query.where.status == 'approved')
-      );
+      allow list: if request.auth != null;
     }
     
     // --- GAME & TEST PROGRESS ---
@@ -75,7 +63,6 @@ service cloud.firestore {
     }
 
     match /stats/{statId} {
-      // Internal stats are restricted to staff
       allow read: if request.auth != null && (isAdmin() || isTeacher());
       allow write: if false;
     }

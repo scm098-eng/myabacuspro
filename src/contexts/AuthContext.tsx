@@ -83,9 +83,6 @@ const triggerAutoEmail = (type: string, userEmail: string, userName: string, met
   }).catch(e => console.warn("Failed to trigger auto-email:", e));
 };
 
-/**
- * UTC standard Monday calculation (YYYY-MM-DD)
- */
 function getUTCMondayKey() {
     const now = new Date();
     const day = now.getUTCDay();
@@ -96,9 +93,6 @@ function getUTCMondayKey() {
     return monday.toISOString().split('T')[0];
 }
 
-/**
- * UTC standard Month calculation (YYYY-MM)
- */
 function getUTCMonthKey() {
     const now = new Date();
     return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;

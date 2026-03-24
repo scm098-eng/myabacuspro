@@ -25,25 +25,3 @@ env:
     secret: GMAIL_APP_PASSWORD
     availability:
       - RUNTIME
-
-  # Firebase Frontend Variables
-  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    secret: FIREBASE_API_KEY
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    secret: FIREBASE_AUTH_DOMAIN
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    secret: FIREBASE_PROJECT_ID
-    availability:
-      - BUILD
-      - RUNTIME
-  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    secret: FIREBASE_APP_ID
-    availability:
-      - BUILD
-      - RUNTIME
