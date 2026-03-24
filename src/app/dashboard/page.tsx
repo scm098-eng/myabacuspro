@@ -110,6 +110,7 @@ export default function StudentDashboardPage() {
     const db = getFirestore(firebaseApp);
     let q;
     
+    // We strictly filter by the UTC calendar keys to enforce the reset visually
     if (leaderboardTab === 'weeklyPoints') {
       q = query(
         collection(db, "users"), 
