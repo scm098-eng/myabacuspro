@@ -20,6 +20,13 @@ const testCategories = [
     iconBg: 'bg-yellow-100'
   },
   {
+    href: '/tests/basic',
+    title: 'Basic Add & Subtract',
+    description: 'Simple calculation training using direct movements. No formulas, no timer.',
+    icon: BrainCircuit,
+    iconBg: 'bg-blue-50'
+  },
+  {
     href: '/tests/small-sister',
     title: 'Small Sister Formulas',
     description: 'Focus on specific "Small Sister" addition and subtraction abacus formulas.',

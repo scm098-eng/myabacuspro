@@ -1,3 +1,4 @@
+
 import type { Question, Difficulty, TestType, TestSettings, GameLevel } from '@/types';
 import { basicAdditionQuestions } from './question-data/basic-addition';
 import { basicSubtractionQuestions } from './question-data/basic-subtraction';
@@ -27,6 +28,12 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
   },
   'beads-set': {
     easy: { numQuestions: 20, timeLimit: 0, title: 'Set Beads Value', icon: 'puzzle' },
+  },
+  'basic-add-sub-l1': {
+    easy: { numQuestions: 30, timeLimit: 0, title: 'Basic Add/Sub: Level 1 (Direct)', icon: 'brain-circuit' },
+  },
+  'basic-add-sub-l2': {
+    easy: { numQuestions: 30, timeLimit: 0, title: 'Basic Add/Sub: Level 2 (Direct)', icon: 'brain-circuit' },
   },
   'addition-subtraction': {
     easy: { numQuestions: 50, timeLimit: 300, title: 'Addition & Subtraction (Easy)', icon: 'brain-circuit' },
@@ -236,6 +243,71 @@ export function generateOptions(correctAnswer: number): number[] {
   return shuffleArray(Array.from(options));
 }
 
+function isDirectDigitAdd(d1: number, d2: number): boolean {
+  const h1 = d1 >= 5 ? 1 : 0;
+  const e1 = d1 % 5;
+  const h2 = d2 >= 5 ? 1 : 0;
+  const e2 = d2 % 5;
+  if (h1 + h2 > 1) return false;
+  if (e1 + e2 > 4) return false;
+  return true;
+}
+
+function isDirectDigitSub(d1: number, d2: number): boolean {
+  const h1 = d1 >= 5 ? 1 : 0;
+  const e1 = d1 % 5;
+  const h2 = d2 >= 5 ? 1 : 0;
+  const e2 = d2 % 5;
+  if (h2 > h1) return false;
+  if (e2 > e1) return false;
+  return true;
+}
+
+function isDirectFull(val: number, delta: number, op: '+' | '-'): boolean {
+  const v1 = val.toString().padStart(3, '0').split('').map(Number);
+  const v2 = delta.toString().padStart(3, '0').split('').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if (op === '+') {
+      if (!isDirectDigitAdd(v1[i], v2[i])) return false;
+    } else {
+      if (!isDirectDigitSub(v1[i], v2[i])) return false;
+    }
+  }
+  return true;
+}
+
+function generateDirectQuestion(max: number): Question {
+  const numTerms = 3;
+  let currentVal = getRandomInt(max === 9 ? 1 : 10, max);
+  let numbers: (number | string)[] = [currentVal];
+
+  for (let i = 0; i < numTerms - 1; i++) {
+    let attempts = 0;
+    let success = false;
+    while (attempts < 20) {
+      const op = Math.random() > 0.5 ? '+' : '-';
+      const delta = getRandomInt(1, max);
+      const nextVal = op === '+' ? currentVal + delta : currentVal - delta;
+      
+      if (nextVal >= 0 && nextVal <= max && isDirectFull(currentVal, delta, op)) {
+        numbers.push(op);
+        numbers.push(delta);
+        currentVal = nextVal;
+        success = true;
+        break;
+      }
+      attempts++;
+    }
+    if (!success) break;
+  }
+
+  return {
+    text: numbers.join(' '),
+    answer: currentVal,
+    options: generateOptions(currentVal)
+  };
+}
+
 /**
  * Generates elite multi-step mixed arithmetic for levels 51+
  * Steps: 3, 4, or 5 based on progress. All non-negative.
@@ -303,6 +375,15 @@ export function generateGameQuestions(level: GameLevel, levelId?: number): Quest
 export function generateTest(testId: TestType, difficulty: Difficulty): Question[] {
   const settings = getTestSettings(testId, difficulty);
   if (!settings) return [];
+
+  if (testId === 'basic-add-sub-l1' || testId === 'basic-add-sub-l2') {
+    const max = testId === 'basic-add-sub-l1' ? 9 : 99;
+    const questions: Question[] = [];
+    for (let i = 0; i < settings.numQuestions; i++) {
+      questions.push(generateDirectQuestion(max));
+    }
+    return questions;
+  }
 
   if (preDefinedQuestions[testId]) {
       const allQuestions = preDefinedQuestions[testId].filter(q => q.answer >= 0);

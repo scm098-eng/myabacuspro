@@ -5,6 +5,8 @@ export type TestType =
   | 'division'
   | 'beads-identify'
   | 'beads-set'
+  | 'basic-add-sub-l1'
+  | 'basic-add-sub-l2'
   | 'basic-addition-plus-4'
   | 'basic-addition-plus-40'
   | 'basic-addition-plus-3'
