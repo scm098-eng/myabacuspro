@@ -14,7 +14,7 @@ import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, CalendarIcon, Camera, Edit, BadgeCheck, ShieldAlert } from 'lucide-react';
+import { Loader2, CalendarIcon, Camera, Edit, BadgeCheck, ShieldAlert, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import type { ProfileData, UpdateProfilePayload } from '@/types';
@@ -53,17 +53,17 @@ const profileSchema = z.object({
   surname: z.string().min(1, { message: "Surname is required." }),
   dob: z.date({ required_error: "A date of birth is required." }),
   country: z.string().min(1, { message: "Country is required." }),
-  addressLine1: z.string().optional(),
-  city: z.string().optional(),
+  addressLine1: z.string().min(5, { message: "Full address is required." }),
+  city: z.string().min(2, { message: "City is required." }),
   taluka: z.string().optional(),
   district: z.string().optional(),
   state: z.string().optional(),
   pincode: z.string().optional(),
-  schoolName: z.string().optional(),
-  grade: z.string().optional(),
+  schoolName: z.string().min(3, { message: "School name is required." }),
+  grade: z.string().min(1, { message: "Grade is required." }),
   mobileNo: z.string().min(5, { message: "Mobile number is required." }),
   whatsappNo: z.string().min(5, { message: "WhatsApp number is required." }),
-  teacherId: z.string().optional(),
+  teacherId: z.string().min(1, { message: "Teacher assignment is required." }),
   instituteName: z.string().optional(),
   instituteCountry: z.string().optional(),
   instituteAddressLine1: z.string().optional(),
@@ -132,6 +132,15 @@ export default function ProfilePage() {
   const { watch, setValue } = form;
   const dobValue = watch('dob');
   const age = calculateAge(dobValue);
+
+  // Check if profile is essentially empty (common for new Google signups)
+  const isProfileEmpty = profile && !profile.grade && !profile.schoolName;
+
+  useEffect(() => {
+    if (isProfileEmpty && !isEditing) {
+      setIsEditing(true);
+    }
+  }, [isProfileEmpty, isEditing]);
 
   useEffect(() => {
     if (isEditing) {
@@ -205,8 +214,13 @@ export default function ProfilePage() {
       if (croppedImageFile) payload.profilePhoto = croppedImageFile;
       await updateUserProfile(user.uid, payload);
       await fetchProfile(user); 
-      toast({ title: "Profile Updated" });
+      toast({ title: "Profile Updated", description: "Your details have been saved successfully." });
       setIsEditing(false);
+      
+      // If they were onboarding, send them to dashboard
+      if (isProfileEmpty) {
+        router.push('/dashboard');
+      }
     } catch (error: any) {
       toast({ title: "Update Failed", description: error.message, variant: "destructive" });
     } finally { setIsSubmitting(false); }
@@ -231,6 +245,10 @@ export default function ProfilePage() {
   };
 
   const handleCancelEdit = () => {
+      if (isProfileEmpty) {
+        toast({ title: "Profile Incomplete", description: "Please fulfill your profile details to continue using the platform.", variant: "destructive" });
+        return;
+      }
       if (profile) {
         form.reset({
             firstName: profile.firstName || '',
@@ -280,13 +298,15 @@ export default function ProfilePage() {
                         My Profile
                         {profile.emailVerified ? <BadgeCheck className="w-6 h-6 text-green-500" /> : <ShieldAlert className="w-6 h-6 text-orange-500" />}
                     </CardTitle>
-                    <CardDescription>{profile.emailVerified ? 'Verified Account' : 'Action Required: Verification Pending'}</CardDescription>
+                    <CardDescription>
+                      {isProfileEmpty ? 'Welcome! Please complete your student profile details first.' : (profile.emailVerified ? 'Verified Account' : 'Action Required: Verification Pending')}
+                    </CardDescription>
                 </div>
-                {!isEditing && <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>}
+                {!isEditing && !isProfileEmpty && <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>}
             </div>
         </CardHeader>
         <CardContent>
-            {isStudentWithoutTeacher && <Alert variant="destructive" className="mb-6"><AlertTitle>Action Required</AlertTitle><AlertDescription>Please select a teacher to complete your profile.</AlertDescription></Alert>}
+            {isStudentWithoutTeacher && <Alert variant="destructive" className="mb-6"><ShieldAlert className="h-4 w-4" /><AlertTitle>Action Required</AlertTitle><AlertDescription>Please select a teacher to complete your profile.</AlertDescription></Alert>}
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                     <div className="flex items-center gap-6">
@@ -298,69 +318,76 @@ export default function ProfilePage() {
                         <div><h2 className="text-2xl font-bold">{currentDisplayName}</h2><p className="text-muted-foreground">{user.email}</p></div>
                     </div>
                     
-                    {isEditing ? (
-                      <>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name="middleName" render={({ field }) => (<FormItem><FormLabel>Middle Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name="surname" render={({ field }) => (<FormItem><FormLabel>Surname *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                           <FormField control={form.control} name="dob" render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                  <FormLabel>Date of Birth *</FormLabel>
-                                    <Popover>
-                                      <PopoverTrigger asChild>
-                                        <Button variant={"outline"} className={cn("w-full justify-between text-left font-normal", !field.value && "text-muted-foreground")}>
-                                          <span>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}</span>
-                                          <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
-                                        </Button>
-                                      </PopoverTrigger>
-                                      <PopoverContent className="w-auto p-0" align="start">
-                                          <Calendar mode="single" captionLayout="dropdown-buttons" fromYear={1950} toYear={new Date().getFullYear()} selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
-                                      </PopoverContent>
-                                    </Popover>
-                                  <FormMessage />
-                                </FormItem>
-                              )} />
-                             <div className="space-y-2"><Label>Age</Label><Input value={age !== null ? `${age} years old` : 'Select DOB'} disabled /></div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <ReadOnlyField label="Full Name" value={currentDisplayName} />
-                        <ReadOnlyField label="Age" value={age ? `${age} years` : 'Not set'} />
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-2 text-primary border-b pb-2">
+                        <User className="w-5 h-5" />
+                        <h3 className="text-xl font-headline font-bold uppercase tracking-tight">Student Details</h3>
                       </div>
-                    )}
-                    
-                    {isEditing ? (
+
+                      {isEditing ? (
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                              <FormField control={form.control} name="middleName" render={({ field }) => (<FormItem><FormLabel>Middle Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                              <FormField control={form.control} name="surname" render={({ field }) => (<FormItem><FormLabel>Surname *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <FormField control={form.control} name="dob" render={({ field }) => (
+                                  <FormItem className="flex flex-col">
+                                    <FormLabel>Date of Birth *</FormLabel>
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <Button variant={"outline"} className={cn("w-full justify-between text-left font-normal", !field.value && "text-muted-foreground")}>
+                                            <span>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}</span>
+                                            <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar mode="single" captionLayout="dropdown-buttons" fromYear={1950} toYear={new Date().getFullYear()} selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
+                                        </PopoverContent>
+                                      </Popover>
+                                    <FormMessage />
+                                  </FormItem>
+                                )} />
+                               <div className="space-y-2"><Label>Age</Label><Input value={age !== null ? `${age} years old` : 'Select DOB'} disabled /></div>
+                          </div>
+                        </>
+                      ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <FormField control={form.control} name="teacherId" render={({ field }) => (
-                                  <FormItem><FormLabel>Assigned Teacher *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={profile.role !== 'student'}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>
-                                      <SelectItem value="unassigned">None</SelectItem>
-                                      {teachers.map(t => <SelectItem key={t.uid} value={t.uid}>{t.firstName} {t.surname}</SelectItem>)}
-                                  </SelectContent></Select><FormMessage /></FormItem>
-                              )} />
-                          {profile.role === 'student' && (
-                            <FormField control={form.control} name="grade" render={({ field }) => (
-                                <FormItem><FormLabel>Grade/Std.</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                            )} />
-                          )}
+                          <ReadOnlyField label="Full Name" value={currentDisplayName} />
+                          <ReadOnlyField label="Age" value={age ? `${age} years` : 'Not set'} />
                         </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <ReadOnlyField label="Teacher" value={teacherName} />
-                        {profile.role === 'student' && <ReadOnlyField label="Grade/Std." value={watch('grade')} />}
-                      </div>
-                    )}
+                      )}
+                      
+                      {isEditing ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField control={form.control} name="teacherId" render={({ field }) => (
+                                    <FormItem><FormLabel>Assigned Teacher *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={profile.role !== 'student'}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>
+                                        <SelectItem value="unassigned">None</SelectItem>
+                                        {teachers.map(t => <SelectItem key={t.uid} value={t.uid}>{t.firstName} {t.surname}</SelectItem>)}
+                                    </SelectContent></Select><FormMessage /></FormItem>
+                                )} />
+                            {profile.role === 'student' && (
+                              <FormField control={form.control} name="grade" render={({ field }) => (
+                                  <FormItem><FormLabel>Grade/Std. *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                              )} />
+                            )}
+                          </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <ReadOnlyField label="Teacher" value={teacherName} />
+                          {profile.role === 'student' && <ReadOnlyField label="Grade/Std." value={watch('grade')} />}
+                        </div>
+                      )}
 
-                    {isEditing && profile.role === 'student' && (
-                      <FormField control={form.control} name="schoolName" render={({ field }) => (
-                          <FormItem><FormLabel>School Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                      )} />
-                    )}
+                      {isEditing && profile.role === 'student' && (
+                        <FormField control={form.control} name="schoolName" render={({ field }) => (
+                            <FormItem><FormLabel>School Name *</FormLabel><FormControl><Input placeholder="Name of your school" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                      )}
 
-                    {!isEditing && profile.role === 'student' && <ReadOnlyField label="School Name" value={watch('schoolName')} />}
+                      {!isEditing && profile.role === 'student' && <ReadOnlyField label="School Name" value={watch('schoolName')} />}
+                    </div>
 
                     {isEditing ? (
                       <>
@@ -381,11 +408,11 @@ export default function ProfilePage() {
                               <FormMessage />
                             </FormItem>
                           )} />
-                          <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
                         <FormField control={form.control} name="addressLine1" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Full Address</FormLabel>
+                            <FormLabel>Full Address *</FormLabel>
                             <FormControl>
                               <Textarea placeholder="Enter your full address (House No, Street, Landmark...)" {...field} rows={3} />
                             </FormControl>
@@ -412,7 +439,7 @@ export default function ProfilePage() {
                             {watch('instituteCountry') === 'India' ? (
                               <Select onValueChange={field.onChange} value={field.value || ''}>
                                 <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                <SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                                  <SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                               </Select>
                             ) : (
                               <FormControl><Input {...field} /></FormControl>
@@ -449,8 +476,8 @@ export default function ProfilePage() {
 
                     {isEditing && (
                         <div className="flex justify-end gap-4 pt-4">
-                            <Button type="button" variant="outline" onClick={handleCancelEdit}>Cancel</Button>
-                            <Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Changes</Button>
+                            {!isProfileEmpty && <Button type="button" variant="outline" onClick={handleCancelEdit}>Cancel</Button>}
+                            <Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Changes & Start Training</Button>
                         </div>
                     )}
                 </form>

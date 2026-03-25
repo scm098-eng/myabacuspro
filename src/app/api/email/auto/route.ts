@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
           <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #eee; border-radius: 15px;">
             <h1 style="color: #0070f3; text-align: center; margin-bottom: 25px;">Welcome Aboard!</h1>
             <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi ${userName},</p>
-            <p style="font-size: 16px; color: #333; line-height: 1.6;">We're thrilled to have you join our global community of mental math masters. Whether you're here to ace an exam or sharpen your mind, we've got the tools to help you succeed.</p>
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">We're thrilled to have you join our community! This email is specifically for <strong>${userName}</strong>'s abacus training progress.</p>
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">Whether you're here to ace an exam or sharpen your mind, we've got the tools to help you succeed.</p>
             <div style="background: #f0f7ff; padding: 20px; border-radius: 10px; margin: 25px 0;">
               <h3 style="margin-top: 0; color: #0070f3;">Quick Start Guide:</h3>
               <ul style="margin-bottom: 0; color: #444;">
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
           <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 2px solid #ffd700; border-radius: 15px; background: #fffdf0;">
             <h1 style="color: #b8860b; text-align: center; margin-bottom: 25px;">Pro Membership Active</h1>
             <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi ${userName},</p>
-            <p style="font-size: 16px; color: #333; line-height: 1.6;">Congratulations! You have successfully upgraded to <strong>MyAbacusPro Pro</strong>. You now have unlimited access to every corner of our platform.</p>
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">Congratulations! <strong>${userName}</strong>'s account has successfully upgraded to <strong>MyAbacusPro Pro</strong>. You now have unlimited access to every corner of our platform.</p>
             <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #ffe4b5; margin: 25px 0;">
               <h3 style="margin-top: 0; color: #b8860b;">Your Pro Perks:</h3>
               <ul style="color: #444;">
@@ -111,7 +112,7 @@ export async function POST(req: NextRequest) {
           <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #4ade80; border-radius: 15px;">
             <h1 style="color: #16a34a; text-align: center; margin-bottom: 25px;">Rank Up!</h1>
             <p style="font-size: 16px; color: #333; line-height: 1.6;">Outstanding performance, ${userName}!</p>
-            <p style="font-size: 16px; color: #333; line-height: 1.6;">Your dedication to daily practice has earned you a new title on the global stage:</p>
+            <p style="font-size: 16px; color: #333; line-height: 1.6;"><strong>${userName}</strong>'s dedication to daily practice has earned a new title on the global stage:</p>
             <div style="text-align: center; padding: 30px; background: #f0fdf4; border-radius: 20px; margin: 25px 0;">
               <div style="font-size: 60px; margin-bottom: 10px;">${metadata.rankIcon}</div>
               <h2 style="color: #16a34a; margin: 0; text-transform: uppercase; letter-spacing: 2px;">${metadata.rankName}</h2>
@@ -134,6 +135,7 @@ export async function POST(req: NextRequest) {
             <div style="text-align: center; margin-bottom: 30px;">
               <span style="background: #f1f5f9; padding: 8px 16px; border-radius: 20px; font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Performance Summary</span>
               <h1 style="color: #0f172a; margin-top: 10px;">${isWeekly ? 'Weekly' : 'Monthly'} Progress</h1>
+              <p style="font-weight: bold; color: #2563eb;">Student: ${userName}</p>
             </div>
             
             <div style="margin-bottom: 30px;">

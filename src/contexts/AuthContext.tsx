@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -162,6 +161,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (profileData.isSuspended && pathname !== '/suspended') {
           router.push('/suspended');
         }
+
+        // --- MANDATORY PROFILE COMPLETION FOR STUDENTS ---
+        // If they are a student and missing critical data (common after Google signup), force them to profile
+        const isProfileIncomplete = profileData.role === 'student' && (!profileData.grade || !profileData.schoolName || !profileData.city || !profileData.addressLine1);
+        const nonOnboardingPages = ['/profile', '/logout', '/suspended', '/login', '/signup', '/'];
+        if (isProfileIncomplete && !nonOnboardingPages.includes(pathname)) {
+          router.push('/profile');
+        }
         
         return profileData;
       }
@@ -267,7 +274,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
 
-      triggerAutoEmail('welcome', user.email!, values.firstName, {
+      // Always use student's full name for email
+      triggerAutoEmail('welcome', user.email!, `${values.firstName} ${values.surname}`, {
         streak: 0,
         practiceDays: 0,
         totalPoints: 0
@@ -323,7 +331,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         });
 
-        triggerAutoEmail('welcome', user.email!, firstName || 'Student', {
+        triggerAutoEmail('welcome', user.email!, `${firstName} ${surname}` || 'Student', {
           streak: 0,
           practiceDays: 0,
           totalPoints: 0
@@ -610,7 +618,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (nextRank.name !== data.lastAwardedRank) {
         updateData.lastAwardedRank = nextRank.name;
-        triggerAutoEmail('achievement', data.email, data.firstName, {
+        triggerAutoEmail('achievement', data.email, `${data.firstName} ${data.surname}`, {
           rankName: nextRank.name,
           rankIcon: nextRank.icon,
           rankDesc: nextRank.description,

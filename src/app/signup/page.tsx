@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -15,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, User } from 'lucide-react';
 import type { SignupData, ProfileData } from '@/types';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -51,21 +50,21 @@ const formSchema = z.object({
   surname: z.string().min(1, { message: "Surname is required." }),
   dob: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "A valid date of birth is required." }),
   country: z.string().min(1, { message: "Country is required." }),
-  addressLine1: z.string().optional(),
-  city: z.string().optional(),
+  addressLine1: z.string().min(5, { message: "Full address is required." }),
+  city: z.string().min(2, { message: "City is required." }),
   taluka: z.string().optional(),
   district: z.string().optional(),
   state: z.string().optional(),
   pincode: z.string().optional(),
-  schoolName: z.string().optional(),
-  grade: z.string().optional(),
+  schoolName: z.string().min(3, { message: "School name is required." }),
+  grade: z.string().min(1, { message: "Grade is required." }),
   mobileNo: z.string().min(5, { message: "Mobile number is required." }),
   whatsappNo: z.string().min(5, { message: "WhatsApp number is required." }),
   email: z.string().email({ message: 'Please enter a valid email.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
   confirmPassword: z.string(),
   role: z.enum(['student', 'teacher'], { required_error: 'You must select a role.' }),
-  teacherId: z.string().optional(),
+  teacherId: z.string().min(1, { message: "Teacher assignment is required." }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -148,7 +147,8 @@ export default function SignupPage() {
   const handleGoogleSignup = async () => {
     try {
       await loginWithGoogle();
-      router.push('/');
+      // Google login users are guided to profile completion via AuthContext redirection
+      router.push('/profile');
     } catch (e: any) {
       toast({ title: 'Sign-up Failed', description: e.message, variant: "destructive" });
     }
@@ -209,39 +209,48 @@ export default function SignupPage() {
                       </FormControl><FormMessage />
                     </FormItem>
                   )} />
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                 <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                 <FormField control={form.control} name="middleName" render={({ field }) => (<FormItem><FormLabel>Middle Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                 <FormField control={form.control} name="surname" render={({ field }) => (<FormItem><FormLabel>Surname *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+
+               <div className="space-y-6">
+                 <div className="flex items-center gap-2 text-primary border-b pb-2">
+                    <User className="w-5 h-5" />
+                    <h3 className="text-xl font-headline font-bold uppercase tracking-tight">Student Details</h3>
+                 </div>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                   <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                   <FormField control={form.control} name="middleName" render={({ field }) => (<FormItem><FormLabel>Middle Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                   <FormField control={form.control} name="surname" render={({ field }) => (<FormItem><FormLabel>Surname *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                 </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField control={form.control} name="dob" render={({ field }) => (<FormItem><FormLabel>Date of Birth *</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                      <div className="space-y-2"><Label>Age</Label><Input value={ageValue !== null ? `${ageValue} years old` : 'Select DOB'} disabled /></div>
+                  </div>
+                  {selectedRole === 'student' && (
+                    <>
+                      <FormField control={form.control} name="schoolName" render={({ field }) => (
+                          <FormItem><FormLabel>School Name *</FormLabel><FormControl><Input placeholder="Enter your school name" {...field} /></FormControl><FormMessage /></FormItem>
+                      )} />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField control={form.control} name="teacherId" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Assigned Teacher *</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Pick a Teacher" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                  {teachers.map(t => <SelectItem key={t.uid} value={t.uid}>{t.firstName} {t.surname}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="grade" render={({ field }) => (
+                            <FormItem><FormLabel>Grade/Std. *</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Grade" /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                        )} />
+                      </div>
+                    </>
+                  )}
                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField control={form.control} name="dob" render={({ field }) => (<FormItem><FormLabel>Date of Birth *</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <div className="space-y-2"><Label>Age</Label><Input value={ageValue !== null ? `${ageValue} years old` : 'Select DOB'} disabled /></div>
-                </div>
-                {selectedRole === 'student' && (
-                  <>
-                    <FormField control={form.control} name="schoolName" render={({ field }) => (
-                        <FormItem><FormLabel>School Name</FormLabel><FormControl><Input placeholder="Enter your school name" {...field} /></FormControl><FormMessage /></FormItem>
-                    )} />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField control={form.control} name="teacherId" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Assigned Teacher *</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl><SelectTrigger><SelectValue placeholder="Pick a Teacher" /></SelectTrigger></FormControl>
-                              <SelectContent>
-                                {teachers.map(t => <SelectItem key={t.uid} value={t.uid}>{t.firstName} {t.surname}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                      )} />
-                      <FormField control={form.control} name="grade" render={({ field }) => (
-                          <FormItem><FormLabel>Grade/Std.</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Grade" /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                      )} />
-                    </div>
-                  </>
-                )}
+
                 <h3 className="text-lg font-medium pt-4 border-b">Residential Address</h3>
                 <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country *</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="state" render={({ field }) => (
@@ -255,12 +264,12 @@ export default function SignupPage() {
                   <FormMessage /></FormItem>
                 )} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="pincode" render={({ field }) => (<FormItem><FormLabel>Pincode</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                 <FormField control={form.control} name="addressLine1" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Address</FormLabel>
+                    <FormLabel>Full Address *</FormLabel>
                     <FormControl>
                       <Textarea placeholder="Enter your full address (House No, Street, Landmark...)" {...field} rows={3} />
                     </FormControl>
