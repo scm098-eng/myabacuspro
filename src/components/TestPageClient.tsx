@@ -78,7 +78,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
 
     if (user) {
       const accuracy = questions.length > 0 ? (score / questions.length) * 100 : 0;
-      const timeSpent = settings.timeLimit - timeLeft;
+      const timeSpent = settings.timeLimit > 0 ? settings.timeLimit - timeLeft : 0;
       const db = getFirestore(firebaseApp);
       
       const difficultyLevel = difficulty === 'easy' ? 1 : (difficulty === 'medium' ? 2 : 3);
@@ -132,7 +132,8 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   }, [userAnswers, questions, router, timeLeft, user, testId, difficulty, settings.timeLimit, isFinished, recordDailyPractice, addPoints]);
 
   useEffect(() => {
-    if (questions.length === 0 || !startTime || isFinished) return;
+    // If timeLimit is 0, it means unlimited time. Do not start the countdown.
+    if (questions.length === 0 || !startTime || isFinished || settings.timeLimit === 0) return;
     
     if (timeLeft <= 0) {
       finishTest();
@@ -159,7 +160,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, finishTest, questions.length, startTime, isFinished, playSound]);
+  }, [timeLeft, finishTest, questions.length, startTime, isFinished, playSound, settings.timeLimit]);
 
    useEffect(() => {
     if (!isFinished && questions.length > 0 && userAnswers.length === questions.length && !userAnswers.includes(null)) {
@@ -217,10 +218,12 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         <CardHeader>
           <div className="flex justify-between items-center mb-4">
             <CardTitle className="text-2xl font-headline">{settings.title}</CardTitle>
-            <div className={cn("flex items-center gap-2 font-semibold text-lg p-2 rounded-md transition-colors", timeLeft < 60 ? 'text-destructive-foreground bg-destructive animate-pulse' : 'text-foreground')}>
-              <Timer className="h-6 w-6" />
-              <span>{minutes}:{seconds.toString().padStart(2, '0')}</span>
-            </div>
+            {settings.timeLimit > 0 && (
+              <div className={cn("flex items-center gap-2 font-semibold text-lg p-2 rounded-md transition-colors", timeLeft < 60 ? 'text-destructive-foreground bg-destructive animate-pulse' : 'text-foreground')}>
+                <Timer className="h-6 w-6" />
+                <span>{minutes}:{seconds.toString().padStart(2, '0')}</span>
+              </div>
+            )}
           </div>
           <CardDescription>Question {currentQuestionIndex + 1} of {questions.length}</CardDescription>
           <Progress value={progress} className="w-full mt-2" />
