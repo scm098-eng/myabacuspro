@@ -1,4 +1,6 @@
 
+'use client';
+
 import type { Question, Difficulty, TestType, TestSettings, GameLevel } from '@/types';
 import { basicAdditionQuestions } from './question-data/basic-addition';
 import { basicSubtractionQuestions } from './question-data/basic-subtraction';
@@ -278,34 +280,45 @@ function isDirectFull(val: number, delta: number, op: '+' | '-'): boolean {
 
 function generateDirectQuestion(max: number): Question {
   const numTerms = 3;
-  let currentVal = getRandomInt(max === 9 ? 1 : 10, max);
-  let numbers: (number | string)[] = [currentVal];
+  
+  // Outer loop to ensure we always get a valid sum with the requested number of terms
+  while (true) {
+    let currentVal = getRandomInt(max === 9 ? 1 : 10, max);
+    let numbers: (number | string)[] = [currentVal];
+    let successCount = 0;
 
-  for (let i = 0; i < numTerms - 1; i++) {
-    let attempts = 0;
-    let success = false;
-    while (attempts < 20) {
-      const op = Math.random() > 0.5 ? '+' : '-';
-      const delta = getRandomInt(1, max);
-      const nextVal = op === '+' ? currentVal + delta : currentVal - delta;
-      
-      if (nextVal >= 0 && nextVal <= max && isDirectFull(currentVal, delta, op)) {
-        numbers.push(op);
-        numbers.push(delta);
-        currentVal = nextVal;
-        success = true;
-        break;
+    for (let i = 0; i < numTerms - 1; i++) {
+      let attempts = 0;
+      let foundOp = false;
+      while (attempts < 50) { 
+        const op = Math.random() > 0.5 ? '+' : '-';
+        // Use deltas that are more likely to result in "Direct" moves
+        // For level 2 (0-99), smaller deltas like 1-40 work better for direct moves
+        const delta = getRandomInt(1, max > 9 ? 40 : max); 
+        const nextVal = op === '+' ? currentVal + delta : currentVal - delta;
+        
+        if (nextVal >= 0 && nextVal <= max && isDirectFull(currentVal, delta, op)) {
+          numbers.push(op);
+          numbers.push(delta);
+          currentVal = nextVal;
+          foundOp = true;
+          successCount++;
+          break;
+        }
+        attempts++;
       }
-      attempts++;
+      if (!foundOp) break; // Try a new starting number
     }
-    if (!success) break;
-  }
 
-  return {
-    text: numbers.join(' '),
-    answer: currentVal,
-    options: generateOptions(currentVal)
-  };
+    // Only return if we actually generated a calculation sum (at least one operation)
+    if (successCount > 0) {
+      return {
+        text: numbers.join(' '),
+        answer: currentVal,
+        options: generateOptions(currentVal)
+      };
+    }
+  }
 }
 
 /**
