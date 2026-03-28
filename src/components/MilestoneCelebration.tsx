@@ -35,7 +35,7 @@ export default function MilestoneCelebration({ days, onClose }: MilestoneCelebra
           
           <div className="space-y-2 mb-8">
             <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tighter italic">
-              Level Clear!
+              Practice Milestone!
             </h2>
             <div className="bg-yellow-100 text-yellow-700 px-6 py-2 rounded-full font-black text-sm uppercase tracking-widest inline-block border-2 border-yellow-200">
               {days} Days Consistency
@@ -51,7 +51,7 @@ export default function MilestoneCelebration({ days, onClose }: MilestoneCelebra
             onClick={onClose} 
             className="w-full h-16 text-xl font-black uppercase tracking-widest bg-yellow-400 hover:bg-yellow-500 text-yellow-950 rounded-2xl shadow-2xl shadow-yellow-200 transition-transform active:scale-95 group"
           >
-            Claim Trophy
+            Claim Reward
           </Button>
         </div>
         
