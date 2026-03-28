@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, Clock, Zap, Crown } from 'lucide-react';
+import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, Clock, Zap, Crown, Cake } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,6 +22,7 @@ import { RANK_CRITERIA } from '@/lib/constants';
 import confetti from 'canvas-confetti';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
+import { isToday, parseISO } from 'date-fns';
 
 /**
  * UTC standard Monday calculation (YYYY-MM-DD)
@@ -192,6 +193,11 @@ export default function StudentDashboardPage() {
     }
   }, [trialDaysRemaining]);
 
+  const isBirthday = useMemo(() => {
+    if (!profile?.dob) return false;
+    return isToday(parseISO(profile.dob));
+  }, [profile?.dob]);
+
   if (isLoading || !mounted) {
     return (
       <div className="space-y-8 max-w-6xl mx-auto p-4 sm:p-8">
@@ -225,6 +231,27 @@ export default function StudentDashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
+      {isBirthday && (
+        <Card className="bg-gradient-to-r from-pink-500 via-rose-400 to-pink-500 border-none shadow-xl rounded-2xl overflow-hidden animate-in fade-in zoom-in duration-700">
+          <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6 text-white">
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-4 rounded-full animate-bounce">
+                <Cake className="w-10 h-10" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black uppercase tracking-tighter">Happy Birthday, {profile.firstName}!</h2>
+                <p className="font-bold opacity-90">We've added <span className="underline decoration-2">+100 Mastery Points</span> to your account as a gift! 🎂</p>
+              </div>
+            </div>
+            <div className="shrink-0">
+              <div className="bg-white text-pink-600 px-6 py-2 rounded-xl font-black shadow-lg text-xs uppercase tracking-widest">
+                Birthday Bonus Applied
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {lastWinner && (
         <Card className="bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 border-none shadow-xl rounded-2xl overflow-hidden animate-in fade-in zoom-in duration-700">
           <CardContent className="p-0">
