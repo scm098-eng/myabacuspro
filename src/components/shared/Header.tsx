@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -54,6 +53,7 @@ export function Header() {
     { href: '/', label: 'Home' },
     { href: '/about', label: 'About' },
     { href: '/tests', label: 'Practice & Games' },
+    { href: '/blog', label: 'Blog' },
     { href: '/pricing', label: 'Pricing' },
     { href: '/contact', label: 'Contact us' },
     { href: '/tool-preview', label: 'Abacus Tool' },

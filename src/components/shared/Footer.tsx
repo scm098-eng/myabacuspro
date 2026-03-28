@@ -26,6 +26,7 @@ export function Footer() {
                       <li className="mb-4"><Link href="/" className="hover:text-primary transition-colors">Home</Link></li>
                       <li className="mb-4"><Link href="/about" className="hover:text-primary transition-colors">About Us</Link></li>
                       <li className="mb-4"><Link href="/tests" className="hover:text-primary transition-colors">Practice & Games</Link></li>
+                      <li className="mb-4"><Link href="/blog" className="hover:text-primary transition-colors">Blog</Link></li>
                       <li className="mb-4"><Link href="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
                       <li><Link href="/tool-preview" className="hover:text-primary transition-colors">Abacus Tool</Link></li>
                   </ul>
