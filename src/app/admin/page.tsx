@@ -129,10 +129,13 @@ export default function AdminDashboardPage() {
   }, [authLoading, profile, router, fetchData]);
 
   useEffect(() => {
-    if (profile?.role === 'admin' || profile?.role === 'teacher') {
-      const db = getFirestore(firebaseApp);
-      
-      // Real-time Blogs with contextual error handling
+    if (!profile) return;
+    
+    const db = getFirestore(firebaseApp);
+    const unsubscribers: (() => void)[] = [];
+
+    // --- ADMIN ONLY LISTENERS ---
+    if (profile.role === 'admin') {
       const blogUnsub = onSnapshot(
         query(collection(db, "blogs"), orderBy("createdAt", "desc")), 
         (snap) => {
@@ -148,7 +151,11 @@ export default function AdminDashboardPage() {
           }
         }
       );
+      unsubscribers.push(blogUnsub);
+    }
 
+    // --- STAFF (ADMIN & TEACHER) LISTENERS ---
+    if (profile.role === 'admin' || profile.role === 'teacher') {
       let q;
       if (leaderboardTab === 'weeklyPoints') {
         q = query(
@@ -199,12 +206,10 @@ export default function AdminDashboardPage() {
           }
         }
       );
-
-      return () => {
-        blogUnsub();
-        leaderboardUnsub();
-      };
+      unsubscribers.push(leaderboardUnsub);
     }
+
+    return () => unsubscribers.forEach(unsub => unsub());
   }, [profile, leaderboardTab, getStudentTitle, currentWeekKey, currentMonthKey]);
 
   const handleSaveBlog = async (e: React.FormEvent) => {

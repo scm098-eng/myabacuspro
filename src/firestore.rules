@@ -50,7 +50,7 @@ service cloud.firestore {
     match /blogs/{blogId} {
       // Blogs are public for all visitors to read
       allow read: if true;
-      // Only admins can create, edit, or delete blog content
+      // ONLY admins can create, edit, or delete blog content. Teachers are excluded.
       allow write: if isAdmin();
     }
     
