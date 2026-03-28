@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 
 /**
  * Transactional Email API
- * Handles: welcome, pro_welcome, achievement, weekly_report, monthly_report
+ * Handles: welcome, pro_welcome, achievement, weekly_report, monthly_report, birthday
  */
 export async function POST(req: NextRequest) {
   try {
@@ -177,6 +177,30 @@ export async function POST(req: NextRequest) {
               <p style="color: #64748b; font-size: 14px; margin-bottom: 25px;">Consistency is the key to becoming a Human Calculator. Your dedication is paying off!</p>
               <a href="https://myabacuspro.com/dashboard" style="background: #2563eb; color: white; padding: 14px 30px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);">Open My Dashboard</a>
             </div>
+            ${footer}
+          </div>
+        `;
+        break;
+
+      case 'birthday':
+        subject = `Happy Birthday, ${userName}! 🎂 Gift Inside!`;
+        html = `
+          <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 2px solid #ec4899; border-radius: 20px; background: #fffafb;">
+            <div style="text-align: center; margin-bottom: 25px;">
+              <div style="font-size: 60px;">🎂</div>
+              <h1 style="color: #ec4899; margin-top: 10px;">Happy Birthday, ${userName}!</h1>
+            </div>
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi ${userName},</p>
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">The entire MyAbacusPro team is wishing you a fantastic birthday! We hope your special day is filled with joy, celebration, and magic.</p>
+            <div style="background: #fdf2f8; padding: 20px; border-radius: 15px; border: 1px solid #fbcfe8; margin: 25px 0; text-align: center;">
+              <h3 style="margin-top: 0; color: #be185d;">A Birthday Gift for You!</h3>
+              <p style="color: #9d174d; font-weight: bold; font-size: 18px;">We've credited +100 Mastery Points to your account!</p>
+              <p style="font-size: 14px; color: #666;">Log in today to see your birthday surprise and keep your streak alive.</p>
+            </div>
+            <div style="text-align: center;">
+              <a href="https://myabacuspro.com/dashboard" style="background: #ec4899; color: white; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">Go to My Dashboard</a>
+            </div>
+            <p style="font-size: 14px; color: #666; text-align: center; margin-top: 30px;">Keep practicing and reaching for the stars!</p>
             ${footer}
           </div>
         `;

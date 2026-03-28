@@ -183,6 +183,92 @@ function getTransporter(password) {
 }
 
 /**
+ * Birthday Wish Template (Server Side)
+ */
+const birthdayWishHTML = (userName) => `
+  <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 2px solid #ec4899; border-radius: 20px; background: #fffafb;">
+    <div style="text-align: center; margin-bottom: 25px;">
+      <div style="font-size: 60px;">🎂</div>
+      <h1 style="color: #ec4899; margin-top: 10px;">Happy Birthday, ${userName}!</h1>
+    </div>
+    <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi ${userName},</p>
+    <p style="font-size: 16px; color: #333; line-height: 1.6;">The entire MyAbacusPro team is wishing you a fantastic birthday! We hope your special day is filled with joy, celebration, and magic.</p>
+    <div style="background: #fdf2f8; padding: 20px; border-radius: 15px; border: 1px solid #fbcfe8; margin: 25px 0; text-align: center;">
+      <h3 style="margin-top: 0; color: #be185d;">A Birthday Gift for You!</h3>
+      <p style="color: #9d174d; font-weight: bold; font-size: 18px;">We've credited +100 Mastery Points to your account!</p>
+      <p style="font-size: 14px; color: #666;">Log in today to see your birthday surprise and keep your streak alive.</p>
+    </div>
+    <div style="text-align: center;">
+      <a href="https://myabacuspro.com/dashboard" style="background: #ec4899; color: white; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">Go to My Dashboard</a>
+    </div>
+    <p style="font-size: 14px; color: #666; text-align: center; margin-top: 30px;">Keep practicing and reaching for the stars!</p>
+    <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #999; font-size: 12px;">
+        <p>© 2026 MyAbacusPro. The ultimate abacus training ground.</p>
+    </div>
+  </div>
+`;
+
+/**
+ * Scheduled: Daily at 03:30 UTC (09:00 AM IST)
+ * Sends birthday wishes and credits points.
+ */
+exports.sendDailyBirthdayWishes = onSchedule({
+    schedule: "30 3 * * *",
+    secrets: ["GMAIL_APP_PASSWORD"]
+}, async (event) => {
+    logger.info("Starting Daily Birthday Wishes Job");
+    const today = new Date();
+    const currentMonth = today.getUTCMonth();
+    const currentDay = today.getUTCDate();
+    const currentYear = today.getUTCFullYear();
+
+    try {
+        const usersSnap = await db.collection('users').where('role', '==', 'student').get();
+        const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
+        let count = 0;
+
+        for (const userDoc of usersSnap.docs) {
+            const data = userDoc.data();
+            if (!data.dob || !data.email || data.isSuspended) continue;
+
+            const dob = new Date(data.dob);
+            // Check if month and day match today
+            if (dob.getUTCMonth() === currentMonth && dob.getUTCDate() === currentDay) {
+                // Check if already sent this year
+                if (data.lastBirthdayWishedYear === currentYear) continue;
+
+                try {
+                    // 1. Send Email
+                    await transporter.sendMail({
+                        from: `"MyAbacusPro" <${GMAIL_USER}>`,
+                        to: data.email,
+                        subject: `Happy Birthday, ${data.firstName}! 🎂`,
+                        html: birthdayWishHTML(data.firstName)
+                    });
+
+                    // 2. Credit Points and Update Record
+                    await userDoc.ref.update({
+                        totalPoints: admin.firestore.FieldValue.increment(100),
+                        weeklyPoints: admin.firestore.FieldValue.increment(100),
+                        monthlyPoints: admin.firestore.FieldValue.increment(100),
+                        lastBirthdayWishedYear: currentYear,
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    count++;
+                    logger.info(`Birthday wish sent & points credited to ${data.firstName} (${data.email})`);
+                } catch (sendErr) {
+                    logger.error(`Failed to send birthday email to ${data.email}`, sendErr);
+                }
+            }
+        }
+        logger.info(`Finished Birthday job. Celebrated ${count} students.`);
+    } catch (err) {
+        logger.error("Daily Birthday Job critical failure", err);
+    }
+});
+
+/**
  * Generates a 6-digit OTP and sends it via email.
  */
 exports.sendVerificationOTP = onCall({
