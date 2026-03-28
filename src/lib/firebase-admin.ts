@@ -1,21 +1,21 @@
-import * as admin from 'firebase-admin';
+
+import { initializeApp, getApps, getApp, type App } from 'firebase-admin/app';
+import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 
 /**
  * Initializes the Firebase Admin SDK using Application Default Credentials (ADC).
- * On Firebase App Hosting, this automatically uses the built-in service identity,
- * removing the need for a manual Service Account JSON and preventing parsing errors.
+ * This modular approach is more reliable in Next.js environments and avoids 
+ * namespace resolution issues that cause "INTERNAL" property errors.
  */
-export function getFirebaseAdmin() {
-  // 1. If already initialized, return the existing app instance
-  if (admin.apps.length > 0) {
-    return admin.apps[0]!;
+export function getFirebaseAdmin(): App {
+  const apps = getApps();
+  if (apps.length > 0) {
+    return apps[0];
   }
 
   try {
-    console.log("Initializing Firebase Admin with Default Credentials...");
-    // 2. initializeApp() without arguments uses ADC (Application Default Credentials)
-    // This is the most stable method for App Hosting and Google Cloud environments.
-    return admin.initializeApp();
+    console.log("Initializing Firebase Admin with modular SDK...");
+    return initializeApp();
   } catch (error) {
     console.error("CRITICAL: Firebase Admin initialization failed:", error);
     throw error;
@@ -23,9 +23,8 @@ export function getFirebaseAdmin() {
 }
 
 /**
- * Helper to get Firestore directly using the safe initialization logic.
+ * Helper to get Firestore directly using the modular initialization logic.
  */
-export const getFirestoreDb = () => {
-  const app = getFirebaseAdmin();
-  return app.firestore();
-};
+export function getFirestoreDb(): Firestore {
+  return getFirestore(getFirebaseAdmin());
+}
