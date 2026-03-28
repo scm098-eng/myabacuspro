@@ -5,8 +5,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Calendar, User, ArrowRight, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { firebaseApp } from '@/lib/firebase';
 import { format } from 'date-fns';
 import type { BlogPost } from '@/types';
 
@@ -15,9 +15,12 @@ export const dynamic = 'force-dynamic';
 
 async function getBlogs(): Promise<BlogPost[]> {
   try {
-    const adminApp = getFirebaseAdmin();
-    const db = getFirestore(adminApp);
-    const snapshot = await db.collection('blogs').orderBy('createdAt', 'desc').get();
+    // Using Client SDK on the server to avoid Admin SDK token refresh issues (500 errors)
+    // This is safe for public reads and more reliable in many hosting environments.
+    const db = getFirestore(firebaseApp);
+    const blogRef = collection(db, 'blogs');
+    const q = query(blogRef, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
     
     return snapshot.docs.map(doc => {
       const data = doc.data();
@@ -50,7 +53,7 @@ export default async function BlogListingPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {blogs.map((post) => (
-          <Card key={post.slug} className="flex flex-col h-full overflow-hidden hover:shadow-2xl transition-all duration-300 group border-primary/10 bg-card">
+          <Card key={post.slug || post.id} className="flex flex-col h-full overflow-hidden hover:shadow-2xl transition-all duration-300 group border-primary/10 bg-card">
             <div className="relative h-48 w-full overflow-hidden">
               <Image
                 src={post.image || 'https://picsum.photos/seed/math/600/400'}

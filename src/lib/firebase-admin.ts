@@ -1,11 +1,11 @@
 
-import { initializeApp, getApps, getApp, type App } from 'firebase-admin/app';
+import { initializeApp, getApps, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 
 /**
  * Initializes the Firebase Admin SDK using Application Default Credentials (ADC).
- * This modular approach is more reliable in Next.js environments and avoids 
- * namespace resolution issues that cause "INTERNAL" property errors.
+ * Explicitly passing the projectId helps the Auth library resolve metadata
+ * in restricted server environments.
  */
 export function getFirebaseAdmin(): App {
   const apps = getApps();
@@ -13,9 +13,13 @@ export function getFirebaseAdmin(): App {
     return apps[0];
   }
 
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "abacusace-mmnqw";
+
   try {
-    console.log("Initializing Firebase Admin with modular SDK...");
-    return initializeApp();
+    console.log("Initializing Firebase Admin for project:", projectId);
+    return initializeApp({
+      projectId: projectId,
+    });
   } catch (error) {
     console.error("CRITICAL: Firebase Admin initialization failed:", error);
     throw error;

@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, Calendar, User, Share2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, collection, query, where, limit, getDocs } from 'firebase/firestore';
+import { firebaseApp } from '@/lib/firebase';
 import { format } from 'date-fns';
 import type { BlogPost } from '@/types';
 
@@ -17,9 +17,11 @@ interface PageProps {
 
 async function getBlogPost(slug: string): Promise<BlogPost | null> {
   try {
-    const adminApp = getFirebaseAdmin();
-    const db = getFirestore(adminApp);
-    const snapshot = await db.collection('blogs').where('slug', '==', slug).limit(1).get();
+    // Using Client SDK on the server for reliable public reads
+    const db = getFirestore(firebaseApp);
+    const blogRef = collection(db, 'blogs');
+    const q = query(blogRef, where('slug', '==', slug), limit(1));
+    const snapshot = await getDocs(q);
     
     if (snapshot.empty) return null;
     
