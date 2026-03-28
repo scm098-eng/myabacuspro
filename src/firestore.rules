@@ -41,6 +41,14 @@ service cloud.firestore {
       allow list: if request.auth != null;
     }
     
+    // --- BLOG RULES ---
+    match /blogs/{blogId} {
+      // Blogs are public for all visitors to read
+      allow read: if true;
+      // Only admins can create, edit, or delete blog content
+      allow write: if isAdmin();
+    }
+    
     // --- GAME & TEST PROGRESS ---
     match /testResults/{resultId} {
       allow create: if request.auth != null && 

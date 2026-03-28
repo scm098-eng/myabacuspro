@@ -132,10 +132,22 @@ export default function AdminDashboardPage() {
     if (profile?.role === 'admin' || profile?.role === 'teacher') {
       const db = getFirestore(firebaseApp);
       
-      // Real-time Blogs
-      const blogUnsub = onSnapshot(query(collection(db, "blogs"), orderBy("createdAt", "desc")), (snap) => {
-        setBlogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost)));
-      });
+      // Real-time Blogs with contextual error handling
+      const blogUnsub = onSnapshot(
+        query(collection(db, "blogs"), orderBy("createdAt", "desc")), 
+        (snap) => {
+          setBlogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost)));
+        },
+        async (error) => {
+          if (error.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+              path: 'blogs',
+              operation: 'list',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          }
+        }
+      );
 
       let q;
       if (leaderboardTab === 'weeklyPoints') {
