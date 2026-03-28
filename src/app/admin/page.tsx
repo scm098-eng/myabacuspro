@@ -444,7 +444,7 @@ export default function AdminDashboardPage() {
                                 <CardTitle className="font-headline">Blog Management</CardTitle>
                                 <CardDescription>Write and publish educational content.</CardDescription>
                             </div>
-                            <Button onClick={() => { setEditingBlog({ date: new Date().toISOString() }); setIsBlogDialogOpen(true); }}>
+                            <Button onClick={() => { setEditingBlog({ createdAt: new Date().toISOString() }); setIsBlogDialogOpen(true); }}>
                                 <Plus className="mr-2 h-4 w-4" /> New Article
                             </Button>
                         </CardHeader>
