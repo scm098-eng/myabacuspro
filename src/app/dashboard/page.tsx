@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -23,6 +22,7 @@ import confetti from 'canvas-confetti';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { isToday, parseISO } from 'date-fns';
+import MilestoneCelebration from '@/components/MilestoneCelebration';
 
 /**
  * UTC standard Monday calculation (YYYY-MM-DD)
@@ -55,6 +55,10 @@ export default function StudentDashboardPage() {
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
   const [isRequestingNotifications, setIsRequestingNotifications] = useState(false);
   const [lastWinner, setLastWinner] = useState<any>(null);
+  
+  // Celebration State
+  const [showMilestone, setShowMilestone] = useState(false);
+  const [milestoneDays, setMilestoneDays] = useState(0);
 
   const currentWeekKey = useMemo(() => getUTCMondayKey(), []);
   const currentMonthKey = useMemo(() => getUTCMonthKey(), []);
@@ -70,6 +74,8 @@ export default function StudentDashboardPage() {
       if (days > 0 && days % 7 === 0) {
         const lastCelebrated = localStorage.getItem(`celebrated_day_${days}`);
         if (!lastCelebrated) {
+          setMilestoneDays(days);
+          setShowMilestone(true);
           confetti({
             particleCount: 150,
             spread: 70,
@@ -231,6 +237,10 @@ export default function StudentDashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
+      {showMilestone && (
+        <MilestoneCelebration days={milestoneDays} onClose={() => setShowMilestone(false)} />
+      )}
+
       {isBirthday && (
         <Card className="bg-gradient-to-r from-pink-500 via-rose-400 to-pink-500 border-none shadow-xl rounded-2xl overflow-hidden animate-in fade-in zoom-in duration-700">
           <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6 text-white">
