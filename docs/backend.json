@@ -1,0 +1,76 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile information including role and practice stats.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "firstName": { "type": "string" },
+        "surname": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "teacher", "admin"] },
+        "subscriptionStatus": { "type": "string", "enum": ["free", "pro"] },
+        "totalPoints": { "type": "number" },
+        "totalDaysPracticed": { "type": "number" },
+        "isSuspended": { "type": "boolean" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "TestResult": {
+      "title": "TestResult",
+      "description": "Record of a completed practice test.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "testId": { "type": "string" },
+        "score": { "type": "number" },
+        "accuracy": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "BlogPost": {
+      "title": "BlogPost",
+      "description": "An article published on the site blog.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "content": { "type": "string", "description": "HTML content of the post" },
+        "excerpt": { "type": "string" },
+        "category": { "type": "string" },
+        "author": { "type": "string" },
+        "image": { "type": "string", "description": "URL to the featured image" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "slug", "content", "category"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com", "password"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "#/backend/entities/UserProfile",
+      "description": "User profiles and statistics."
+    },
+    "/testResults/{resultId}": {
+      "schema": "#/backend/entities/TestResult",
+      "description": "History of practice test performance."
+    },
+    "/gameProgress/{userId}": {
+      "schema": { "type": "object", "properties": { "completedLevels": { "type": "array", "items": { "type": "number" } } } },
+      "description": "Tracking of unlocked and completed game levels."
+    },
+    "/blogs/{blogId}": {
+      "schema": "#/backend/entities/BlogPost",
+      "description": "Content for the site's blog section."
+    },
+    "/stats/leaderboard": {
+      "schema": { "type": "object" },
+      "description": "System-wide statistics and weekly winners."
+    }
+  }
+}

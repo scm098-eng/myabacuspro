@@ -1,19 +1,44 @@
-'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { blogPosts } from '@/lib/blog-posts';
-import { usePageBackground } from '@/hooks/usePageBackground';
 import { Calendar, User, ArrowRight, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
+import { format } from 'date-fns';
+import type { BlogPost } from '@/types';
 
-export default function BlogListingPage() {
-  usePageBackground('');
+// Force dynamic rendering to always show fresh content
+export const dynamic = 'force-dynamic';
+
+async function getBlogs(): Promise<BlogPost[]> {
+  try {
+    const adminApp = getFirebaseAdmin();
+    const db = getFirestore(adminApp);
+    const snapshot = await db.collection('blogs').orderBy('createdAt', 'desc').get();
+    
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Convert Firestore Timestamps to ISO strings for the client
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString()
+      } as BlogPost;
+    });
+  } catch (error) {
+    console.error("Failed to fetch blogs from Firestore:", error);
+    return [];
+  }
+}
+
+export default async function BlogListingPage() {
+  const blogs = await getBlogs();
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12">
+    <div className="max-w-6xl mx-auto space-y-12 py-8">
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-black font-headline uppercase tracking-tighter text-foreground sm:text-6xl">
           Math & Mastery <span className="text-primary">Blog</span>
@@ -24,14 +49,15 @@ export default function BlogListingPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {blogPosts.map((post) => (
-          <Card key={post.slug} className="flex flex-col h-full overflow-hidden hover:shadow-2xl transition-all duration-300 group border-primary/10">
+        {blogs.map((post) => (
+          <Card key={post.slug} className="flex flex-col h-full overflow-hidden hover:shadow-2xl transition-all duration-300 group border-primary/10 bg-card">
             <div className="relative h-48 w-full overflow-hidden">
               <Image
-                src={post.image}
+                src={post.image || 'https://picsum.photos/seed/math/600/400'}
                 alt={post.title}
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-110"
+                data-ai-hint="abacus education"
               />
               <div className="absolute top-4 left-4">
                 <Badge className="bg-primary/90 backdrop-blur-sm uppercase font-black text-[10px] tracking-widest border-none">
@@ -41,8 +67,14 @@ export default function BlogListingPage() {
             </div>
             <CardHeader className="flex-grow">
               <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3 font-bold uppercase tracking-tight">
-                <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {post.date}</span>
-                <span className="flex items-center gap-1"><User className="w-3 h-3" /> {post.author}</span>
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3" /> 
+                  {format(new Date(post.createdAt), 'MMM d, yyyy')}
+                </span>
+                <span className="flex items-center gap-1">
+                  <User className="w-3 h-3" /> 
+                  {post.author}
+                </span>
               </div>
               <CardTitle className="text-xl font-bold leading-tight group-hover:text-primary transition-colors">
                 {post.title}
@@ -62,7 +94,7 @@ export default function BlogListingPage() {
         ))}
       </div>
 
-      {blogPosts.length === 0 && (
+      {blogs.length === 0 && (
         <div className="text-center py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed border-primary/20">
           <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
           <p className="text-muted-foreground font-bold">New articles are coming soon!</p>

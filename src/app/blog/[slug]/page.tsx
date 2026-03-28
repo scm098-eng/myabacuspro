@@ -1,33 +1,51 @@
-'use client';
 
-import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { blogPosts } from '@/lib/blog-posts';
-import { usePageBackground } from '@/hooks/usePageBackground';
+import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Calendar, User, Share2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
+import { format } from 'date-fns';
+import type { BlogPost } from '@/types';
 
-export default function BlogPostPage() {
-  usePageBackground('');
-  const { slug } = useParams();
-  const router = useRouter();
-  
-  const post = blogPosts.find((p) => p.slug === slug);
+interface PageProps {
+  params: Promise<{ slug: string }>;
+}
+
+async function getBlogPost(slug: string): Promise<BlogPost | null> {
+  try {
+    const adminApp = getFirebaseAdmin();
+    const db = getFirestore(adminApp);
+    const snapshot = await db.collection('blogs').where('slug', '==', slug).limit(1).get();
+    
+    if (snapshot.empty) return null;
+    
+    const doc = snapshot.docs[0];
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString()
+    } as BlogPost;
+  } catch (error) {
+    console.error("Error fetching blog post:", error);
+    return null;
+  }
+}
+
+export default async function BlogPostPage({ params }: PageProps) {
+  const { slug } = await params;
+  const post = await getBlogPost(slug);
 
   if (!post) {
-    return (
-      <div className="text-center py-20">
-        <h1 className="text-2xl font-bold">Article not found.</h1>
-        <Button onClick={() => router.push('/blog')} className="mt-4">Back to Blog</Button>
-      </div>
-    );
+    notFound();
   }
 
   return (
-    <article className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <article className="max-w-4xl mx-auto space-y-8 py-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <Button asChild variant="ghost" className="hover:bg-primary/5">
         <Link href="/blog">
           <ChevronLeft className="mr-2 w-4 h-4" /> Back to Blog
@@ -39,8 +57,14 @@ export default function BlogPostPage() {
           <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-none px-4 py-1">
             {post.category}
           </Badge>
-          <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4" /> {post.date}</span>
-          <span className="flex items-center gap-1.5"><User className="w-4 h-4" /> {post.author}</span>
+          <span className="flex items-center gap-1.5">
+            <Calendar className="w-4 h-4" /> 
+            {format(new Date(post.createdAt), 'MMMM d, yyyy')}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <User className="w-4 h-4" /> 
+            {post.author}
+          </span>
         </div>
         
         <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tighter leading-tight">
@@ -50,11 +74,12 @@ export default function BlogPostPage() {
 
       <div className="relative aspect-video w-full rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white/20">
         <Image
-          src={post.image}
+          src={post.image || 'https://picsum.photos/seed/math/1200/600'}
           alt={post.title}
           fill
           className="object-cover"
           priority
+          data-ai-hint="abacus learning"
         />
       </div>
 

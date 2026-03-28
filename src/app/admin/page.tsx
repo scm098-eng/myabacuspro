@@ -5,27 +5,28 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import type { ProfileData } from '@/types';
+import type { ProfileData, BlogPost } from '@/types';
 import { usePageBackground } from '@/hooks/usePageBackground';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock } from 'lucide-react';
+import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit } from 'firebase/firestore';
+import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { isWithinInterval, add, parseISO, getDate, getMonth } from 'date-fns';
+import { isWithinInterval, add, parseISO, getDate, getMonth, format } from 'date-fns';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 /**
  * UTC standard Monday calculation (YYYY-MM-DD)
@@ -95,6 +96,11 @@ export default function AdminDashboardPage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
 
+  const [blogs, setBlogs] = useState<BlogPost[]>([]);
+  const [isBlogDialogOpen, setIsBlogDialogOpen] = useState(false);
+  const [isSavingBlog, setIsSavingBlog] = useState(false);
+  const [editingBlog, setEditingBlog] = useState<Partial<BlogPost> | null>(null);
+
   const currentWeekKey = useMemo(() => getUTCMondayKey(), []);
   const currentMonthKey = useMemo(() => getUTCMonthKey(), []);
 
@@ -125,9 +131,13 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     if (profile?.role === 'admin' || profile?.role === 'teacher') {
       const db = getFirestore(firebaseApp);
-      let q;
+      
+      // Real-time Blogs
+      const blogUnsub = onSnapshot(query(collection(db, "blogs"), orderBy("createdAt", "desc")), (snap) => {
+        setBlogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost)));
+      });
 
-      // Apply the same calendar filters as the student dashboard to ensure resets are visible
+      let q;
       if (leaderboardTab === 'weeklyPoints') {
         q = query(
           collection(db, "users"), 
@@ -153,7 +163,7 @@ export default function AdminDashboardPage() {
         );
       }
 
-      return onSnapshot(q, 
+      const leaderboardUnsub = onSnapshot(q, 
         (snapshot) => {
           const data = snapshot.docs.map(doc => {
             const ud = doc.data() as ProfileData;
@@ -177,8 +187,50 @@ export default function AdminDashboardPage() {
           }
         }
       );
+
+      return () => {
+        blogUnsub();
+        leaderboardUnsub();
+      };
     }
   }, [profile, leaderboardTab, getStudentTitle, currentWeekKey, currentMonthKey]);
+
+  const handleSaveBlog = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBlog?.title || !editingBlog?.content || !editingBlog?.slug) return;
+    
+    setIsSavingBlog(true);
+    const db = getFirestore(firebaseApp);
+    const id = editingBlog.id || editingBlog.slug;
+    const blogData = {
+      ...editingBlog,
+      author: editingBlog.author || `${profile?.firstName} ${profile?.surname}`,
+      createdAt: editingBlog.createdAt || serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    try {
+      await setDoc(doc(db, "blogs", id), blogData, { merge: true });
+      toast({ title: editingBlog.id ? "Blog Updated" : "Blog Published" });
+      setIsBlogDialogOpen(false);
+      setEditingBlog(null);
+    } catch (err: any) {
+      toast({ title: "Failed to save blog", description: err.message, variant: "destructive" });
+    } finally {
+      setIsSavingBlog(false);
+    }
+  };
+
+  const handleDeleteBlog = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this article?")) return;
+    const db = getFirestore(firebaseApp);
+    try {
+      await deleteDoc(doc(db, "blogs", id));
+      toast({ title: "Blog Deleted" });
+    } catch (err: any) {
+      toast({ title: "Failed to delete blog", variant: "destructive" });
+    }
+  };
 
   const handleSendPromo = async (isTest = false) => {
     if (!emailSubject || !emailMessage) {
@@ -312,6 +364,7 @@ export default function AdminDashboardPage() {
                 <TabsList className="bg-muted p-1 mb-8 overflow-x-auto justify-start h-auto flex-wrap">
                     <TabsTrigger value="students" className="h-10">Students</TabsTrigger>
                     {profile?.role === 'admin' && <TabsTrigger value="teachers" className="h-10">Staff List</TabsTrigger>}
+                    {profile?.role === 'admin' && <TabsTrigger value="blogs" className="h-10">Blogs</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="moderation" className="h-10">Moderation</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="marketing" className="h-10">Marketing</TabsTrigger>}
                 </TabsList>
@@ -361,6 +414,53 @@ export default function AdminDashboardPage() {
                                             </TableCell>
                                         </TableRow>
                                     )) : <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No staff members found.</TableCell></TableRow>}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="blogs">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle className="font-headline">Blog Management</CardTitle>
+                                <CardDescription>Write and publish educational content.</CardDescription>
+                            </div>
+                            <Button onClick={() => { setEditingBlog({ date: new Date().toISOString() }); setIsBlogDialogOpen(true); }}>
+                                <Plus className="mr-2 h-4 w-4" /> New Article
+                            </Button>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Title</TableHead>
+                                        <TableHead>Category</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {blogs.length > 0 ? blogs.map((blog) => (
+                                        <TableRow key={blog.id}>
+                                            <TableCell className="font-medium">{blog.title}</TableCell>
+                                            <TableCell><Badge variant="outline">{blog.category}</Badge></TableCell>
+                                            <TableCell className="text-xs text-muted-foreground">{blog.createdAt?.toDate ? format(blog.createdAt.toDate(), 'MMM d, yyyy') : 'Just now'}</TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button variant="ghost" size="icon" onClick={() => { setEditingBlog(blog); setIsBlogDialogOpen(true); }}>
+                                                        <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteBlog(blog.id)}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )) : (
+                                        <TableRow><TableCell colSpan={4} className="text-center py-12 text-muted-foreground">No blog posts yet.</TableCell></TableRow>
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>
@@ -481,6 +581,56 @@ export default function AdminDashboardPage() {
             </Card>
         </div>
       </div>
+
+      <Dialog open={isBlogDialogOpen} onOpenChange={setIsBlogDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+                <DialogTitle>{editingBlog?.id ? 'Edit Article' : 'Create New Article'}</DialogTitle>
+                <DialogDescription>Content will be rendered as HTML. Use standard tags like h3, p, ul, li.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSaveBlog} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label>Title</Label>
+                        <Input value={editingBlog?.title || ''} onChange={(e) => setEditingBlog(prev => ({ ...prev, title: e.target.value, slug: e.target.value.toLowerCase().replace(/ /g, '-') }))} placeholder="The Future of Soroban" required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>URL Slug</Label>
+                        <Input value={editingBlog?.slug || ''} onChange={(e) => setEditingBlog(prev => ({ ...prev, slug: e.target.value }))} placeholder="future-of-soroban" required />
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label>Category</Label>
+                        <Input value={editingBlog?.category || ''} onChange={(e) => setEditingBlog(prev => ({ ...prev, category: e.target.value }))} placeholder="Education" required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Author Override (Optional)</Label>
+                        <Input value={editingBlog?.author || ''} onChange={(e) => setEditingBlog(prev => ({ ...prev, author: e.target.value }))} placeholder="Master Trainer" />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label>Featured Image URL</Label>
+                    <Input value={editingBlog?.image || ''} onChange={(e) => setEditingBlog(prev => ({ ...prev, image: e.target.value }))} placeholder="https://..." />
+                </div>
+                <div className="space-y-2">
+                    <Label>Brief Excerpt</Label>
+                    <Textarea value={editingBlog?.excerpt || ''} onChange={(e) => setEditingBlog(prev => ({ ...prev, excerpt: e.target.value }))} rows={2} required />
+                </div>
+                <div className="space-y-2">
+                    <Label>HTML Content</Label>
+                    <Textarea value={editingBlog?.content || ''} onChange={(e) => setEditingBlog(prev => ({ ...prev, content: e.target.value }))} rows={10} required className="font-mono text-xs" />
+                </div>
+                <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsBlogDialogOpen(false)}>Cancel</Button>
+                    <Button type="submit" disabled={isSavingBlog}>
+                        {isSavingBlog ? <Loader2 className="animate-spin mr-2" /> : <BookOpen className="mr-2" />}
+                        Save Article
+                    </Button>
+                </DialogFooter>
+            </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

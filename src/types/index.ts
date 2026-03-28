@@ -300,3 +300,15 @@ export interface TestResult {
   questions?: Question[];
   userAnswers?: (number | null)[];
 }
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string;
+  category: string;
+  author: string;
+  image: string;
+  createdAt: any;
+}
