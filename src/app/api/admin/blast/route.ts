@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
@@ -14,15 +15,21 @@ export async function POST(req: NextRequest) {
     console.log("--- BLAST DIAGNOSTICS ---");
     console.log("GMAIL_PASS prefix:", process.env.GMAIL_APP_PASSWORD?.substring(0, 3) || "MISSING");
 
-    // 2. Safely parse the body using Next.js native JSON handling
-    const body = await req.json();
+    // 2. Parse FormData for attachments support
+    const formData = await req.formData();
+    
+    const subject = formData.get('subject') as string;
+    const message = formData.get('message') as string;
+    const targetAudience = formData.get('targetAudience') as string;
+    const isTest = formData.get('isTest') === 'true';
+    const testEmail = formData.get('testEmail') as string;
+    const files = formData.getAll('attachments') as File[];
 
     console.log("--- BLAST TRIGGERED ---", { 
-      target: body.targetAudience, 
-      isTest: body.isTest 
+      target: targetAudience, 
+      isTest,
+      attachmentsCount: files.length
     });
-
-    const { subject, message, targetAudience, isTest, testEmail } = body;
 
     // 3. Validation
     if (!subject || !message) {
@@ -67,7 +74,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No recipients found" }, { status: 404 });
     }
 
-    // 6. Setup Nodemailer
+    // 6. Process Attachments
+    const emailAttachments = await Promise.all(files.map(async (file) => ({
+      filename: file.name,
+      content: Buffer.from(await file.arrayBuffer()),
+      contentType: file.type
+    })));
+
+    // 7. Setup Nodemailer
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -80,7 +94,7 @@ export async function POST(req: NextRequest) {
       <div style="font-family: sans-serif; padding: 30px; border: 1px solid #eee; border-radius: 12px; max-width: 600px; margin: auto;">
         <h2 style="color: #0070f3; text-align: center; margin-bottom: 20px;">MyAbacusPro</h2>
         <div style="line-height: 1.6; color: #333; font-size: 16px;">
-          ${message.replace(/\n/g, '<br>')}
+          ${message}
         </div>
         <div style="text-align: center; margin-top: 30px;">
             <a href="https://myabacuspro.com/pricing" style="background-color: #28a745; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
@@ -92,7 +106,7 @@ export async function POST(req: NextRequest) {
       </div>
     `;
 
-    // 7. Sequential Sending with Delay (Gmail Rate Limit Protection)
+    // 8. Sequential Sending with Delay (Gmail Rate Limit Protection)
     let successCount = 0;
     let failCount = 0;
 
@@ -102,7 +116,8 @@ export async function POST(req: NextRequest) {
           from: '"MyAbacusPro" <myabacuspro@gmail.com>',
           to: email,
           subject: isTest ? `[TEST] ${subject}` : subject,
-          html: htmlContent
+          html: htmlContent,
+          attachments: emailAttachments
         });
         successCount++;
         // Small delay to keep Gmail happy and avoid burst detection

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette, Type, Code, FileText } from 'lucide-react';
+import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette, Type, Code, FileText, Paperclip, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -117,6 +117,9 @@ export default function AdminDashboardPage() {
   const [emailMessage, setEmailMessage] = useState('');
   const [targetAudience, setTargetAudience] = useState('all');
   const [isSendingPromo, setIsSendingPromo] = useState(false);
+  const [marketingDraftContent, setMarketingDraftContent] = useState('');
+  const [marketingAttachments, setMarketingAttachments] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
@@ -291,18 +294,22 @@ export default function AdminDashboardPage() {
     }
     setIsSendingPromo(true);
     try {
+        const formData = new FormData();
+        formData.append('subject', emailSubject);
+        formData.append('message', emailMessage);
+        formData.append('targetAudience', isTest ? 'none' : targetAudience);
+        formData.append('isTest', isTest.toString());
+        if (isTest && profile?.email) {
+          formData.append('testEmail', profile.email);
+        }
+        
+        marketingAttachments.forEach((file) => {
+          formData.append('attachments', file);
+        });
+
         const response = await fetch('/api/admin/blast', {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json' 
-          },
-          body: JSON.stringify({
-            subject: emailSubject,
-            message: emailMessage,
-            targetAudience: isTest ? 'none' : targetAudience,
-            isTest,
-            testEmail: profile?.email
-          }),
+          body: formData,
         });
 
         const data = await response.json();
@@ -319,6 +326,8 @@ export default function AdminDashboardPage() {
         if (!isTest) { 
           setEmailSubject(''); 
           setEmailMessage(''); 
+          setMarketingDraftContent('');
+          setMarketingAttachments([]);
         }
     } catch (error: any) {
         console.error("Blast Frontend Error:", error);
@@ -346,6 +355,17 @@ export default function AdminDashboardPage() {
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setMarketingAttachments(prev => [...prev, ...files]);
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setMarketingAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
   const { filteredTeachers, filteredStudents, summaryStats, filteredSuspicious, upcomingBirthdays } = useMemo(() => {
@@ -572,11 +592,80 @@ export default function AdminDashboardPage() {
                 <TabsContent value="marketing">
                     <Card>
                         <CardHeader><CardTitle>Communication Hub</CardTitle></CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-6">
                             <div className="space-y-2"><Label>Target Audience</Label><Select value={targetAudience} onValueChange={setTargetAudience}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Every Student</SelectItem><SelectItem value="pro">Pro Members Only</SelectItem><SelectItem value="free">Free Members Only</SelectItem><SelectItem value="teachers">Teaching Staff Only</SelectItem></SelectContent></Select></div>
                             <div className="space-y-2"><Label>Email Subject</Label><Input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} /></div>
-                            <div className="space-y-2"><Label>HTML Content</Label><Textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} className="min-h-[200px]" /></div>
-                            <div className="flex gap-4">
+                            
+                            <div className="space-y-4">
+                              <Label className="text-base font-bold">Email Message</Label>
+                              <Tabs defaultValue="draft" className="border rounded-xl p-4 bg-muted/20">
+                                <TabsList className="grid w-full grid-cols-2 max-w-xs mb-4">
+                                  <TabsTrigger value="draft" className="flex items-center gap-2">
+                                    <FileText className="w-4 h-4" /> Standard
+                                  </TabsTrigger>
+                                  <TabsTrigger value="source" className="flex items-center gap-2">
+                                    <Code className="w-4 h-4" /> HTML Source
+                                  </TabsTrigger>
+                                </TabsList>
+                                
+                                <TabsContent value="draft" className="space-y-2">
+                                  <Textarea 
+                                    value={marketingDraftContent} 
+                                    onChange={(e) => {
+                                      const text = e.target.value;
+                                      setMarketingDraftContent(text);
+                                      setEmailMessage(plainTextToHtml(text));
+                                    }} 
+                                    placeholder="Write your email content here. Paragraphs will be added automatically."
+                                    rows={8}
+                                    className="text-base leading-relaxed bg-background"
+                                  />
+                                </TabsContent>
+
+                                <TabsContent value="source" className="space-y-2">
+                                  <Textarea 
+                                    value={emailMessage} 
+                                    onChange={(e) => setEmailMessage(e.target.value)} 
+                                    rows={8} 
+                                    className="font-mono text-xs bg-slate-900 text-slate-100" 
+                                  />
+                                </TabsContent>
+                              </Tabs>
+                            </div>
+
+                            <div className="space-y-3">
+                              <Label className="text-base font-bold flex items-center gap-2">
+                                <Paperclip className="w-4 h-4" /> Attachments
+                              </Label>
+                              <div className="flex items-center gap-4">
+                                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                                  <Plus className="w-4 h-4 mr-2" /> Add Files
+                                </Button>
+                                <input 
+                                  type="file" 
+                                  ref={fileInputRef} 
+                                  className="hidden" 
+                                  multiple 
+                                  onChange={handleFileChange}
+                                />
+                                <span className="text-xs text-muted-foreground">Max 5MB per file</span>
+                              </div>
+                              
+                              {marketingAttachments.length > 0 && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                  {marketingAttachments.map((file, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-2 bg-muted rounded-lg border border-border">
+                                      <span className="text-xs font-medium truncate flex-1 pr-2">{file.name}</span>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeAttachment(idx)}>
+                                        <X className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex gap-4 pt-4">
                               <Button onClick={() => handleSendPromo(true)} variant="outline" disabled={isSendingPromo}>Send Test</Button>
                               <Button onClick={() => handleSendPromo(false)} className="flex-1" disabled={isSendingPromo}>
                                 {isSendingPromo ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2 h-4 w-4" />}
