@@ -12,9 +12,45 @@ import { format } from 'date-fns';
 import type { BlogPost } from '@/types';
 import { ShareButton } from '@/components/blog/ShareButton';
 import type { Metadata } from 'next';
+import { cn } from '@/lib/utils';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+/**
+ * Determines styles based on deterministic seed (slug) or manual settings.
+ * Ensures every blog has a unique "identity".
+ */
+function getBlogTheme(post: BlogPost) {
+  // Deterministic styles based on title length or slug
+  const seed = post.slug.length;
+  
+  const layout = post.layout || (seed % 3 === 0 ? 'centered' : seed % 2 === 0 ? 'magazine' : 'standard');
+  const fontFamily = post.fontFamily || (seed % 3 === 0 ? 'serif' : seed % 2 === 0 ? 'sans' : 'modern');
+  const spacing = post.lineSpacing || (seed % 2 === 0 ? 'relaxed' : 'wide');
+  const dropCap = post.dropCap !== undefined ? post.dropCap : true;
+
+  return {
+    container: cn(
+      "mx-auto transition-all duration-700",
+      layout === 'centered' ? "max-w-3xl px-6" : layout === 'magazine' ? "max-w-5xl px-4" : "max-w-4xl px-4"
+    ),
+    header: cn(
+      "space-y-6 mb-12",
+      layout === 'centered' ? "text-center" : "text-left"
+    ),
+    content: cn(
+      "prose prose-slate lg:prose-xl dark:prose-invert max-w-none",
+      fontFamily === 'serif' ? "font-serif" : fontFamily === 'modern' ? "font-headline tracking-tight" : "font-sans",
+      spacing === 'relaxed' ? "leading-relaxed" : spacing === 'wide' ? "leading-loose" : "leading-normal",
+      dropCap && "drop-cap-enabled"
+    ),
+    image: cn(
+      "relative w-full overflow-hidden shadow-2xl mb-12",
+      layout === 'magazine' ? "aspect-[21/9] rounded-3xl" : "aspect-video rounded-[2.5rem]"
+    )
+  };
 }
 
 async function getBlogPost(slug: string): Promise<BlogPost | null> {
@@ -64,35 +100,37 @@ export default async function BlogPostPage({ params }: PageProps) {
     notFound();
   }
 
+  const theme = getBlogTheme(post);
+
   return (
-    <article className="max-w-4xl mx-auto space-y-8 py-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <Button asChild variant="ghost" className="hover:bg-primary/5">
+    <article className={cn("py-12 animate-in fade-in slide-in-from-bottom-4 duration-700", theme.container)}>
+      <Button asChild variant="ghost" className="mb-8 hover:bg-primary/5 rounded-full px-6">
         <Link href="/blog">
           <ChevronLeft className="mr-2 w-4 h-4" /> Back to Blog
         </Link>
       </Button>
 
-      <div className="space-y-6 text-center">
-        <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-black uppercase tracking-widest text-muted-foreground">
-          <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-none px-4 py-1">
+      <div className={theme.header}>
+        <div className="flex flex-wrap items-center gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+          <Badge className="bg-primary text-white border-none px-4 py-1.5 rounded-full">
             {post.category}
           </Badge>
-          <span className="flex items-center gap-1.5">
-            <Calendar className="w-4 h-4" /> 
-            {format(new Date(post.createdAt), 'MMMM d, yyyy')}
+          <span className="flex items-center gap-1.5 bg-muted px-3 py-1 rounded-full">
+            <Calendar className="w-3 h-3" /> 
+            {format(new Date(post.createdAt), 'MMM d, yyyy')}
           </span>
-          <span className="flex items-center gap-1.5">
-            <User className="w-4 h-4" /> 
+          <span className="flex items-center gap-1.5 bg-muted px-3 py-1 rounded-full">
+            <User className="w-3 h-3" /> 
             {post.author}
           </span>
         </div>
         
-        <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tighter leading-tight text-slate-900">
+        <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tighter leading-none text-slate-900 drop-shadow-sm">
           {post.title}
         </h1>
       </div>
 
-      <div className="relative aspect-video w-full rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white/20">
+      <div className={theme.image}>
         <Image
           src={post.image || 'https://picsum.photos/seed/math/1200/600'}
           alt={post.title}
@@ -103,26 +141,31 @@ export default async function BlogPostPage({ params }: PageProps) {
         />
       </div>
 
-      <div className="james-clear-style px-4 sm:px-0">
+      <div className="james-clear-style">
         <div 
-          className="content-area"
+          className={theme.content}
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
         
-        <div className="cta-section">
-          <h4>Ready to master mental math?</h4>
-          <p className="text-lg mb-4">Join thousands of students building lightning-fast calculation skills on our digital platform.</p>
-          <Link href="/signup">Try our free abacus practice tool here</Link>
+        <div className="cta-section bg-gradient-to-br from-primary/5 to-transparent p-10 rounded-[2.5rem] border border-primary/10 mt-20">
+          <h4 className="text-2xl font-black uppercase tracking-tight text-slate-900 mb-4">Ready to master mental math?</h4>
+          <p className="text-lg font-medium text-slate-600 mb-8">Join thousands of students building lightning-fast calculation skills on our digital platform.</p>
+          <Button asChild size="lg" className="h-14 px-10 text-lg font-black rounded-2xl shadow-xl hover:scale-105 transition-transform">
+            <Link href="/signup">Try Our Free Practice Tool</Link>
+          </Button>
         </div>
 
-        <Separator className="my-12" />
+        <Separator className="my-16" />
         
-        <div className="flex justify-between items-center bg-muted/30 p-6 rounded-2xl border border-primary/10 mb-12">
+        <div className="flex justify-between items-center bg-slate-900 p-8 rounded-3xl shadow-2xl border border-white/10 mb-12 text-white">
           <div className="space-y-1">
-            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Written By</p>
-            <p className="text-lg font-bold text-slate-900">{post.author}</p>
+            <p className="text-[10px] font-black uppercase text-primary tracking-widest">Written By</p>
+            <p className="text-2xl font-black tracking-tight font-headline">{post.author}</p>
           </div>
-          <ShareButton title={post.title} />
+          <div className="flex items-center gap-4">
+            <span className="text-xs font-bold opacity-60 uppercase tracking-widest hidden sm:block">Share Article</span>
+            <ShareButton title={post.title} />
+          </div>
         </div>
       </div>
     </article>

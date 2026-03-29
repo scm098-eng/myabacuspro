@@ -311,4 +311,10 @@ export interface BlogPost {
   author: string;
   image: string;
   createdAt: any;
+  // Dynamic Style Settings
+  layout?: 'standard' | 'centered' | 'magazine';
+  fontFamily?: 'serif' | 'sans' | 'modern';
+  lineSpacing?: 'normal' | 'relaxed' | 'wide';
+  dropCap?: boolean;
+  accentColor?: string;
 }

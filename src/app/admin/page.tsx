@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit } from 'lucide-react';
+import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -27,6 +27,7 @@ import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 
 /**
  * UTC standard Monday calculation (YYYY-MM-DD)
@@ -224,6 +225,11 @@ export default function AdminDashboardPage() {
       author: editingBlog.author || `${profile?.firstName} ${profile?.surname}`,
       createdAt: editingBlog.createdAt || serverTimestamp(),
       updatedAt: serverTimestamp(),
+      // Ensure defaults for styling
+      layout: editingBlog.layout || 'standard',
+      fontFamily: editingBlog.fontFamily || 'serif',
+      lineSpacing: editingBlog.lineSpacing || 'relaxed',
+      dropCap: editingBlog.dropCap !== undefined ? editingBlog.dropCap : true,
     };
 
     try {
@@ -444,7 +450,7 @@ export default function AdminDashboardPage() {
                                 <CardTitle className="font-headline">Blog Management</CardTitle>
                                 <CardDescription>Write and publish educational content.</CardDescription>
                             </div>
-                            <Button onClick={() => { setEditingBlog({ createdAt: new Date().toISOString() }); setIsBlogDialogOpen(true); }}>
+                            <Button onClick={() => { setEditingBlog({ createdAt: new Date().toISOString(), layout: 'standard', fontFamily: 'serif', lineSpacing: 'relaxed', dropCap: true }); setIsBlogDialogOpen(true); }}>
                                 <Plus className="mr-2 h-4 w-4" /> New Article
                             </Button>
                         </CardHeader>
@@ -605,7 +611,7 @@ export default function AdminDashboardPage() {
                 <DialogTitle>{editingBlog?.id ? 'Edit Article' : 'Create New Article'}</DialogTitle>
                 <DialogDescription>Content will be rendered as HTML. Use standard tags like h3, p, ul, li.</DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSaveBlog} className="space-y-4">
+            <form onSubmit={handleSaveBlog} className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label>Title</Label>
@@ -613,13 +619,12 @@ export default function AdminDashboardPage() {
                           value={editingBlog?.title || ''} 
                           onChange={(e) => {
                             const title = e.target.value;
-                            // Clean slug generation logic to avoid broken URLs (No ?, !, etc.)
                             const slug = title
                               .toLowerCase()
                               .trim()
-                              .replace(/[^\w\s-]/g, '') // Remove non-word chars (except spaces and hyphens)
-                              .replace(/[\s-]+/g, '-')  // Replace spaces and hyphens with a single hyphen
-                              .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+                              .replace(/[^\w\s-]/g, '')
+                              .replace(/[\s-]+/g, '-')
+                              .replace(/^-+|-+$/g, '');
                             setEditingBlog(prev => ({ ...prev, title, slug }));
                           }} 
                           placeholder="The Future of Soroban" 
@@ -627,7 +632,7 @@ export default function AdminDashboardPage() {
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label>URL Slug (Automatically Generated)</Label>
+                        <Label>URL Slug</Label>
                         <Input 
                           value={editingBlog?.slug || ''} 
                           onChange={(e) => setEditingBlog(prev => ({ 
@@ -639,13 +644,64 @@ export default function AdminDashboardPage() {
                         />
                     </div>
                 </div>
+
+                <Card className="border-primary/20 bg-primary/5">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2"><Palette className="w-4 h-4" /> Style Settings (Identity)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label>Page Layout</Label>
+                      <Select value={editingBlog?.layout || 'standard'} onValueChange={(val: any) => setEditingBlog(prev => ({ ...prev, layout: val }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="standard">Standard (Traditional)</SelectItem>
+                          <SelectItem value="centered">Magazine (Narrow/Focused)</SelectItem>
+                          <SelectItem value="magazine">Full Hero (High Impact)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Typography Family</Label>
+                      <Select value={editingBlog?.fontFamily || 'serif'} onValueChange={(val: any) => setEditingBlog(prev => ({ ...prev, fontFamily: val }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="serif">Merriweather (Classic Serif)</SelectItem>
+                          <SelectItem value="sans">Inter (Modern Clean)</SelectItem>
+                          <SelectItem value="modern">Geometric (High Contrast)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Line Spacing</Label>
+                      <Select value={editingBlog?.lineSpacing || 'relaxed'} onValueChange={(val: any) => setEditingBlog(prev => ({ ...prev, lineSpacing: val }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tight">Condensed (1.4)</SelectItem>
+                          <SelectItem value="normal">Standard (1.6)</SelectItem>
+                          <SelectItem value="relaxed">Comfortable (1.8)</SelectItem>
+                          <SelectItem value="wide">Breathable (2.0)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center space-x-2 pt-4">
+                      <Switch 
+                        id="drop-cap" 
+                        checked={editingBlog?.dropCap !== false} 
+                        onCheckedChange={(val) => setEditingBlog(prev => ({ ...prev, dropCap: val }))} 
+                      />
+                      <Label htmlFor="drop-cap">Enable Large Drop-Cap</Label>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label>Category</Label>
                         <Input value={editingBlog?.category || ''} onChange={(e) => setEditingBlog(prev => ({ ...prev, category: e.target.value }))} placeholder="Education" required />
                     </div>
                     <div className="space-y-2">
-                        <Label>Author Override (Optional)</Label>
+                        <Label>Author Override</Label>
                         <Input value={editingBlog?.author || ''} onChange={(e) => setEditingBlog(prev => ({ ...prev, author: e.target.value }))} placeholder="Master Trainer" />
                     </div>
                 </div>
