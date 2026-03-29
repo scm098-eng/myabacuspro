@@ -1,15 +1,15 @@
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Calendar, User, Share2 } from 'lucide-react';
+import { ChevronLeft, Calendar, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { getFirestore, collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import { format } from 'date-fns';
 import type { BlogPost } from '@/types';
+import { ShareButton } from '@/components/blog/ShareButton';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -99,9 +99,7 @@ export default async function BlogPostPage({ params }: PageProps) {
               <p className="text-xs font-black uppercase text-muted-foreground tracking-widest">Written By</p>
               <p className="text-lg font-bold">{post.author}</p>
             </div>
-            <Button variant="outline" size="icon" className="rounded-full h-12 w-12">
-              <Share2 className="w-5 h-5" />
-            </Button>
+            <ShareButton title={post.title} />
           </div>
         </div>
 
