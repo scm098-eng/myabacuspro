@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -10,6 +11,7 @@ import { firebaseApp } from '@/lib/firebase';
 import { format } from 'date-fns';
 import type { BlogPost } from '@/types';
 import { ShareButton } from '@/components/blog/ShareButton';
+import type { Metadata } from 'next';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -35,6 +37,23 @@ async function getBlogPost(slug: string): Promise<BlogPost | null> {
     console.error("Error fetching blog post:", error);
     return null;
   }
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getBlogPost(slug);
+  
+  if (!post) return { title: 'Article Not Found' };
+  
+  return {
+    title: post.title,
+    description: post.excerpt,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      images: [post.image || 'https://picsum.photos/seed/math/1200/600'],
+    }
+  };
 }
 
 export default async function BlogPostPage({ params }: PageProps) {

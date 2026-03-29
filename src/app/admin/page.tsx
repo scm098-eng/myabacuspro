@@ -609,11 +609,34 @@ export default function AdminDashboardPage() {
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label>Title</Label>
-                        <Input value={editingBlog?.title || ''} onChange={(e) => setEditingBlog(prev => ({ ...prev, title: e.target.value, slug: e.target.value.toLowerCase().replace(/ /g, '-') }))} placeholder="The Future of Soroban" required />
+                        <Input 
+                          value={editingBlog?.title || ''} 
+                          onChange={(e) => {
+                            const title = e.target.value;
+                            // Clean slug generation logic to avoid broken URLs (No ?, !, etc.)
+                            const slug = title
+                              .toLowerCase()
+                              .trim()
+                              .replace(/[^\w\s-]/g, '') // Remove non-word chars (except spaces and hyphens)
+                              .replace(/[\s-]+/g, '-')  // Replace spaces and hyphens with a single hyphen
+                              .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+                            setEditingBlog(prev => ({ ...prev, title, slug }));
+                          }} 
+                          placeholder="The Future of Soroban" 
+                          required 
+                        />
                     </div>
                     <div className="space-y-2">
-                        <Label>URL Slug</Label>
-                        <Input value={editingBlog?.slug || ''} onChange={(e) => setEditingBlog(prev => ({ ...prev, slug: e.target.value }))} placeholder="future-of-soroban" required />
+                        <Label>URL Slug (Automatically Generated)</Label>
+                        <Input 
+                          value={editingBlog?.slug || ''} 
+                          onChange={(e) => setEditingBlog(prev => ({ 
+                            ...prev, 
+                            slug: e.target.value.toLowerCase().replace(/[^\w-]+/g, '') 
+                          }))} 
+                          placeholder="future-of-soroban" 
+                          required 
+                        />
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
