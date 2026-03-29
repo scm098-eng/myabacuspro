@@ -12,9 +12,9 @@ export function ShareButton({ title }: ShareButtonProps) {
   const { toast } = useToast();
 
   const handleShare = async () => {
-    // We get the URL directly on the client
     const url = window.location.href;
 
+    // Try native share first
     if (navigator.share) {
       try {
         await navigator.share({
@@ -22,27 +22,30 @@ export function ShareButton({ title }: ShareButtonProps) {
           text: `Check out this article on My Abacus Pro: ${title}`,
           url: url,
         });
+        return; // Success, exit function
       } catch (err) {
-        // We ignore abort errors (when user cancels the share sheet)
-        if ((err as Error).name !== 'AbortError') {
-          console.error('Error sharing:', err);
+        // If the user cancelled, we just stop
+        if ((err as Error).name === 'AbortError') {
+          return;
         }
+        // For any other error (like Permission Denied), we proceed to the clipboard fallback
+        console.warn('Native share failed or was denied, falling back to clipboard:', err);
       }
-    } else {
-      // Fallback for browsers that don't support navigator.share
-      try {
-        await navigator.clipboard.writeText(url);
-        toast({
-          title: 'Link Copied!',
-          description: 'The article link has been copied to your clipboard.',
-        });
-      } catch (err) {
-        toast({
-          title: 'Error',
-          description: 'Could not copy link to clipboard.',
-          variant: 'destructive',
-        });
-      }
+    }
+
+    // Fallback for browsers without share support or when permission is denied
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: 'Link Copied!',
+        description: 'The article link has been copied to your clipboard.',
+      });
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Could not copy link to clipboard.',
+        variant: 'destructive',
+      });
     }
   };
 
