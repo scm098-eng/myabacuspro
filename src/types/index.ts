@@ -316,5 +316,8 @@ export interface BlogPost {
   fontFamily?: 'serif' | 'sans' | 'modern';
   lineSpacing?: 'normal' | 'relaxed' | 'wide';
   dropCap?: boolean;
+  headlineWeight?: 'bold' | 'black';
+  headlineCase?: 'normal' | 'uppercase';
+  headlineSpacing?: 'tight' | 'normal' | 'wide';
   accentColor?: string;
 }

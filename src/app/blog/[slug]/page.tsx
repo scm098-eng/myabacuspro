@@ -31,6 +31,11 @@ function getBlogTheme(post: BlogPost) {
   const spacing = post.lineSpacing || (seed % 2 === 0 ? 'relaxed' : 'wide');
   const dropCap = post.dropCap !== undefined ? post.dropCap : true;
 
+  // Headline Identity Logic
+  const headlineWeight = post.headlineWeight || (seed % 2 === 0 ? 'black' : 'bold');
+  const headlineCase = post.headlineCase || (seed % 3 === 0 ? 'uppercase' : 'normal');
+  const headlineSpacing = post.headlineSpacing || (seed % 2 === 0 ? 'tight' : 'normal');
+
   return {
     container: cn(
       "mx-auto transition-all duration-700",
@@ -39,6 +44,12 @@ function getBlogTheme(post: BlogPost) {
     header: cn(
       "space-y-6 mb-12",
       layout === 'centered' ? "text-center" : "text-left"
+    ),
+    headline: cn(
+      "text-4xl md:text-6xl font-headline tracking-tighter leading-none text-slate-900 drop-shadow-sm",
+      headlineWeight === 'black' ? "font-black" : "font-bold",
+      headlineCase === 'uppercase' ? "uppercase" : "normal-case",
+      headlineSpacing === 'tight' ? "tracking-tighter" : headlineSpacing === 'wide' ? "tracking-widest" : "tracking-normal"
     ),
     content: cn(
       "prose prose-slate lg:prose-xl dark:prose-invert max-w-none",
@@ -125,7 +136,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           </span>
         </div>
         
-        <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tighter leading-none text-slate-900 drop-shadow-sm">
+        <h1 className={theme.headline}>
           {post.title}
         </h1>
       </div>

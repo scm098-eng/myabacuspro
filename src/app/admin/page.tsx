@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette } from 'lucide-react';
+import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette, Type } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -230,6 +230,9 @@ export default function AdminDashboardPage() {
       fontFamily: editingBlog.fontFamily || 'serif',
       lineSpacing: editingBlog.lineSpacing || 'relaxed',
       dropCap: editingBlog.dropCap !== undefined ? editingBlog.dropCap : true,
+      headlineWeight: editingBlog.headlineWeight || 'black',
+      headlineCase: editingBlog.headlineCase || 'uppercase',
+      headlineSpacing: editingBlog.headlineSpacing || 'normal',
     };
 
     try {
@@ -450,7 +453,7 @@ export default function AdminDashboardPage() {
                                 <CardTitle className="font-headline">Blog Management</CardTitle>
                                 <CardDescription>Write and publish educational content.</CardDescription>
                             </div>
-                            <Button onClick={() => { setEditingBlog({ createdAt: new Date().toISOString(), layout: 'standard', fontFamily: 'serif', lineSpacing: 'relaxed', dropCap: true }); setIsBlogDialogOpen(true); }}>
+                            <Button onClick={() => { setEditingBlog({ createdAt: new Date().toISOString(), layout: 'standard', fontFamily: 'serif', lineSpacing: 'relaxed', dropCap: true, headlineWeight: 'black', headlineCase: 'uppercase', headlineSpacing: 'normal' }); setIsBlogDialogOpen(true); }}>
                                 <Plus className="mr-2 h-4 w-4" /> New Article
                             </Button>
                         </CardHeader>
@@ -647,7 +650,7 @@ export default function AdminDashboardPage() {
 
                 <Card className="border-primary/20 bg-primary/5">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm flex items-center gap-2"><Palette className="w-4 h-4" /> Style Settings (Identity)</CardTitle>
+                    <CardTitle className="text-sm flex items-center gap-2"><Palette className="w-4 h-4" /> Layout Settings</CardTitle>
                   </CardHeader>
                   <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
@@ -691,6 +694,45 @@ export default function AdminDashboardPage() {
                         onCheckedChange={(val) => setEditingBlog(prev => ({ ...prev, dropCap: val }))} 
                       />
                       <Label htmlFor="drop-cap">Enable Large Drop-Cap</Label>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-primary/20 bg-primary/5">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2"><Type className="w-4 h-4" /> Headline Identity</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label>Headline Boldness</Label>
+                      <Select value={editingBlog?.headlineWeight || 'black'} onValueChange={(val: any) => setEditingBlog(prev => ({ ...prev, headlineWeight: val }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="bold">Bold (700)</SelectItem>
+                          <SelectItem value="black">Extra Black (900)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Headline Casing</Label>
+                      <Select value={editingBlog?.headlineCase || 'uppercase'} onValueChange={(val: any) => setEditingBlog(prev => ({ ...prev, headlineCase: val }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="normal">Standard (Sentence Case)</SelectItem>
+                          <SelectItem value="uppercase">All Caps (Impact)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Letter Spacing</Label>
+                      <Select value={editingBlog?.headlineSpacing || 'normal'} onValueChange={(val: any) => setEditingBlog(prev => ({ ...prev, headlineSpacing: val }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tight">Tight (Compact)</SelectItem>
+                          <SelectItem value="normal">Standard</SelectItem>
+                          <SelectItem value="wide">Wide (Spacious)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </CardContent>
                 </Card>
