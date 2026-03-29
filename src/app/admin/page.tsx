@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette, Type } from 'lucide-react';
+import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette, Type, Code, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -79,6 +79,30 @@ const isBirthdayToday = (dob: string) => {
     return getMonth(today) === getMonth(birthday) && getDate(today) === getDate(birthday);
 }
 
+/**
+ * Helper to convert plain text draft into HTML paragraphs
+ */
+const plainTextToHtml = (text: string) => {
+  if (!text) return '';
+  return text
+    .split('\n')
+    .filter(p => p.trim() !== '')
+    .map(p => `<p>${p.trim()}</p>`)
+    .join('\n\n');
+};
+
+/**
+ * Helper to strip basic HTML paragraphs back to plain text for the editor
+ */
+const htmlToPlainText = (html: string) => {
+  if (!html) return '';
+  return html
+    .replace(/<\/p>/g, '\n')
+    .replace(/<p>/g, '')
+    .replace(/<br\s*\/?>/g, '\n')
+    .trim();
+};
+
 export default function AdminDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
   const { profile, getAllUsers, approveTeacher, isLoading: authLoading, getStudentTitle, toggleUserSuspension } = useAuth();
@@ -101,6 +125,7 @@ export default function AdminDashboardPage() {
   const [isBlogDialogOpen, setIsBlogDialogOpen] = useState(false);
   const [isSavingBlog, setIsSavingBlog] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Partial<BlogPost> | null>(null);
+  const [draftContent, setDraftContent] = useState('');
 
   const currentWeekKey = useMemo(() => getUTCMondayKey(), []);
   const currentMonthKey = useMemo(() => getUTCMonthKey(), []);
@@ -240,6 +265,7 @@ export default function AdminDashboardPage() {
       toast({ title: editingBlog.id ? "Blog Updated" : "Blog Published" });
       setIsBlogDialogOpen(false);
       setEditingBlog(null);
+      setDraftContent('');
     } catch (err: any) {
       toast({ title: "Failed to save blog", description: err.message, variant: "destructive" });
     } finally {
@@ -453,7 +479,20 @@ export default function AdminDashboardPage() {
                                 <CardTitle className="font-headline">Blog Management</CardTitle>
                                 <CardDescription>Write and publish educational content.</CardDescription>
                             </div>
-                            <Button onClick={() => { setEditingBlog({ createdAt: new Date().toISOString(), layout: 'standard', fontFamily: 'serif', lineSpacing: 'relaxed', dropCap: true, headlineWeight: 'black', headlineCase: 'uppercase', headlineSpacing: 'normal' }); setIsBlogDialogOpen(true); }}>
+                            <Button onClick={() => { 
+                              setEditingBlog({ 
+                                createdAt: new Date().toISOString(), 
+                                layout: 'standard', 
+                                fontFamily: 'serif', 
+                                lineSpacing: 'relaxed', 
+                                dropCap: true, 
+                                headlineWeight: 'black', 
+                                headlineCase: 'uppercase', 
+                                headlineSpacing: 'normal' 
+                              }); 
+                              setDraftContent('');
+                              setIsBlogDialogOpen(true); 
+                            }}>
                                 <Plus className="mr-2 h-4 w-4" /> New Article
                             </Button>
                         </CardHeader>
@@ -475,7 +514,11 @@ export default function AdminDashboardPage() {
                                             <TableCell className="text-xs text-muted-foreground">{blog.createdAt?.toDate ? format(blog.createdAt.toDate(), 'MMM d, yyyy') : 'Just now'}</TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
-                                                    <Button variant="ghost" size="icon" onClick={() => { setEditingBlog(blog); setIsBlogDialogOpen(true); }}>
+                                                    <Button variant="ghost" size="icon" onClick={() => { 
+                                                      setEditingBlog(blog); 
+                                                      setDraftContent(htmlToPlainText(blog.content || ''));
+                                                      setIsBlogDialogOpen(true); 
+                                                    }}>
                                                         <Edit className="h-4 w-4" />
                                                     </Button>
                                                     <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteBlog(blog.id)}>
@@ -755,10 +798,51 @@ export default function AdminDashboardPage() {
                     <Label>Brief Excerpt</Label>
                     <Textarea value={editingBlog?.excerpt || ''} onChange={(e) => setEditingBlog(prev => ({ ...prev, excerpt: e.target.value }))} rows={2} required />
                 </div>
-                <div className="space-y-2">
-                    <Label>HTML Content</Label>
-                    <Textarea value={editingBlog?.content || ''} onChange={(e) => setEditingBlog(prev => ({ ...prev, content: e.target.value }))} rows={10} required className="font-mono text-xs" />
+
+                <div className="space-y-4">
+                  <Label className="text-lg font-bold">Content Editor</Label>
+                  <Tabs defaultValue="draft" className="border rounded-xl p-4 bg-background">
+                    <TabsList className="grid w-full grid-cols-2 max-w-xs mb-4">
+                      <TabsTrigger value="draft" className="flex items-center gap-2">
+                        <FileText className="w-4 h-4" /> Standard
+                      </TabsTrigger>
+                      <TabsTrigger value="source" className="flex items-center gap-2">
+                        <Code className="w-4 h-4" /> HTML Source
+                      </TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="draft" className="space-y-2">
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest px-1">Write your article here. Paragraphs will be created automatically.</p>
+                      <Textarea 
+                        value={draftContent} 
+                        onChange={(e) => {
+                          const text = e.target.value;
+                          setDraftContent(text);
+                          setEditingBlog(prev => ({ ...prev, content: plainTextToHtml(text) }));
+                        }} 
+                        placeholder="Once upon a time in the world of math..."
+                        rows={12}
+                        className="text-base leading-relaxed"
+                      />
+                      <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground">
+                        <span>Line breaks start new blocks</span>
+                        <span>{draftContent.split('\n').filter(p => p.trim() !== '').length} Paragraphs Detected</span>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="source" className="space-y-2">
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest px-1">Direct HTML mode for advanced styling.</p>
+                      <Textarea 
+                        value={editingBlog?.content || ''} 
+                        onChange={(e) => setEditingBlog(prev => ({ ...prev, content: e.target.value }))} 
+                        rows={12} 
+                        required 
+                        className="font-mono text-xs bg-slate-900 text-slate-100" 
+                      />
+                    </TabsContent>
+                  </Tabs>
                 </div>
+
                 <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setIsBlogDialogOpen(false)}>Cancel</Button>
                     <Button type="submit" disabled={isSavingBlog}>
