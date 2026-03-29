@@ -17,7 +17,6 @@ interface PageProps {
 
 async function getBlogPost(slug: string): Promise<BlogPost | null> {
   try {
-    // Using Client SDK on the server for reliable public reads
     const db = getFirestore(firebaseApp);
     const blogRef = collection(db, 'blogs');
     const q = query(blogRef, where('slug', '==', slug), limit(1));
@@ -47,15 +46,15 @@ export default async function BlogPostPage({ params }: PageProps) {
   }
 
   return (
-    <article className="max-w-4xl mx-auto space-y-8 py-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <article className="max-w-4xl mx-auto space-y-8 py-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <Button asChild variant="ghost" className="hover:bg-primary/5">
         <Link href="/blog">
           <ChevronLeft className="mr-2 w-4 h-4" /> Back to Blog
         </Link>
       </Button>
 
-      <div className="space-y-6">
-        <div className="flex flex-wrap items-center gap-4 text-sm font-black uppercase tracking-widest text-primary">
+      <div className="space-y-6 text-center">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-black uppercase tracking-widest text-muted-foreground">
           <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-none px-4 py-1">
             {post.category}
           </Badge>
@@ -69,7 +68,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           </span>
         </div>
         
-        <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tighter leading-tight">
+        <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tighter leading-tight text-slate-900">
           {post.title}
         </h1>
       </div>
@@ -85,32 +84,26 @@ export default async function BlogPostPage({ params }: PageProps) {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <div className="lg:col-span-8">
-          <div 
-            className="prose prose-lg max-w-none prose-primary text-slate-700 leading-relaxed font-medium"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
-          
-          <Separator className="my-12" />
-          
-          <div className="flex justify-between items-center bg-muted/30 p-6 rounded-2xl border border-primary/10">
-            <div className="space-y-1">
-              <p className="text-xs font-black uppercase text-muted-foreground tracking-widest">Written By</p>
-              <p className="text-lg font-bold">{post.author}</p>
-            </div>
-            <ShareButton title={post.title} />
-          </div>
+      <div className="james-clear-style px-4 sm:px-0">
+        <div 
+          className="content-area"
+          dangerouslySetInnerHTML={{ __html: post.content }}
+        />
+        
+        <div className="cta-section">
+          <h4>Ready to master mental math?</h4>
+          <p className="text-lg mb-4">Join thousands of students building lightning-fast calculation skills on our digital platform.</p>
+          <Link href="/signup">Try our free abacus practice tool here</Link>
         </div>
 
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-gradient-to-br from-primary to-orange-600 p-8 rounded-[2rem] text-white shadow-xl sticky top-24">
-            <h3 className="text-2xl font-black uppercase tracking-tighter mb-4">Start Training Now</h3>
-            <p className="text-white/80 font-bold mb-6 text-sm">Join thousands of students and become a Human Calculator.</p>
-            <Button asChild className="w-full bg-white text-primary hover:bg-white/90 font-black uppercase tracking-widest h-14 rounded-xl text-xs">
-              <Link href="/signup">Join For Free</Link>
-            </Button>
+        <Separator className="my-12" />
+        
+        <div className="flex justify-between items-center bg-muted/30 p-6 rounded-2xl border border-primary/10 mb-12">
+          <div className="space-y-1">
+            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Written By</p>
+            <p className="text-lg font-bold text-slate-900">{post.author}</p>
           </div>
+          <ShareButton title={post.title} />
         </div>
       </div>
     </article>
