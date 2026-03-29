@@ -1,6 +1,6 @@
 'use client';
 
-import { Share2, Link, Facebook, Twitter, Linkedin, MessageCircle, MoreHorizontal } from 'lucide-react';
+import { Share2, Link as LinkIcon, Facebook, Twitter, Linkedin, MessageCircle, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useState, useEffect } from 'react';
 
 interface ShareButtonProps {
   title: string;
@@ -16,6 +17,12 @@ interface ShareButtonProps {
 
 export function ShareButton({ title }: ShareButtonProps) {
   const { toast } = useToast();
+  const [isShareSupported, setIsShareSupported] = useState(false);
+
+  useEffect(() => {
+    // Check for native share support after mount to satisfy TS and avoid hydration mismatch
+    setIsShareSupported(typeof navigator !== 'undefined' && !!navigator.share);
+  }, []);
 
   const getShareUrl = () => typeof window !== 'undefined' ? window.location.href : '';
   const encodedUrl = encodeURIComponent(getShareUrl());
@@ -38,7 +45,6 @@ export function ShareButton({ title }: ShareButtonProps) {
   };
 
   const handleNativeShare = async () => {
-    // Try native share first
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
@@ -111,10 +117,10 @@ export function ShareButton({ title }: ShareButtonProps) {
           onClick={handleCopyLink} 
           className="flex items-center gap-2 cursor-pointer py-2"
         >
-          <Link className="w-4 h-4 text-muted-foreground" />
+          <LinkIcon className="w-4 h-4 text-muted-foreground" />
           <span className="font-medium">Copy Link</span>
         </DropdownMenuItem>
-        {typeof navigator !== 'undefined' && navigator.share && (
+        {isShareSupported && (
           <DropdownMenuItem 
             onClick={handleNativeShare} 
             className="flex items-center gap-2 cursor-pointer py-2 border-t mt-1 pt-3"
