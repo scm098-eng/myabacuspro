@@ -20,6 +20,7 @@ import { TEST_NAME_MAP } from '@/lib/constants';
 import { FirestorePermissionError } from '@/lib/errors';
 import { errorEmitter } from '@/lib/error-emitter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from '@/lib/utils';
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -135,8 +136,9 @@ export default function ProgressReportPage() {
 
     const { practiceTests, gameResults } = useMemo(() => {
         return {
-            practiceTests: testHistory.filter(r => !r.isGame),
-            gameResults: testHistory.filter(r => r.isGame)
+            // Use strict boolean check to handle legacy records correctly
+            practiceTests: testHistory.filter(r => r.isGame !== true),
+            gameResults: testHistory.filter(r => r.isGame === true)
         };
     }, [testHistory]);
 
@@ -317,7 +319,7 @@ export default function ProgressReportPage() {
                                                 <TableCell>{format(result.createdAt, 'PPp')}</TableCell>
                                                 <TableCell className="font-bold text-pink-600">Bubble Game</TableCell>
                                                 <TableCell>{result.difficulty}</TableCell>
-                                                <TableCell className="font-black text-orange-600">+{result.earnedPoints}</TableCell>
+                                                <TableCell className="font-black text-orange-600">+{result.earnedPoints || 0}</TableCell>
                                                 <TableCell>{result.accuracy.toFixed(1)}%</TableCell>
                                                 <TableCell className="text-right">
                                                     <Badge className={cn("rounded-md px-3", result.accuracy >= 90 ? "bg-green-500" : "bg-muted text-muted-foreground")}>

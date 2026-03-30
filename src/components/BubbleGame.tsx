@@ -142,6 +142,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const [showSubmissionAnim, setShowSubmissionAnim] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  const isFinishingRef = useRef(false);
   const questionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user, saveCompletedGameLevel, recordDailyPractice, addPoints } = useAuth();
   const { playSound } = useSound();
@@ -171,7 +172,8 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   }, [level, levelId]);
   
   const finishGame = useCallback(async (finalScore: number, finalLives: number) => {
-    if (gameState !== 'playing') return;
+    if (isFinishingRef.current) return;
+    isFinishingRef.current = true;
 
     const correctAnswers = finalScore / 10;
     const accuracy = (correctAnswers / (questions.length || 1)) * 100;
@@ -236,7 +238,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         setTimeout(() => setShowSubmissionAnim(true), 600);
       }
     }
-  }, [questions.length, user, levelId, saveCompletedGameLevel, recordDailyPractice, addPoints, playSound, gameState, levelName]);
+  }, [questions.length, user, levelId, saveCompletedGameLevel, recordDailyPractice, addPoints, playSound, levelName]);
 
   const advanceQuestion = useCallback((isCorrectOutcome?: boolean) => {
     const nextScore = isCorrectOutcome ? score + 10 : score;
@@ -254,7 +256,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         clearTimeout(questionTimeoutRef.current);
     }
     
-    if (!questions.length || currentQuestionIndex >= questions.length || lives <= 0) {
+    if (!questions.length || currentQuestionIndex >= questions.length || lives <= 0 || isFinishingRef.current) {
       return;
     }
 
@@ -289,7 +291,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
     const maxTime = (config.speed + 3 + config.variance + config.qDelay + 0.8) * 1000;
     questionTimeoutRef.current = setTimeout(() => {
-        if (gameState === 'playing') {
+        if (gameState === 'playing' && !isFinishingRef.current) {
             setLives(l => l - 1);
             playSound('wrong');
             advanceQuestion(false);
@@ -308,7 +310,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   }, [gameState, questions, currentQuestionIndex, generateBubbles]);
   
   useEffect(() => {
-     if (lives <= 0 && gameState === 'playing') {
+     if (lives <= 0 && gameState === 'playing' && !isFinishingRef.current) {
       finishGame(score, 0);
       if (questionTimeoutRef.current) {
         clearTimeout(questionTimeoutRef.current);
@@ -317,7 +319,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   }, [lives, gameState, score, finishGame]);
 
   const handleBubbleClick = (bubble: Bubble) => {
-    if (gameState !== 'playing' || bubble.isQuestion) return;
+    if (gameState !== 'playing' || bubble.isQuestion || isFinishingRef.current) return;
     
     if (questionTimeoutRef.current) {
         clearTimeout(questionTimeoutRef.current);
@@ -453,6 +455,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                                 </Button>
                             ) : null}
                             <Button onClick={() => {
+                                isFinishingRef.current = false;
                                 setCurrentQuestionIndex(0);
                                 setScore(0);
                                 setLives(MAX_LIVES);
