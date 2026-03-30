@@ -21,7 +21,7 @@ const db = admin.firestore();
 const GMAIL_USER = 'myabacuspro@gmail.com';
 
 /**
- * Helper to get the UTC Monday key (YYYY-MM-DD)
+ * Helper to get the UTC Monday key (YYYY-MM-DD) for TODAY
  */
 function getUTCMondayKey() {
     const now = new Date();
@@ -34,10 +34,32 @@ function getUTCMondayKey() {
 }
 
 /**
+ * Helper to get the UTC Monday key for the WEEK THAT JUST ENDED
+ */
+function getUTCPreviousMondayKey() {
+    const now = new Date();
+    const day = now.getUTCDay();
+    const diff = (day === 0 ? 6 : day - 1) + 7; // Monday 7 days ago
+    const prevMonday = new Date(now);
+    prevMonday.setUTCDate(now.getUTCDate() - diff);
+    prevMonday.setUTCHours(0, 0, 0, 0);
+    return prevMonday.toISOString().split('T')[0];
+}
+
+/**
  * Helper to get the UTC Month key (YYYY-MM)
  */
 function getUTCMonthKey() {
     const now = new Date();
+    return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+/**
+ * Helper to get the UTC Month key for the MONTH THAT JUST ENDED
+ */
+function getUTCPreviousMonthKey() {
+    const now = new Date();
+    now.setUTCMonth(now.getUTCMonth() - 1);
     return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
@@ -47,11 +69,14 @@ function getUTCMonthKey() {
 exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
     logger.info("Starting Weekly Points Reset & Winner Declaration");
     const currentWeekKey = getUTCMondayKey();
+    const lastWeekKey = getUTCPreviousMondayKey();
 
     try {
         // 1. Declare Winner (highest weekly points from the period JUST ENDING)
+        // We filter by lastWeekKey to ensure we use the correct index and ignore stale data
         const topUserSnap = await db.collection('users')
             .where('role', '==', 'student')
+            .where('lastWeeklyReset', '==', lastWeekKey)
             .orderBy('weeklyPoints', 'desc')
             .limit(1)
             .get();
@@ -66,15 +91,21 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
                         photo: winner.profilePhoto || '',
                         points: winner.weeklyPoints || 0,
                         declaredAt: admin.firestore.FieldValue.serverTimestamp(),
-                        weekKey: currentWeekKey
+                        weekKey: lastWeekKey
                     }
                 }, { merge: true });
-                logger.info(`Winner declared: ${winner.firstName} ${winner.surname} with ${winner.weeklyPoints} pts.`);
+                logger.info(`Weekly Winner declared: ${winner.firstName} with ${winner.weeklyPoints} pts.`);
             }
+        } else {
+            logger.info("No active students found for weekly winner declaration.");
         }
 
-        // 2. Reset all students
-        const usersSnap = await db.collection('users').where('role', '==', 'student').get();
+        // 2. Reset all students whose last reset was the previous week
+        const usersSnap = await db.collection('users')
+            .where('role', '==', 'student')
+            .where('lastWeeklyReset', '==', lastWeekKey)
+            .get();
+            
         let batch = db.batch();
         let count = 0;
 
@@ -97,7 +128,7 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
             await batch.commit();
         }
         
-        logger.info(`Successfully reset weekly points for ${usersSnap.size} students for week ${currentWeekKey}.`);
+        logger.info(`Successfully reset weekly points for ${usersSnap.size} students.`);
     } catch (err) {
         logger.error("Weekly reset failed", err);
     }
@@ -109,11 +140,13 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
 exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
     logger.info("Starting Monthly Points Reset");
     const currentMonthKey = getUTCMonthKey();
+    const lastMonthKey = getUTCPreviousMonthKey();
 
     try {
         // Declare Monthly Winner
         const topUserSnap = await db.collection('users')
             .where('role', '==', 'student')
+            .where('lastMonthlyReset', '==', lastMonthKey)
             .orderBy('monthlyPoints', 'desc')
             .limit(1)
             .get();
@@ -128,13 +161,18 @@ exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
                         photo: winner.profilePhoto || '',
                         points: winner.monthlyPoints || 0,
                         declaredAt: admin.firestore.FieldValue.serverTimestamp(),
-                        monthKey: currentMonthKey
+                        monthKey: lastMonthKey
                     }
                 }, { merge: true });
+                logger.info(`Monthly Winner declared: ${winner.firstName}`);
             }
         }
 
-        const usersSnap = await db.collection('users').where('role', '==', 'student').get();
+        const usersSnap = await db.collection('users')
+            .where('role', '==', 'student')
+            .where('lastMonthlyReset', '==', lastMonthKey)
+            .get();
+            
         let batch = db.batch();
         let count = 0;
 
@@ -157,7 +195,7 @@ exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
             await batch.commit();
         }
         
-        logger.info(`Successfully reset monthly points for ${usersSnap.size} students for ${currentMonthKey}.`);
+        logger.info(`Successfully reset monthly points for ${usersSnap.size} students.`);
     } catch (err) {
         logger.error("Monthly reset failed", err);
     }
