@@ -75,6 +75,7 @@ export const TEST_NAME_MAP: Record<string, string> = {
     'combination-minus-80': 'Combination: -80',
     'combination-minus-9': 'Combination: -9',
     'combination-minus-90': 'Combination: -90',
+    'bubble-game': 'Bubble Game',
 };
 
 export const RANK_CRITERIA = [

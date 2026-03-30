@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
@@ -14,6 +15,10 @@ import { useRouter } from 'next/navigation';
 import { calculatePoints } from '@/lib/scoring';
 import { useSound } from '@/hooks/useSound';
 import confetti from 'canvas-confetti';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { firebaseApp } from '@/lib/firebase';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 interface Bubble {
   id: string;
@@ -185,6 +190,31 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
       setFinalMasteryPoints(earnedPoints);
       addPoints(user.uid, earnedPoints);
 
+      // Save record to Firestore for Game History
+      const db = getFirestore(firebaseApp);
+      const resultData = {
+        userId: user.uid,
+        testId: 'bubble-game',
+        difficulty: levelName,
+        score: correctAnswers,
+        totalQuestions: questions.length,
+        accuracy: accuracy,
+        timeSpent: 0,
+        timeLeft: 0,
+        earnedPoints: earnedPoints,
+        createdAt: serverTimestamp(),
+        isGame: true
+      };
+
+      addDoc(collection(db, 'testResults'), resultData).catch(async (serverError) => {
+          const permissionError = new FirestorePermissionError({
+              path: '/testResults',
+              operation: 'create',
+              requestResourceData: resultData,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+      });
+
       if (accuracy >= MIN_SCORE_TO_PASS && finalLives > 0) {
         saveCompletedGameLevel(levelId);
         recordDailyPractice(user.uid);
@@ -206,7 +236,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         setTimeout(() => setShowSubmissionAnim(true), 600);
       }
     }
-  }, [questions.length, user, levelId, saveCompletedGameLevel, recordDailyPractice, addPoints, playSound, gameState]);
+  }, [questions.length, user, levelId, saveCompletedGameLevel, recordDailyPractice, addPoints, playSound, gameState, levelName]);
 
   const advanceQuestion = useCallback((isCorrectOutcome?: boolean) => {
     const nextScore = isCorrectOutcome ? score + 10 : score;

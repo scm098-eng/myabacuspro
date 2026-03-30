@@ -86,7 +86,8 @@ export type TestType =
   | 'mastery-mix-9'
   | 'mastery-mix-10'
   | 'mastery-mix-11'
-  | 'mastery-mix-12';
+  | 'mastery-mix-12'
+  | 'bubble-game';
 
 export type GameLevel =
   | 'small-sister-plus-4'
@@ -299,6 +300,7 @@ export interface TestResult {
   earnedPoints?: number;
   questions?: Question[];
   userAnswers?: (number | null)[];
+  isGame?: boolean;
 }
 
 export interface BlogPost {

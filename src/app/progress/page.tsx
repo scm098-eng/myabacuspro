@@ -14,11 +14,12 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Activity, CheckCircle, Target, Clock, Star } from 'lucide-react';
+import { TrendingUp, Activity, CheckCircle, Target, Clock, Star, Gamepad2, BookOpen } from 'lucide-react';
 import { getTestSettings } from '@/lib/questions';
 import { TEST_NAME_MAP } from '@/lib/constants';
 import { FirestorePermissionError } from '@/lib/errors';
 import { errorEmitter } from '@/lib/error-emitter';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -99,7 +100,7 @@ export default function ProgressReportPage() {
                 return {
                     date: format(result.createdAt, 'MMM d'),
                     Accuracy: parseFloat(result.accuracy.toFixed(1)),
-                    Test: settings ? settings.title : result.testId,
+                    Test: settings ? settings.title : (TEST_NAME_MAP[result.testId] || result.testId),
                     score: result.score,
                     totalQuestions: result.totalQuestions,
                 }
@@ -132,6 +133,13 @@ export default function ProgressReportPage() {
         };
     }, [testHistory]);
 
+    const { practiceTests, gameResults } = useMemo(() => {
+        return {
+            practiceTests: testHistory.filter(r => !r.isGame),
+            gameResults: testHistory.filter(r => r.isGame)
+        };
+    }, [testHistory]);
+
     if (isLoading || isAuthLoading) {
         return <ProgressReportSkeleton />;
     }
@@ -151,7 +159,7 @@ export default function ProgressReportPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Tests Taken</CardTitle>
+                        <CardTitle className="text-sm font-medium">Activities Completed</CardTitle>
                         <Activity className="w-5 h-5 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -178,7 +186,7 @@ export default function ProgressReportPage() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Total Practice Time</CardTitle>
+                        <CardTitle className="text-sm font-medium">Practice Time (Tests)</CardTitle>
                         <Clock className="w-5 h-5 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -189,8 +197,8 @@ export default function ProgressReportPage() {
             
             <Card>
                 <CardHeader>
-                    <CardTitle>Performance Trend (Last 15 Tests)</CardTitle>
-                    <CardDescription>Accuracy percentage over your most recent tests.</CardDescription>
+                    <CardTitle>Performance Trend (Last 15 Sessions)</CardTitle>
+                    <CardDescription>Accuracy percentage over your most recent tests and games.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {testHistory.length > 0 ? (
@@ -222,55 +230,113 @@ export default function ProgressReportPage() {
                         </ResponsiveContainer>
                     ) : (
                         <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                            Complete a test to see your performance trend.
+                            Complete an activity to see your performance trend.
                         </div>
                     )}
                 </CardContent>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Detailed Test History</CardTitle>
-                    <CardDescription>A log of all your completed practice tests.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Test Type</TableHead>
-                                <TableHead>Difficulty</TableHead>
-                                <TableHead>Score</TableHead>
-                                <TableHead>Accuracy</TableHead>
-                                <TableHead>Time Spent</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {testHistory.length > 0 ? (
-                                testHistory.map((result) => (
-                                    <TableRow key={result.id}>
-                                        <TableCell>{format(result.createdAt, 'PPp')}</TableCell>
-                                        <TableCell>{TEST_NAME_MAP[result.testId] || result.testId}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={
-                                                result.difficulty === 'hard' ? 'destructive' :
-                                                result.difficulty === 'medium' ? 'secondary' : 'default'
-                                            } className="capitalize">{result.difficulty}</Badge>
-                                        </TableCell>
-                                        <TableCell>{result.score}/{result.totalQuestions}</TableCell>
-                                        <TableCell>{result.accuracy.toFixed(1)}%</TableCell>
-                                        <TableCell>{Math.floor(result.timeSpent / 60)}m {result.timeSpent % 60}s</TableCell>
+            <Tabs defaultValue="tests" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8 bg-muted/50 p-1 rounded-xl">
+                    <TabsTrigger value="tests" className="flex items-center gap-2 rounded-lg font-bold">
+                        <BookOpen className="w-4 h-4" /> Practice Tests
+                    </TabsTrigger>
+                    <TabsTrigger value="games" className="flex items-center gap-2 rounded-lg font-bold">
+                        <Gamepad2 className="w-4 h-4" /> Game History
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="tests">
+                    <Card className="border-none shadow-lg overflow-hidden">
+                        <CardHeader className="bg-muted/30">
+                            <CardTitle>Detailed Test History</CardTitle>
+                            <CardDescription>A log of all your completed timed practice tests.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <Table>
+                                <TableHeader className="bg-muted/10">
+                                    <TableRow>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Test Type</TableHead>
+                                        <TableHead>Difficulty</TableHead>
+                                        <TableHead>Score</TableHead>
+                                        <TableHead>Accuracy</TableHead>
+                                        <TableHead>Time Spent</TableHead>
                                     </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="text-center">No test history found.</TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                                </TableHeader>
+                                <TableBody>
+                                    {practiceTests.length > 0 ? (
+                                        practiceTests.map((result) => (
+                                            <TableRow key={result.id}>
+                                                <TableCell>{format(result.createdAt, 'PPp')}</TableCell>
+                                                <TableCell>{TEST_NAME_MAP[result.testId] || result.testId}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={
+                                                        result.difficulty === 'hard' ? 'destructive' :
+                                                        result.difficulty === 'medium' ? 'secondary' : 'default'
+                                                    } className="capitalize">{result.difficulty}</Badge>
+                                                </TableCell>
+                                                <TableCell>{result.score}/{result.totalQuestions}</TableCell>
+                                                <TableCell className="font-bold text-primary">{result.accuracy.toFixed(1)}%</TableCell>
+                                                <TableCell>{Math.floor(result.timeSpent / 60)}m {result.timeSpent % 60}s</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="text-center py-12 text-muted-foreground font-medium">No test history found.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="games">
+                    <Card className="border-none shadow-lg overflow-hidden">
+                        <CardHeader className="bg-muted/30">
+                            <CardTitle>Bubble Game History</CardTitle>
+                            <CardDescription>Visual log of your journey through the level map.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <Table>
+                                <TableHeader className="bg-muted/10">
+                                    <TableRow>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Activity</TableHead>
+                                        <TableHead>Level Name</TableHead>
+                                        <TableHead>Points</TableHead>
+                                        <TableHead>Accuracy</TableHead>
+                                        <TableHead className="text-right">Outcome</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {gameResults.length > 0 ? (
+                                        gameResults.map((result) => (
+                                            <TableRow key={result.id}>
+                                                <TableCell>{format(result.createdAt, 'PPp')}</TableCell>
+                                                <TableCell className="font-bold text-pink-600">Bubble Game</TableCell>
+                                                <TableCell>{result.difficulty}</TableCell>
+                                                <TableCell className="font-black text-orange-600">+{result.earnedPoints}</TableCell>
+                                                <TableCell>{result.accuracy.toFixed(1)}%</TableCell>
+                                                <TableCell className="text-right">
+                                                    <Badge className={cn("rounded-md px-3", result.accuracy >= 90 ? "bg-green-500" : "bg-muted text-muted-foreground")}>
+                                                        {result.accuracy >= 90 ? 'CLEARED' : 'ATTEMPTED'}
+                                                    </Badge>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="text-center py-12 text-muted-foreground font-medium">No game history found. Start popping bubbles!</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }
