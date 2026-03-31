@@ -61,7 +61,7 @@ const ProfileSection = ({ title, icon: Icon, children }: { title: string, icon: 
 const DetailItem = ({ label, value, icon: Icon }: { label: string, value?: string | number | null, icon?: any }) => (
   <div className="flex items-start gap-3">
     {Icon && <Icon className="w-4 h-4 text-muted-foreground mt-1 shrink-0" />}
-    <div className="grid gap-0.5">
+    <div className="grid gap-0.5 min-w-0">
       <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
       <span className="text-sm font-bold text-foreground break-words">{value || 'Not provided'}</span>
     </div>
@@ -232,40 +232,42 @@ export default function AdminUserDetailsPage() {
 
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-12">
+    <div className="max-w-6xl mx-auto space-y-8 pb-12 px-4">
         <Card className={cn("overflow-hidden border-none shadow-xl", userProfile.isSuspended ? "bg-red-50/50" : "bg-card")}>
-            <CardHeader className="flex flex-col md:flex-row items-start md:items-center gap-6 p-8 bg-muted/20 border-b">
-                 <Avatar className="h-32 w-32 border-4 border-primary/20 shadow-2xl">
+            <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center gap-6 p-6 sm:p-8 bg-muted/20 border-b">
+                 <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-primary/20 shadow-2xl shrink-0">
                     <AvatarImage src={userProfile.profilePhoto || ''} alt={displayName} />
-                    <AvatarFallback className="text-4xl font-black">{displayInitial}</AvatarFallback>
+                    <AvatarFallback className="text-2xl sm:text-4xl font-black">{displayInitial}</AvatarFallback>
                 </Avatar>
-                <div className="flex-grow space-y-2">
+                <div className="flex-grow space-y-2 min-w-0">
                     <div className="flex flex-wrap items-center gap-3">
-                      <CardTitle className="text-4xl font-headline font-black uppercase tracking-tight flex items-center gap-3">
+                      <CardTitle className="text-2xl sm:text-3xl lg:text-4xl font-headline font-black uppercase tracking-tight flex items-center gap-3 truncate max-w-full">
                           {displayName}
                       </CardTitle>
-                      <Badge className="font-black uppercase tracking-widest text-[10px] px-3 py-1">{userProfile.role}</Badge>
-                      {userProfile.isSuspended && <Badge variant="destructive" className="font-black uppercase tracking-widest text-[10px] px-3 py-1">SUSPENDED</Badge>}
-                      {userProfile.role === 'teacher' && (
-                          <Badge variant={userProfile.status === 'approved' ? 'default' : 'secondary'} className={cn("font-black uppercase tracking-widest text-[10px] px-3 py-1", userProfile.status === 'approved' ? 'bg-green-500/20 text-green-700 border-green-400' : '')}>
-                              <UserCheck className="mr-2 h-3 w-3" />
-                              {userProfile.status}
-                          </Badge>
-                      )}
+                      <div className="flex flex-wrap gap-2">
+                        <Badge className="font-black uppercase tracking-widest text-[10px] px-3 py-1 shrink-0">{userProfile.role}</Badge>
+                        {userProfile.isSuspended && <Badge variant="destructive" className="font-black uppercase tracking-widest text-[10px] px-3 py-1 shrink-0">SUSPENDED</Badge>}
+                        {userProfile.role === 'teacher' && (
+                            <Badge variant={userProfile.status === 'approved' ? 'default' : 'secondary'} className={cn("font-black uppercase tracking-widest text-[10px] px-3 py-1 shrink-0", userProfile.status === 'approved' ? "bg-green-500/20 text-green-700 border-green-400" : "")}>
+                                <UserCheck className="mr-2 h-3 w-3" />
+                                {userProfile.status}
+                            </Badge>
+                        )}
+                      </div>
                     </div>
-                    <CardDescription className="text-xl font-bold flex items-center gap-2 text-primary">
-                      <Mail className="w-5 h-5" /> {userProfile.email}
+                    <CardDescription className="text-lg sm:text-xl font-bold flex items-center gap-2 text-primary truncate">
+                      <Mail className="w-5 h-5 shrink-0" /> {userProfile.email}
                     </CardDescription>
                     
                     <div className="flex flex-wrap gap-4 pt-2">
                       {userProfile.role === 'student' && userProfile.schoolName && (
-                          <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm border">
+                          <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm border shrink-0">
                               <School className="w-4 h-4 text-muted-foreground" />
                               <span className="text-xs font-bold">{userProfile.schoolName}, {userProfile.grade}</span>
                           </div>
                       )}
                       {(userProfile.role === 'teacher' || userProfile.role === 'admin') && userProfile.instituteName && (
-                          <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm border">
+                          <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm border shrink-0">
                               <Building className="w-4 h-4 text-muted-foreground" />
                               <span className="text-xs font-bold">{userProfile.instituteName}</span>
                           </div>
@@ -273,12 +275,12 @@ export default function AdminUserDetailsPage() {
                     </div>
                 </div>
                 {currentUserProfile?.role === 'admin' && (
-                  <div className="flex flex-col gap-3 w-full md:w-64">
+                  <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:w-64 mt-4 lg:mt-0">
                     <Button 
                       onClick={handleToggleSuspension} 
                       variant={userProfile.isSuspended ? "default" : "destructive"}
                       disabled={isUpdatingStatus || isDeleting}
-                      className="w-full h-12 font-black uppercase text-xs"
+                      className="flex-1 h-12 font-black uppercase text-xs"
                     >
                       {isUpdatingStatus ? <Loader2 className="animate-spin mr-2" /> : (userProfile.isSuspended ? <ShieldCheck className="mr-2 h-4 w-4" /> : <Ban className="mr-2 h-4 w-4" />)}
                       {userProfile.isSuspended ? "Restore Account" : "Suspend Account"}
@@ -286,7 +288,7 @@ export default function AdminUserDetailsPage() {
                     
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 w-full h-12 font-black uppercase text-xs" disabled={isDeleting}>
+                        <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 flex-1 h-12 font-black uppercase text-xs" disabled={isDeleting}>
                           <Trash2 className="mr-2 h-4 w-4" /> Delete Account
                         </Button>
                       </AlertDialogTrigger>
@@ -311,7 +313,7 @@ export default function AdminUserDetailsPage() {
                 )}
             </CardHeader>
 
-            <CardContent className="p-8 space-y-10">
+            <CardContent className="p-6 sm:p-8 space-y-10">
                 {/* --- UNIVERSAL PROFILE DETAILS --- */}
                 <ProfileSection title="Personal Profile" icon={UserCircle}>
                     <DetailItem label="Date of Birth" value={userProfile.dob ? format(new Date(userProfile.dob), 'PPP') : 'N/A'} icon={Calendar} />
@@ -357,16 +359,18 @@ export default function AdminUserDetailsPage() {
                 <CardHeader><CardTitle className="font-headline font-black uppercase tracking-tight">Performance Trend</CardTitle><CardDescription>Last 30 practice sessions</CardDescription></CardHeader>
                 <CardContent>
                     {testHistory.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                          <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                          <YAxis unit="%" domain={[0, 100]} stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                          <Tooltip content={<CustomTooltip />} />
-                          <Legend />
-                          <Line type="monotone" dataKey="Accuracy" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 4, fill: "hsl(var(--primary))" }} />
-                        </LineChart>
-                      </ResponsiveContainer>
+                      <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                            <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                            <YAxis unit="%" domain={[0, 100]} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend />
+                            <Line type="monotone" dataKey="Accuracy" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 4, fill: "hsl(var(--primary))" }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
                     ) : (
                       <div className="h-[300px] flex items-center justify-center text-muted-foreground italic">No test data available for this student.</div>
                     )}
@@ -424,14 +428,14 @@ export default function AdminUserDetailsPage() {
                                 assignedStudents.map((student) => (
                                 <TableRow key={student.uid}>
                                     <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-8 w-8"><AvatarImage src={student.profilePhoto} /><AvatarFallback>{student.firstName?.[0]}{student.surname?.[0]}</AvatarFallback></Avatar>
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <Avatar className="h-8 w-8 shrink-0"><AvatarImage src={student.profilePhoto} /><AvatarFallback>{student.firstName?.[0]}{student.surname?.[0]}</AvatarFallback></Avatar>
                                             <p className="font-bold text-sm truncate">{student.firstName} {student.surname}</p>
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-xs text-muted-foreground">{student.email}</TableCell>
                                     <TableCell>
-                                        <Badge variant={student.subscriptionStatus === 'pro' ? 'default' : 'secondary'} className={cn("text-[9px] font-black uppercase", student.subscriptionStatus === 'pro' ? 'bg-yellow-400 text-yellow-900 border-yellow-500' : '')}>
+                                        <Badge variant={student.subscriptionStatus === 'pro' ? 'default' : 'secondary'} className={cn("text-[9px] font-black uppercase", student.subscriptionStatus === 'pro' ? "bg-yellow-400 text-yellow-900 border-yellow-500" : "")}>
                                             {student.subscriptionStatus || 'free'}
                                         </Badge>
                                     </TableCell>
