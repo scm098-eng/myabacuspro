@@ -90,6 +90,7 @@ export default function AdminUserDetailsPage() {
   const [userProfile, setUserProfile] = useState<ProfileData | null>(null);
   const [testHistory, setTestHistory] = useState<TestResult[]>([]);
   const [assignedStudents, setAssignedStudents] = useState<ProfileData[]>([]);
+  const [teacherName, setTeacherName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -114,6 +115,13 @@ export default function AdminUserDetailsPage() {
           setUserProfile(profile);
 
           if (profile.role === 'student') {
+            // Fetch teacher name if assigned
+            if (profile.teacherId && profile.teacherId !== 'unassigned') {
+                getUserProfile(profile.teacherId).then(tp => {
+                    if (tp) setTeacherName(`${tp.firstName} ${tp.surname}`);
+                });
+            }
+
             getUserTestHistory(userId).then(history => {
               setTestHistory(history);
               setIsLoading(false);
@@ -216,7 +224,7 @@ export default function AdminUserDetailsPage() {
   }
   
   const displayName = `${userProfile.firstName} ${userProfile.surname}`;
-  const displayInitial = userProfile.firstName?.[0] || '';
+  const displayInitial = (userProfile.firstName?.[0] || '') + (userProfile.surname?.[0] || '');
   const age = userProfile.dob ? differenceInYears(new Date(), new Date(userProfile.dob)) : 'N/A';
   
   const residentialAddress = [
@@ -242,7 +250,7 @@ export default function AdminUserDetailsPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
-        {/* --- MAIN PROFILE HEADER (MATCHES SCREENSHOT) --- */}
+        {/* --- MAIN PROFILE HEADER --- */}
         <Card className={cn("overflow-hidden border-slate-100 shadow-sm", userProfile.isSuspended ? "bg-red-50/50" : "bg-card")}>
             <CardHeader className="flex flex-col md:flex-row items-center gap-8 p-10">
                  <Avatar className="h-24 w-24 bg-pink-500 text-white shrink-0">
@@ -380,7 +388,7 @@ export default function AdminUserDetailsPage() {
           </>
         )}
 
-        {/* --- COMPLETE PROFILE DETAILS (ACCESSIBLE VIA SCROLL) --- */}
+        {/* --- COMPLETE PROFILE DETAILS --- */}
         <Card className="shadow-sm border-slate-100">
             <CardHeader className="bg-slate-50 p-8 border-b">
               <CardTitle className="text-xl font-bold flex items-center gap-2">
@@ -409,7 +417,7 @@ export default function AdminUserDetailsPage() {
                     <ProfileSection title="Academic Information" icon={School}>
                         <DetailItem label="School Name" value={userProfile.schoolName} />
                         <DetailItem label="Grade / Standard" value={userProfile.grade} />
-                        <DetailItem label="Assigned Teacher ID" value={userProfile.teacherId} />
+                        <DetailItem label="Assigned Teacher" value={teacherName || 'Fetching...'} />
                     </ProfileSection>
                   ) : (
                     <ProfileSection title="Institute Information" icon={Building}>
