@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette, Type, Code, FileText, Paperclip, X } from 'lucide-react';
+import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette, Type, Code, FileText, Paperclip, X, UserPlus, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -22,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { isWithinInterval, add, parseISO, getDate, getMonth, format } from 'date-fns';
+import { isWithinInterval, add, parseISO, getDate, getMonth, format, formatDistanceToNow } from 'date-fns';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from "@/lib/utils";
@@ -79,6 +79,14 @@ const isBirthdayToday = (dob: string) => {
     return getMonth(today) === getMonth(birthday) && getDate(today) === getDate(birthday);
 }
 
+const isRecentJoin = (createdAt: any) => {
+  if (!createdAt) return false;
+  const joinDate = createdAt?.toDate ? createdAt.toDate() : new Date(createdAt);
+  const now = new Date();
+  const diffInHours = (now.getTime() - joinDate.getTime()) / (1000 * 60 * 60);
+  return diffInHours <= 24; // Joined within last 24 hours
+};
+
 /**
  * Helper to convert plain text draft into HTML paragraphs
  */
@@ -123,6 +131,7 @@ export default function AdminDashboardPage() {
 
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
+  const [recentJoins, setRecentJoins] = useState<ProfileData[]>([]);
 
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [isBlogDialogOpen, setIsBlogDialogOpen] = useState(false);
@@ -181,6 +190,15 @@ export default function AdminDashboardPage() {
         }
       );
       unsubscribers.push(blogUnsub);
+
+      // --- RECENT JOINS LISTENER ---
+      const joinsUnsub = onSnapshot(
+        query(collection(db, "users"), orderBy("createdAt", "desc"), limit(5)),
+        (snap) => {
+          setRecentJoins(snap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as ProfileData)));
+        }
+      );
+      unsubscribers.push(joinsUnsub);
     }
 
     // --- STAFF (ADMIN & TEACHER) LISTENERS ---
@@ -450,7 +468,20 @@ export default function AdminDashboardPage() {
                                 <TableBody>
                                     {filteredStudents.length > 0 ? filteredStudents.map((s) => (
                                         <TableRow key={s.uid} className={s.isSuspended ? "opacity-50" : ""}>
-                                            <TableCell><div className="flex items-center gap-2"><Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto}/></Avatar><div><p className="text-sm font-bold">{s.firstName} {s.surname}</p><p className="text-[10px] text-muted-foreground">{s.email}</p></div></div></TableCell>
+                                            <TableCell>
+                                              <div className="flex items-center gap-2">
+                                                <Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto}/></Avatar>
+                                                <div>
+                                                  <div className="flex items-center gap-2">
+                                                    <p className="text-sm font-bold">{s.firstName} {s.surname}</p>
+                                                    {isRecentJoin(s.createdAt) && (
+                                                      <Badge className="h-4 px-1.5 text-[8px] bg-orange-500 text-white border-none animate-pulse">NEW</Badge>
+                                                    )}
+                                                  </div>
+                                                  <p className="text-[10px] text-muted-foreground">{s.email}</p>
+                                                </div>
+                                              </div>
+                                            </TableCell>
                                             <TableCell><Badge variant={s.subscriptionStatus === 'pro' ? 'default' : 'outline'}>{s.subscriptionStatus}</Badge></TableCell>
                                             <TableCell className="text-right"><Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link></Button></TableCell>
                                         </TableRow>
@@ -470,7 +501,19 @@ export default function AdminDashboardPage() {
                                 <TableBody>
                                     {filteredTeachers.length > 0 ? filteredTeachers.map((t) => (
                                         <TableRow key={t.uid}>
-                                            <TableCell><p className="text-sm font-bold">{t.firstName} {t.surname}</p><p className="text-[10px] text-muted-foreground">{t.email}</p></TableCell>
+                                            <TableCell>
+                                              <div className="flex items-center gap-2">
+                                                <div>
+                                                  <div className="flex items-center gap-2">
+                                                    <p className="text-sm font-bold">{t.firstName} {t.surname}</p>
+                                                    {isRecentJoin(t.createdAt) && (
+                                                      <Badge className="h-4 px-1.5 text-[8px] bg-orange-500 text-white border-none">NEW</Badge>
+                                                    )}
+                                                  </div>
+                                                  <p className="text-[10px] text-muted-foreground">{t.email}</p>
+                                                </div>
+                                              </div>
+                                            </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     <Badge variant="outline" className="h-6 font-bold bg-green-50 text-green-700 border-green-200">Pro: {t.stats.pro}</Badge>
@@ -679,6 +722,43 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="space-y-8">
+            {profile?.role === 'admin' && recentJoins.length > 0 && (
+              <Card className="border-orange-200 bg-orange-50/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-black flex items-center gap-2 uppercase tracking-tight text-orange-700">
+                    <UserPlus className="w-5 h-5" /> New Members
+                  </CardTitle>
+                  <CardDescription className="text-[10px] font-bold text-orange-600/70">REAL-TIME ACTIVITY FEED</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-orange-100">
+                    {recentJoins.map((u) => (
+                      <Link key={u.uid} href={`/admin/user/${u.uid}`} className="flex items-center gap-3 p-4 hover:bg-orange-100/50 transition-colors group">
+                        <Avatar className="h-10 w-10 border-2 border-white shadow-sm shrink-0">
+                          <AvatarImage src={u.profilePhoto} />
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-bold truncate text-slate-900">{u.firstName} {u.surname}</p>
+                            <Badge className="h-3.5 px-1.5 text-[7px] bg-orange-500 text-white border-none uppercase font-black">
+                              {u.role}
+                            </Badge>
+                          </div>
+                          <p className="text-[9px] font-bold text-orange-600/80 uppercase tracking-tight">
+                            Joined {formatDistanceToNow(u.createdAt?.toDate ? u.createdAt.toDate() : new Date(u.createdAt), { addSuffix: true })}
+                          </p>
+                        </div>
+                        <Zap className="w-4 h-4 text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </Link>
+                    ))}
+                  </div>
+                </CardContent>
+                <CardFooter className="bg-orange-100/30 py-3 border-t border-orange-100">
+                  <p className="text-[9px] font-bold text-orange-700 uppercase tracking-widest text-center w-full">Stay alert for new students!</p>
+                </CardFooter>
+              </Card>
+            )}
+
             {profile?.role === 'admin' && upcomingBirthdays.length > 0 && (
                 <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2 font-headline"><Cake className="text-pink-500 w-5 h-5"/> Upcoming Birthdays</CardTitle></CardHeader>
