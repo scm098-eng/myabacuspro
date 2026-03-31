@@ -234,71 +234,70 @@ export default function AdminUserDetailsPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12 px-4">
         <Card className={cn("overflow-hidden border-none shadow-xl", userProfile.isSuspended ? "bg-red-50/50" : "bg-card")}>
-            <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center gap-6 p-6 sm:p-8 bg-muted/20 border-b">
-                 <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-primary/20 shadow-2xl shrink-0">
+            <CardHeader className="flex flex-col lg:flex-row items-start gap-6 p-6 sm:p-8 bg-muted/20 border-b">
+                 <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-4 border-primary/20 shadow-lg shrink-0">
                     <AvatarImage src={userProfile.profilePhoto || ''} alt={displayName} />
-                    <AvatarFallback className="text-2xl sm:text-4xl font-black">{displayInitial}</AvatarFallback>
+                    <AvatarFallback className="text-xl sm:text-2xl font-black">{displayInitial}</AvatarFallback>
                 </Avatar>
-                <div className="flex-grow space-y-2 min-w-0">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <CardTitle className="text-2xl sm:text-3xl lg:text-4xl font-headline font-black uppercase tracking-tight flex items-center gap-3 truncate max-w-full">
+                <div className="flex-grow space-y-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CardTitle className="text-lg sm:text-2xl font-headline font-bold uppercase tracking-tight flex items-center gap-3 truncate max-w-full">
                           {displayName}
                       </CardTitle>
-                      <div className="flex flex-wrap gap-2">
-                        <Badge className="font-black uppercase tracking-widest text-[10px] px-3 py-1 shrink-0">{userProfile.role}</Badge>
-                        {userProfile.isSuspended && <Badge variant="destructive" className="font-black uppercase tracking-widest text-[10px] px-3 py-1 shrink-0">SUSPENDED</Badge>}
+                      <div className="flex flex-wrap gap-1">
+                        <Badge className="font-bold uppercase tracking-widest text-[9px] px-2 py-0.5 shrink-0">{userProfile.role}</Badge>
+                        {userProfile.isSuspended && <Badge variant="destructive" className="font-bold uppercase tracking-widest text-[9px] px-2 py-0.5 shrink-0">SUSPENDED</Badge>}
                         {userProfile.role === 'teacher' && (
-                            <Badge variant={userProfile.status === 'approved' ? 'default' : 'secondary'} className={cn("font-black uppercase tracking-widest text-[10px] px-3 py-1 shrink-0", userProfile.status === 'approved' ? "bg-green-500/20 text-green-700 border-green-400" : "")}>
-                                <UserCheck className="mr-2 h-3 w-3" />
+                            <Badge variant={userProfile.status === 'approved' ? 'default' : 'secondary'} className={cn("font-bold uppercase tracking-widest text-[9px] px-2 py-0.5 shrink-0", userProfile.status === 'approved' ? "bg-green-500/20 text-green-700 border-green-400" : "")}>
+                                <UserCheck className="mr-1 h-3 w-3" />
                                 {userProfile.status}
                             </Badge>
                         )}
                       </div>
                     </div>
-                    <CardDescription className="text-lg sm:text-xl font-bold flex items-center gap-2 text-primary truncate">
-                      <Mail className="w-5 h-5 shrink-0" /> {userProfile.email}
+                    <CardDescription className="text-sm sm:text-base font-semibold flex items-center gap-2 text-primary truncate">
+                      <Mail className="w-4 h-4 shrink-0" /> {userProfile.email}
                     </CardDescription>
                     
-                    <div className="flex flex-wrap gap-4 pt-2">
+                    <div className="flex flex-wrap gap-3 pt-1">
                       {userProfile.role === 'student' && userProfile.schoolName && (
-                          <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm border shrink-0">
-                              <School className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-xs font-bold">{userProfile.schoolName}, {userProfile.grade}</span>
+                          <div className="flex items-center gap-2 bg-white px-2 py-0.5 rounded-full shadow-sm border shrink-0">
+                              <School className="w-3.5 h-3.5 text-muted-foreground" />
+                              <span className="text-[11px] font-bold">{userProfile.schoolName}, {userProfile.grade}</span>
                           </div>
                       )}
                       {(userProfile.role === 'teacher' || userProfile.role === 'admin') && userProfile.instituteName && (
-                          <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm border shrink-0">
-                              <Building className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-xs font-bold">{userProfile.instituteName}</span>
+                          <div className="flex items-center gap-2 bg-white px-2 py-0.5 rounded-full shadow-sm border shrink-0">
+                              <Building className="w-3.5 h-3.5 text-muted-foreground" />
+                              <span className="text-[11px] font-bold">{userProfile.instituteName}</span>
                           </div>
                       )}
                     </div>
                 </div>
                 {currentUserProfile?.role === 'admin' && (
-                  <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:w-64 mt-4 lg:mt-0">
+                  <div className="flex flex-wrap gap-2 mt-4 lg:mt-0 lg:ml-auto">
                     <Button 
                       onClick={handleToggleSuspension} 
                       variant={userProfile.isSuspended ? "default" : "destructive"}
                       disabled={isUpdatingStatus || isDeleting}
-                      className="flex-1 h-12 font-black uppercase text-xs"
+                      size="sm"
+                      className="font-bold uppercase text-[10px] px-4"
                     >
-                      {isUpdatingStatus ? <Loader2 className="animate-spin mr-2" /> : (userProfile.isSuspended ? <ShieldCheck className="mr-2 h-4 w-4" /> : <Ban className="mr-2 h-4 w-4" />)}
-                      {userProfile.isSuspended ? "Restore Account" : "Suspend Account"}
+                      {isUpdatingStatus ? <Loader2 className="animate-spin mr-2" /> : (userProfile.isSuspended ? <ShieldCheck className="mr-2 h-3 w-3" /> : <Ban className="mr-2 h-3 w-3" />)}
+                      {userProfile.isSuspended ? "Restore" : "Suspend"}
                     </Button>
                     
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 flex-1 h-12 font-black uppercase text-xs" disabled={isDeleting}>
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete Account
+                        <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50 font-bold uppercase text-[10px] px-4" disabled={isDeleting}>
+                          <Trash2 className="mr-2 h-3 w-3" /> Delete
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent className="rounded-[2rem]">
+                      <AlertDialogContent className="rounded-2xl">
                         <AlertDialogHeader>
-                          <AlertDialogTitle className="flex items-center gap-2 text-2xl font-headline font-black text-red-600"><AlertTriangle /> CRITICAL ACTION</AlertDialogTitle>
-                          <AlertDialogDescription className="text-base font-medium">
-                            You are about to permanently remove <strong>{displayName}</strong>'s data from the system. This cannot be undone.
-                            <br/><br/>
-                            <em>Note: To prevent re-login, you must also delete them from the Firebase Auth Console manually.</em>
+                          <AlertDialogTitle className="flex items-center gap-2 text-xl font-headline font-black text-red-600"><AlertTriangle /> CRITICAL ACTION</AlertDialogTitle>
+                          <AlertDialogDescription className="text-sm font-medium">
+                            You are about to permanently remove <strong>{displayName}</strong>'s data. This cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
