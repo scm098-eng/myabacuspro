@@ -232,78 +232,76 @@ export default function AdminUserDetailsPage() {
 
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-12 px-4">
+    <div className="max-w-6xl mx-auto space-y-8 pb-12">
         <Card className={cn("overflow-hidden border-none shadow-xl", userProfile.isSuspended ? "bg-red-50/50" : "bg-card")}>
-            <CardHeader className="flex flex-col lg:flex-row items-start gap-6 p-6 sm:p-8 bg-muted/20 border-b">
-                 <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-4 border-primary/20 shadow-lg shrink-0">
+            <CardHeader className="flex flex-col md:flex-row items-start md:items-center gap-8 p-10 bg-muted/20 border-b">
+                 <Avatar className="h-32 w-32 border-4 border-primary/20 shadow-2xl shrink-0">
                     <AvatarImage src={userProfile.profilePhoto || ''} alt={displayName} />
-                    <AvatarFallback className="text-xl sm:text-2xl font-black">{displayInitial}</AvatarFallback>
+                    <AvatarFallback className="text-4xl font-black">{displayInitial}</AvatarFallback>
                 </Avatar>
-                <div className="flex-grow space-y-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <CardTitle className="text-lg sm:text-2xl font-headline font-bold uppercase tracking-tight flex items-center gap-3 truncate max-w-full">
+                <div className="flex-grow space-y-4">
+                    <div className="space-y-1">
+                      <CardTitle className="text-4xl sm:text-5xl font-black font-headline uppercase tracking-tighter text-slate-900 leading-none">
                           {displayName}
                       </CardTitle>
-                      <div className="flex flex-wrap gap-1">
-                        <Badge className="font-bold uppercase tracking-widest text-[9px] px-2 py-0.5 shrink-0">{userProfile.role}</Badge>
-                        {userProfile.isSuspended && <Badge variant="destructive" className="font-bold uppercase tracking-widest text-[9px] px-2 py-0.5 shrink-0">SUSPENDED</Badge>}
-                        {userProfile.role === 'teacher' && (
-                            <Badge variant={userProfile.status === 'approved' ? 'default' : 'secondary'} className={cn("font-bold uppercase tracking-widest text-[9px] px-2 py-0.5 shrink-0", userProfile.status === 'approved' ? "bg-green-500/20 text-green-700 border-green-400" : "")}>
-                                <UserCheck className="mr-1 h-3 w-3" />
-                                {userProfile.status}
-                            </Badge>
+                      <Badge className="font-black uppercase tracking-widest text-[10px] px-3 py-1 bg-primary text-white border-none h-auto">
+                        {userProfile.role}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="text-xl font-bold flex items-center gap-2 text-primary">
+                        <Mail className="w-5 h-5 shrink-0" /> {userProfile.email}
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-3">
+                        {userProfile.role === 'student' && userProfile.schoolName && (
+                            <div className="flex items-center gap-2 bg-slate-100 px-4 py-1.5 rounded-full shadow-sm border border-slate-200">
+                                <School className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-xs font-black uppercase tracking-tight text-slate-700">{userProfile.schoolName}, {userProfile.grade}</span>
+                            </div>
+                        )}
+                        {(userProfile.role === 'teacher' || userProfile.role === 'admin') && userProfile.instituteName && (
+                            <div className="flex items-center gap-2 bg-slate-100 px-4 py-1.5 rounded-full shadow-sm border border-slate-200">
+                                <Building className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-xs font-black uppercase tracking-tight text-slate-700">{userProfile.instituteName}</span>
+                            </div>
                         )}
                       </div>
                     </div>
-                    <CardDescription className="text-sm sm:text-base font-semibold flex items-center gap-2 text-primary truncate">
-                      <Mail className="w-4 h-4 shrink-0" /> {userProfile.email}
-                    </CardDescription>
-                    
-                    <div className="flex flex-wrap gap-3 pt-1">
-                      {userProfile.role === 'student' && userProfile.schoolName && (
-                          <div className="flex items-center gap-2 bg-white px-2 py-0.5 rounded-full shadow-sm border shrink-0">
-                              <School className="w-3.5 h-3.5 text-muted-foreground" />
-                              <span className="text-[11px] font-bold">{userProfile.schoolName}, {userProfile.grade}</span>
-                          </div>
-                      )}
-                      {(userProfile.role === 'teacher' || userProfile.role === 'admin') && userProfile.instituteName && (
-                          <div className="flex items-center gap-2 bg-white px-2 py-0.5 rounded-full shadow-sm border shrink-0">
-                              <Building className="w-3.5 h-3.5 text-muted-foreground" />
-                              <span className="text-[11px] font-bold">{userProfile.instituteName}</span>
-                          </div>
-                      )}
-                    </div>
                 </div>
+
                 {currentUserProfile?.role === 'admin' && (
-                  <div className="flex flex-wrap gap-2 mt-4 lg:mt-0 lg:ml-auto">
+                  <div className="flex flex-col gap-3 ml-auto shrink-0 w-full md:w-auto pt-4 md:pt-0">
                     <Button 
                       onClick={handleToggleSuspension} 
                       variant={userProfile.isSuspended ? "default" : "destructive"}
                       disabled={isUpdatingStatus || isDeleting}
-                      size="sm"
-                      className="font-bold uppercase text-[10px] px-4"
+                      className="font-black uppercase tracking-widest text-xs h-12 shadow-lg"
                     >
-                      {isUpdatingStatus ? <Loader2 className="animate-spin mr-2" /> : (userProfile.isSuspended ? <ShieldCheck className="mr-2 h-3 w-3" /> : <Ban className="mr-2 h-3 w-3" />)}
-                      {userProfile.isSuspended ? "Restore" : "Suspend"}
+                      {isUpdatingStatus ? <Loader2 className="animate-spin mr-2" /> : (userProfile.isSuspended ? <ShieldCheck className="mr-2 h-4 w-4" /> : <Ban className="mr-2 h-4 w-4" />)}
+                      {userProfile.isSuspended ? "Restore Account" : "Suspend Account"}
                     </Button>
                     
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50 font-bold uppercase text-[10px] px-4" disabled={isDeleting}>
-                          <Trash2 className="mr-2 h-3 w-3" /> Delete
+                        <Button variant="outline" className="text-destructive border-destructive/20 hover:bg-destructive/5 font-black uppercase tracking-widest text-xs h-12" disabled={isDeleting}>
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete Account
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent className="rounded-2xl">
+                      <AlertDialogContent className="rounded-3xl border-4 border-destructive/20 p-8">
                         <AlertDialogHeader>
-                          <AlertDialogTitle className="flex items-center gap-2 text-xl font-headline font-black text-red-600"><AlertTriangle /> CRITICAL ACTION</AlertDialogTitle>
-                          <AlertDialogDescription className="text-sm font-medium">
-                            You are about to permanently remove <strong>{displayName}</strong>'s data. This cannot be undone.
+                          <AlertDialogTitle className="flex items-center gap-2 text-2xl font-black uppercase tracking-tighter text-destructive">
+                            <AlertTriangle className="w-8 h-8" /> Critical Action
+                          </AlertDialogTitle>
+                          <AlertDialogDescription className="text-lg font-medium text-slate-700 mt-4">
+                            You are about to permanently remove <strong>{displayName}</strong>'s data. This action cannot be reversed.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel className="rounded-xl font-bold">Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleDeleteUser} className="bg-red-600 hover:bg-red-700 rounded-xl font-bold">
-                            {isDeleting ? <Loader2 className="animate-spin mr-2" /> : "Permanently Delete"}
+                        <AlertDialogFooter className="mt-8 gap-4">
+                          <AlertDialogCancel className="rounded-2xl h-12 font-bold px-8">Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive hover:bg-destructive/90 rounded-2xl h-12 font-black uppercase tracking-widest px-8">
+                            {isDeleting ? <Loader2 className="animate-spin mr-2" /> : "Confirm Deletion"}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -312,93 +310,95 @@ export default function AdminUserDetailsPage() {
                 )}
             </CardHeader>
 
-            <CardContent className="p-6 sm:p-8 space-y-10">
-                {/* --- UNIVERSAL PROFILE DETAILS --- */}
-                <ProfileSection title="Personal Profile" icon={UserCircle}>
-                    <DetailItem label="Date of Birth" value={userProfile.dob ? format(new Date(userProfile.dob), 'PPP') : 'N/A'} icon={Calendar} />
-                    <DetailItem label="Age" value={age !== 'N/A' ? `${age} Years` : 'N/A'} icon={Activity} />
-                    <DetailItem label="Mobile Number" value={userProfile.mobileNo} icon={Phone} />
-                    <DetailItem label="WhatsApp" value={userProfile.whatsappNo} icon={MessageSquare} />
-                    <DetailItem label="Location" value={`${userProfile.city || ''}, ${userProfile.state || ''}`} icon={MapPin} />
-                    <DetailItem label="Country" value={userProfile.country} icon={Home} />
-                </ProfileSection>
-
-                <ProfileSection title="Residential Address" icon={Home}>
-                    <div className="col-span-full bg-muted/10 p-4 rounded-xl border border-dashed text-sm font-medium leading-relaxed">
-                        {residentialAddress || 'No full address provided.'}
-                    </div>
-                </ProfileSection>
-
-                {/* --- ROLE SPECIFIC DETAILS --- */}
-                {userProfile.role === 'student' ? (
-                  <ProfileSection title="Academic Information" icon={School}>
-                      <DetailItem label="School Name" value={userProfile.schoolName} />
-                      <DetailItem label="Grade / Standard" value={userProfile.grade} />
-                      <DetailItem label="Assigned Teacher ID" value={userProfile.teacherId} />
+            <CardContent className="p-10 space-y-12">
+                <div className="grid grid-cols-1 gap-12">
+                  {/* --- UNIVERSAL PROFILE DETAILS --- */}
+                  <ProfileSection title="Personal Profile" icon={UserCircle}>
+                      <DetailItem label="Date of Birth" value={userProfile.dob ? format(new Date(userProfile.dob), 'PPP') : 'N/A'} icon={Calendar} />
+                      <DetailItem label="Age" value={age !== 'N/A' ? `${age} Years` : 'N/A'} icon={Activity} />
+                      <DetailItem label="Mobile Number" value={userProfile.mobileNo} icon={Phone} />
+                      <DetailItem label="WhatsApp" value={userProfile.whatsappNo} icon={MessageSquare} />
+                      <DetailItem label="Location" value={`${userProfile.city || ''}, ${userProfile.state || ''}`} icon={MapPin} />
+                      <DetailItem label="Country" value={userProfile.country} icon={Home} />
                   </ProfileSection>
-                ) : (
-                  <ProfileSection title="Institute Information" icon={Building}>
-                      <DetailItem label="Institute Name" value={userProfile.instituteName} />
-                      <DetailItem label="Full Institute Address" value={instituteAddress} />
+
+                  <ProfileSection title="Residential Address" icon={Home}>
+                      <div className="col-span-full bg-slate-50 p-6 rounded-2xl border-2 border-dashed border-slate-200 text-base font-bold text-slate-700 leading-relaxed shadow-inner">
+                          {residentialAddress || 'No full address provided.'}
+                      </div>
                   </ProfileSection>
-                )}
+
+                  {/* --- ROLE SPECIFIC DETAILS --- */}
+                  {userProfile.role === 'student' ? (
+                    <ProfileSection title="Academic Information" icon={School}>
+                        <DetailItem label="School Name" value={userProfile.schoolName} />
+                        <DetailItem label="Grade / Standard" value={userProfile.grade} />
+                        <DetailItem label="Assigned Teacher ID" value={userProfile.teacherId} />
+                    </ProfileSection>
+                  ) : (
+                    <ProfileSection title="Institute Information" icon={Building}>
+                        <DetailItem label="Institute Name" value={userProfile.instituteName} />
+                        <DetailItem label="Full Institute Address" value={instituteAddress} />
+                    </ProfileSection>
+                  )}
+                </div>
             </CardContent>
         </Card>
 
         {userProfile.role === 'student' && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card className="shadow-lg"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Tests Taken</CardTitle><Activity className="w-5 h-5 text-primary" /></CardHeader><CardContent><div className="text-3xl font-black">{summaryStats.testsTaken}</div></CardContent></Card>
-                <Card className="shadow-lg"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Avg Accuracy</CardTitle><Target className="w-5 h-5 text-green-500" /></CardHeader><CardContent><div className="text-3xl font-black">{summaryStats.averageAccuracy}%</div></CardContent></Card>
-                <Card className="shadow-lg"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Best Score</CardTitle><Star className="w-5 h-5 text-yellow-500" /></CardHeader><CardContent><div className="text-3xl font-black">{summaryStats.bestAccuracy}%</div></CardContent></Card>
-                <Card className="shadow-lg"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Practice Time</CardTitle><Clock className="w-5 h-5 text-blue-500" /></CardHeader><CardContent><div className="text-3xl font-black">{summaryStats.totalTime}</div></CardContent></Card>
+                <Card className="shadow-lg border-none"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Tests Taken</CardTitle><Activity className="w-5 h-5 text-primary" /></CardHeader><CardContent><div className="text-4xl font-black">{summaryStats.testsTaken}</div></CardContent></Card>
+                <Card className="shadow-lg border-none"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Avg Accuracy</CardTitle><Target className="w-5 h-5 text-green-500" /></CardHeader><CardContent><div className="text-4xl font-black">{summaryStats.averageAccuracy}%</div></CardContent></Card>
+                <Card className="shadow-lg border-none"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Best Score</CardTitle><Star className="w-5 h-5 text-yellow-500" /></CardHeader><CardContent><div className="text-4xl font-black">{summaryStats.bestAccuracy}%</div></CardContent></Card>
+                <Card className="shadow-lg border-none"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Practice Time</CardTitle><Clock className="w-5 h-5 text-blue-500" /></CardHeader><CardContent><div className="text-4xl font-black">{summaryStats.totalTime}</div></CardContent></Card>
             </div>
             
-            <Card className="shadow-lg border-none">
-                <CardHeader><CardTitle className="font-headline font-black uppercase tracking-tight">Performance Trend</CardTitle><CardDescription>Last 30 practice sessions</CardDescription></CardHeader>
-                <CardContent>
+            <Card className="shadow-xl border-none">
+                <CardHeader className="p-8 pb-4"><CardTitle className="text-2xl font-black uppercase tracking-tight">Performance Trend</CardTitle><CardDescription className="font-bold">Visual analysis of the last 30 practice sessions</CardDescription></CardHeader>
+                <CardContent className="p-8 pt-0">
                     {testHistory.length > 0 ? (
-                      <div className="h-[300px] w-full">
+                      <div className="h-[350px] w-full mt-6">
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                            <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                            <YAxis unit="%" domain={[0, 100]} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                            <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} fontWeight="bold" />
+                            <YAxis unit="%" domain={[0, 100]} stroke="hsl(var(--muted-foreground))" fontSize={12} fontWeight="bold" />
                             <Tooltip content={<CustomTooltip />} />
                             <Legend />
-                            <Line type="monotone" dataKey="Accuracy" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 4, fill: "hsl(var(--primary))" }} />
+                            <Line type="monotone" dataKey="Accuracy" stroke="hsl(var(--primary))" strokeWidth={4} dot={{ r: 6, fill: "hsl(var(--primary))", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 8 }} />
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
                     ) : (
-                      <div className="h-[300px] flex items-center justify-center text-muted-foreground italic">No test data available for this student.</div>
+                      <div className="h-[300px] flex items-center justify-center text-muted-foreground italic font-bold">No test data available for this student.</div>
                     )}
                 </CardContent>
             </Card>
 
-            <Card className="shadow-lg border-none overflow-hidden">
-                <CardHeader className="bg-muted/30"><CardTitle className="font-headline font-black uppercase tracking-tight">Full Activity Log</CardTitle></CardHeader>
+            <Card className="shadow-xl border-none overflow-hidden">
+                <CardHeader className="bg-muted/30 p-8"><CardTitle className="text-2xl font-black uppercase tracking-tight">Full Activity Log</CardTitle></CardHeader>
                 <CardContent className="p-0">
                     <Table>
-                      <TableHeader className="bg-muted/10">
+                      <TableHeader className="bg-muted/10 h-14">
                         <TableRow>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Difficulty</TableHead>
-                          <TableHead>Accuracy</TableHead>
-                          <TableHead>Time</TableHead>
+                          <TableHead className="font-black uppercase tracking-widest text-[10px] pl-8">Date</TableHead>
+                          <TableHead className="font-black uppercase tracking-widest text-[10px]">Type</TableHead>
+                          <TableHead className="font-black uppercase tracking-widest text-[10px]">Difficulty</TableHead>
+                          <TableHead className="font-black uppercase tracking-widest text-[10px]">Accuracy</TableHead>
+                          <TableHead className="font-black uppercase tracking-widest text-[10px]">Time</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                           {testHistory.length > 0 ? (testHistory.map((result) => (
-                            <TableRow key={result.id}>
-                              <TableCell className="text-xs font-bold">{format(result.createdAt, 'PPp')}</TableCell>
-                              <TableCell className="font-bold text-primary">{TEST_NAME_MAP[result.testId] || result.testId}</TableCell>
-                              <TableCell><Badge variant="outline" className="capitalize text-[10px] font-bold">{result.difficulty}</Badge></TableCell>
-                              <TableCell className="font-black text-foreground">{result.accuracy.toFixed(1)}%</TableCell>
-                              <TableCell className="text-xs text-muted-foreground">{Math.floor(result.timeSpent / 60)}m {result.timeSpent % 60}s</TableCell>
+                            <TableRow key={result.id} className="h-16 hover:bg-muted/20">
+                              <TableCell className="text-xs font-bold pl-8">{format(result.createdAt, 'PPp')}</TableCell>
+                              <TableCell className="font-black text-primary uppercase tracking-tight">{TEST_NAME_MAP[result.testId] || result.testId}</TableCell>
+                              <TableCell><Badge variant="outline" className="capitalize text-[10px] font-black border-2">{result.difficulty}</Badge></TableCell>
+                              <TableCell className="font-black text-lg text-slate-900">{result.accuracy.toFixed(1)}%</TableCell>
+                              <TableCell className="text-xs text-muted-foreground font-bold">{Math.floor(result.timeSpent / 60)}m {result.timeSpent % 60}s</TableCell>
                             </TableRow>
-                          ))) : (<TableRow><TableCell colSpan={5} className="text-center py-12 italic text-muted-foreground">No test history found.</TableCell></TableRow>)}
+                          ))) : (<TableRow><TableCell colSpan={5} className="text-center py-20 italic text-muted-foreground font-bold">No test history found for this student.</TableCell></TableRow>)}
                       </TableBody>
                     </Table>
                 </CardContent>
@@ -407,46 +407,46 @@ export default function AdminUserDetailsPage() {
         )}
 
          {(userProfile.role === 'teacher' || userProfile.role === 'admin') && (
-            <Card className="shadow-lg border-none overflow-hidden">
-                <CardHeader className="bg-muted/30">
-                    <CardTitle className="flex items-center gap-2 font-headline font-black uppercase tracking-tight"><Users className="w-6 h-6 text-primary"/>Assigned Students</CardTitle>
-                    <CardDescription className="font-medium text-muted-foreground">Currently monitoring {assignedStudents.length} students.</CardDescription>
+            <Card className="shadow-xl border-none overflow-hidden">
+                <CardHeader className="bg-muted/30 p-8">
+                    <CardTitle className="flex items-center gap-3 text-2xl font-black uppercase tracking-tight"><Users className="w-8 h-8 text-primary"/>Assigned Students</CardTitle>
+                    <CardDescription className="font-bold text-lg text-slate-600">Currently monitoring {assignedStudents.length} students.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
                      <Table>
-                        <TableHeader className="bg-muted/10">
+                        <TableHeader className="bg-muted/10 h-14">
                             <TableRow>
-                                <TableHead>Student</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Subscription</TableHead>
-                                <TableHead className="text-right">Action</TableHead>
+                                <TableHead className="font-black uppercase tracking-widest text-[10px] pl-8">Student</TableHead>
+                                <TableHead className="font-black uppercase tracking-widest text-[10px]">Email</TableHead>
+                                <TableHead className="font-black uppercase tracking-widest text-[10px]">Subscription</TableHead>
+                                <TableHead className="text-right font-black uppercase tracking-widest text-[10px] pr-8">Action</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {assignedStudents.length > 0 ? (
                                 assignedStudents.map((student) => (
-                                <TableRow key={student.uid}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <Avatar className="h-8 w-8 shrink-0"><AvatarImage src={student.profilePhoto} /><AvatarFallback>{student.firstName?.[0]}{student.surname?.[0]}</AvatarFallback></Avatar>
-                                            <p className="font-bold text-sm truncate">{student.firstName} {student.surname}</p>
+                                <TableRow key={student.uid} className="h-20 hover:bg-muted/20">
+                                    <TableCell className="pl-8">
+                                        <div className="flex items-center gap-4 min-w-0">
+                                            <Avatar className="h-10 w-10 shrink-0 border-2 border-primary/10"><AvatarImage src={student.profilePhoto} /><AvatarFallback>{student.firstName?.[0]}{student.surname?.[0]}</AvatarFallback></Avatar>
+                                            <p className="font-black text-slate-900 truncate uppercase tracking-tight">{student.firstName} {student.surname}</p>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-xs text-muted-foreground">{student.email}</TableCell>
+                                    <TableCell className="text-sm font-bold text-muted-foreground">{student.email}</TableCell>
                                     <TableCell>
-                                        <Badge variant={student.subscriptionStatus === 'pro' ? 'default' : 'secondary'} className={cn("text-[9px] font-black uppercase", student.subscriptionStatus === 'pro' ? "bg-yellow-400 text-yellow-900 border-yellow-500" : "")}>
+                                        <Badge variant={student.subscriptionStatus === 'pro' ? 'default' : 'secondary'} className={cn("text-[9px] font-black uppercase tracking-widest h-6 px-3", student.subscriptionStatus === 'pro' ? "bg-yellow-400 text-yellow-900 border-yellow-500" : "")}>
                                             {student.subscriptionStatus || 'free'}
                                         </Badge>
                                     </TableCell>
-                                     <TableCell className="text-right">
-                                        <Button asChild variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                            <Link href={`/admin/user/${student.uid}`}><Eye className="h-4 w-4" /></Link>
+                                     <TableCell className="text-right pr-8">
+                                        <Button asChild variant="ghost" size="sm" className="h-10 w-10 p-0 rounded-full hover:bg-primary/10">
+                                            <Link href={`/admin/user/${student.uid}`}><Eye className="h-5 w-5 text-primary" /></Link>
                                         </Button>
                                     </TableCell>
                                 </TableRow>
                                 ))
                             ) : (
-                                <TableRow><TableCell colSpan={4} className="text-center py-12 italic text-muted-foreground">No students assigned yet.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={4} className="text-center py-20 italic text-muted-foreground font-bold">No students assigned to this teacher yet.</TableCell></TableRow>
                             )}
                         </TableBody>
                     </Table>
