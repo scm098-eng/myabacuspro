@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/tabs";
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -295,12 +295,15 @@ export default function AdminDashboardPage() {
     setIsSavingBlog(true);
     const db = getFirestore(firebaseApp);
     const id = editingBlog.id || editingBlog.slug;
+    
+    // Preserve createdAt if it exists (handles both Timestamps and strings)
     const blogData = {
       ...editingBlog,
       author: editingBlog.author || `${profile?.firstName} ${profile?.surname}`,
       createdAt: editingBlog.createdAt || serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
+    
     try {
       await setDoc(doc(db, "blogs", id), blogData, { merge: true });
       toast({ title: "Blog Updated" });
@@ -454,6 +457,34 @@ export default function AdminDashboardPage() {
                     </Card>
                 </TabsContent>
 
+                <TabsContent value="blogs">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-headline">Blog Management</h2>
+                        <Button onClick={() => { setEditingBlog({ title: '', content: '', excerpt: '', category: 'News', slug: '' }); setDraftContent(''); setIsBlogDialogOpen(true); }}>
+                            <Plus className="mr-2 h-4 w-4" /> New Article
+                        </Button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {blogs.map(blog => (
+                            <Card key={blog.id}>
+                                <CardHeader>
+                                    <div className="flex justify-between items-start">
+                                        <div><CardTitle className="text-lg">{blog.title}</CardTitle><CardDescription>{blog.category} • {blog.author}</CardDescription></div>
+                                        <div className="flex gap-2">
+                                            <Button variant="ghost" size="sm" onClick={() => { setEditingBlog(blog); setDraftContent(htmlToPlainText(blog.content)); setIsBlogDialogOpen(true); }}><Edit className="w-4 h-4" /></Button>
+                                            <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDeleteBlog(blog.id)}><Trash2 className="w-4 h-4" /></Button>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent><p className="text-xs text-muted-foreground line-clamp-2">{blog.excerpt}</p></CardContent>
+                                <CardFooter className="text-[10px] text-muted-foreground italic">
+                                    Last Updated: {blog.createdAt?.toDate ? format(blog.createdAt.toDate(), 'PPp') : (typeof blog.createdAt === 'string' ? format(parseISO(blog.createdAt), 'PPp') : 'Just now')}
+                                </CardFooter>
+                            </Card>
+                        ))}
+                    </div>
+                </TabsContent>
+
                 <TabsContent value="system">
                     <div className="space-y-8">
                         <Card className="border-primary/20 bg-primary/5">
@@ -570,6 +601,26 @@ export default function AdminDashboardPage() {
             <Button onClick={() => handleForceDeclareWinner('monthly')} variant="outline" disabled={isResetting !== null}>Monthly Master</Button>
           </div>
           <DialogFooter><Button variant="ghost" onClick={() => setForceWinnerDialog({ open: false, user: null })}>Cancel</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isBlogDialogOpen} onOpenChange={setIsBlogDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{editingBlog?.id ? 'Edit Article' : 'New Article'}</DialogTitle></DialogHeader>
+          <form onSubmit={handleSaveBlog} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Title</Label><Input value={editingBlog?.title || ''} onChange={e => setEditingBlog(prev => ({ ...prev, title: e.target.value, slug: e.target.value.toLowerCase().replace(/ /g, '-') }))} required /></div>
+              <div className="space-y-2"><Label>Slug (URL)</Label><Input value={editingBlog?.slug || ''} onChange={e => setEditingBlog(prev => ({ ...prev, slug: e.target.value }))} required /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Category</Label><Input value={editingBlog?.category || ''} onChange={e => setEditingBlog(prev => ({ ...prev, category: e.target.value }))} required /></div>
+              <div className="space-y-2"><Label>Author</Label><Input value={editingBlog?.author || ''} onChange={e => setEditingBlog(prev => ({ ...prev, author: e.target.value }))} /></div>
+            </div>
+            <div className="space-y-2"><Label>Featured Image URL</Label><Input value={editingBlog?.image || ''} onChange={e => setEditingBlog(prev => ({ ...prev, image: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>Excerpt (Meta Description)</Label><Textarea value={editingBlog?.excerpt || ''} onChange={e => setEditingBlog(prev => ({ ...prev, excerpt: e.target.value }))} rows={2} required /></div>
+            <div className="space-y-2"><Label>Content (HTML)</Label><Textarea value={draftContent} onChange={e => { setDraftContent(e.target.value); setEditingBlog(prev => ({ ...prev, content: plainTextToHtml(e.target.value) })); }} rows={10} required placeholder="Write your content here. Paragraphs will be converted to HTML automatically." /></div>
+            <DialogFooter><Button type="button" variant="ghost" onClick={() => setIsBlogDialogOpen(false)}>Cancel</Button><Button type="submit" disabled={isSavingBlog}>{isSavingBlog ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2 h-4 w-4" />} {editingBlog?.id ? 'Update' : 'Publish'}</Button></DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

@@ -7,16 +7,40 @@ import { Calendar, User, ArrowRight, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
-import { format } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 import type { BlogPost } from '@/types';
 
 // Force dynamic rendering to always show fresh content
 export const dynamic = 'force-dynamic';
 
+/**
+ * Robust date normalization helper.
+ * Handles Firestore Timestamps, ISO strings, and Date objects.
+ */
+function normalizeDate(val: any): string {
+  if (!val) return new Date().toISOString();
+  
+  // Handle Firestore Timestamp
+  if (val && typeof val.toDate === 'function') {
+    return val.toDate().toISOString();
+  }
+  
+  // Handle ISO strings or other string formats
+  if (typeof val === 'string') {
+    const parsed = parseISO(val);
+    if (isValid(parsed)) return val;
+  }
+  
+  // Handle native Date objects
+  if (val instanceof Date && isValid(val)) {
+    return val.toISOString();
+  }
+
+  return new Date().toISOString();
+}
+
 async function getBlogs(): Promise<BlogPost[]> {
   try {
-    // Using Client SDK on the server to avoid Admin SDK token refresh issues (500 errors)
-    // This is safe for public reads and more reliable in many hosting environments.
     const db = getFirestore(firebaseApp);
     const blogRef = collection(db, 'blogs');
     const q = query(blogRef, orderBy('createdAt', 'desc'));
@@ -27,8 +51,7 @@ async function getBlogs(): Promise<BlogPost[]> {
       return {
         id: doc.id,
         ...data,
-        // Convert Firestore Timestamps to ISO strings for the client
-        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString()
+        createdAt: normalizeDate(data.createdAt)
       } as BlogPost;
     });
   } catch (error) {

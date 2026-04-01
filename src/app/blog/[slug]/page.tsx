@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { getFirestore, collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
-import { format } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 import type { BlogPost } from '@/types';
 import { ShareButton } from '@/components/blog/ShareButton';
 import type { Metadata } from 'next';
@@ -16,6 +16,17 @@ import { cn } from '@/lib/utils';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+/**
+ * Normalizes date input to an ISO string.
+ */
+function normalizeDate(val: any): string {
+  if (!val) return new Date().toISOString();
+  if (val && typeof val.toDate === 'function') return val.toDate().toISOString();
+  if (typeof val === 'string' && isValid(parseISO(val))) return val;
+  if (val instanceof Date && isValid(val)) return val.toISOString();
+  return new Date().toISOString();
 }
 
 /**
@@ -78,7 +89,7 @@ async function getBlogPost(slug: string): Promise<BlogPost | null> {
     return {
       id: doc.id,
       ...data,
-      createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString()
+      createdAt: normalizeDate(data.createdAt)
     } as BlogPost;
   } catch (error) {
     console.error("Error fetching blog post:", error);
