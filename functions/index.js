@@ -11,7 +11,7 @@ const logger = require("firebase-functions/logger");
 const nodemailer = require('nodemailer');
 
 const admin = require('firebase-admin');
-const { FieldValue } = require('firebase-admin/firestore');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 if (admin.apps.length === 0) {
     admin.initializeApp();
@@ -19,7 +19,7 @@ if (admin.apps.length === 0) {
 
 // Set global defaults for all functions in this file
 setGlobalOptions({ maxInstances: 10, timeoutSeconds: 540, memory: '1GiB', region: 'us-central1' });
-const db = admin.firestore();
+const db = getFirestore();
 
 const GMAIL_USER = 'myabacuspro@gmail.com';
 

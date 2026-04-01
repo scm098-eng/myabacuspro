@@ -96,9 +96,6 @@ const isRecentJoin = (createdAt: any) => {
   return diffInHours <= 24; 
 };
 
-/**
- * Helper to convert plain text draft into HTML paragraphs
- */
 const plainTextToHtml = (text: string) => {
   if (!text) return '';
   return text
@@ -108,9 +105,6 @@ const plainTextToHtml = (text: string) => {
     .join('\n\n');
 };
 
-/**
- * Helper to strip basic HTML paragraphs back to plain text for the editor
- */
 const htmlToPlainText = (html: string) => {
   if (!html) return '';
   return html
@@ -464,7 +458,9 @@ export default function AdminDashboardPage() {
       .sort((a, b) => {
         const dateA = parseISO(a.dob || '');
         const dateB = parseISO(b.dob || '');
-        return (getMonth(dateA) * 31 + getDate(dateA)) - (getMonth(dateB) * 31 + getDate(dateB));
+        const sortValA = getMonth(dateA) * 31 + getDate(dateA);
+        const sortValB = getMonth(dateB) * 31 + getDate(dateB);
+        return sortValA - sortValB;
       });
     
     const teacherMap = allStudents.reduce((acc, s) => {
@@ -480,7 +476,7 @@ export default function AdminDashboardPage() {
     const teachersWithStats = allTeachers.map(t => ({ ...t, stats: teacherMap[t.uid] || { total: 0, pro: 0, free: 0 } }));
     
     const suspicious = allUsers.map(u => {
-        let reasons = [];
+        const reasons = [];
         if (u.isSuspended) reasons.push("Account Suspended");
         if ((u.totalPoints || 0) > 100000) reasons.push("High Point Total");
         if (u.emailVerified === false) reasons.push("Email Unverified");
@@ -500,7 +496,9 @@ export default function AdminDashboardPage() {
     };
   }, [allUsers, searchTerm, profile]);
 
-  if (isLoading || authLoading) return <div className="p-8"><Skeleton className="h-[600px] w-full" /></div>;
+  if (isLoading || authLoading) {
+    return <div className="p-8"><Skeleton className="h-[600px] w-full" /></div>;
+  }
 
   return (
     <div className="space-y-8">
@@ -688,7 +686,7 @@ export default function AdminDashboardPage() {
                         <CardHeader><CardTitle className="text-red-700">Flagged Accounts</CardTitle><CardDescription>Potential fake accounts or unverified users.</CardDescription></CardHeader>
                         <CardContent>
                             <Table>
-                                <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Reason</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
+                                <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Reason</TableHead><TableHead className="text-right">Action</TableHead></TableHeader>
                                 <TableBody>
                                     {filteredSuspicious.length > 0 ? filteredSuspicious.map((u) => (
                                         <TableRow key={u.uid}>
@@ -960,7 +958,7 @@ export default function AdminDashboardPage() {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg font-black flex items-center gap-2 uppercase tracking-tight text-orange-700">
                     <UserPlus className="w-5 h-5" /> New Members
-                  </Title>
+                  </CardTitle>
                   <CardDescription className="text-[10px] font-bold text-orange-600/70">REAL-TIME ACTIVITY FEED</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
