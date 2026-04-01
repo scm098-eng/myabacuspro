@@ -21,6 +21,25 @@ const db = admin.firestore();
 const GMAIL_USER = 'myabacuspro@gmail.com';
 
 /**
+ * Transactional Email Transport
+ */
+function getTransporter(password) {
+    if (!password) {
+        logger.error("CRITICAL: GMAIL_APP_PASSWORD missing.");
+        throw new Error("SMTP Auth failed");
+    }
+    return nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true, 
+        auth: {
+            user: GMAIL_USER,
+            pass: password,
+        },
+    });
+}
+
+/**
  * Helper to get the UTC Monday key (YYYY-MM-DD) for TODAY
  */
 function getUTCMondayKey() {
@@ -47,7 +66,7 @@ function getUTCPreviousMondayKey() {
 }
 
 /**
- * Helper to get the UTC Month key (YYYY-MM)
+ * Helper to get the UTC Month key (YYYY-MM) for TODAY
  */
 function getUTCMonthKey() {
     const now = new Date();
@@ -64,16 +83,74 @@ function getUTCPreviousMonthKey() {
 }
 
 /**
+ * Progress Report Email Template
+ */
+const progressReportHTML = (userName, type, metadata) => `
+  <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 20px;">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <span style="background: #f1f5f9; padding: 8px 16px; border-radius: 20px; font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Performance Summary</span>
+      <h1 style="color: #0f172a; margin-top: 10px;">${type === 'weekly' ? 'Weekly' : 'Monthly'} Progress</h1>
+      <p style="font-weight: bold; color: #2563eb;">Student: ${userName}</p>
+    </div>
+    
+    <div style="margin-bottom: 30px;">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding-right: 10px;">
+            <div style="background: #f8fafc; padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #f1f5f9;">
+              <p style="margin: 0; font-size: 10px; color: #64748b; font-weight: bold; text-transform: uppercase;">Points Earned</p>
+              <p style="margin: 5px 0 0; font-size: 24px; font-weight: 900; color: #2563eb;">+${metadata.periodPoints}</p>
+            </div>
+          </td>
+          <td style="padding-left: 10px;">
+            <div style="background: #f8fafc; padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #f1f5f9;">
+              <p style="margin: 0; font-size: 10px; color: #64748b; font-weight: bold; text-transform: uppercase;">Current Streak</p>
+              <p style="margin: 5px 0 0; font-size: 24px; font-weight: 900; color: #f97316;">${metadata.streak} Days</p>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background: #0f172a; color: white; padding: 25px; border-radius: 20px; margin-bottom: 30px;">
+      <h3 style="margin-top: 0; color: #38bdf8; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Overall Standing</h3>
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 15px;">
+        <tr>
+          <td>
+            <p style="margin: 0; font-size: 11px; opacity: 0.7;">Total Mastery Points</p>
+            <p style="margin: 5px 0 0; font-size: 20px; font-weight: bold;">${(metadata.totalPoints || 0).toLocaleString()}</p>
+          </td>
+          <td align="right">
+            <p style="margin: 0; font-size: 11px; opacity: 0.7;">Total Practice Days</p>
+            <p style="margin: 5px 0 0; font-size: 20px; font-weight: bold;">${metadata.practiceDays}</p>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="text-align: center;">
+      <p style="color: #64748b; font-size: 14px; margin-bottom: 25px;">Consistency is the key to becoming a Human Calculator. Your dedication is paying off!</p>
+      <a href="https://myabacuspro.com/dashboard" style="background: #2563eb; color: white; padding: 14px 30px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);">Open My Dashboard</a>
+    </div>
+    <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #999; font-size: 12px;">
+        <p>© 2026 MyAbacusPro. The ultimate abacus training ground.</p>
+    </div>
+  </div>
+`;
+
+/**
  * Scheduled: Every Monday at 00:00 UTC
  */
-exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
+exports.resetWeeklyPoints = onSchedule({
+    schedule: "0 0 * * 1",
+    secrets: ["GMAIL_APP_PASSWORD"]
+}, async (event) => {
     logger.info("Starting Weekly Points Reset & Winner Declaration");
     const currentWeekKey = getUTCMondayKey();
     const lastWeekKey = getUTCPreviousMondayKey();
 
     try {
         // 1. Declare Winner (highest weekly points from the period JUST ENDING)
-        // We filter by lastWeekKey to ensure we use the correct index and ignore stale data
         const topUserSnap = await db.collection('users')
             .where('role', '==', 'student')
             .where('lastWeeklyReset', '==', lastWeekKey)
@@ -94,22 +171,40 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
                         weekKey: lastWeekKey
                     }
                 }, { merge: true });
-                logger.info(`Weekly Winner declared: ${winner.firstName} with ${winner.weeklyPoints} pts.`);
+                logger.info(`Weekly Winner declared: ${winner.firstName}`);
             }
-        } else {
-            logger.info("No active students found for weekly winner declaration.");
         }
 
-        // 2. Reset all students whose last reset was the previous week
-        const usersSnap = await db.collection('users')
-            .where('role', '==', 'student')
-            .where('lastWeeklyReset', '==', lastWeekKey)
-            .get();
-            
+        // 2. Fetch all students to reset and send reports
+        const usersSnap = await db.collection('users').where('role', '==', 'student').get();
+        const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
         let batch = db.batch();
         let count = 0;
 
         for (const userDoc of usersSnap.docs) {
+            const data = userDoc.data();
+            // Skip if already reset for this cycle
+            if (data.lastWeeklyReset === currentWeekKey) continue;
+
+            // Send Report if they have an email and practiced this week
+            if (data.email && (data.weeklyPoints || 0) > 0) {
+                try {
+                    await transporter.sendMail({
+                        from: '"MyAbacusPro" <myabacuspro@gmail.com>',
+                        to: data.email,
+                        subject: `Weekly Mastery Report: ${data.firstName} 📈`,
+                        html: progressReportHTML(data.firstName, 'weekly', {
+                            periodPoints: data.weeklyPoints || 0,
+                            streak: data.currentStreak || 0,
+                            totalPoints: data.totalPoints || 0,
+                            practiceDays: data.totalDaysPracticed || 0
+                        })
+                    });
+                } catch (emailErr) {
+                    logger.error(`Failed to send weekly report to ${data.email}`, emailErr);
+                }
+            }
+
             batch.update(userDoc.ref, {
                 weeklyPoints: 0,
                 lastWeeklyReset: currentWeekKey,
@@ -117,18 +212,17 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
             });
             count++;
 
-            if (count === 500) {
+            if (count % 500 === 0) {
                 await batch.commit();
                 batch = db.batch();
-                count = 0;
             }
         }
 
-        if (count > 0) {
+        if (count % 500 !== 0) {
             await batch.commit();
         }
         
-        logger.info(`Successfully reset weekly points for ${usersSnap.size} students.`);
+        logger.info(`Successfully reset and sent reports for ${count} students.`);
     } catch (err) {
         logger.error("Weekly reset failed", err);
     }
@@ -137,13 +231,16 @@ exports.resetWeeklyPoints = onSchedule("0 0 * * 1", async (event) => {
 /**
  * Scheduled: 1st of every month at 00:00 UTC
  */
-exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
-    logger.info("Starting Monthly Points Reset");
+exports.resetMonthlyPoints = onSchedule({
+    schedule: "0 0 1 * *",
+    secrets: ["GMAIL_APP_PASSWORD"]
+}, async (event) => {
+    logger.info("Starting Monthly Points Reset & Winner Declaration");
     const currentMonthKey = getUTCMonthKey();
     const lastMonthKey = getUTCPreviousMonthKey();
 
     try {
-        // Declare Monthly Winner
+        // 1. Declare Monthly Winner
         const topUserSnap = await db.collection('users')
             .where('role', '==', 'student')
             .where('lastMonthlyReset', '==', lastMonthKey)
@@ -168,15 +265,34 @@ exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
             }
         }
 
-        const usersSnap = await db.collection('users')
-            .where('role', '==', 'student')
-            .where('lastMonthlyReset', '==', lastMonthKey)
-            .get();
-            
+        // 2. Reset and send reports
+        const usersSnap = await db.collection('users').where('role', '==', 'student').get();
+        const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
         let batch = db.batch();
         let count = 0;
 
         for (const userDoc of usersSnap.docs) {
+            const data = userDoc.data();
+            if (data.lastMonthlyReset === currentMonthKey) continue;
+
+            if (data.email && (data.monthlyPoints || 0) > 0) {
+                try {
+                    await transporter.sendMail({
+                        from: '"MyAbacusPro" <myabacuspro@gmail.com>',
+                        to: data.email,
+                        subject: `Monthly Mastery Report: ${data.firstName} 📈`,
+                        html: progressReportHTML(data.firstName, 'monthly', {
+                            periodPoints: data.monthlyPoints || 0,
+                            streak: data.currentStreak || 0,
+                            totalPoints: data.totalPoints || 0,
+                            practiceDays: data.totalDaysPracticed || 0
+                        })
+                    });
+                } catch (emailErr) {
+                    logger.error(`Failed to send monthly report to ${data.email}`, emailErr);
+                }
+            }
+
             batch.update(userDoc.ref, {
                 monthlyPoints: 0,
                 lastMonthlyReset: currentMonthKey,
@@ -184,67 +300,21 @@ exports.resetMonthlyPoints = onSchedule("0 0 1 * *", async (event) => {
             });
             count++;
 
-            if (count === 500) {
+            if (count % 500 === 0) {
                 await batch.commit();
                 batch = db.batch();
-                count = 0;
             }
         }
 
-        if (count > 0) {
+        if (count % 500 !== 0) {
             await batch.commit();
         }
         
-        logger.info(`Successfully reset monthly points for ${usersSnap.size} students.`);
+        logger.info(`Successfully reset monthly cycle for ${count} students.`);
     } catch (err) {
         logger.error("Monthly reset failed", err);
     }
 });
-
-/**
- * Transactional Email Transport
- */
-function getTransporter(password) {
-    if (!password) {
-        logger.error("CRITICAL: GMAIL_APP_PASSWORD missing.");
-        throw new Error("SMTP Auth failed");
-    }
-    return nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 465,
-        secure: true, 
-        auth: {
-            user: GMAIL_USER,
-            pass: password,
-        },
-    });
-}
-
-/**
- * Birthday Wish Template (Server Side)
- */
-const birthdayWishHTML = (userName) => `
-  <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 2px solid #ec4899; border-radius: 20px; background: #fffafb;">
-    <div style="text-align: center; margin-bottom: 25px;">
-      <div style="font-size: 60px;">🎂</div>
-      <h1 style="color: #ec4899; margin-top: 10px;">Happy Birthday, ${userName}!</h1>
-    </div>
-    <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi ${userName},</p>
-    <p style="font-size: 16px; color: #333; line-height: 1.6;">The entire MyAbacusPro team is wishing you a fantastic birthday! We hope your special day is filled with joy, celebration, and magic.</p>
-    <div style="background: #fdf2f8; padding: 20px; border-radius: 15px; border: 1px solid #fbcfe8; margin: 25px 0; text-align: center;">
-      <h3 style="margin-top: 0; color: #be185d;">A Birthday Gift for You!</h3>
-      <p style="color: #9d174d; font-weight: bold; font-size: 18px;">We've credited +100 Mastery Points to your account!</p>
-      <p style="font-size: 14px; color: #666;">Log in today to see your birthday surprise and keep your streak alive.</p>
-    </div>
-    <div style="text-align: center;">
-      <a href="https://myabacuspro.com/dashboard" style="background: #ec4899; color: white; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">Go to My Dashboard</a>
-    </div>
-    <p style="font-size: 14px; color: #666; text-align: center; margin-top: 30px;">Keep practicing and reaching for the stars!</p>
-    <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #999; font-size: 12px;">
-        <p>© 2026 MyAbacusPro. The ultimate abacus training ground.</p>
-    </div>
-  </div>
-`;
 
 /**
  * Scheduled: Daily at 03:30 UTC (09:00 AM IST)
@@ -270,21 +340,35 @@ exports.sendDailyBirthdayWishes = onSchedule({
             if (!data.dob || !data.email || data.isSuspended) continue;
 
             const dob = new Date(data.dob);
-            // Check if month and day match today
             if (dob.getUTCMonth() === currentMonth && dob.getUTCDate() === currentDay) {
-                // Check if already sent this year
                 if (data.lastBirthdayWishedYear === currentYear) continue;
 
                 try {
-                    // 1. Send Email
                     await transporter.sendMail({
                         from: `"MyAbacusPro" <${GMAIL_USER}>`,
                         to: data.email,
                         subject: `Happy Birthday, ${data.firstName}! 🎂`,
-                        html: birthdayWishHTML(data.firstName)
+                        html: `
+                          <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 2px solid #ec4899; border-radius: 20px; background: #fffafb;">
+                            <div style="text-align: center; margin-bottom: 25px;">
+                              <div style="font-size: 60px;">🎂</div>
+                              <h1 style="color: #ec4899; margin-top: 10px;">Happy Birthday, ${data.firstName}!</h1>
+                            </div>
+                            <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi ${data.firstName},</p>
+                            <p style="font-size: 16px; color: #333; line-height: 1.6;">The entire MyAbacusPro team is wishing you a fantastic birthday! We hope your special day is filled with joy, celebration, and magic.</p>
+                            <div style="background: #fdf2f8; padding: 20px; border-radius: 15px; border: 1px solid #fbcfe8; margin: 25px 0; text-align: center;">
+                              <h3 style="margin-top: 0; color: #be185d;">A Birthday Gift for You!</h3>
+                              <p style="color: #9d174d; font-weight: bold; font-size: 18px;">We've credited +100 Mastery Points to your account!</p>
+                              <p style="font-size: 14px; color: #666;">Log in today to see your birthday surprise and keep your streak alive.</p>
+                            </div>
+                            <div style="text-align: center;">
+                              <a href="https://myabacuspro.com/dashboard" style="background: #ec4899; color: white; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">Go to My Dashboard</a>
+                            </div>
+                            <p style="font-size: 14px; color: #666; text-align: center; margin-top: 30px;">Keep practicing and reaching for the stars!</p>
+                          </div>
+                        `
                     });
 
-                    // 2. Credit Points and Update Record
                     await userDoc.ref.update({
                         totalPoints: admin.firestore.FieldValue.increment(100),
                         weeklyPoints: admin.firestore.FieldValue.increment(100),
@@ -294,7 +378,6 @@ exports.sendDailyBirthdayWishes = onSchedule({
                     });
 
                     count++;
-                    logger.info(`Birthday wish sent & points credited to ${data.firstName} (${data.email})`);
                 } catch (sendErr) {
                     logger.error(`Failed to send birthday email to ${data.email}`, sendErr);
                 }
