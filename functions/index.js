@@ -15,7 +15,7 @@ if (admin.apps.length === 0) {
     admin.initializeApp();
 }
 
-setGlobalOptions({ maxInstances: 10, timeoutSeconds: 540, memory: '1GiB' });
+setGlobalOptions({ maxInstances: 10, timeoutSeconds: 540, memory: '1GiB', region: 'us-central1' });
 const db = admin.firestore();
 
 const GMAIL_USER = 'myabacuspro@gmail.com';
@@ -337,7 +337,7 @@ exports.manualResetWeekly = onCall({
     secrets: ["GMAIL_APP_PASSWORD"]
 }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
-    const userDoc = await db.collection('users').doc(request.auth.uid).get();
+    const userDoc = await admin.firestore().collection('users').doc(request.auth.uid).get();
     if (userDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
 
     try {
@@ -356,7 +356,7 @@ exports.manualResetMonthly = onCall({
     secrets: ["GMAIL_APP_PASSWORD"]
 }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
-    const userDoc = await db.collection('users').doc(request.auth.uid).get();
+    const userDoc = await admin.firestore().collection('users').doc(request.auth.uid).get();
     if (userDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
 
     try {
@@ -371,41 +371,48 @@ exports.manualResetMonthly = onCall({
 /**
  * Force Declare a Specific Winner: Admin only
  */
-exports.forceDeclareWinner = onCall(async (request) => {
-    logger.info("forceDeclareWinner triggered", { data: request.data });
+exports.forceDeclareWinner = onCall({
+    region: "us-central1"
+}, async (request) => {
+    const { data, auth } = request;
+    logger.info("forceDeclareWinner triggered", { data });
     
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', "Login required.");
+    if (!auth) {
+        throw new HttpsError('unauthenticated', "The function must be called while authenticated.");
     }
 
     try {
-        const adminDoc = await db.collection('users').doc(request.auth.uid).get();
-        if (adminDoc.data()?.role !== 'admin') {
-            throw new HttpsError('permission-denied', "Admin only.");
+        // 1. Verify Admin Status
+        const adminDoc = await admin.firestore().collection('users').doc(auth.uid).get();
+        if (!adminDoc.exists || adminDoc.data()?.role !== 'admin') {
+            throw new HttpsError('permission-denied', "Only administrators can perform this action.");
         }
 
-        const { uid, type } = request.data; // type: 'weekly' | 'monthly'
+        const { uid, type } = data; // type: 'weekly' | 'monthly'
         if (!uid || !type) {
-            throw new HttpsError('invalid-argument', "UID and type required.");
+            throw new HttpsError('invalid-argument', "Student UID and period type (weekly/monthly) are required.");
         }
 
-        const winnerSnap = await db.collection('users').doc(uid).get();
+        // 2. Fetch Student Data
+        const winnerSnap = await admin.firestore().collection('users').doc(uid).get();
         if (!winnerSnap.exists) {
-            throw new HttpsError('not-found', "Student not found.");
+            throw new HttpsError('not-found', "The target student was not found.");
         }
         
         const winner = winnerSnap.data();
         const periodKey = type === 'weekly' ? getUTCMondayKey() : getUTCMonthKey();
         const points = type === 'weekly' ? (winner.weeklyPoints || 0) : (winner.monthlyPoints || 0);
+        const fullName = `${winner.firstName || ''} ${winner.surname || ''}`.trim() || 'Student';
 
-        const docRef = db.collection('stats').doc('leaderboard');
+        // 3. Update Global Leaderboard Stat
+        const docRef = admin.firestore().collection('stats').doc('leaderboard');
         const updateKey = type === 'weekly' ? 'lastWeeklyWinner' : 'lastMonthlyWinner';
         const periodField = type === 'weekly' ? 'weekKey' : 'monthKey';
 
         await docRef.set({
             [updateKey]: {
                 uid: uid,
-                name: `${winner.firstName} ${winner.surname}`,
+                name: fullName,
                 photo: winner.profilePhoto || '',
                 points: points,
                 declaredAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -413,15 +420,15 @@ exports.forceDeclareWinner = onCall(async (request) => {
             }
         }, { merge: true });
 
-        logger.info(`Manually declared ${winner.firstName} as ${type} winner.`);
-        return { status: "success" };
+        logger.info(`Manually declared ${fullName} as ${type} champion.`);
+        return { status: "success", message: `Declared ${fullName} as winner.` };
     } catch (err) {
         logger.error("Manual declaration failed with error:", err);
         // If it's already an HttpsError, re-throw it. Otherwise, wrap it.
         if (err instanceof HttpsError) {
             throw err;
         }
-        throw new HttpsError('internal', `Cloud Function Error: ${err.message}`);
+        throw new HttpsError('internal', `Cloud Function Failure: ${err.message || 'Unknown error'}`);
     }
 });
 
