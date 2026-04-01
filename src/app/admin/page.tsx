@@ -875,35 +875,6 @@ export default function AdminDashboardPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="border-orange-200 bg-orange-50/10">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Star className="w-5 h-5 text-orange-500" />
-                                    Manual Winner Override
-                                </CardTitle>
-                                <CardDescription>Directly name a student as champion without resetting points.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex flex-col md:flex-row gap-4 items-end">
-                                    <div className="flex-1 w-full space-y-2">
-                                        <Label>Select Student</Label>
-                                        <Select onValueChange={(val) => setForceWinnerDialog({ open: true, user: allUsers.find(u => u.uid === val) || null })}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Search or select a student..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {processedData.filteredStudents.map(s => (
-                                                    <SelectItem key={s.uid} value={s.uid}>
-                                                        {s.firstName} {s.surname} ({s.email})
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-lg flex items-center gap-2">
