@@ -391,7 +391,7 @@ export default function AdminDashboardPage() {
     
     setIsResetting(type);
     try {
-      const functions = getFunctions(firebaseApp);
+      const functions = getFunctions(firebaseApp, 'us-central1');
       const resetFn = httpsCallable(functions, type === 'weekly' ? 'manualResetWeekly' : 'manualResetMonthly');
       const result: any = await resetFn();
       
@@ -401,8 +401,7 @@ export default function AdminDashboardPage() {
       });
     } catch (e: any) {
       console.error("Reset Trigger Error:", e);
-      const detailedMessage = e.details?.message || e.message || "Reset failed. Check Cloud Function logs.";
-      toast({ title: "Reset Failed", description: detailedMessage, variant: "destructive" });
+      toast({ title: "Reset Failed", description: e.message || "The server encountered an error processing the reset.", variant: "destructive" });
     } finally {
       setIsResetting(null);
     }
@@ -413,14 +412,15 @@ export default function AdminDashboardPage() {
     
     setIsResetting('force');
     try {
-      const functions = getFunctions(firebaseApp);
+      // Explicitly specify region to match function deployment
+      const functions = getFunctions(firebaseApp, 'us-central1');
       const forceFn = httpsCallable(functions, 'forceDeclareWinner');
       const result: any = await forceFn({ uid: forceWinnerDialog.user.uid, type });
       
       if (result.data.status === 'success') {
         toast({ 
           title: "Success", 
-          description: `${forceWinnerDialog.user.firstName} is now the ${type} champion.` 
+          description: result.data.message || `${forceWinnerDialog.user.firstName} is now the ${type} champion.` 
         });
         setForceWinnerDialog({ open: false, user: null });
       } else {
@@ -428,15 +428,15 @@ export default function AdminDashboardPage() {
       }
     } catch (e: any) {
       console.error("Force Declare Error:", e);
-      // Detailed error breakdown for the admin
-      const serverMessage = e.details?.message || e.message;
-      const detailedMessage = serverMessage === "internal" 
-        ? "The server encountered an internal error. This often happens if Firestore permissions or Cloud Function logic is slightly out of sync. Check Cloud logs for details." 
-        : (serverMessage || "The server encountered an error processing the declaration.");
-        
+      
+      // If the error message is just "internal", provide a more helpful context
+      const descriptiveError = e.message === "internal" 
+        ? "The server encountered a configuration issue. Please ensure the winner declaration logic is properly deployed and try again."
+        : (e.message || "An unexpected error occurred during the declaration.");
+
       toast({ 
         title: "Declaration Failed", 
-        description: detailedMessage, 
+        description: descriptiveError, 
         variant: "destructive" 
       });
     } finally {
@@ -953,7 +953,7 @@ export default function AdminDashboardPage() {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg font-black flex items-center gap-2 uppercase tracking-tight text-orange-700">
                     <UserPlus className="w-5 h-5" /> New Members
-                  </CardTitle>
+                  </Title>
                   <CardDescription className="text-[10px] font-bold text-orange-600/70">REAL-TIME ACTIVITY FEED</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
