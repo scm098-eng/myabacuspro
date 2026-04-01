@@ -29,7 +29,7 @@ const GMAIL_USER = 'myabacuspro@gmail.com';
 function getTransporter(password) {
     if (!password) {
         logger.error("CRITICAL: GMAIL_APP_PASSWORD missing.");
-        throw new Error("SMTP Auth failed");
+        throw new Error("SMTP Auth failed: GMAIL_APP_PASSWORD is not set in environment secrets.");
     }
     return nodemailer.createTransport({
         host: 'smtp.gmail.com',
@@ -61,7 +61,7 @@ function getUTCMondayKey() {
 function getUTCPreviousMondayKey() {
     const now = new Date();
     const day = now.getUTCDay();
-    const diff = (day === 0 ? 6 : day - 1) + 7; // Monday 7 days ago
+    const diff = (day === 0 ? 6 : day - 1) + 7; 
     const prevMonday = new Date(now);
     prevMonday.setUTCDate(now.getUTCDate() - diff);
     prevMonday.setUTCHours(0, 0, 0, 0);
@@ -295,7 +295,8 @@ exports.manualResetWeekly = onCall({
         const count = await performWeeklyReset();
         return { status: "success", count };
     } catch (err) {
-        throw new HttpsError('internal', err.message || "Reset failed");
+        logger.error("Manual Weekly Reset Error:", err);
+        throw new HttpsError('failed-precondition', err.message || "Reset failed");
     }
 });
 
@@ -310,7 +311,8 @@ exports.manualResetMonthly = onCall({
         const count = await performMonthlyReset();
         return { status: "success", count };
     } catch (err) {
-        throw new HttpsError('internal', err.message || "Reset failed");
+        logger.error("Manual Monthly Reset Error:", err);
+        throw new HttpsError('failed-precondition', err.message || "Reset failed");
     }
 });
 
@@ -321,7 +323,6 @@ exports.forceDeclareWinner = onCall(async (request) => {
     }
 
     try {
-        // Verify admin permissions using the global 'db' instance
         const adminDoc = await db.collection('users').doc(auth.uid).get();
         if (!adminDoc.exists || adminDoc.data()?.role !== 'admin') {
             throw new HttpsError('permission-denied', "Admin permissions required.");
@@ -332,7 +333,6 @@ exports.forceDeclareWinner = onCall(async (request) => {
             throw new HttpsError('invalid-argument', "User ID and Reset Type are required.");
         }
 
-        // Fetch student details
         const winnerSnap = await db.collection('users').doc(uid).get();
         if (!winnerSnap.exists) {
             throw new HttpsError('failed-precondition', "The selected student could not be found.");
@@ -342,14 +342,12 @@ exports.forceDeclareWinner = onCall(async (request) => {
         const periodKey = type === 'weekly' ? getUTCMondayKey() : getUTCMonthKey();
         const points = type === 'weekly' ? (winner.weeklyPoints || 0) : (winner.monthlyPoints || 0);
         
-        // Resolve display name
         let fullName = `${winner.firstName || ''} ${winner.surname || ''}`.trim();
         if (!fullName) fullName = winner.email?.split('@')[0] || 'Champion';
 
         const updateKey = type === 'weekly' ? 'lastWeeklyWinner' : 'lastMonthlyWinner';
         const periodField = type === 'weekly' ? 'weekKey' : 'monthKey';
 
-        // Update global winner status
         await db.collection('stats').doc('leaderboard').set({
             [updateKey]: {
                 uid: uid,
@@ -361,6 +359,8 @@ exports.forceDeclareWinner = onCall(async (request) => {
             }
         }, { merge: true });
 
+        logger.info(`Manually declared ${fullName} as ${type} winner.`);
+
         return { 
             status: "success", 
             message: `Successfully declared ${fullName} as the ${type} champion.` 
@@ -368,6 +368,6 @@ exports.forceDeclareWinner = onCall(async (request) => {
     } catch (err) {
         logger.error("Force Declare Error:", err);
         if (err instanceof HttpsError) throw err;
-        throw new HttpsError('internal', err.message || "The server encountered an unexpected error.");
+        throw new HttpsError('failed-precondition', err.message || "The server encountered an unexpected error.");
     }
 });
