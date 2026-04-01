@@ -369,6 +369,43 @@ exports.manualResetMonthly = onCall({
 });
 
 /**
+ * Force Declare a Specific Winner: Admin only
+ */
+exports.forceDeclareWinner = onCall(async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
+    const adminDoc = await db.collection('users').doc(request.auth.uid).get();
+    if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
+
+    const { uid, type } = request.data; // type: 'weekly' | 'monthly'
+    if (!uid || !type) throw new HttpsError('invalid-argument', "UID and type required.");
+
+    const winnerSnap = await db.collection('users').doc(uid).get();
+    if (!winnerSnap.exists) throw new HttpsError('not-found', "Student not found.");
+    
+    const winner = winnerSnap.data();
+    const periodKey = type === 'weekly' ? getUTCMondayKey() : getUTCMonthKey();
+    const points = type === 'weekly' ? (winner.weeklyPoints || 0) : (winner.monthlyPoints || 0);
+
+    const docRef = db.collection('stats').doc('leaderboard');
+    const updateKey = type === 'weekly' ? 'lastWeeklyWinner' : 'lastMonthlyWinner';
+    const periodField = type === 'weekly' ? 'weekKey' : 'monthKey';
+
+    await docRef.set({
+        [updateKey]: {
+            uid: uid,
+            name: `${winner.firstName} ${winner.surname}`,
+            photo: winner.profilePhoto || '',
+            points: points,
+            declaredAt: admin.firestore.FieldValue.serverTimestamp(),
+            [periodField]: periodKey
+        }
+    }, { merge: true });
+
+    logger.info(`Manually declared ${winner.firstName} as ${type} winner.`);
+    return { status: "success" };
+});
+
+/**
  * Scheduled: Daily at 03:30 UTC (09:00 AM IST)
  * Sends birthday wishes and credits points.
  */

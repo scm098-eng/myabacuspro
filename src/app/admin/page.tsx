@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette, Type, Code, FileText, Paperclip, X, UserPlus, Zap, Settings, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette, Type, Code, FileText, Paperclip, X, UserPlus, Zap, Settings, RefreshCw, AlertTriangle, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -134,7 +134,9 @@ export default function AdminDashboardPage() {
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
   const [recentJoins, setRecentJoins] = useState<ProfileData[]>([]);
   const [winnersData, setWinnersData] = useState<any>(null);
-  const [isResetting, setIsResetting] = useState<'weekly' | 'monthly' | null>(null);
+  const [isResetting, setIsResetting] = useState<'weekly' | 'monthly' | 'force' | null>(null);
+  
+  const [forceWinnerDialog, setForceWinnerDialog] = useState<{ open: boolean, user: ProfileData | null }>({ open: false, user: null });
 
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [isBlogDialogOpen, setIsBlogDialogOpen] = useState(false);
@@ -404,6 +406,27 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleForceDeclareWinner = async (type: 'weekly' | 'monthly') => {
+    if (!forceWinnerDialog.user) return;
+    
+    setIsResetting('force');
+    try {
+      const functions = getFunctions(firebaseApp);
+      const forceFn = httpsCallable(functions, 'forceDeclareWinner');
+      await forceFn({ uid: forceWinnerDialog.user.uid, type });
+      
+      toast({ 
+        title: "Success", 
+        description: `${forceWinnerDialog.user.firstName} is now the ${type} champion.` 
+      });
+      setForceWinnerDialog({ open: false, user: null });
+    } catch (e: any) {
+      toast({ title: "Failed", description: e.message, variant: "destructive" });
+    } finally {
+      setIsResetting(null);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
@@ -513,7 +536,16 @@ export default function AdminDashboardPage() {
                                               </div>
                                             </TableCell>
                                             <TableCell><Badge variant={s.subscriptionStatus === 'pro' ? 'default' : 'outline'}>{s.subscriptionStatus}</Badge></TableCell>
-                                            <TableCell className="text-right"><Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link></Button></TableCell>
+                                            <TableCell className="text-right">
+                                              <div className="flex justify-end gap-2">
+                                                {profile?.role === 'admin' && (
+                                                  <Button variant="ghost" size="sm" onClick={() => setForceWinnerDialog({ open: true, user: s })} className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50">
+                                                    <Trophy className="w-4 h-4" />
+                                                  </Button>
+                                                )}
+                                                <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link></Button>
+                                              </div>
+                                            </TableCell>
                                         </TableRow>
                                     )) : <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">No students found.</TableCell></TableRow>}
                                 </TableBody>
@@ -805,6 +837,35 @@ export default function AdminDashboardPage() {
                                         {isResetting === 'monthly' ? <Loader2 className="animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
                                         Declare Monthly Winner
                                     </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-orange-200 bg-orange-50/10">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Star className="w-5 h-5 text-orange-500" />
+                                    Manual Winner Override
+                                </CardTitle>
+                                <CardDescription>Directly name a student as champion without resetting points.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex flex-col md:flex-row gap-4 items-end">
+                                    <div className="flex-1 w-full space-y-2">
+                                        <Label>Select Student</Label>
+                                        <Select onValueChange={(val) => setForceWinnerDialog({ open: true, user: allUsers.find(u => u.uid === val) || null })}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Search or select a student..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {filteredStudents.map(s => (
+                                                    <SelectItem key={s.uid} value={s.uid}>
+                                                        {s.firstName} {s.surname} ({s.email})
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -1168,6 +1229,53 @@ export default function AdminDashboardPage() {
                     </Button>
                 </DialogFooter>
             </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- FORCE WINNER DIALOG --- */}
+      <Dialog open={forceWinnerDialog.open} onOpenChange={(val) => !val && setForceWinnerDialog({ open: false, user: null })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-yellow-500" />
+              Declare Champion
+            </DialogTitle>
+            <DialogDescription>
+              Name <strong>{forceWinnerDialog.user?.firstName} {forceWinnerDialog.user?.surname}</strong> as the winner for the current period.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-1 gap-4 py-4">
+            <Button 
+              onClick={() => handleForceDeclareWinner('weekly')} 
+              variant="outline" 
+              className="h-16 justify-between px-6"
+              disabled={isResetting !== null}
+            >
+              <div className="text-left">
+                <p className="font-bold">Weekly Champion</p>
+                <p className="text-xs text-muted-foreground">Appears on Marquee & Dashboard</p>
+              </div>
+              <Trophy className="w-5 h-5 text-blue-500" />
+            </Button>
+
+            <Button 
+              onClick={() => handleForceDeclareWinner('monthly')} 
+              variant="outline" 
+              className="h-16 justify-between px-6"
+              disabled={isResetting !== null}
+            >
+              <div className="text-left">
+                <p className="font-bold">Monthly Master</p>
+                <p className="text-xs text-muted-foreground">Highest Tier Recognition</p>
+              </div>
+              <Crown className="w-5 h-5 text-purple-500" />
+            </Button>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setForceWinnerDialog({ open: false, user: null })}>Cancel</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
