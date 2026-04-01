@@ -139,89 +139,176 @@ const progressReportHTML = (userName, type, metadata) => `
 `;
 
 /**
+ * Shared logic for Weekly Reset
+ */
+async function performWeeklyReset() {
+    logger.info("Starting Weekly Points Reset & Winner Declaration");
+    const currentWeekKey = getUTCMondayKey();
+    const lastWeekKey = getUTCPreviousMondayKey();
+
+    // 1. Declare Winner (highest weekly points from the period JUST ENDING)
+    const topUserSnap = await db.collection('users')
+        .where('role', '==', 'student')
+        .where('lastWeeklyReset', '==', lastWeekKey)
+        .orderBy('weeklyPoints', 'desc')
+        .limit(1)
+        .get();
+
+    if (!topUserSnap.empty) {
+        const winner = topUserSnap.docs[0].data();
+        if ((winner.weeklyPoints || 0) > 0) {
+            await db.collection('stats').doc('leaderboard').set({
+                lastWeeklyWinner: {
+                    uid: topUserSnap.docs[0].id,
+                    name: `${winner.firstName} ${winner.surname}`,
+                    photo: winner.profilePhoto || '',
+                    points: winner.weeklyPoints || 0,
+                    declaredAt: admin.firestore.FieldValue.serverTimestamp(),
+                    weekKey: lastWeekKey
+                }
+            }, { merge: true });
+            logger.info(`Weekly Winner declared: ${winner.firstName}`);
+        }
+    }
+
+    // 2. Fetch all students to reset and send reports
+    const usersSnap = await db.collection('users').where('role', '==', 'student').get();
+    const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
+    let batch = db.batch();
+    let count = 0;
+
+    for (const userDoc of usersSnap.docs) {
+        const data = userDoc.data();
+        // Skip if already reset for this cycle
+        if (data.lastWeeklyReset === currentWeekKey) continue;
+
+        // Send Report if they have an email and practiced this week
+        if (data.email && (data.weeklyPoints || 0) > 0) {
+            try {
+                await transporter.sendMail({
+                    from: '"MyAbacusPro" <myabacuspro@gmail.com>',
+                    to: data.email,
+                    subject: `Weekly Mastery Report: ${data.firstName} 📈`,
+                    html: progressReportHTML(data.firstName, 'weekly', {
+                        periodPoints: data.weeklyPoints || 0,
+                        streak: data.currentStreak || 0,
+                        totalPoints: data.totalPoints || 0,
+                        practiceDays: data.totalDaysPracticed || 0
+                    })
+                });
+            } catch (emailErr) {
+                logger.error(`Failed to send weekly report to ${data.email}`, emailErr);
+            }
+        }
+
+        batch.update(userDoc.ref, {
+            weeklyPoints: 0,
+            lastWeeklyReset: currentWeekKey,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        count++;
+
+        if (count % 500 === 0) {
+            await batch.commit();
+            batch = db.batch();
+        }
+    }
+
+    if (count % 500 !== 0) {
+        await batch.commit();
+    }
+    return count;
+}
+
+/**
+ * Shared logic for Monthly Reset
+ */
+async function performMonthlyReset() {
+    logger.info("Starting Monthly Points Reset & Winner Declaration");
+    const currentMonthKey = getUTCMonthKey();
+    const lastMonthKey = getUTCPreviousMonthKey();
+
+    // 1. Declare Monthly Winner
+    const topUserSnap = await db.collection('users')
+        .where('role', '==', 'student')
+        .where('lastMonthlyReset', '==', lastMonthKey)
+        .orderBy('monthlyPoints', 'desc')
+        .limit(1)
+        .get();
+
+    if (!topUserSnap.empty) {
+        const winner = topUserSnap.docs[0].data();
+        if ((winner.monthlyPoints || 0) > 0) {
+            await db.collection('stats').doc('leaderboard').set({
+                lastMonthlyWinner: {
+                    uid: topUserSnap.docs[0].id,
+                    name: `${winner.firstName} ${winner.surname}`,
+                    photo: winner.profilePhoto || '',
+                    points: winner.monthlyPoints || 0,
+                    declaredAt: admin.firestore.FieldValue.serverTimestamp(),
+                    monthKey: lastMonthKey
+                }
+            }, { merge: true });
+            logger.info(`Monthly Winner declared: ${winner.firstName}`);
+        }
+    }
+
+    // 2. Reset and send reports
+    const usersSnap = await db.collection('users').where('role', '==', 'student').get();
+    const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
+    let batch = db.batch();
+    let count = 0;
+
+    for (const userDoc of usersSnap.docs) {
+        const data = userDoc.data();
+        if (data.lastMonthlyReset === currentMonthKey) continue;
+
+        if (data.email && (data.monthlyPoints || 0) > 0) {
+            try {
+                await transporter.sendMail({
+                    from: '"MyAbacusPro" <myabacuspro@gmail.com>',
+                    to: data.email,
+                    subject: `Monthly Mastery Report: ${data.firstName} 📈`,
+                    html: progressReportHTML(data.firstName, 'monthly', {
+                        periodPoints: data.monthlyPoints || 0,
+                        streak: data.currentStreak || 0,
+                        totalPoints: data.totalPoints || 0,
+                        practiceDays: data.totalDaysPracticed || 0
+                    })
+                });
+            } catch (emailErr) {
+                logger.error(`Failed to send monthly report to ${data.email}`, emailErr);
+            }
+        }
+
+        batch.update(userDoc.ref, {
+            monthlyPoints: 0,
+            lastMonthlyReset: currentMonthKey,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        count++;
+
+        if (count % 500 === 0) {
+            await batch.commit();
+            batch = db.batch();
+        }
+    }
+
+    if (count % 500 !== 0) {
+        await batch.commit();
+    }
+    return count;
+}
+
+/**
  * Scheduled: Every Monday at 00:00 UTC
  */
 exports.resetWeeklyPoints = onSchedule({
     schedule: "0 0 * * 1",
     secrets: ["GMAIL_APP_PASSWORD"]
 }, async (event) => {
-    logger.info("Starting Weekly Points Reset & Winner Declaration");
-    const currentWeekKey = getUTCMondayKey();
-    const lastWeekKey = getUTCPreviousMondayKey();
-
     try {
-        // 1. Declare Winner (highest weekly points from the period JUST ENDING)
-        const topUserSnap = await db.collection('users')
-            .where('role', '==', 'student')
-            .where('lastWeeklyReset', '==', lastWeekKey)
-            .orderBy('weeklyPoints', 'desc')
-            .limit(1)
-            .get();
-
-        if (!topUserSnap.empty) {
-            const winner = topUserSnap.docs[0].data();
-            if ((winner.weeklyPoints || 0) > 0) {
-                await db.collection('stats').doc('leaderboard').set({
-                    lastWeeklyWinner: {
-                        uid: topUserSnap.docs[0].id,
-                        name: `${winner.firstName} ${winner.surname}`,
-                        photo: winner.profilePhoto || '',
-                        points: winner.weeklyPoints || 0,
-                        declaredAt: admin.firestore.FieldValue.serverTimestamp(),
-                        weekKey: lastWeekKey
-                    }
-                }, { merge: true });
-                logger.info(`Weekly Winner declared: ${winner.firstName}`);
-            }
-        }
-
-        // 2. Fetch all students to reset and send reports
-        const usersSnap = await db.collection('users').where('role', '==', 'student').get();
-        const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
-        let batch = db.batch();
-        let count = 0;
-
-        for (const userDoc of usersSnap.docs) {
-            const data = userDoc.data();
-            // Skip if already reset for this cycle
-            if (data.lastWeeklyReset === currentWeekKey) continue;
-
-            // Send Report if they have an email and practiced this week
-            if (data.email && (data.weeklyPoints || 0) > 0) {
-                try {
-                    await transporter.sendMail({
-                        from: '"MyAbacusPro" <myabacuspro@gmail.com>',
-                        to: data.email,
-                        subject: `Weekly Mastery Report: ${data.firstName} 📈`,
-                        html: progressReportHTML(data.firstName, 'weekly', {
-                            periodPoints: data.weeklyPoints || 0,
-                            streak: data.currentStreak || 0,
-                            totalPoints: data.totalPoints || 0,
-                            practiceDays: data.totalDaysPracticed || 0
-                        })
-                    });
-                } catch (emailErr) {
-                    logger.error(`Failed to send weekly report to ${data.email}`, emailErr);
-                }
-            }
-
-            batch.update(userDoc.ref, {
-                weeklyPoints: 0,
-                lastWeeklyReset: currentWeekKey,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            });
-            count++;
-
-            if (count % 500 === 0) {
-                await batch.commit();
-                batch = db.batch();
-            }
-        }
-
-        if (count % 500 !== 0) {
-            await batch.commit();
-        }
-        
+        const count = await performWeeklyReset();
         logger.info(`Successfully reset and sent reports for ${count} students.`);
     } catch (err) {
         logger.error("Weekly reset failed", err);
@@ -235,84 +322,49 @@ exports.resetMonthlyPoints = onSchedule({
     schedule: "0 0 1 * *",
     secrets: ["GMAIL_APP_PASSWORD"]
 }, async (event) => {
-    logger.info("Starting Monthly Points Reset & Winner Declaration");
-    const currentMonthKey = getUTCMonthKey();
-    const lastMonthKey = getUTCPreviousMonthKey();
-
     try {
-        // 1. Declare Monthly Winner
-        const topUserSnap = await db.collection('users')
-            .where('role', '==', 'student')
-            .where('lastMonthlyReset', '==', lastMonthKey)
-            .orderBy('monthlyPoints', 'desc')
-            .limit(1)
-            .get();
-
-        if (!topUserSnap.empty) {
-            const winner = topUserSnap.docs[0].data();
-            if ((winner.monthlyPoints || 0) > 0) {
-                await db.collection('stats').doc('leaderboard').set({
-                    lastMonthlyWinner: {
-                        uid: topUserSnap.docs[0].id,
-                        name: `${winner.firstName} ${winner.surname}`,
-                        photo: winner.profilePhoto || '',
-                        points: winner.monthlyPoints || 0,
-                        declaredAt: admin.firestore.FieldValue.serverTimestamp(),
-                        monthKey: lastMonthKey
-                    }
-                }, { merge: true });
-                logger.info(`Monthly Winner declared: ${winner.firstName}`);
-            }
-        }
-
-        // 2. Reset and send reports
-        const usersSnap = await db.collection('users').where('role', '==', 'student').get();
-        const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
-        let batch = db.batch();
-        let count = 0;
-
-        for (const userDoc of usersSnap.docs) {
-            const data = userDoc.data();
-            if (data.lastMonthlyReset === currentMonthKey) continue;
-
-            if (data.email && (data.monthlyPoints || 0) > 0) {
-                try {
-                    await transporter.sendMail({
-                        from: '"MyAbacusPro" <myabacuspro@gmail.com>',
-                        to: data.email,
-                        subject: `Monthly Mastery Report: ${data.firstName} 📈`,
-                        html: progressReportHTML(data.firstName, 'monthly', {
-                            periodPoints: data.monthlyPoints || 0,
-                            streak: data.currentStreak || 0,
-                            totalPoints: data.totalPoints || 0,
-                            practiceDays: data.totalDaysPracticed || 0
-                        })
-                    });
-                } catch (emailErr) {
-                    logger.error(`Failed to send monthly report to ${data.email}`, emailErr);
-                }
-            }
-
-            batch.update(userDoc.ref, {
-                monthlyPoints: 0,
-                lastMonthlyReset: currentMonthKey,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            });
-            count++;
-
-            if (count % 500 === 0) {
-                await batch.commit();
-                batch = db.batch();
-            }
-        }
-
-        if (count % 500 !== 0) {
-            await batch.commit();
-        }
-        
+        const count = await performMonthlyReset();
         logger.info(`Successfully reset monthly cycle for ${count} students.`);
     } catch (err) {
         logger.error("Monthly reset failed", err);
+    }
+});
+
+/**
+ * Manual Callable: Admin only
+ */
+exports.manualResetWeekly = onCall({
+    secrets: ["GMAIL_APP_PASSWORD"]
+}, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
+    const userDoc = await db.collection('users').doc(request.auth.uid).get();
+    if (userDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
+
+    try {
+        const count = await performWeeklyReset();
+        return { status: "success", count };
+    } catch (err) {
+        logger.error("Manual Weekly reset failed", err);
+        throw new HttpsError('internal', err.message);
+    }
+});
+
+/**
+ * Manual Callable: Admin only
+ */
+exports.manualResetMonthly = onCall({
+    secrets: ["GMAIL_APP_PASSWORD"]
+}, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
+    const userDoc = await db.collection('users').doc(request.auth.uid).get();
+    if (userDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
+
+    try {
+        const count = await performMonthlyReset();
+        return { status: "success", count };
+    } catch (err) {
+        logger.error("Manual Monthly reset failed", err);
+        throw new HttpsError('internal', err.message);
     }
 });
 

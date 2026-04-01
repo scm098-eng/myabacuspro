@@ -12,10 +12,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette, Type, Code, FileText, Paperclip, X, UserPlus, Zap } from 'lucide-react';
+import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette, Type, Code, FileText, Paperclip, X, UserPlus, Zap, Settings, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from '@/components/ui/textarea';
@@ -132,6 +133,8 @@ export default function AdminDashboardPage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
   const [recentJoins, setRecentJoins] = useState<ProfileData[]>([]);
+  const [winnersData, setWinnersData] = useState<any>(null);
+  const [isResetting, setIsResetting] = useState<'weekly' | 'monthly' | null>(null);
 
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [isBlogDialogOpen, setIsBlogDialogOpen] = useState(false);
@@ -190,6 +193,12 @@ export default function AdminDashboardPage() {
         }
       );
       unsubscribers.push(blogUnsub);
+
+      // Winners Listener
+      const winnerUnsub = onSnapshot(doc(db, "stats", "leaderboard"), (snap) => {
+        if (snap.exists()) setWinnersData(snap.data());
+      });
+      unsubscribers.push(winnerUnsub);
 
       // --- RECENT JOINS LISTENER ---
       const joinsUnsub = onSnapshot(
@@ -375,6 +384,26 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleManualReset = async (type: 'weekly' | 'monthly') => {
+    if (!confirm(`Are you sure you want to trigger the ${type} reset? This will declare a winner, send all reports, and reset student points for the new period.`)) return;
+    
+    setIsResetting(type);
+    try {
+      const functions = getFunctions(firebaseApp);
+      const resetFn = httpsCallable(functions, type === 'weekly' ? 'manualResetWeekly' : 'manualResetMonthly');
+      const result: any = await resetFn();
+      
+      toast({ 
+        title: "Reset Successful", 
+        description: `Winner declared and reports sent to ${result.data.count} students.` 
+      });
+    } catch (e: any) {
+      toast({ title: "Reset Failed", description: e.message, variant: "destructive" });
+    } finally {
+      setIsResetting(null);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
@@ -457,6 +486,7 @@ export default function AdminDashboardPage() {
                     {profile?.role === 'admin' && <TabsTrigger value="blogs" className="h-10">Blogs</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="moderation" className="h-10">Moderation</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="marketing" className="h-10">Marketing</TabsTrigger>}
+                    {profile?.role === 'admin' && <TabsTrigger value="system" className="h-10">System</TabsTrigger>}
                 </TabsList>
 
                 <TabsContent value="students">
@@ -717,6 +747,124 @@ export default function AdminDashboardPage() {
                             </div>
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                <TabsContent value="system">
+                    <div className="space-y-8">
+                        <Card className="border-primary/20 bg-primary/5">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Settings className="w-5 h-5 text-primary" />
+                                    System Maintenance
+                                </CardTitle>
+                                <CardDescription>Trigger performance cycles and declare winners manually.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="p-6 bg-background rounded-2xl border border-border shadow-sm space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-blue-100 p-2 rounded-lg">
+                                            <RefreshCw className="w-5 h-5 text-blue-600" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold">Weekly Performance Cycle</h4>
+                                            <p className="text-xs text-muted-foreground">Monday 00:00 UTC</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-xs leading-relaxed text-muted-foreground">
+                                        Declares the student with the most points since last Monday as champion. Resets all weekly points to zero and sends reports.
+                                    </p>
+                                    <Button 
+                                        onClick={() => handleManualReset('weekly')} 
+                                        variant="outline" 
+                                        className="w-full"
+                                        disabled={isResetting !== null}
+                                    >
+                                        {isResetting === 'weekly' ? <Loader2 className="animate-spin mr-2" /> : <Trophy className="w-4 h-4 mr-2" />}
+                                        Run Weekly Declaration
+                                    </Button>
+                                </div>
+
+                                <div className="p-6 bg-background rounded-2xl border border-border shadow-sm space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-purple-100 p-2 rounded-lg">
+                                            <Crown className="w-5 h-5 text-purple-600" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold">Monthly Performance Cycle</h4>
+                                            <p className="text-xs text-muted-foreground">1st Day 00:00 UTC</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-xs leading-relaxed text-muted-foreground">
+                                        Identifies the master of the previous month. Resets all monthly points and sends comprehensive mastery reports.
+                                    </p>
+                                    <Button 
+                                        onClick={() => handleManualReset('monthly')} 
+                                        className="w-full bg-purple-600 hover:bg-purple-700"
+                                        disabled={isResetting !== null}
+                                    >
+                                        {isResetting === 'monthly' ? <Loader2 className="animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
+                                        Declare Monthly Winner
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                    <Trophy className="w-5 h-5 text-yellow-500" />
+                                    Live Winner Status
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Current Weekly Champion</Label>
+                                        <div className="p-4 bg-muted rounded-xl border border-border flex items-center gap-4">
+                                            {winnersData?.lastWeeklyWinner ? (
+                                                <>
+                                                    <Avatar className="h-10 w-10 border-2 border-white"><AvatarImage src={winnersData.lastWeeklyWinner.photo}/></Avatar>
+                                                    <div>
+                                                        <p className="font-bold text-sm">{winnersData.lastWeeklyWinner.name}</p>
+                                                        <p className="text-[10px] font-medium text-muted-foreground">
+                                                            {winnersData.lastWeeklyWinner.points.toLocaleString()} PTS • Declared {formatDistanceToNow(winnersData.lastWeeklyWinner.declaredAt.toDate(), { addSuffix: true })}
+                                                        </p>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <p className="text-xs italic text-muted-foreground">No weekly champion declared yet.</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Current Monthly Master</Label>
+                                        <div className="p-4 bg-muted rounded-xl border border-border flex items-center gap-4">
+                                            {winnersData?.lastMonthlyWinner ? (
+                                                <>
+                                                    <Avatar className="h-10 w-10 border-2 border-white"><AvatarImage src={winnersData.lastMonthlyWinner.photo}/></Avatar>
+                                                    <div>
+                                                        <p className="font-bold text-sm">{winnersData.lastMonthlyWinner.name}</p>
+                                                        <p className="text-[10px] font-medium text-muted-foreground">
+                                                            {winnersData.lastMonthlyWinner.points.toLocaleString()} PTS • Declared {formatDistanceToNow(winnersData.lastMonthlyWinner.declaredAt.toDate(), { addSuffix: true })}
+                                                        </p>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <p className="text-xs italic text-muted-foreground">No monthly master declared yet.</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                            <CardFooter className="bg-red-50 py-4 border-t border-red-100 rounded-b-lg">
+                                <p className="text-[10px] text-red-700 font-bold flex items-center gap-2">
+                                    <AlertTriangle className="w-3 h-3" />
+                                    WARNING: Resets are IRREVERSIBLE. Only trigger if the automated system misses a cycle.
+                                </p>
+                            </CardFooter>
+                        </Card>
+                    </div>
                 </TabsContent>
             </Tabs>
         </div>
