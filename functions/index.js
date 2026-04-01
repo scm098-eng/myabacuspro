@@ -324,7 +324,7 @@ exports.forceDeclareWinner = onCall(async (request) => {
             throw new HttpsError('permission-denied', "Admin permissions required.");
         }
 
-        const { uid, type } = data; // type: 'weekly' | 'monthly'
+        const { uid, type } = data; 
         if (!uid || !type) throw new HttpsError('invalid-argument', "Missing parameters.");
 
         const winnerSnap = await db.collection('users').doc(uid).get();
@@ -333,7 +333,9 @@ exports.forceDeclareWinner = onCall(async (request) => {
         const winner = winnerSnap.data();
         const periodKey = type === 'weekly' ? getUTCMondayKey() : getUTCMonthKey();
         const points = type === 'weekly' ? (winner.weeklyPoints || 0) : (winner.monthlyPoints || 0);
-        const fullName = `${winner.firstName || ''} ${winner.surname || ''}`.trim();
+        
+        let fullName = `${winner.firstName || ''} ${winner.surname || ''}`.trim();
+        if (!fullName) fullName = winner.email?.split('@')[0] || 'Champion';
 
         const updateKey = type === 'weekly' ? 'lastWeeklyWinner' : 'lastMonthlyWinner';
         const periodField = type === 'weekly' ? 'weekKey' : 'monthKey';
@@ -341,7 +343,7 @@ exports.forceDeclareWinner = onCall(async (request) => {
         await db.collection('stats').doc('leaderboard').set({
             [updateKey]: {
                 uid: uid,
-                name: fullName || 'Student',
+                name: fullName,
                 photo: winner.profilePhoto || '',
                 points: points,
                 declaredAt: FieldValue.serverTimestamp(),
@@ -349,9 +351,10 @@ exports.forceDeclareWinner = onCall(async (request) => {
             }
         }, { merge: true });
 
-        return { status: "success", message: `Successfully declared ${fullName} as the ${type} winner.` };
+        return { status: "success", message: `Successfully declared ${fullName} as the ${type} champion.` };
     } catch (err) {
+        logger.error("Force Declare Error:", err);
         if (err instanceof HttpsError) throw err;
-        throw new HttpsError('internal', err.message || "Server error.");
+        throw new HttpsError('internal', err.message || "Server encountered an error.");
     }
 });

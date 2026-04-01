@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
@@ -23,12 +22,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { isWithinInterval, add, parseISO, getDate, getMonth, format, formatDistanceToNow } from 'date-fns';
+import { isWithinInterval, add, parseISO, getDate, getMonth, format, formatDistanceToNow, isValid } from 'date-fns';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
 
 /**
  * UTC standard Monday calculation (YYYY-MM-DD)
@@ -69,6 +67,7 @@ const isBirthdaySoon = (dob: string | undefined) => {
     try {
       const today = new Date();
       const birthday = parseISO(dob);
+      if (!isValid(birthday)) return false;
       const nextBirthday = new Date(today.getFullYear(), getMonth(birthday), getDate(birthday));
       if (nextBirthday < today) nextBirthday.setFullYear(today.getFullYear() + 1);
       return isWithinInterval(nextBirthday, { start: today, end: add(today, { days: 7 }) });
@@ -82,6 +81,7 @@ const isBirthdayToday = (dob: string | undefined) => {
     try {
       const today = new Date();
       const birthday = parseISO(dob);
+      if (!isValid(birthday)) return false;
       return getMonth(today) === getMonth(birthday) && getDate(today) === getDate(birthday);
     } catch (e) {
       return false;
@@ -91,6 +91,7 @@ const isBirthdayToday = (dob: string | undefined) => {
 const isRecentJoin = (createdAt: any) => {
   if (!createdAt) return false;
   const joinDate = createdAt?.toDate ? createdAt.toDate() : new Date(createdAt);
+  if (!isValid(joinDate)) return false;
   const now = new Date();
   const diffInHours = (now.getTime() - joinDate.getTime()) / (1000 * 60 * 60);
   return diffInHours <= 24; 
@@ -246,7 +247,7 @@ export default function AdminDashboardPage() {
               uid: doc.id, 
               name: `${ud.firstName} ${ud.surname}`, 
               photo: ud.profilePhoto, 
-              points: ud[leaderboardTab as keyof ProfileData] || 0, 
+              points: (ud as any)[leaderboardTab] || 0, 
               title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) 
             };
           });
@@ -291,7 +292,7 @@ export default function AdminDashboardPage() {
 
     try {
       await setDoc(doc(db, "blogs", id), blogData, { merge: true });
-      toast({ title: editingBlog.id ? "Blog Updated" : "Blog Published" });
+      toast({ title: "Blog Updated", description: editingBlog.id ? "Article saved successfully." : "Article published." });
       setIsBlogDialogOpen(false);
       setEditingBlog(null);
       setDraftContent('');
@@ -393,7 +394,7 @@ export default function AdminDashboardPage() {
       
       toast({ 
         title: "Reset Successful", 
-        description: `Winner declared and reports sent to ${result.data.count} students.` 
+        description: `Winner declared and reports sent to ${result.data.count || 0} students.` 
       });
     } catch (e: any) {
       toast({ title: "Reset Failed", description: e.message || "The server encountered an error processing the reset.", variant: "destructive" });
@@ -422,13 +423,9 @@ export default function AdminDashboardPage() {
       }
     } catch (e: any) {
       console.error("Force Declare Error:", e);
-      const descriptiveError = e.message === "internal" 
-        ? "The server encountered an issue. Check Cloud Function logs for details."
-        : (e.message || "An unexpected error occurred during the declaration.");
-
       toast({ 
         title: "Declaration Failed", 
-        description: descriptiveError, 
+        description: e.message || "An unexpected error occurred during the declaration.", 
         variant: "destructive" 
       });
     } finally {
@@ -447,9 +444,14 @@ export default function AdminDashboardPage() {
     setMarketingAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const { filteredTeachers, filteredStudents, summaryStats, filteredSuspicious, upcomingBirthdays } = useMemo(() => {
+  const processedData = useMemo(() => {
     const sl = searchTerm.toLowerCase();
-    const matches = (u: ProfileData) => (u.firstName?.toLowerCase().includes(sl) || u.surname?.toLowerCase().includes(sl) || u.email?.toLowerCase().includes(sl));
+    const matches = (u: ProfileData) => (
+      u.firstName?.toLowerCase().includes(sl) || 
+      u.surname?.toLowerCase().includes(sl) || 
+      u.email?.toLowerCase().includes(sl)
+    );
+    
     const allTeachers = allUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
     const allStudents = allUsers.filter(u => u.role === 'student');
     
@@ -458,6 +460,7 @@ export default function AdminDashboardPage() {
       .sort((a, b) => {
         const dateA = parseISO(a.dob || '');
         const dateB = parseISO(b.dob || '');
+        if (!isValid(dateA) || !isValid(dateB)) return 0;
         const sortValA = getMonth(dateA) * 31 + getDate(dateA);
         const sortValB = getMonth(dateB) * 31 + getDate(dateB);
         return sortValA - sortValB;
@@ -509,9 +512,9 @@ export default function AdminDashboardPage() {
         </CardHeader>
         <CardContent className="space-y-6">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <StatCard title="Total Students" value={summaryStats.totalStudents} icon={GraduationCap} />
-                <StatCard title="Pro Accounts" value={summaryStats.proUsers} icon={Crown} />
-                <StatCard title="Active Staff" value={summaryStats.totalTeachers} icon={Briefcase} />
+                <StatCard title="Total Students" value={processedData.summaryStats.totalStudents} icon={GraduationCap} />
+                <StatCard title="Pro Accounts" value={processedData.summaryStats.proUsers} icon={Crown} />
+                <StatCard title="Active Staff" value={processedData.summaryStats.totalTeachers} icon={Briefcase} />
             </div>
             <div className="relative group max-w-2xl">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -539,7 +542,7 @@ export default function AdminDashboardPage() {
                             <Table>
                                 <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
                                 <TableBody>
-                                    {filteredStudents.length > 0 ? filteredStudents.map((s) => (
+                                    {processedData.filteredStudents.length > 0 ? processedData.filteredStudents.map((s) => (
                                         <TableRow key={s.uid} className={s.isSuspended ? "opacity-50" : ""}>
                                             <TableCell>
                                               <div className="flex items-center gap-2">
@@ -581,7 +584,7 @@ export default function AdminDashboardPage() {
                             <Table>
                                 <TableHeader><TableRow><TableHead>Teacher</TableHead><TableHead>Students (Pro/Free)</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
                                 <TableBody>
-                                    {filteredTeachers.length > 0 ? filteredTeachers.map((t) => (
+                                    {processedData.filteredTeachers.length > 0 ? processedData.filteredTeachers.map((t) => (
                                         <TableRow key={t.uid}>
                                             <TableCell>
                                               <div className="flex items-center gap-2">
@@ -598,8 +601,8 @@ export default function AdminDashboardPage() {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
-                                                    <Badge variant="outline" className="h-6 font-bold bg-green-50 text-green-700 border-green-200">Pro: {t.stats.pro}</Badge>
-                                                    <Badge variant="outline" className="h-6 font-bold bg-slate-50 text-slate-600">Free: {t.stats.free}</Badge>
+                                                    <Badge variant="outline" className="h-6 font-bold bg-green-50 text-green-700 border-green-200">Pro: {(t as any).stats.pro}</Badge>
+                                                    <Badge variant="outline" className="h-6 font-bold bg-slate-50 text-slate-600">Free: {(t as any).stats.free}</Badge>
                                                 </div>
                                             </TableCell>
                                             <TableCell><Badge variant={t.status === 'approved' || t.role === 'admin' ? 'default' : 'secondary'}>{t.status || 'Active'}</Badge></TableCell>
@@ -688,12 +691,12 @@ export default function AdminDashboardPage() {
                             <Table>
                                 <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Reason</TableHead><TableHead className="text-right">Action</TableHead></TableHeader>
                                 <TableBody>
-                                    {filteredSuspicious.length > 0 ? filteredSuspicious.map((u) => (
+                                    {processedData.filteredSuspicious.length > 0 ? processedData.filteredSuspicious.map((u) => (
                                         <TableRow key={u.uid}>
                                             <TableCell><p className="text-sm font-bold">{u.firstName} {u.surname}</p><p className="text-[10px] text-muted-foreground">{u.email}</p></TableCell>
                                             <TableCell>
                                                 <div className="flex flex-wrap gap-1">
-                                                    {u.flagReasons.map(r => (
+                                                    {(u as any).flagReasons.map((r: string) => (
                                                         <Badge key={r} variant="outline" className="text-[9px] border-red-200 bg-red-50 text-red-700">{r}</Badge>
                                                     ))}
                                                 </div>
@@ -880,7 +883,7 @@ export default function AdminDashboardPage() {
                                                 <SelectValue placeholder="Search or select a student..." />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {filteredStudents.map(s => (
+                                                {processedData.filteredStudents.map(s => (
                                                     <SelectItem key={s.uid} value={s.uid}>
                                                         {s.firstName} {s.surname} ({s.email})
                                                     </SelectItem>
@@ -976,7 +979,7 @@ export default function AdminDashboardPage() {
                             </Badge>
                           </div>
                           <p className="text-[9px] font-bold text-orange-600/80 uppercase tracking-tight">
-                            Joined {formatDistanceToNow(u.createdAt?.toDate ? u.createdAt.toDate() : new Date(u.createdAt), { addSuffix: true })}
+                            Joined {u.createdAt?.toDate ? formatDistanceToNow(u.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
                           </p>
                         </div>
                         <Zap className="w-4 h-4 text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -987,12 +990,12 @@ export default function AdminDashboardPage() {
               </Card>
             )}
 
-            {profile?.role === 'admin' && upcomingBirthdays.length > 0 && (
+            {profile?.role === 'admin' && processedData.upcomingBirthdays.length > 0 && (
                 <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2 font-headline"><Cake className="text-pink-500 w-5 h-5"/> Upcoming Birthdays</CardTitle></CardHeader>
                     <CardContent className="p-0">
                         <div className="divide-y">
-                            {upcomingBirthdays.map((u) => (
+                            {processedData.upcomingBirthdays.map((u) => (
                                 <div key={u.uid} className="flex items-center justify-between p-4 hover:bg-muted/30">
                                     <div className="min-w-0 flex-1">
                                         <p className="text-sm font-bold truncate">{u.firstName} {u.surname}</p>
