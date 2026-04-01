@@ -316,19 +316,28 @@ exports.manualResetMonthly = onCall({
 
 exports.forceDeclareWinner = onCall(async (request) => {
     const { data, auth } = request;
-    if (!auth) throw new HttpsError('unauthenticated', "Authentication required.");
+    if (!auth) {
+        throw new HttpsError('unauthenticated', "Authentication required.");
+    }
 
     try {
-        const adminDoc = await db.collection('users').doc(auth.uid).get();
+        // Use an explicit database instance for the transaction
+        const firestore = getFirestore();
+        const adminDoc = await firestore.collection('users').doc(auth.uid).get();
+        
         if (!adminDoc.exists || adminDoc.data()?.role !== 'admin') {
             throw new HttpsError('permission-denied', "Admin permissions required.");
         }
 
         const { uid, type } = data; 
-        if (!uid || !type) throw new HttpsError('invalid-argument', "Missing parameters.");
+        if (!uid || !type) {
+            throw new HttpsError('invalid-argument', "User ID and Reset Type are required.");
+        }
 
-        const winnerSnap = await db.collection('users').doc(uid).get();
-        if (!winnerSnap.exists) throw new HttpsError('not-found', "Student not found.");
+        const winnerSnap = await firestore.collection('users').doc(uid).get();
+        if (!winnerSnap.exists) {
+            throw new HttpsError('not-found', "The selected student could not be found.");
+        }
         
         const winner = winnerSnap.data();
         const periodKey = type === 'weekly' ? getUTCMondayKey() : getUTCMonthKey();
@@ -340,7 +349,7 @@ exports.forceDeclareWinner = onCall(async (request) => {
         const updateKey = type === 'weekly' ? 'lastWeeklyWinner' : 'lastMonthlyWinner';
         const periodField = type === 'weekly' ? 'weekKey' : 'monthKey';
 
-        await db.collection('stats').doc('leaderboard').set({
+        await firestore.collection('stats').doc('leaderboard').set({
             [updateKey]: {
                 uid: uid,
                 name: fullName,
@@ -351,10 +360,13 @@ exports.forceDeclareWinner = onCall(async (request) => {
             }
         }, { merge: true });
 
-        return { status: "success", message: `Successfully declared ${fullName} as the ${type} champion.` };
+        return { 
+            status: "success", 
+            message: `Successfully declared ${fullName} as the ${type} champion.` 
+        };
     } catch (err) {
         logger.error("Force Declare Error:", err);
         if (err instanceof HttpsError) throw err;
-        throw new HttpsError('internal', err.message || "Server encountered an error.");
+        throw new HttpsError('internal', err.message || "The server encountered an unexpected error processing the request.");
     }
 });

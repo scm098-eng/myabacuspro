@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
@@ -542,35 +543,39 @@ export default function AdminDashboardPage() {
                             <Table>
                                 <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
                                 <TableBody>
-                                    {processedData.filteredStudents.length > 0 ? processedData.filteredStudents.map((s) => (
-                                        <TableRow key={s.uid} className={s.isSuspended ? "opacity-50" : ""}>
-                                            <TableCell>
-                                              <div className="flex items-center gap-2">
-                                                <Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto}/></Avatar>
-                                                <div>
+                                    {processedData.filteredStudents.length > 0 ? (
+                                        processedData.filteredStudents.map((s) => (
+                                            <TableRow key={s.uid} className={s.isSuspended ? "opacity-50" : ""}>
+                                                <TableCell>
                                                   <div className="flex items-center gap-2">
-                                                    <p className="text-sm font-bold">{s.firstName} {s.surname}</p>
-                                                    {isRecentJoin(s.createdAt) && (
-                                                      <Badge className="h-4 px-1.5 text-[8px] bg-orange-500 text-white border-none animate-pulse">NEW</Badge>
-                                                    )}
+                                                    <Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto}/></Avatar>
+                                                    <div>
+                                                      <div className="flex items-center gap-2">
+                                                        <p className="text-sm font-bold">{s.firstName} {s.surname}</p>
+                                                        {isRecentJoin(s.createdAt) && (
+                                                          <Badge className="h-4 px-1.5 text-[8px] bg-orange-500 text-white border-none animate-pulse">NEW</Badge>
+                                                        )}
+                                                      </div>
+                                                      <p className="text-[10px] text-muted-foreground">{s.email}</p>
+                                                    </div>
                                                   </div>
-                                                  <p className="text-[10px] text-muted-foreground">{s.email}</p>
-                                                </div>
-                                              </div>
-                                            </TableCell>
-                                            <TableCell><Badge variant={s.subscriptionStatus === 'pro' ? 'default' : 'outline'}>{s.subscriptionStatus}</Badge></TableCell>
-                                            <TableCell className="text-right">
-                                              <div className="flex justify-end gap-2">
-                                                {profile?.role === 'admin' && (
-                                                  <Button variant="ghost" size="sm" onClick={() => setForceWinnerDialog({ open: true, user: s })} className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50">
-                                                    <Trophy className="w-4 h-4" />
-                                                  </Button>
-                                                )}
-                                                <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link></Button>
-                                              </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    )) : <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">No students found.</TableCell></TableRow>}
+                                                </TableCell>
+                                                <TableCell><Badge variant={s.subscriptionStatus === 'pro' ? 'default' : 'outline'}>{s.subscriptionStatus}</Badge></TableCell>
+                                                <TableCell className="text-right">
+                                                  <div className="flex justify-end gap-2">
+                                                    {profile?.role === 'admin' && (
+                                                      <Button variant="ghost" size="sm" onClick={() => setForceWinnerDialog({ open: true, user: s })} className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50">
+                                                        <Trophy className="w-4 h-4" />
+                                                      </Button>
+                                                    )}
+                                                    <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link></Button>
+                                                  </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">No students found.</TableCell></TableRow>
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>
@@ -584,36 +589,40 @@ export default function AdminDashboardPage() {
                             <Table>
                                 <TableHeader><TableRow><TableHead>Teacher</TableHead><TableHead>Students (Pro/Free)</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
                                 <TableBody>
-                                    {processedData.filteredTeachers.length > 0 ? processedData.filteredTeachers.map((t) => (
-                                        <TableRow key={t.uid}>
-                                            <TableCell>
-                                              <div className="flex items-center gap-2">
-                                                <div>
+                                    {processedData.filteredTeachers.length > 0 ? (
+                                        processedData.filteredTeachers.map((t) => (
+                                            <TableRow key={t.uid}>
+                                                <TableCell>
                                                   <div className="flex items-center gap-2">
-                                                    <p className="text-sm font-bold">{t.firstName} {t.surname}</p>
-                                                    {isRecentJoin(t.createdAt) && (
-                                                      <Badge className="h-4 px-1.5 text-[8px] bg-orange-500 text-white border-none">NEW</Badge>
-                                                    )}
+                                                    <div>
+                                                      <div className="flex items-center gap-2">
+                                                        <p className="text-sm font-bold">{t.firstName} {t.surname}</p>
+                                                        {isRecentJoin(t.createdAt) && (
+                                                          <Badge className="h-4 px-1.5 text-[8px] bg-orange-500 text-white border-none">NEW</Badge>
+                                                        )}
+                                                      </div>
+                                                      <p className="text-[10px] text-muted-foreground">{t.email}</p>
+                                                    </div>
                                                   </div>
-                                                  <p className="text-[10px] text-muted-foreground">{t.email}</p>
-                                                </div>
-                                              </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <Badge variant="outline" className="h-6 font-bold bg-green-50 text-green-700 border-green-200">Pro: {(t as any).stats.pro}</Badge>
-                                                    <Badge variant="outline" className="h-6 font-bold bg-slate-50 text-slate-600">Free: {(t as any).stats.free}</Badge>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell><Badge variant={t.status === 'approved' || t.role === 'admin' ? 'default' : 'secondary'}>{t.status || 'Active'}</Badge></TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    {t.status === 'pending' && <Button size="sm" onClick={() => handleApprove(t.uid)}><UserCheck className="w-4 h-4" /></Button>}
-                                                    <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${t.uid}`}><Eye className="w-4 h-4" /></Link></Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    )) : <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No staff members found.</TableCell></TableRow>}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge variant="outline" className="h-6 font-bold bg-green-50 text-green-700 border-green-200">Pro: {(t as any).stats.pro}</Badge>
+                                                        <Badge variant="outline" className="h-6 font-bold bg-slate-50 text-slate-600">Free: {(t as any).stats.free}</Badge>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell><Badge variant={t.status === 'approved' || t.role === 'admin' ? 'default' : 'secondary'}>{t.status || 'Active'}</Badge></TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        {t.status === 'pending' && <Button size="sm" onClick={() => handleApprove(t.uid)}><UserCheck className="w-4 h-4" /></Button>}
+                                                        <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${t.uid}`}><Eye className="w-4 h-4" /></Link></Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No staff members found.</TableCell></TableRow>
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>
@@ -689,7 +698,7 @@ export default function AdminDashboardPage() {
                         <CardHeader><CardTitle className="text-red-700">Flagged Accounts</CardTitle><CardDescription>Potential fake accounts or unverified users.</CardDescription></CardHeader>
                         <CardContent>
                             <Table>
-                                <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Reason</TableHead><TableHead className="text-right">Action</TableHead></TableHeader>
+                                <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Reason</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
                                 <TableBody>
                                     {processedData.filteredSuspicious.length > 0 ? processedData.filteredSuspicious.map((u) => (
                                         <TableRow key={u.uid}>
@@ -944,10 +953,10 @@ export default function AdminDashboardPage() {
                                 </div>
                             </CardContent>
                             <CardFooter className="bg-red-50 py-4 border-t border-red-100 rounded-b-lg">
-                                <p className="text-[10px] text-red-700 font-bold flex items-center gap-2">
+                                <div className="text-[10px] text-red-700 font-bold flex items-center gap-2">
                                     <AlertTriangle className="w-3 h-3" />
                                     WARNING: Resets are IRREVERSIBLE.
-                                </p>
+                                </div>
                             </CardFooter>
                         </Card>
                     </div>
