@@ -345,7 +345,7 @@ exports.manualResetWeekly = onCall({
         return { status: "success", count };
     } catch (err) {
         logger.error("Manual Weekly reset failed", err);
-        throw new HttpsError('internal', err.message);
+        throw new HttpsError('failed-precondition', err.message || "Reset failed");
     }
 });
 
@@ -364,7 +364,7 @@ exports.manualResetMonthly = onCall({
         return { status: "success", count };
     } catch (err) {
         logger.error("Manual Monthly reset failed", err);
-        throw new HttpsError('internal', err.message);
+        throw new HttpsError('failed-precondition', err.message || "Reset failed");
     }
 });
 
@@ -382,8 +382,9 @@ exports.forceDeclareWinner = onCall({
     }
 
     try {
+        const firestoreDb = admin.firestore();
         // 1. Verify Admin Status
-        const adminDoc = await admin.firestore().collection('users').doc(auth.uid).get();
+        const adminDoc = await firestoreDb.collection('users').doc(auth.uid).get();
         if (!adminDoc.exists || adminDoc.data()?.role !== 'admin') {
             throw new HttpsError('permission-denied', "Only administrators can perform this action.");
         }
@@ -394,7 +395,7 @@ exports.forceDeclareWinner = onCall({
         }
 
         // 2. Fetch Student Data
-        const winnerSnap = await admin.firestore().collection('users').doc(uid).get();
+        const winnerSnap = await firestoreDb.collection('users').doc(uid).get();
         if (!winnerSnap.exists) {
             throw new HttpsError('not-found', "The target student was not found.");
         }
@@ -405,7 +406,7 @@ exports.forceDeclareWinner = onCall({
         const fullName = `${winner.firstName || ''} ${winner.surname || ''}`.trim() || 'Student';
 
         // 3. Update Global Leaderboard Stat
-        const docRef = admin.firestore().collection('stats').doc('leaderboard');
+        const docRef = firestoreDb.collection('stats').doc('leaderboard');
         const updateKey = type === 'weekly' ? 'lastWeeklyWinner' : 'lastMonthlyWinner';
         const periodField = type === 'weekly' ? 'weekKey' : 'monthKey';
 
@@ -424,11 +425,9 @@ exports.forceDeclareWinner = onCall({
         return { status: "success", message: `Declared ${fullName} as winner.` };
     } catch (err) {
         logger.error("Manual declaration failed with error:", err);
-        // If it's already an HttpsError, re-throw it. Otherwise, wrap it.
-        if (err instanceof HttpsError) {
-            throw err;
-        }
-        throw new HttpsError('internal', `Cloud Function Failure: ${err.message || 'Unknown error'}`);
+        // Ensure standard Firebase HttpsError is thrown for the client to parse correctly
+        if (err instanceof HttpsError) throw err;
+        throw new HttpsError('internal', err.message || 'An unexpected server error occurred.');
     }
 });
 

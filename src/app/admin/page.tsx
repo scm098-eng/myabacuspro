@@ -413,20 +413,24 @@ export default function AdminDashboardPage() {
     try {
       const functions = getFunctions(firebaseApp);
       const forceFn = httpsCallable(functions, 'forceDeclareWinner');
-      await forceFn({ uid: forceWinnerDialog.user.uid, type });
+      const result: any = await forceFn({ uid: forceWinnerDialog.user.uid, type });
       
-      toast({ 
-        title: "Success", 
-        description: `${forceWinnerDialog.user.firstName} is now the ${type} champion.` 
-      });
-      setForceWinnerDialog({ open: false, user: null });
+      if (result.data.status === 'success') {
+        toast({ 
+          title: "Success", 
+          description: `${forceWinnerDialog.user.firstName} is now the ${type} champion.` 
+        });
+        setForceWinnerDialog({ open: false, user: null });
+      } else {
+        throw new Error(result.data.message || "Manual declaration failed.");
+      }
     } catch (e: any) {
       console.error("Force Declare Error:", e);
-      // Display the actual error message from the Cloud Function if available
-      const errorMessage = e.message || "An unexpected error occurred during declaration.";
+      // Detailed error breakdown for the admin
+      const detailedMessage = e.details || e.message || "The server encountered an error processing the declaration.";
       toast({ 
         title: "Declaration Failed", 
-        description: errorMessage, 
+        description: detailedMessage, 
         variant: "destructive" 
       });
     } finally {
