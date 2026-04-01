@@ -421,7 +421,14 @@ export default function AdminDashboardPage() {
       });
       setForceWinnerDialog({ open: false, user: null });
     } catch (e: any) {
-      toast({ title: "Failed", description: e.message, variant: "destructive" });
+      console.error("Force Declare Error:", e);
+      // Display the actual error message from the Cloud Function if available
+      const errorMessage = e.message || "An unexpected error occurred during declaration.";
+      toast({ 
+        title: "Declaration Failed", 
+        description: errorMessage, 
+        variant: "destructive" 
+      });
     } finally {
       setIsResetting(null);
     }
