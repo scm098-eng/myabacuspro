@@ -11,6 +11,8 @@ const logger = require("firebase-functions/logger");
 const nodemailer = require('nodemailer');
 
 const admin = require('firebase-admin');
+const { FieldValue } = require('firebase-admin/firestore');
+
 if (admin.apps.length === 0) {
     admin.initializeApp();
 }
@@ -163,7 +165,7 @@ async function performWeeklyReset() {
                     name: `${winner.firstName} ${winner.surname}`,
                     photo: winner.profilePhoto || '',
                     points: winner.weeklyPoints || 0,
-                    declaredAt: admin.firestore.FieldValue.serverTimestamp(),
+                    declaredAt: FieldValue.serverTimestamp(),
                     weekKey: lastWeekKey
                 }
             }, { merge: true });
@@ -204,7 +206,7 @@ async function performWeeklyReset() {
         batch.update(userDoc.ref, {
             weeklyPoints: 0,
             lastWeeklyReset: currentWeekKey,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            updatedAt: FieldValue.serverTimestamp()
         });
         count++;
 
@@ -245,7 +247,7 @@ async function performMonthlyReset() {
                     name: `${winner.firstName} ${winner.surname}`,
                     photo: winner.profilePhoto || '',
                     points: winner.monthlyPoints || 0,
-                    declaredAt: admin.firestore.FieldValue.serverTimestamp(),
+                    declaredAt: FieldValue.serverTimestamp(),
                     monthKey: lastMonthKey
                 }
             }, { merge: true });
@@ -284,7 +286,7 @@ async function performMonthlyReset() {
         batch.update(userDoc.ref, {
             monthlyPoints: 0,
             lastMonthlyReset: currentMonthKey,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            updatedAt: FieldValue.serverTimestamp()
         });
         count++;
 
@@ -337,7 +339,7 @@ exports.manualResetWeekly = onCall({
     secrets: ["GMAIL_APP_PASSWORD"]
 }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
-    const userDoc = await admin.firestore().collection('users').doc(request.auth.uid).get();
+    const userDoc = await db.collection('users').doc(request.auth.uid).get();
     if (userDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
 
     try {
@@ -345,7 +347,7 @@ exports.manualResetWeekly = onCall({
         return { status: "success", count };
     } catch (err) {
         logger.error("Manual Weekly reset failed", err);
-        throw new HttpsError('failed-precondition', err.message || "Reset failed");
+        throw new HttpsError('internal', err.message || "Reset failed");
     }
 });
 
@@ -356,7 +358,7 @@ exports.manualResetMonthly = onCall({
     secrets: ["GMAIL_APP_PASSWORD"]
 }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
-    const userDoc = await admin.firestore().collection('users').doc(request.auth.uid).get();
+    const userDoc = await db.collection('users').doc(request.auth.uid).get();
     if (userDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
 
     try {
@@ -364,7 +366,7 @@ exports.manualResetMonthly = onCall({
         return { status: "success", count };
     } catch (err) {
         logger.error("Manual Monthly reset failed", err);
-        throw new HttpsError('failed-precondition', err.message || "Reset failed");
+        throw new HttpsError('internal', err.message || "Reset failed");
     }
 });
 
@@ -382,9 +384,8 @@ exports.forceDeclareWinner = onCall({
     }
 
     try {
-        const firestoreDb = admin.firestore();
         // 1. Verify Admin Status
-        const adminDoc = await firestoreDb.collection('users').doc(auth.uid).get();
+        const adminDoc = await db.collection('users').doc(auth.uid).get();
         if (!adminDoc.exists || adminDoc.data()?.role !== 'admin') {
             throw new HttpsError('permission-denied', "Only administrators can perform this action.");
         }
@@ -395,7 +396,7 @@ exports.forceDeclareWinner = onCall({
         }
 
         // 2. Fetch Student Data
-        const winnerSnap = await firestoreDb.collection('users').doc(uid).get();
+        const winnerSnap = await db.collection('users').doc(uid).get();
         if (!winnerSnap.exists) {
             throw new HttpsError('not-found', "The target student was not found.");
         }
@@ -406,7 +407,7 @@ exports.forceDeclareWinner = onCall({
         const fullName = `${winner.firstName || ''} ${winner.surname || ''}`.trim() || 'Student';
 
         // 3. Update Global Leaderboard Stat
-        const docRef = firestoreDb.collection('stats').doc('leaderboard');
+        const docRef = db.collection('stats').doc('leaderboard');
         const updateKey = type === 'weekly' ? 'lastWeeklyWinner' : 'lastMonthlyWinner';
         const periodField = type === 'weekly' ? 'weekKey' : 'monthKey';
 
@@ -416,7 +417,7 @@ exports.forceDeclareWinner = onCall({
                 name: fullName,
                 photo: winner.profilePhoto || '',
                 points: points,
-                declaredAt: admin.firestore.FieldValue.serverTimestamp(),
+                declaredAt: FieldValue.serverTimestamp(),
                 [periodField]: periodKey
             }
         }, { merge: true });
@@ -425,8 +426,12 @@ exports.forceDeclareWinner = onCall({
         return { status: "success", message: `Declared ${fullName} as winner.` };
     } catch (err) {
         logger.error("Manual declaration failed with error:", err);
-        // Ensure standard Firebase HttpsError is thrown for the client to parse correctly
-        if (err instanceof HttpsError) throw err;
+        // Map error to correct HttpsError if it isn't one already
+        if (err.code && typeof err.code === 'string' && err.message) {
+            // Check if it's already an HttpsError or standard code
+            const validCodes = ['unauthenticated', 'permission-denied', 'invalid-argument', 'not-found', 'failed-precondition'];
+            if (validCodes.includes(err.code)) throw err;
+        }
         throw new HttpsError('internal', err.message || 'An unexpected server error occurred.');
     }
 });
@@ -485,11 +490,11 @@ exports.sendDailyBirthdayWishes = onSchedule({
                     });
 
                     await userDoc.ref.update({
-                        totalPoints: admin.firestore.FieldValue.increment(100),
-                        weeklyPoints: admin.firestore.FieldValue.increment(100),
-                        monthlyPoints: admin.firestore.FieldValue.increment(100),
+                        totalPoints: FieldValue.increment(100),
+                        weeklyPoints: FieldValue.increment(100),
+                        monthlyPoints: FieldValue.increment(100),
                         lastBirthdayWishedYear: currentYear,
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                        updatedAt: FieldValue.serverTimestamp()
                     });
 
                     count++;
@@ -571,8 +576,8 @@ exports.verifyEmailWithOTP = onCall(async (request) => {
         
         await db.collection('users').doc(userId).update({
             emailVerified: true,
-            pendingOTP: admin.firestore.FieldValue.delete(),
-            otpExpiresAt: admin.firestore.FieldValue.delete()
+            pendingOTP: FieldValue.delete(),
+            otpExpiresAt: FieldValue.delete()
         });
 
         return { status: "success" };

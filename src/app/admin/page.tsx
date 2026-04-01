@@ -400,7 +400,9 @@ export default function AdminDashboardPage() {
         description: `Winner declared and reports sent to ${result.data.count} students.` 
       });
     } catch (e: any) {
-      toast({ title: "Reset Failed", description: e.message, variant: "destructive" });
+      console.error("Reset Trigger Error:", e);
+      const detailedMessage = e.details?.message || e.message || "Reset failed. Check Cloud Function logs.";
+      toast({ title: "Reset Failed", description: detailedMessage, variant: "destructive" });
     } finally {
       setIsResetting(null);
     }
@@ -427,7 +429,11 @@ export default function AdminDashboardPage() {
     } catch (e: any) {
       console.error("Force Declare Error:", e);
       // Detailed error breakdown for the admin
-      const detailedMessage = e.details || e.message || "The server encountered an error processing the declaration.";
+      const serverMessage = e.details?.message || e.message;
+      const detailedMessage = serverMessage === "internal" 
+        ? "The server encountered an internal error. This often happens if Firestore permissions or Cloud Function logic is slightly out of sync. Check Cloud logs for details." 
+        : (serverMessage || "The server encountered an error processing the declaration.");
+        
       toast({ 
         title: "Declaration Failed", 
         description: detailedMessage, 
