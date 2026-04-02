@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, Users, ShieldCheck, Mail, ShieldX, UserCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
@@ -24,6 +24,7 @@ import { Label } from '@/components/ui/label';
 import { parseISO, isValid, format, formatDistanceToNow, getDate, getMonth, isWithinInterval, add } from 'date-fns';
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 
 /**
  * UTC standard Monday calculation (YYYY-MM-DD)
@@ -115,7 +116,7 @@ const htmlToPlainText = (html: string) => {
 
 export default function AdminDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
-  const { profile, getAllUsers, isLoading: authLoading, getStudentTitle, markUserAsRead } = useAuth();
+  const { profile, getAllUsers, isLoading: authLoading, getStudentTitle, markUserAsRead, approveTeacher } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -127,15 +128,25 @@ export default function AdminDashboardPage() {
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
   const [recentJoins, setRecentJoins] = useState<ProfileData[]>([]);
   const [winnersData, setWinnersData] = useState<any>(null);
-  const [isResetting, setIsResetting] = useState<'weekly' | 'monthly' | 'force' | null>(null);
+  const [isResetting, setIsResetting] = useState<'weekly' | 'monthly' | 'force' | 'blast' | null>(null);
   
   const [forceWinnerDialog, setForceWinnerDialog] = useState<{ open: boolean, user: ProfileData | null }>({ open: false, user: null });
 
+  // Blog State
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [isBlogDialogOpen, setIsBlogDialogOpen] = useState(false);
   const [isSavingBlog, setIsSavingBlog] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Partial<BlogPost> | null>(null);
   const [draftContent, setDraftContent] = useState('');
+
+  // Marketing State
+  const [marketingForm, setMarketingForm] = useState({
+    subject: '',
+    message: '',
+    targetAudience: 'all',
+    isTest: true,
+    testEmail: ''
+  });
 
   const currentWeekKey = useMemo(() => getUTCMondayKey(), []);
   const currentMonthKey = useMemo(() => getUTCMonthKey(), []);
@@ -184,6 +195,7 @@ export default function AdminDashboardPage() {
       });
       unsubscribers.push(winnerUnsub);
 
+      // Inbox for unread student signups
       const joinsUnsub = onSnapshot(
         query(
           collection(db, "users"), 
@@ -295,6 +307,44 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleApproveTeacher = async (uid: string) => {
+    try {
+      await approveTeacher(uid);
+      toast({ title: "Teacher Approved", description: "Account is now active." });
+      fetchData();
+    } catch (err) {
+      toast({ title: "Approval Failed", variant: "destructive" });
+    }
+  };
+
+  const handleBlastEmails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsResetting('blast');
+    try {
+      const formData = new FormData();
+      formData.append('subject', marketingForm.subject);
+      formData.append('message', marketingForm.message);
+      formData.append('targetAudience', marketingForm.targetAudience);
+      formData.append('isTest', String(marketingForm.isTest));
+      formData.append('testEmail', marketingForm.testEmail);
+
+      const res = await fetch('/api/admin/blast', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "Blast Complete", description: `Sent to ${data.count} recipients.` });
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      toast({ title: "Blast Failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsResetting(null);
+    }
+  };
+
   const handleSaveBlog = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingBlog?.title || !editingBlog?.content || !editingBlog?.slug) return;
@@ -321,44 +371,32 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleDeleteBlog = async (id: string) => {
-    const db = getFirestore(firebaseApp);
-    try {
-      await deleteDoc(doc(db, "blogs", id));
-      toast({ title: "Blog Deleted" });
-    } catch (err: any) {
-      toast({ title: "Delete Failed", variant: "destructive" });
-    }
-  };
-
   const processedData = useMemo(() => {
     const sl = searchTerm.toLowerCase();
     const matches = (u: ProfileData) => (u.firstName?.toLowerCase().includes(sl) || u.surname?.toLowerCase().includes(sl) || u.email?.toLowerCase().includes(sl));
     
-    const allTeachers = allUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
+    const allStaff = allUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
     const allStudents = allUsers.filter(u => u.role === 'student');
     
-    const birthdays = allUsers
-      .filter(u => isBirthdaySoon(u.dob))
-      .sort((a, b) => {
-        const dateA = parseISO(a.dob || '');
-        const dateB = parseISO(b.dob || '');
-        if (!isValid(dateA) || !isValid(dateB)) return 0;
-        return (getMonth(dateA) * 31 + getDate(dateA)) - (getMonth(dateB) * 31 + getDate(dateB));
-      });
-    
     return { 
-        filteredTeachers: allTeachers.filter(matches), 
+        filteredStaff: allStaff.filter(matches).map(s => {
+          const students = allStudents.filter(stu => stu.teacherId === s.uid);
+          return {
+            ...s,
+            proCount: students.filter(stu => stu.subscriptionStatus === 'pro').length,
+            freeCount: students.filter(stu => stu.subscriptionStatus !== 'pro').length
+          };
+        }),
         filteredStudents: allStudents
             .filter(u => profile?.role === 'admin' ? u.isAdminRead !== false : true)
             .filter(u => (profile?.role === 'admin' || u.teacherId === profile?.uid))
             .filter(matches),
+        pendingTeachers: allUsers.filter(u => u.role === 'teacher' && u.status === 'pending'),
         summaryStats: { 
-            totalTeachers: allTeachers.length, 
+            totalTeachers: allStaff.length, 
             totalStudents: allStudents.length, 
             proUsers: allStudents.filter(s => s.subscriptionStatus === 'pro').length 
-        },
-        upcomingBirthdays: birthdays
+        }
     };
   }, [allUsers, searchTerm, profile]);
 
@@ -389,7 +427,10 @@ export default function AdminDashboardPage() {
             <Tabs defaultValue="students" className="w-full">
                 <TabsList className="bg-muted p-1 mb-8 overflow-x-auto justify-start h-auto flex-wrap">
                     <TabsTrigger value="students" className="h-10">Students</TabsTrigger>
+                    {profile?.role === 'admin' && <TabsTrigger value="staff" className="h-10">Staff List</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="blogs" className="h-10">Blogs</TabsTrigger>}
+                    {profile?.role === 'admin' && <TabsTrigger value="moderation" className="h-10">Moderation</TabsTrigger>}
+                    {profile?.role === 'admin' && <TabsTrigger value="marketing" className="h-10">Marketing</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="system" className="h-10">System</TabsTrigger>}
                 </TabsList>
 
@@ -423,9 +464,116 @@ export default function AdminDashboardPage() {
                                               </div>
                                             </TableCell>
                                         </TableRow>
-                                    )) : <TableRow><TableCell colSpan={3} className="text-center py-8">No students found.</TableCell></TableRow>}
+                                    )) : <TableRow><TableCell colSpan={3} className="text-center py-8">No acknowledged students found.</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="staff">
+                    <Card>
+                        <CardHeader><CardTitle>Staff Breakdown</CardTitle></CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Teacher</TableHead>
+                                        <TableHead>Students (Pro/Free)</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Action</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {processedData.filteredStaff.map(s => (
+                                        <TableRow key={s.uid}>
+                                            <TableCell>
+                                                <div className="font-bold">{s.firstName} {s.surname}</div>
+                                                <div className="text-[10px] text-muted-foreground">{s.email}</div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex gap-2">
+                                                    <Badge className="bg-green-500/10 text-green-700 border-green-200">Pro: {s.proCount}</Badge>
+                                                    <Badge variant="outline">Free: {s.freeCount}</Badge>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell><Badge className={s.role === 'admin' ? "bg-blue-600" : "bg-orange-500"}>{s.status || s.role}</Badge></TableCell>
+                                            <TableCell className="text-right">
+                                                <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link></Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="moderation">
+                    <Card>
+                        <CardHeader><CardTitle>Pending Approvals</CardTitle><CardDescription>Teachers waiting for access.</CardDescription></CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader><TableRow><TableHead>Teacher</TableHead><TableHead>Institute</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {processedData.pendingTeachers.length > 0 ? processedData.pendingTeachers.map(t => (
+                                        <TableRow key={t.uid}>
+                                            <TableCell>
+                                                <div className="font-bold">{t.firstName} {t.surname}</div>
+                                                <div className="text-[10px] text-muted-foreground">{t.email}</div>
+                                            </TableCell>
+                                            <TableCell className="text-sm font-medium">{t.instituteName || 'N/A'}</TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button variant="outline" size="sm" onClick={() => handleApproveTeacher(t.uid)}><UserCheck className="w-4 h-4 mr-2" /> Approve</Button>
+                                                    <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${t.uid}`}><Eye className="w-4 h-4" /></Link></Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )) : <TableRow><TableCell colSpan={3} className="text-center py-8">No pending staff accounts.</TableCell></TableRow>}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="marketing">
+                    <Card>
+                        <CardHeader><CardTitle className="flex items-center gap-2"><Mail className="w-5 h-5 text-primary" /> Email Blast Tool</CardTitle><CardDescription>Send mass updates to your community.</CardDescription></CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleBlastEmails} className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <Label>Campaign Subject</Label>
+                                        <Input value={marketingForm.subject} onChange={e => setMarketingForm(p => ({ ...p, subject: e.target.value }))} placeholder="e.g. Weekly Mastery Update" required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Target Audience</Label>
+                                        <div className="flex gap-4">
+                                            <Button type="button" variant={marketingForm.targetAudience === 'all' ? 'default' : 'outline'} onClick={() => setMarketingForm(p => ({ ...p, targetAudience: 'all' }))} className="flex-1">All Students</Button>
+                                            <Button type="button" variant={marketingForm.targetAudience === 'pro' ? 'default' : 'outline'} onClick={() => setMarketingForm(p => ({ ...p, targetAudience: 'pro' }))} className="flex-1">Pro Only</Button>
+                                            <Button type="button" variant={marketingForm.targetAudience === 'teachers' ? 'default' : 'outline'} onClick={() => setMarketingForm(p => ({ ...p, targetAudience: 'teachers' }))} className="flex-1">Teachers</Button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Message Content (Supports HTML)</Label>
+                                    <Textarea value={marketingForm.message} onChange={e => setMarketingForm(p => ({ ...p, message: e.target.value }))} rows={8} required />
+                                </div>
+                                <div className="flex items-center gap-6 p-4 bg-muted rounded-xl border border-border">
+                                    <div className="flex items-center gap-2">
+                                        <Checkbox checked={marketingForm.isTest} onCheckedChange={(val) => setMarketingForm(p => ({ ...p, isTest: !!val }))} />
+                                        <Label className="font-bold">Test Send Only</Label>
+                                    </div>
+                                    {marketingForm.isTest && (
+                                        <Input className="flex-1 bg-white" placeholder="test@example.com" value={marketingForm.testEmail} onChange={e => setMarketingForm(p => ({ ...p, testEmail: e.target.value }))} />
+                                    )}
+                                </div>
+                                <Button type="submit" className="w-full h-12 text-lg font-black uppercase tracking-widest" disabled={isResetting !== null}>
+                                    {isResetting === 'blast' ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2 h-5 w-5" />}
+                                    Launch Blast
+                                </Button>
+                            </form>
                         </CardContent>
                     </Card>
                 </TabsContent>

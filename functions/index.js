@@ -42,7 +42,7 @@ function getTransporter(password) {
 }
 
 /**
- * Helper to get the UTC Monday key (YYYY-MM-DD) for TODAY
+ * Helpers to get UTC keys for resetting points
  */
 function getUTCMondayKey() {
     const now = new Date();
@@ -54,9 +54,6 @@ function getUTCMondayKey() {
     return monday.toISOString().split('T')[0];
 }
 
-/**
- * Helper to get the UTC Monday key for the WEEK THAT JUST ENDED
- */
 function getUTCPreviousMondayKey() {
     const now = new Date();
     const day = now.getUTCDay();
@@ -67,17 +64,11 @@ function getUTCPreviousMondayKey() {
     return prevMonday.toISOString().split('T')[0];
 }
 
-/**
- * Helper to get the UTC Month key (YYYY-MM) for TODAY
- */
 function getUTCMonthKey() {
     const now = new Date();
     return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
-/**
- * Helper to get the UTC Month key for the MONTH THAT JUST ENDED
- */
 function getUTCPreviousMonthKey() {
     const now = new Date();
     now.setUTCMonth(now.getUTCMonth() - 1);
@@ -85,7 +76,7 @@ function getUTCPreviousMonthKey() {
 }
 
 /**
- * Progress Report Email Template
+ * Email Template
  */
 const progressReportHTML = (userName, type, metadata) => `
   <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 20px;">
@@ -93,29 +84,18 @@ const progressReportHTML = (userName, type, metadata) => `
       <h1 style="color: #0f172a;">${type === 'weekly' ? 'Weekly' : 'Monthly'} Progress</h1>
       <p style="font-weight: bold; color: #2563eb;">Student: ${userName}</p>
     </div>
-    
     <div style="margin-bottom: 30px;">
-      <table width="100%" border="0" cellspacing="0" cellpadding="0">
-        <tr>
-          <td align="center">
-            <div style="background: #f8fafc; padding: 20px; border-radius: 15px; border: 1px solid #f1f5f9;">
-              <p style="margin: 0; font-size: 10px; color: #64748b; font-weight: bold;">Points Earned</p>
-              <p style="margin: 5px 0 0; font-size: 24px; font-weight: 900; color: #2563eb;">+${metadata.periodPoints}</p>
-            </div>
-          </td>
-        </tr>
-      </table>
+      <div style="background: #f8fafc; padding: 20px; border-radius: 15px; border: 1px solid #f1f5f9; text-align: center;">
+        <p style="margin: 0; font-size: 10px; color: #64748b; font-weight: bold;">Points Earned</p>
+        <p style="margin: 5px 0 0; font-size: 24px; font-weight: 900; color: #2563eb;">+${metadata.periodPoints}</p>
+      </div>
     </div>
-
     <div style="text-align: center;">
       <a href="https://myabacuspro.com/dashboard" style="background: #2563eb; color: white; padding: 14px 30px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">View Dashboard</a>
     </div>
   </div>
 `;
 
-/**
- * Shared logic for Weekly Reset
- */
 async function performWeeklyReset() {
     const currentWeekKey = getUTCMondayKey();
     const lastWeekKey = getUTCPreviousMondayKey();
@@ -136,7 +116,7 @@ async function performWeeklyReset() {
                     name: `${winner.firstName || ''} ${winner.surname || ''}`.trim(),
                     photo: winner.profilePhoto || '',
                     points: winner.weeklyPoints || 0,
-                    declaredAt: admin.firestore.FieldValue.serverTimestamp(),
+                    declaredAt: FieldValue.serverTimestamp(),
                     weekKey: lastWeekKey
                 }
             }, { merge: true });
@@ -158,12 +138,7 @@ async function performWeeklyReset() {
                     from: '"MyAbacusPro" <myabacuspro@gmail.com>',
                     to: data.email,
                     subject: `Weekly Mastery Report`,
-                    html: progressReportHTML(data.firstName, 'weekly', {
-                        periodPoints: data.weeklyPoints || 0,
-                        streak: data.currentStreak || 0,
-                        totalPoints: data.totalPoints || 0,
-                        practiceDays: data.totalDaysPracticed || 0
-                    })
+                    html: progressReportHTML(data.firstName, 'weekly', { periodPoints: data.weeklyPoints || 0 })
                 });
             } catch (e) {}
         }
@@ -171,7 +146,7 @@ async function performWeeklyReset() {
         batch.update(userDoc.ref, {
             weeklyPoints: 0,
             lastWeeklyReset: currentWeekKey,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            updatedAt: FieldValue.serverTimestamp()
         });
         count++;
 
@@ -181,15 +156,10 @@ async function performWeeklyReset() {
         }
     }
 
-    if (count % 500 !== 0) {
-        await batch.commit();
-    }
+    if (count % 500 !== 0) await batch.commit();
     return count;
 }
 
-/**
- * Shared logic for Monthly Reset
- */
 async function performMonthlyReset() {
     const currentMonthKey = getUTCMonthKey();
     const lastMonthKey = getUTCPreviousMonthKey();
@@ -210,7 +180,7 @@ async function performMonthlyReset() {
                     name: `${winner.firstName || ''} ${winner.surname || ''}`.trim(),
                     photo: winner.profilePhoto || '',
                     points: winner.monthlyPoints || 0,
-                    declaredAt: admin.firestore.FieldValue.serverTimestamp(),
+                    declaredAt: FieldValue.serverTimestamp(),
                     monthKey: lastMonthKey
                 }
             }, { merge: true });
@@ -232,12 +202,7 @@ async function performMonthlyReset() {
                     from: '"MyAbacusPro" <myabacuspro@gmail.com>',
                     to: data.email,
                     subject: `Monthly Mastery Report`,
-                    html: progressReportHTML(data.firstName, 'monthly', {
-                        periodPoints: data.monthlyPoints || 0,
-                        streak: data.currentStreak || 0,
-                        totalPoints: data.totalPoints || 0,
-                        practiceDays: data.totalDaysPracticed || 0
-                    })
+                    html: progressReportHTML(data.firstName, 'monthly', { periodPoints: data.monthlyPoints || 0 })
                 });
             } catch (e) {}
         }
@@ -245,7 +210,7 @@ async function performMonthlyReset() {
         batch.update(userDoc.ref, {
             monthlyPoints: 0,
             lastMonthlyReset: currentMonthKey,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            updatedAt: FieldValue.serverTimestamp()
         });
         count++;
 
@@ -255,120 +220,63 @@ async function performMonthlyReset() {
         }
     }
 
-    if (count % 500 !== 0) {
-        await batch.commit();
-    }
+    if (count % 500 !== 0) await batch.commit();
     return count;
 }
 
-exports.resetWeeklyPoints = onSchedule({
-    schedule: "0 0 * * 1",
-    secrets: ["GMAIL_APP_PASSWORD"]
-}, async (event) => {
-    try {
-        await performWeeklyReset();
-    } catch (err) {
-        logger.error("Weekly reset failed", err);
-    }
+exports.resetWeeklyPoints = onSchedule({ schedule: "0 0 * * 1", secrets: ["GMAIL_APP_PASSWORD"] }, async (event) => {
+    try { await performWeeklyReset(); } catch (err) { logger.error("Weekly reset failed", err); }
 });
 
-exports.resetMonthlyPoints = onSchedule({
-    schedule: "0 0 1 * *",
-    secrets: ["GMAIL_APP_PASSWORD"]
-}, async (event) => {
-    try {
-        await performMonthlyReset();
-    } catch (err) {
-        logger.error("Monthly reset failed", err);
-    }
+exports.resetMonthlyPoints = onSchedule({ schedule: "0 0 1 * *", secrets: ["GMAIL_APP_PASSWORD"] }, async (event) => {
+    try { await performMonthlyReset(); } catch (err) { logger.error("Monthly reset failed", err); }
 });
 
-exports.manualResetWeekly = onCall({
-    secrets: ["GMAIL_APP_PASSWORD"],
-}, async (request) => {
+exports.manualResetWeekly = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
     const userDoc = await db.collection('users').doc(request.auth.uid).get();
     if (userDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
-
-    try {
-        const count = await performWeeklyReset();
-        return { status: "success", count };
-    } catch (err) {
-        logger.error("Manual Weekly Reset Error:", err);
-        throw new HttpsError('failed-precondition', err.message || "Reset failed");
-    }
+    const count = await performWeeklyReset();
+    return { status: "success", count };
 });
 
-exports.manualResetMonthly = onCall({
-    secrets: ["GMAIL_APP_PASSWORD"],
-}, async (request) => {
+exports.manualResetMonthly = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
     const userDoc = await db.collection('users').doc(request.auth.uid).get();
     if (userDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
-
-    try {
-        const count = await performMonthlyReset();
-        return { status: "success", count };
-    } catch (err) {
-        logger.error("Manual Monthly Reset Error:", err);
-        throw new HttpsError('failed-precondition', err.message || "Reset failed");
-    }
+    const count = await performMonthlyReset();
+    return { status: "success", count };
 });
 
-exports.forceDeclareWinner = onCall({
-    secrets: ["GMAIL_APP_PASSWORD"],
-}, async (request) => {
-    const { data, auth } = request;
-    if (!auth) {
-        throw new HttpsError('unauthenticated', "Authentication required.");
-    }
+exports.forceDeclareWinner = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
+    const adminDoc = await db.collection('users').doc(request.auth.uid).get();
+    if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
 
-    try {
-        const adminDoc = await db.collection('users').doc(auth.uid).get();
-        if (!adminDoc.exists || adminDoc.data()?.role !== 'admin') {
-            throw new HttpsError('permission-denied', "Admin permissions required.");
+    const { uid, type } = request.data;
+    if (!uid || !type) throw new HttpsError('invalid-argument', "Missing ID or Type.");
+
+    const winnerSnap = await db.collection('users').doc(uid).get();
+    if (!winnerSnap.exists) throw new HttpsError('failed-precondition', "Student not found.");
+    
+    const winner = winnerSnap.data();
+    const periodKey = type === 'weekly' ? getUTCMondayKey() : getUTCMonthKey();
+    const points = type === 'weekly' ? (winner.weeklyPoints || 0) : (winner.monthlyPoints || 0);
+    const fullName = `${winner.firstName || ''} ${winner.surname || ''}`.trim() || 'Champion';
+
+    const updateKey = type === 'weekly' ? 'lastWeeklyWinner' : 'lastMonthlyWinner';
+    const periodField = type === 'weekly' ? 'weekKey' : 'monthKey';
+
+    await db.collection('stats').doc('leaderboard').set({
+        [updateKey]: {
+            uid: uid,
+            name: fullName,
+            photo: winner.profilePhoto || '',
+            points: points,
+            declaredAt: FieldValue.serverTimestamp(),
+            [periodField]: periodKey
         }
+    }, { merge: true });
 
-        const { uid, type } = data; 
-        if (!uid || !type) {
-            throw new HttpsError('invalid-argument', "User ID and Reset Type are required.");
-        }
-
-        const winnerSnap = await db.collection('users').doc(uid).get();
-        if (!winnerSnap.exists) {
-            throw new HttpsError('failed-precondition', "The selected student could not be found.");
-        }
-        
-        const winner = winnerSnap.data();
-        const periodKey = type === 'weekly' ? getUTCMondayKey() : getUTCMonthKey();
-        const points = type === 'weekly' ? (winner.weeklyPoints || 0) : (winner.monthlyPoints || 0);
-        
-        let fullName = `${winner.firstName || ''} ${winner.surname || ''}`.trim();
-        if (!fullName) fullName = winner.email?.split('@')[0] || 'Champion';
-
-        const updateKey = type === 'weekly' ? 'lastWeeklyWinner' : 'lastMonthlyWinner';
-        const periodField = type === 'weekly' ? 'weekKey' : 'monthKey';
-
-        await db.collection('stats').doc('leaderboard').set({
-            [updateKey]: {
-                uid: uid,
-                name: fullName,
-                photo: winner.profilePhoto || '',
-                points: points,
-                declaredAt: admin.firestore.FieldValue.serverTimestamp(),
-                [periodField]: periodKey
-            }
-        }, { merge: true });
-
-        logger.info(`Manually declared ${fullName} as ${type} winner.`);
-
-        return { 
-            status: "success", 
-            message: `Successfully declared ${fullName} as the ${type} champion.` 
-        };
-    } catch (err) {
-        logger.error("Force Declare Error:", err);
-        if (err instanceof HttpsError) throw err;
-        throw new HttpsError('internal', err.message || "The server encountered an unexpected error.");
-    }
+    return { status: "success", message: `Declared ${fullName} as ${type} champion.` };
 });
