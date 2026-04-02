@@ -34,41 +34,43 @@ export default function UpdateHighlights() {
     <Dialog open={isOpen} onOpenChange={(val) => {
       if (!val) handleDismiss();
     }}>
-      <DialogContent className="sm:max-w-lg p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl animate-in slide-in-from-bottom-8 duration-500">
-        <div className="bg-slate-900 p-8 text-center text-white relative">
-          <div className="absolute top-0 right-0 p-4 opacity-20">
-            <Sparkles className="w-20 h-20" />
+      <DialogContent className="w-[95vw] sm:max-w-lg p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl animate-in slide-in-from-bottom-8 duration-500 max-h-[90vh] flex flex-col">
+        <div className="overflow-y-auto flex-1 scrollbar-none">
+          <div className="bg-slate-900 p-6 sm:p-8 text-center text-white relative">
+            <div className="absolute top-0 right-0 p-4 opacity-20">
+              <Sparkles className="w-16 h-16 sm:w-20 sm:h-20" />
+            </div>
+            <div className="mx-auto bg-white/10 p-4 rounded-3xl w-fit mb-4">
+              <Rocket className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+            </div>
+            <h2 className="text-[10px] sm:text-sm font-black uppercase tracking-[0.3em] text-primary mb-1">New Update Available</h2>
+            <DialogTitle className="text-3xl sm:text-4xl font-black font-headline uppercase tracking-tighter">
+              Version {APP_VERSION}
+            </DialogTitle>
           </div>
-          <div className="mx-auto bg-white/10 p-4 rounded-3xl w-fit mb-4">
-            <Rocket className="w-10 h-10 text-primary" />
+
+          <div className="p-6 sm:p-8 space-y-6 bg-white">
+            <DialogDescription className="sr-only">What's new in this update</DialogDescription>
+            <div className="grid gap-6">
+              {UPDATE_NOTES.map((note, i) => (
+                <div key={i} className="flex items-start gap-4 animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${i * 150}ms` }}>
+                  <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/5 text-xl sm:text-2xl shadow-inner border border-primary/10">
+                    {note.icon}
+                  </div>
+                  <div>
+                    <h4 className="text-base sm:text-lg font-black text-slate-900 leading-tight mb-1">{note.title}</h4>
+                    <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">{note.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <h2 className="text-sm font-black uppercase tracking-[0.3em] text-primary mb-1">New Update Available</h2>
-          <DialogTitle className="text-4xl font-black font-headline uppercase tracking-tighter">
-            Version {APP_VERSION}
-          </DialogTitle>
         </div>
 
-        <div className="p-8 space-y-6 bg-white">
-          <DialogDescription className="sr-only">What's new in this update</DialogDescription>
-          <div className="grid gap-6">
-            {UPDATE_NOTES.map((note, i) => (
-              <div key={i} className="flex items-start gap-4 animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${i * 150}ms` }}>
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/5 text-2xl shadow-inner border border-primary/10">
-                  {note.icon}
-                </div>
-                <div>
-                  <h4 className="text-lg font-black text-slate-900 leading-tight mb-1">{note.title}</h4>
-                  <p className="text-sm text-slate-500 font-medium leading-relaxed">{note.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <DialogFooter className="p-8 pt-0 bg-white">
-          <Button onClick={handleDismiss} className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl hover:scale-[1.01] transition-transform">
+        <DialogFooter className="p-6 sm:p-8 pt-0 bg-white">
+          <Button onClick={handleDismiss} className="w-full h-14 sm:h-16 text-lg sm:text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl hover:scale-[1.01] transition-transform">
             Awesome, Let's Go!
-            <Check className="ml-2 h-6 w-6" />
+            <Check className="ml-2 h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
         </DialogFooter>
       </DialogContent>

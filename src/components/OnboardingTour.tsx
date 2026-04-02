@@ -71,19 +71,19 @@ export default function OnboardingTour() {
         setIsOpen(false);
       }
     }}>
-      <DialogContent className="sm:max-w-md text-center rounded-[2rem] overflow-hidden border-2 border-primary/20 shadow-2xl animate-in zoom-in-95">
+      <DialogContent className="w-[95vw] sm:max-w-md text-center rounded-[2rem] overflow-hidden border-2 border-primary/20 shadow-2xl animate-in zoom-in-95 max-h-[90vh] flex flex-col p-0">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
         
-        <div className="relative z-10 py-6">
-          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-muted/50 mb-6 shadow-inner animate-bounce duration-1000">
+        <div className="relative z-10 flex-1 overflow-y-auto p-6 sm:p-8 scrollbar-none">
+          <div className="mx-auto flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full bg-muted/50 mb-6 shadow-inner animate-bounce duration-1000">
             {step.icon}
           </div>
           
           <DialogHeader>
-            <DialogTitle className="text-3xl font-black font-headline uppercase tracking-tighter text-foreground leading-none">
+            <DialogTitle className="text-2xl sm:text-3xl font-black font-headline uppercase tracking-tighter text-foreground leading-none">
               {step.title}
             </DialogTitle>
-            <DialogDescription className="mt-4 text-lg font-medium text-muted-foreground px-4 leading-relaxed">
+            <DialogDescription className="mt-4 text-base sm:text-lg font-medium text-muted-foreground px-2 leading-relaxed">
               {step.description}
             </DialogDescription>
           </DialogHeader>
@@ -101,7 +101,7 @@ export default function OnboardingTour() {
           </div>
         </div>
 
-        <DialogFooter className="relative z-10 px-6 pb-6">
+        <DialogFooter className="relative z-10 p-6 sm:p-8 pt-0">
           <Button onClick={handleNext} className="w-full h-14 text-lg font-black uppercase tracking-widest rounded-2xl shadow-xl hover:scale-[1.02] transition-transform">
             {step.buttonText}
             {currentStep === STEPS.length - 1 ? <CheckCircle2 className="ml-2 h-5 w-5" /> : <ChevronRight className="ml-2 h-5 w-5" />}
