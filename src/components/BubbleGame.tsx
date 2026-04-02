@@ -19,6 +19,7 @@ import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/fire
 import { firebaseApp } from '@/lib/firebase';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
+import PageGuide from './shared/PageGuide';
 
 interface Bubble {
   id: string;
@@ -375,6 +376,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                         <p className="text-sm sm:text-2xl font-black leading-none">{score}</p>
                     </div>
                 </div>
+                <PageGuide guideKey="bubble_game" triggerLabel="Rules" variant="ghost" className="text-white hover:bg-white/10 hidden sm:flex" />
             </div>
             
             <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-white/10 rounded-xl sm:rounded-2xl border border-white/5 mx-2 shrink-0">

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -28,6 +29,7 @@ import { calculatePoints } from '@/lib/scoring';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { useSound } from '@/hooks/useSound';
+import PageGuide from './shared/PageGuide';
 
 export default function TestPageClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
@@ -217,7 +219,10 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       <Card className="shadow-2xl relative overflow-hidden flex flex-col flex-grow">
         <CardHeader>
           <div className="flex justify-between items-center mb-4">
-            <CardTitle className="text-2xl font-headline">{settings.title}</CardTitle>
+            <div className="space-y-1">
+              <CardTitle className="text-2xl font-headline">{settings.title}</CardTitle>
+              <PageGuide guideKey="timed_test" triggerLabel="Test Rules" className="h-7 text-[10px]" />
+            </div>
             {settings.timeLimit > 0 && (
               <div className={cn("flex items-center gap-2 font-semibold text-lg p-2 rounded-md transition-colors", timeLeft < 60 ? 'text-destructive-foreground bg-destructive animate-pulse' : 'text-foreground')}>
                 <Timer className="h-6 w-6" />

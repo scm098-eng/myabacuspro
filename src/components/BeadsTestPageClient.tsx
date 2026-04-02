@@ -30,6 +30,7 @@ import { Input } from './ui/input';
 import { calculatePoints } from '@/lib/scoring';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
+import PageGuide from './shared/PageGuide';
 
 export default function BeadsTestPageClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
@@ -234,7 +235,10 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
       <Card className="shadow-2xl relative overflow-hidden flex flex-col flex-grow">
         <CardHeader>
           <div className="flex justify-between items-center mb-4">
-            <CardTitle className="text-2xl font-headline">{settings.title}</CardTitle>
+            <div className="space-y-1">
+              <CardTitle className="text-2xl font-headline">{settings.title}</CardTitle>
+              <PageGuide guideKey="bead_test" triggerLabel="How to Play" className="h-7 text-[10px]" />
+            </div>
           </div>
           <CardDescription>Question {currentQuestionIndex + 1} of {questions.length}</CardDescription>
           <Progress value={progress} className="w-full mt-2" />

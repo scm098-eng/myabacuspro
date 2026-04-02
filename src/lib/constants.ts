@@ -93,6 +93,48 @@ export const RANK_CRITERIA = [
   { name: "Junior Calculator", icon: "👶", color: "#ADD8E6", daysReq: 0, pointsReq: 0, description: "The journey to math mastery begins today." }
 ];
 
+export const PAGE_GUIDES = {
+  abacus_tool: {
+    title: "How to use the Abacus Tool",
+    steps: [
+      "Click on beads to move them up or down.",
+      "Heavenly beads (top) are worth 5.",
+      "Earthly beads (bottom) are worth 1 each.",
+      "Use the 'Multiplication Lab' tab to see step-by-step logic.",
+      "Input numbers directly to see them visualized instantly."
+    ]
+  },
+  timed_test: {
+    title: "How to take Timed Tests",
+    steps: [
+      "Read the calculation displayed on the screen.",
+      "Calculate the result mentally or using your abacus.",
+      "Click the correct answer from the options provided.",
+      "Watch the timer! Faster accuracy earns more Mastery Points.",
+      "Use the navigation bar to jump between questions."
+    ]
+  },
+  bead_test: {
+    title: "How to master Beads Mastery",
+    steps: [
+      "Identify mode: Look at the abacus and type the correct value.",
+      "Set mode: Click the beads manually to match the target number.",
+      "There is no time limit—focus on perfect visualization.",
+      "Submit your answer to advance to the next question."
+    ]
+  },
+  bubble_game: {
+    title: "How to play Bubble Game",
+    steps: [
+      "A yellow bubble will float up with a math question.",
+      "Correct and incorrect answers will follow in pink bubbles.",
+      "Click the pink bubble with the correct answer to score.",
+      "Don't click the wrong answer or let the question float away!",
+      "You have 5 lives. Reach 90% accuracy to clear the level."
+    ]
+  }
+};
+
 export const APP_VERSION = "2.1.0";
 
 export const UPDATE_NOTES = [

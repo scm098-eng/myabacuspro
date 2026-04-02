@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, ChevronRight, RotateCcw, Calculator, Info, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import PageGuide from '@/components/shared/PageGuide';
 
 interface MultiplicationStep {
   text: string;
@@ -134,12 +135,15 @@ function ToolPreviewContent() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
-      <div className="text-center space-y-2">
+      <div className="text-center space-y-4">
         <h1 className="text-4xl font-extrabold tracking-tight font-headline flex items-center justify-center gap-3">
           <Calculator className="w-10 h-10 text-primary" />
           Interactive Abacus Tool
         </h1>
-        <p className="text-muted-foreground text-lg">Master visualization and complex operations with our digital Soroban.</p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <p className="text-muted-foreground text-lg">Master visualization and complex operations with our digital Soroban.</p>
+          <PageGuide guideKey="abacus_tool" triggerLabel="How to Use Tool" />
+        </div>
       </div>
 
       <Tabs defaultValue="freeplay" className="w-full">
