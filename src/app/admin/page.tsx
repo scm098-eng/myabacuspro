@@ -11,10 +11,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, Users, ShieldCheck, Mail, ShieldX, UserCheck, Paperclip, FileText, Code, X, AlertTriangle, ShieldAlert, UserX } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, Users, ShieldCheck, Mail, UserCheck, Paperclip, FileText, Code, X, ShieldAlert, UserX } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -176,7 +176,11 @@ export default function AdminDashboardPage() {
       const blogUnsub = onSnapshot(
         query(collection(db, "blogs"), orderBy("createdAt", "desc")), 
         (snap) => {
-          setBlogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt } as BlogPost)));
+          setBlogs(snap.docs.map(doc => ({ 
+            id: doc.id, 
+            ...doc.data(), 
+            createdAt: doc.data().createdAt // Use the raw data for normalization later
+          } as BlogPost)));
         }
       );
       unsubscribers.push(blogUnsub);
@@ -577,7 +581,7 @@ export default function AdminDashboardPage() {
                                 <CardTitle className="flex items-center gap-2 text-red-700">
                                     <UserX className="w-5 h-5" /> Account Moderation
                                 </CardTitle>
-                                <CardDescription>Review flagged, potential fake, or unverified accounts.</CardDescription>
+                                <CardDescription>Review flagged, potential fake, or unverified student accounts.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Table>
