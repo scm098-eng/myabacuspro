@@ -92,3 +92,23 @@ export const RANK_CRITERIA = [
   { name: "Rising Star", icon: "🌟", color: "#4ADE80", daysReq: 7, pointsReq: 1000, description: "An incredible start! You're destined for greatness." },
   { name: "Junior Calculator", icon: "👶", color: "#ADD8E6", daysReq: 0, pointsReq: 0, description: "The journey to math mastery begins today." }
 ];
+
+export const APP_VERSION = "2.1.0";
+
+export const UPDATE_NOTES = [
+  {
+    title: "New 30-Day Rank System",
+    description: "We've updated our mastery roadmap! Now unlock new ranks every 30 days of consistent practice.",
+    icon: "🏆"
+  },
+  {
+    title: "Visual Solution Modal",
+    description: "Review your test mistakes with a step-by-step visual abacus breakdown for every calculation.",
+    icon: "🧮"
+  },
+  {
+    title: "Bubble Game Elite Levels",
+    description: "Added 1,000 unique levels to the Bubble Game candy road!",
+    icon: "🫧"
+  }
+];

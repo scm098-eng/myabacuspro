@@ -5,6 +5,8 @@ import { useEffect } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import FirebaseErrorListener from '@/components/FirebaseErrorListener';
 import BirthdayWish from '@/components/BirthdayWish';
+import OnboardingTour from '@/components/OnboardingTour';
+import UpdateHighlights from '@/components/UpdateHighlights';
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -34,6 +36,8 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
     <AuthProvider>
       <FirebaseErrorListener />
       <BirthdayWish />
+      <OnboardingTour />
+      <UpdateHighlights />
       {children}
     </AuthProvider>
   );
