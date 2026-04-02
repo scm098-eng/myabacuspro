@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette, Type, Code, FileText, Paperclip, X, UserPlus, Zap, Settings, RefreshCw, AlertTriangle, Star, Check } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -21,12 +22,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { isWithinInterval, add, parseISO, getDate, getMonth, format, formatDistanceToNow, isValid } from 'date-fns';
-import { errorEmitter } from '@/lib/error-emitter';
-import { FirestorePermissionError } from '@/lib/errors';
+import { parseISO, isValid, format, formatDistanceToNow, getDate, getMonth, isWithinInterval, add } from 'date-fns';
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 /**
  * UTC standard Monday calculation (YYYY-MM-DD)
@@ -47,6 +45,28 @@ function getUTCMondayKey() {
 function getUTCMonthKey() {
     const now = new Date();
     return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+/**
+ * Robust date normalization helper for display
+ */
+function normalizeDateDisplay(val: any): string {
+  if (!val) return 'Just now';
+  
+  let date: Date;
+  if (val && typeof val.toDate === 'function') {
+    date = val.toDate();
+  } else if (typeof val === 'string') {
+    date = parseISO(val);
+  } else if (val instanceof Date) {
+    date = val;
+  } else if (val && typeof val.seconds === 'number') {
+    date = new Date(val.seconds * 1000);
+  } else {
+    return 'Just now';
+  }
+
+  return isValid(date) ? format(date, 'PPp') : 'Just now';
 }
 
 const StatCard = ({ title, value, icon: Icon, subValue }: { title: string, value: string | number, icon: React.ElementType, subValue?: string }) => (
@@ -94,31 +114,9 @@ const htmlToPlainText = (html: string) => {
     .trim();
 };
 
-/**
- * Robust date normalization helper for display
- */
-function normalizeDateDisplay(val: any): string {
-  if (!val) return 'Just now';
-  
-  let date: Date;
-  if (val && typeof val.toDate === 'function') {
-    date = val.toDate();
-  } else if (typeof val === 'string') {
-    date = parseISO(val);
-  } else if (val instanceof Date) {
-    date = val;
-  } else if (val && typeof val.seconds === 'number') {
-    date = new Date(val.seconds * 1000);
-  } else {
-    return 'Just now';
-  }
-
-  return isValid(date) ? format(date, 'PPp') : 'Just now';
-}
-
 export default function AdminDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
-  const { profile, getAllUsers, approveTeacher, isLoading: authLoading, getStudentTitle, toggleUserSuspension, markUserAsRead } = useAuth();
+  const { profile, getAllUsers, isLoading: authLoading, getStudentTitle, markUserAsRead } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -187,7 +185,6 @@ export default function AdminDashboardPage() {
       });
       unsubscribers.push(winnerUnsub);
 
-      // New Members Inbox Logic: Only show unread students
       const joinsUnsub = onSnapshot(
         query(
           collection(db, "users"), 
@@ -351,26 +348,14 @@ export default function AdminDashboardPage() {
         return (getMonth(dateA) * 31 + getDate(dateA)) - (getMonth(dateB) * 31 + getDate(dateB));
       });
     
-    const teacherMap = allStudents.reduce((acc, s) => {
-        if (s.teacherId) {
-            if (!acc[s.teacherId]) acc[s.teacherId] = { total: 0, pro: 0, free: 0 };
-            acc[s.teacherId].total++;
-            if (s.subscriptionStatus === 'pro') acc[s.teacherId].pro++;
-            else acc[s.teacherId].free++;
-        }
-        return acc;
-    }, {} as Record<string, { total: number, pro: number, free: number }>);
-
-    const teachersWithStats = allTeachers.map(t => ({ ...t, stats: teacherMap[t.uid] || { total: 0, pro: 0, free: 0 } }));
-    
     return { 
-        filteredTeachers: teachersWithStats.filter(matches), 
+        filteredTeachers: allTeachers.filter(matches), 
         filteredStudents: allStudents
-            .filter(u => profile?.role === 'admin' ? u.isAdminRead !== false : true) // Admins only see read students in main list
+            .filter(u => profile?.role === 'admin' ? u.isAdminRead !== false : true)
             .filter(u => (profile?.role === 'admin' || u.teacherId === profile?.uid))
             .filter(matches),
         summaryStats: { 
-            totalTeachers: allTeachers.filter(t => t.status === 'approved' || t.role === 'admin').length, 
+            totalTeachers: allTeachers.length, 
             totalStudents: allStudents.length, 
             proUsers: allStudents.filter(s => s.subscriptionStatus === 'pro').length 
         },
@@ -405,7 +390,6 @@ export default function AdminDashboardPage() {
             <Tabs defaultValue="students" className="w-full">
                 <TabsList className="bg-muted p-1 mb-8 overflow-x-auto justify-start h-auto flex-wrap">
                     <TabsTrigger value="students" className="h-10">Students</TabsTrigger>
-                    {profile?.role === 'admin' && <TabsTrigger value="teachers" className="h-10">Staff List</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="blogs" className="h-10">Blogs</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="system" className="h-10">System</TabsTrigger>}
                 </TabsList>
