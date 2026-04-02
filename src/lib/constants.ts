@@ -79,11 +79,16 @@ export const TEST_NAME_MAP: Record<string, string> = {
 };
 
 export const RANK_CRITERIA = [
-  { name: "Human Calculator", icon: "👑", color: "#FFD700", daysReq: 365, pointsReq: 100000, description: "The ultimate master. Speed and accuracy beyond limits." },
-  { name: "Grandmaster", icon: "🔱", color: "#E5E4E2", daysReq: 270, pointsReq: 50000, description: "Elite status reserved for the most dedicated math warriors." },
-  { name: "Math Ninja", icon: "🥷", color: "#C0C0C0", daysReq: 180, pointsReq: 25000, description: "Lightning fast visualization and precision." },
-  { name: "Speed Runner", icon: "⚡", color: "#CD7F32", daysReq: 90, pointsReq: 10000, description: "Unstoppable momentum and developing mastery." },
-  { name: "Apprentice", icon: "🛠️", color: "#A52A2A", daysReq: 30, pointsReq: 2500, description: "Solid foundation in all core abacus formulas." },
-  { name: "Rising Star", icon: "🌟", color: "#4ADE80", daysReq: 3, pointsReq: 250, description: "An incredible start! You're destined for greatness." },
+  { name: "Human Calculator", icon: "👑", color: "#FFD700", daysReq: 365, pointsReq: 250000, description: "The ultimate master. Speed and accuracy beyond all limits." },
+  { name: "Grandmaster", icon: "🔱", color: "#E5E4E2", daysReq: 270, pointsReq: 150000, description: "Elite status reserved for the most dedicated math warriors." },
+  { name: "Math Titan", icon: "🏛️", color: "#94a3b8", daysReq: 240, pointsReq: 120000, description: "Unshakable precision and monumental focus." },
+  { name: "Supreme Ninja", icon: "⚔️", color: "#475569", daysReq: 210, pointsReq: 100000, description: "A legendary force in the world of mental arithmetic." },
+  { name: "Math Ninja", icon: "🥷", color: "#C0C0C0", daysReq: 180, pointsReq: 80000, description: "Lightning fast visualization and silent precision." },
+  { name: "Flash Master", icon: "☄️", color: "#f97316", daysReq: 150, pointsReq: 60000, description: "Moving at the speed of thought. Truly impressive." },
+  { name: "Elite Apprentice", icon: "🎖️", color: "#10b981", daysReq: 120, pointsReq: 45000, description: "A top-tier practitioner nearing absolute mastery." },
+  { name: "Master Apprentice", icon: "💎", color: "#06b6d4", daysReq: 90, pointsReq: 30000, description: "Significant expertise across all complex formulas." },
+  { name: "Senior Apprentice", icon: "🎓", color: "#3b82f6", daysReq: 60, pointsReq: 15000, description: "Advanced skills and deep understanding of abacus logic." },
+  { name: "Apprentice", icon: "🛠️", color: "#A52A2A", daysReq: 30, pointsReq: 5000, description: "Solid foundation in all core abacus techniques." },
+  { name: "Rising Star", icon: "🌟", color: "#4ADE80", daysReq: 7, pointsReq: 1000, description: "An incredible start! You're destined for greatness." },
   { name: "Junior Calculator", icon: "👶", color: "#ADD8E6", daysReq: 0, pointsReq: 0, description: "The journey to math mastery begins today." }
 ];
