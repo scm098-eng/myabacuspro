@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -115,6 +115,28 @@ const htmlToPlainText = (html: string) => {
     .replace(/<br\s*\/?>/g, '\n')
     .trim();
 };
+
+/**
+ * Robust date normalization helper for display
+ */
+function normalizeDateDisplay(val: any): string {
+  if (!val) return 'Just now';
+  
+  let date: Date;
+  if (val && typeof val.toDate === 'function') {
+    date = val.toDate();
+  } else if (typeof val === 'string') {
+    date = parseISO(val);
+  } else if (val instanceof Date) {
+    date = val;
+  } else if (val && typeof val.seconds === 'number') {
+    date = new Date(val.seconds * 1000);
+  } else {
+    return 'Just now';
+  }
+
+  return isValid(date) ? format(date, 'PPp') : 'Just now';
+}
 
 export default function AdminDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
@@ -296,7 +318,6 @@ export default function AdminDashboardPage() {
     const db = getFirestore(firebaseApp);
     const id = editingBlog.id || editingBlog.slug;
     
-    // Preserve createdAt if it exists (handles both Timestamps and strings)
     const blogData = {
       ...editingBlog,
       author: editingBlog.author || `${profile?.firstName} ${profile?.surname}`,
@@ -478,7 +499,7 @@ export default function AdminDashboardPage() {
                                 </CardHeader>
                                 <CardContent><p className="text-xs text-muted-foreground line-clamp-2">{blog.excerpt}</p></CardContent>
                                 <CardFooter className="text-[10px] text-muted-foreground italic">
-                                    Last Updated: {blog.createdAt?.toDate ? format(blog.createdAt.toDate(), 'PPp') : (typeof blog.createdAt === 'string' ? format(parseISO(blog.createdAt), 'PPp') : 'Just now')}
+                                    Last Updated: {normalizeDateDisplay(blog.createdAt)}
                                 </CardFooter>
                             </Card>
                         ))}
