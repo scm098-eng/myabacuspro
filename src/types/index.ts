@@ -321,4 +321,7 @@ export interface BlogPost {
   headlineWeight?: 'bold' | 'black';
   headlineCase?: 'normal' | 'uppercase';
   headlineSpacing?: 'tight' | 'normal' | 'wide';
+  // Image Specifics
+  imagePosition?: 'top' | 'left' | 'right';
+  imageFit?: 'cover' | 'contain';
 }

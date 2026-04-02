@@ -34,18 +34,17 @@ function normalizeDate(val: any): string {
  * Ensures every blog has a unique "identity".
  */
 function getBlogTheme(post: BlogPost) {
-  // Deterministic styles based on title length or slug
-  const seed = post.slug.length;
-  
-  const layout = post.layout || (seed % 3 === 0 ? 'centered' : seed % 2 === 0 ? 'magazine' : 'standard');
-  const fontFamily = post.fontFamily || (seed % 3 === 0 ? 'serif' : seed % 2 === 0 ? 'sans' : 'modern');
-  const spacing = post.lineSpacing || (seed % 2 === 0 ? 'relaxed' : 'wide');
+  const layout = post.layout || 'standard';
+  const fontFamily = post.fontFamily || 'serif';
+  const spacing = post.lineSpacing || 'relaxed';
   const dropCap = post.dropCap !== undefined ? post.dropCap : true;
+  const imagePos = post.imagePosition || 'top';
+  const imageFit = post.imageFit || 'cover';
 
   // Headline Identity Logic
-  const headlineWeight = post.headlineWeight || (seed % 2 === 0 ? 'black' : 'bold');
-  const headlineCase = post.headlineCase || (seed % 3 === 0 ? 'uppercase' : 'normal');
-  const headlineSpacing = post.headlineSpacing || (seed % 2 === 0 ? 'tight' : 'normal');
+  const headlineWeight = post.headlineWeight || 'black';
+  const headlineCase = post.headlineCase || 'normal';
+  const headlineSpacing = post.headlineSpacing || 'normal';
 
   return {
     container: cn(
@@ -57,7 +56,7 @@ function getBlogTheme(post: BlogPost) {
       layout === 'centered' ? "text-center" : "text-left"
     ),
     headline: cn(
-      "text-4xl md:text-6xl font-headline tracking-tighter leading-none text-slate-900 drop-shadow-sm",
+      "text-4xl md:text-6xl font-headline tracking-tighter leading-tight text-slate-900 drop-shadow-sm",
       headlineWeight === 'black' ? "font-black" : "font-bold",
       headlineCase === 'uppercase' ? "uppercase" : "normal-case",
       headlineSpacing === 'tight' ? "tracking-tighter" : headlineSpacing === 'wide' ? "tracking-widest" : "tracking-normal"
@@ -68,10 +67,13 @@ function getBlogTheme(post: BlogPost) {
       spacing === 'relaxed' ? "leading-relaxed" : spacing === 'wide' ? "leading-loose" : "leading-normal",
       dropCap && "drop-cap-enabled"
     ),
-    image: cn(
-      "relative w-full overflow-hidden shadow-2xl mb-12",
-      layout === 'magazine' ? "aspect-[16/9] rounded-3xl" : "aspect-[3/2] rounded-[2.5rem]"
-    )
+    imageContainer: cn(
+      "relative w-full overflow-hidden shadow-2xl mb-12 bg-slate-50 border",
+      layout === 'magazine' ? "aspect-[16/9] rounded-3xl" : "aspect-[3/2] rounded-[2.5rem]",
+      imagePos === 'left' && "md:w-1/2 md:float-left md:mr-10 md:mb-8",
+      imagePos === 'right' && "md:w-1/2 md:float-right md:ml-10 md:mb-8"
+    ),
+    imageFit: imageFit === 'contain' ? 'object-contain' : 'object-cover'
   };
 }
 
@@ -152,23 +154,27 @@ export default async function BlogPostPage({ params }: PageProps) {
         </h1>
       </div>
 
-      <div className={theme.image}>
-        <Image
-          src={post.image || 'https://picsum.photos/seed/math/1200/600'}
-          alt={post.title}
-          fill
-          className="object-cover"
-          priority
-          data-ai-hint="abacus learning"
-        />
-      </div>
+      <div className="clearfix">
+        <div className={theme.imageContainer}>
+          <Image
+            src={post.image || 'https://picsum.photos/seed/math/1200/600'}
+            alt={post.title}
+            fill
+            className={theme.imageFit}
+            priority
+            data-ai-hint="abacus learning"
+          />
+        </div>
 
-      <div className="james-clear-style">
-        <div 
-          className={theme.content}
-          dangerouslySetInnerHTML={{ __html: post.content }}
-        />
-        
+        <div className="james-clear-style">
+          <div 
+            className={theme.content}
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+        </div>
+      </div>
+      
+      <div className="max-w-[700px] mx-auto">
         <div className="cta-section bg-gradient-to-br from-primary/5 to-transparent p-10 rounded-[2.5rem] border border-primary/10 mt-20">
           <h4 className="text-2xl font-black uppercase tracking-tight text-slate-900 mb-4">Ready to master mental math?</h4>
           <p className="text-lg font-medium text-slate-600 mb-8">Join thousands of students building lightning-fast calculation skills on our digital platform.</p>
