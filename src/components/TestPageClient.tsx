@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -8,7 +7,7 @@ import type { Question, Difficulty, TestType, TestSettings } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Timer, AlertTriangle, Loader2, PlayCircle } from 'lucide-react';
+import { Timer, AlertTriangle, Loader2, PlayCircle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -30,6 +29,8 @@ import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { useSound } from '@/hooks/useSound';
 import { PAGE_GUIDES } from '@/lib/constants';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 export default function TestPageClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
@@ -45,6 +46,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   const [isAnswered, setIsAnswered] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [isFinished, setIsFinished] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -53,6 +55,13 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     setQuestions(generatedQuestions);
     setUserAnswers(new Array(generatedQuestions.length).fill(null));
     questionButtonRefs.current = new Array(generatedQuestions.length);
+
+    // Check if user has opted to skip rules
+    const skip = localStorage.getItem('skip_rules_timed_test') === 'true';
+    if (skip) {
+      setHasStarted(true);
+      setStartTime(Date.now());
+    }
   }, [testId, difficulty]);
   
   useEffect(() => {
@@ -66,6 +75,9 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   }, [currentQuestionIndex]);
 
   const handleStart = () => {
+    if (dontShowAgain) {
+      localStorage.setItem('skip_rules_timed_test', 'true');
+    }
     setHasStarted(true);
     setStartTime(Date.now());
     playSound('points');
@@ -221,27 +233,35 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
 
   if (!hasStarted) {
     return (
-      <div className="flex flex-col max-w-xl mx-auto h-full">
-        <Card className="shadow-2xl border-none rounded-[2rem] overflow-hidden bg-card animate-in zoom-in-95 duration-500">
-          <CardHeader className="bg-primary text-primary-foreground text-center py-10">
-            <CardTitle className="text-3xl font-black uppercase tracking-tighter font-headline">How to Take Timed Tests</CardTitle>
-            <CardDescription className="text-primary-foreground/80 font-bold text-lg">Follow these rules to maximize your score!</CardDescription>
+      <div className="flex flex-col max-w-xl mx-auto h-full px-4">
+        <Card className="shadow-2xl border-none rounded-[2rem] overflow-hidden bg-card animate-in zoom-in-95 duration-500 max-h-[90vh] flex flex-col">
+          <CardHeader className="bg-primary text-primary-foreground text-center py-6 shrink-0">
+            <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tighter font-headline">Test Rules</CardTitle>
+            <CardDescription className="text-primary-foreground/80 font-bold text-sm sm:text-lg">Follow these to score high!</CardDescription>
           </CardHeader>
-          <CardContent className="p-8">
+          <CardContent className="p-6 sm:p-8 overflow-y-auto flex-1 scrollbar-none">
             <div className="space-y-4">
               {PAGE_GUIDES.timed_test.steps.map((step, i) => (
                 <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-muted/50 border border-muted-foreground/5 animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${i * 100}ms` }}>
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-white text-xs font-black shadow-md">
                     {i + 1}
                   </div>
-                  <p className="text-base font-medium text-slate-700 leading-tight pt-1.5">{step}</p>
+                  <p className="text-sm sm:text-base font-medium text-slate-700 leading-tight pt-1.5">{step}</p>
                 </div>
               ))}
             </div>
           </CardContent>
-          <CardFooter className="p-8 pt-0">
-            <Button onClick={handleStart} className="w-full h-16 text-2xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.02]">
-              <PlayCircle className="mr-3 h-8 w-8" /> Start Test Now
+          <CardFooter className="p-6 sm:p-8 pt-0 flex flex-col gap-4 bg-white/50 border-t shrink-0">
+            <div className="flex items-center space-x-2 py-2">
+              <Checkbox 
+                id="dont-show" 
+                checked={dontShowAgain} 
+                onCheckedChange={(val) => setDontShowAgain(!!val)} 
+              />
+              <Label htmlFor="dont-show" className="text-xs font-bold text-muted-foreground uppercase cursor-pointer">Do not show rules again</Label>
+            </div>
+            <Button onClick={handleStart} className="w-full h-14 sm:h-16 text-xl sm:text-2xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.02]">
+              <PlayCircle className="mr-3 h-6 w-6 sm:h-8 sm:w-8" /> Start Test
             </Button>
           </CardFooter>
         </Card>
@@ -250,16 +270,16 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   }
 
   return (
-    <div className="flex flex-col max-w-3xl mx-auto h-full">
+    <div className="flex flex-col max-w-3xl mx-auto h-full px-4">
       <Card className="shadow-2xl relative overflow-hidden flex flex-col flex-grow">
         <CardHeader>
           <div className="flex justify-between items-center mb-4">
             <div className="space-y-1">
-              <CardTitle className="text-2xl font-headline">{settings.title}</CardTitle>
+              <CardTitle className="text-xl sm:text-2xl font-headline">{settings.title}</CardTitle>
             </div>
             {settings.timeLimit > 0 && (
-              <div className={cn("flex items-center gap-2 font-semibold text-lg p-2 rounded-md transition-colors", timeLeft < 60 ? 'text-destructive-foreground bg-destructive animate-pulse' : 'text-foreground')}>
-                <Timer className="h-6 w-6" />
+              <div className={cn("flex items-center gap-2 font-semibold text-base sm:text-lg p-2 rounded-md transition-colors", timeLeft < 60 ? 'text-destructive-foreground bg-destructive animate-pulse' : 'text-foreground')}>
+                <Timer className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span>{minutes}:{seconds.toString().padStart(2, '0')}</span>
               </div>
             )}
@@ -286,14 +306,14 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
           </ScrollArea>
         
           <div className="text-center my-auto transition-opacity duration-300" key={currentQuestionIndex}>
-            <p className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-wider text-foreground whitespace-pre-wrap">
+            <p className="text-xl sm:text-3xl md:text-4xl font-bold tracking-wider text-foreground whitespace-pre-wrap">
               {currentQuestion.text}
             </p>
-            <p className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-wider text-foreground whitespace-pre-wrap mt-4">
+            <p className="text-xl sm:text-3xl md:text-4xl font-bold tracking-wider text-foreground whitespace-pre-wrap mt-4">
               = ?
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-auto pt-6">
             {currentQuestion.options.map((option, index) => {
               const isCorrect = option === currentQuestion.answer;
               const isSelected = selectedOption === option;
@@ -304,7 +324,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
                   onClick={() => handleAnswer(option)}
                   disabled={isAnswered}
                   className={cn(
-                    "h-20 text-3xl font-bold transition-all duration-300 transform hover:scale-105",
+                    "h-16 sm:h-20 text-2xl sm:text-3xl font-bold transition-all duration-300 transform hover:scale-105",
                     isAnswered && isSelected && !isCorrect && "bg-destructive hover:bg-destructive/90",
                     isAnswered && isCorrect && "bg-green-50 hover:bg-green-50 text-green-700 border-green-500 border-2",
                   )}
@@ -320,7 +340,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       <div className="mt-6 flex justify-end">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="destructive">
+            <Button variant="destructive" size="sm" className="sm:size-default">
                 <AlertTriangle className="mr-2 h-4 w-4" />
                 End Test
             </Button>

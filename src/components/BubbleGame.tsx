@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
@@ -20,6 +19,8 @@ import { firebaseApp } from '@/lib/firebase';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { PAGE_GUIDES } from '@/lib/constants';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 interface Bubble {
   id: string;
@@ -142,6 +143,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const [finalMasteryPoints, setFinalMasteryPoints] = useState(0);
   const [showSubmissionAnim, setShowSubmissionAnim] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const isFinishingRef = useRef(false);
   const questionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -162,6 +164,11 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   useEffect(() => {
     setMounted(true);
     document.body.style.overflow = 'hidden';
+
+    // Check skip rules preference
+    const skip = localStorage.getItem('skip_rules_bubble_game') === 'true';
+    if (skip) setGameState('playing');
+
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -173,6 +180,9 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   }, [level, levelId]);
   
   const handleStart = () => {
+    if (dontShowAgain) {
+      localStorage.setItem('skip_rules_bubble_game', 'true');
+    }
     setGameState('playing');
     playSound('points');
   };
@@ -430,31 +440,39 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         {gameState === 'intro' && (
             <div className="absolute inset-0 flex items-center justify-center p-4 z-[1000] animate-in fade-in zoom-in-95 duration-500">
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
-                <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white rounded-[3rem] overflow-hidden relative z-[1001]">
-                    <CardHeader className="bg-pink-500 text-white text-center py-10">
-                        <div className="mx-auto bg-white/20 p-4 rounded-full w-fit mb-4">
-                            <Star className="w-12 h-12 text-white animate-pulse" />
+                <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white rounded-[3rem] overflow-hidden relative z-[1001] max-h-[90vh] flex flex-col">
+                    <CardHeader className="bg-pink-500 text-white text-center py-6 sm:py-10 shrink-0">
+                        <div className="mx-auto bg-white/20 p-2 sm:p-4 rounded-full w-fit mb-4 hidden sm:block">
+                            <Star className="w-8 h-8 sm:w-12 sm:h-12 text-white animate-pulse" />
                         </div>
-                        <CardTitle className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter">
+                        <CardTitle className="text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter">
                             How to Play
                         </CardTitle>
-                        <CardDescription className="text-white/80 font-bold text-lg mt-2">
+                        <CardDescription className="text-white/80 font-bold text-sm sm:text-lg mt-2">
                             Master the Bubble Game!
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="p-8 space-y-4">
+                    <CardContent className="p-6 sm:p-8 space-y-4 overflow-y-auto flex-1 scrollbar-none">
                         {PAGE_GUIDES.bubble_game.steps.map((step, i) => (
                             <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-muted/50 border border-muted-foreground/5 animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${i * 100}ms` }}>
                                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pink-500 text-white text-xs font-black shadow-md">
                                     {i + 1}
                                 </div>
-                                <p className="text-base font-medium text-slate-700 leading-tight pt-1.5">{step}</p>
+                                <p className="text-sm sm:text-base font-medium text-slate-700 leading-tight pt-1.5">{step}</p>
                             </div>
                         ))}
                     </CardContent>
-                    <CardFooter className="p-8 pt-0">
-                        <Button onClick={handleStart} className="w-full h-16 text-2xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.02] bg-pink-500 hover:bg-pink-600 text-white">
-                            <PlayCircle className="mr-3 h-8 w-8" /> Start Popping!
+                    <CardFooter className="p-6 sm:p-8 pt-0 flex flex-col gap-4 bg-white/50 border-t shrink-0">
+                        <div className="flex items-center space-x-2 py-2">
+                          <Checkbox 
+                            id="dont-show-bubbles" 
+                            checked={dontShowAgain} 
+                            onCheckedChange={(val) => setDontShowAgain(!!val)} 
+                          />
+                          <Label htmlFor="dont-show-bubbles" className="text-xs font-bold text-muted-foreground uppercase cursor-pointer">Do not show rules again</Label>
+                        </div>
+                        <Button onClick={handleStart} className="w-full h-14 sm:h-16 text-xl sm:text-2xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.02] bg-pink-500 hover:bg-pink-600 text-white">
+                            <PlayCircle className="mr-3 h-6 w-6 sm:h-8 sm:w-8" /> Start Popping!
                         </Button>
                     </CardFooter>
                 </Card>
@@ -464,23 +482,23 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         {(gameState === 'levelComplete' || gameState === 'gameOver') && (
             <div className="absolute inset-0 flex items-center justify-center p-4 z-[1000] animate-in fade-in zoom-in-95 duration-500">
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
-                <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white rounded-[3rem] overflow-hidden relative z-[1001]">
-                    <CardHeader className={cn("text-center py-10", gameState === 'levelComplete' ? "bg-green-500" : "bg-destructive")}>
-                        <div className="mx-auto bg-white/20 p-4 rounded-full w-fit mb-4">
-                            {gameState === 'levelComplete' ? <CheckCircle2 className="w-12 h-12 text-white" /> : <AlertCircle className="w-12 h-12 text-white" />}
+                <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white rounded-[3rem] overflow-hidden relative z-[1001] max-h-[90vh] flex flex-col">
+                    <CardHeader className={cn("text-center py-6 sm:py-10 shrink-0", gameState === 'levelComplete' ? "bg-green-500" : "bg-destructive")}>
+                        <div className="mx-auto bg-white/20 p-2 sm:p-4 rounded-full w-fit mb-4 hidden sm:block">
+                            {gameState === 'levelComplete' ? <CheckCircle2 className="w-8 h-8 sm:w-12 sm:h-12 text-white" /> : <AlertCircle className="w-8 h-8 sm:w-12 sm:h-12 text-white" />}
                         </div>
-                        <CardTitle className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter">
+                        <CardTitle className="text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter">
                             {gameState === 'levelComplete' ? 'Level Clear!' : 'Game Over'}
                         </CardTitle>
-                        <CardDescription className="text-white/80 font-bold text-lg mt-2 px-6">
+                        <CardDescription className="text-white/80 font-bold text-sm sm:text-lg mt-2 px-6">
                             {gameState === 'levelComplete' ? `Awesome job on ${levelName}` : 'Keep going! Practice makes perfect.'}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="p-10 text-center space-y-8">
+                    <CardContent className="p-6 sm:p-10 text-center space-y-8 flex-1 overflow-y-auto">
                         <div className="space-y-2 relative">
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Mastery Points Earned</p>
                             <div className="relative inline-block">
-                              <p className="text-7xl font-black text-primary drop-shadow-sm">{finalMasteryPoints}</p>
+                              <p className="text-5xl sm:text-7xl font-black text-primary drop-shadow-sm">{finalMasteryPoints}</p>
                               {showSubmissionAnim && Array.from({ length: 20 }).map((_, i) => (
                                 <FloatingParticle key={i} index={i} />
                               ))}
@@ -489,7 +507,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                         
                         <div className="grid gap-4">
                             {gameState === 'levelComplete' && levelId < 1000 ? (
-                                <Button onClick={() => router.push(`/game/level-${levelId + 1}`)} className="h-16 text-xl font-black rounded-2xl shadow-xl hover:scale-[1.02] transition-transform">
+                                <Button onClick={() => router.push(`/game/level-${levelId + 1}`)} className="h-14 sm:h-16 text-lg sm:text-xl font-black rounded-2xl shadow-xl hover:scale-[1.02] transition-transform">
                                     NEXT LEVEL
                                 </Button>
                             ) : null}
@@ -501,10 +519,10 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                                 setFinalMasteryPoints(0);
                                 setShowSubmissionAnim(false);
                                 setGameState('playing');
-                            }} variant="outline" className="h-14 text-lg font-bold border-2 border-primary/20 rounded-2xl">
+                            }} variant="outline" className="h-12 sm:h-14 text-base sm:text-lg font-bold border-2 border-primary/20 rounded-2xl">
                                 TRY AGAIN
                             </Button>
-                            <Button variant="ghost" onClick={() => router.push('/game')} className="h-12 font-bold uppercase tracking-widest text-muted-foreground">
+                            <Button variant="ghost" onClick={() => router.push('/game')} className="h-10 sm:h-12 font-bold uppercase tracking-widest text-muted-foreground text-xs sm:text-sm">
                                 BACK TO LEVEL MAP
                             </Button>
                         </div>
