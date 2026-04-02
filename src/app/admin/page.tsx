@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, Users, ShieldCheck, Mail, ShieldX, UserCheck, Paperclip, FileText, Code, X } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, Users, ShieldCheck, Mail, ShieldX, UserCheck, Paperclip, FileText, Code, X, AlertTriangle, ShieldAlert, UserX } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
@@ -103,7 +103,7 @@ const htmlToPlainText = (html: string) => {
 
 export default function AdminDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
-  const { profile, getAllUsers, isLoading: authLoading, getStudentTitle, markUserAsRead, approveTeacher } = useAuth();
+  const { profile, getAllUsers, isLoading: authLoading, getStudentTitle, markUserAsRead, approveTeacher, toggleUserSuspension } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -115,7 +115,7 @@ export default function AdminDashboardPage() {
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
   const [recentJoins, setRecentJoins] = useState<ProfileData[]>([]);
   const [winnersData, setWinnersData] = useState<any>(null);
-  const [isResetting, setIsResetting] = useState<'weekly' | 'monthly' | 'force' | 'blast' | null>(null);
+  const [isResetting, setIsResetting] = useState<'weekly' | 'monthly' | 'force' | 'blast' | 'suspension' | null>(null);
   
   const [forceWinnerDialog, setForceWinnerDialog] = useState<{ open: boolean, user: ProfileData | null }>({ open: false, user: null });
 
@@ -126,7 +126,7 @@ export default function AdminDashboardPage() {
   const [editingBlog, setEditingBlog] = useState<Partial<BlogPost> | null>(null);
   const [draftContent, setDraftContent] = useState('');
 
-  // Marketing (Communication Hub) State
+  // Marketing State
   const [marketingForm, setMarketingForm] = useState({
     subject: '',
     message: '',
@@ -308,6 +308,19 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleToggleUserSuspension = async (uid: string, currentStatus: boolean) => {
+    setIsResetting('suspension');
+    try {
+      await toggleUserSuspension(uid, !currentStatus);
+      toast({ title: !currentStatus ? "User Suspended" : "User Restored" });
+      fetchData();
+    } catch (err) {
+      toast({ title: "Update Failed", variant: "destructive" });
+    } finally {
+      setIsResetting(null);
+    }
+  };
+
   const handleBlastEmails = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsResetting('blast');
@@ -408,6 +421,7 @@ export default function AdminDashboardPage() {
             .filter(u => (profile?.role === 'admin' || u.teacherId === profile?.uid))
             .filter(matches),
         pendingTeachers: allUsers.filter(u => u.role === 'teacher' && u.status === 'pending'),
+        moderationList: allUsers.filter(u => u.isSuspended || u.emailVerified === false),
         summaryStats: { 
             totalTeachers: allStaff.length, 
             totalStudents: allStudents.length, 
@@ -446,7 +460,7 @@ export default function AdminDashboardPage() {
                     {profile?.role === 'admin' && <TabsTrigger value="staff" className="h-10">Staff List</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="blogs" className="h-10">Blogs</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="moderation" className="h-10">Moderation</TabsTrigger>}
-                    {profile?.role === 'admin' && <TabsTrigger value="marketing" className="h-10">Communication Hub</TabsTrigger>}
+                    {profile?.role === 'admin' && <TabsTrigger value="marketing" className="h-10">Marketing</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="system" className="h-10">System</TabsTrigger>}
                 </TabsList>
 
@@ -526,38 +540,95 @@ export default function AdminDashboardPage() {
                 </TabsContent>
 
                 <TabsContent value="moderation">
-                    <Card>
-                        <CardHeader><CardTitle>Pending Approvals</CardTitle><CardDescription>Teachers waiting for access.</CardDescription></CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader><TableRow><TableHead>Teacher</TableHead><TableHead>Institute</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {processedData.pendingTeachers.length > 0 ? processedData.pendingTeachers.map(t => (
-                                        <TableRow key={t.uid}>
-                                            <TableCell>
-                                                <div className="font-bold">{t.firstName} {t.surname}</div>
-                                                <div className="text-[10px] text-muted-foreground">{t.email}</div>
-                                            </TableCell>
-                                            <TableCell className="text-sm font-medium">{t.instituteName || 'N/A'}</TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button variant="outline" size="sm" onClick={() => handleApproveTeacher(t.uid)}><UserCheck className="w-4 h-4 mr-2" /> Approve</Button>
-                                                    <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${t.uid}`}><Eye className="w-4 h-4" /></Link></Button>
-                                                </div>
-                                            </TableCell>
+                    <div className="space-y-8">
+                        <Card className="border-orange-200 bg-orange-50/10">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-orange-700">
+                                    <ShieldAlert className="w-5 h-5" /> Pending Teacher Approvals
+                                </CardTitle>
+                                <CardDescription>Verify credentials before granting platform access.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader><TableRow><TableHead>Teacher</TableHead><TableHead>Institute</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
+                                    <TableBody>
+                                        {processedData.pendingTeachers.length > 0 ? processedData.pendingTeachers.map(t => (
+                                            <TableRow key={t.uid}>
+                                                <TableCell>
+                                                    <div className="font-bold">{t.firstName} {t.surname}</div>
+                                                    <div className="text-[10px] text-muted-foreground">{t.email}</div>
+                                                </TableCell>
+                                                <TableCell className="text-sm font-medium">{t.instituteName || 'N/A'}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button variant="outline" size="sm" onClick={() => handleApproveTeacher(t.uid)}><UserCheck className="w-4 h-4 mr-2" /> Approve</Button>
+                                                        <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${t.uid}`}><Eye className="w-4 h-4" /></Link></Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )) : <TableRow><TableCell colSpan={3} className="text-center py-8">No pending staff accounts.</TableCell></TableRow>}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-red-200 bg-red-50/5">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-red-700">
+                                    <UserX className="w-5 h-5" /> Account Moderation
+                                </CardTitle>
+                                <CardDescription>Review flagged, potential fake, or unverified accounts.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>User</TableHead>
+                                            <TableHead>Issue</TableHead>
+                                            <TableHead className="text-right">Management</TableHead>
                                         </TableRow>
-                                    )) : <TableRow><TableCell colSpan={3} className="text-center py-8">No pending staff accounts.</TableCell></TableRow>}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {processedData.moderationList.length > 0 ? processedData.moderationList.map(u => (
+                                            <TableRow key={u.uid}>
+                                                <TableCell>
+                                                    <div className="font-bold">{u.firstName} {u.surname}</div>
+                                                    <div className="text-[10px] text-muted-foreground">{u.email}</div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {u.isSuspended && <Badge variant="destructive">Suspended</Badge>}
+                                                        {!u.emailVerified && <Badge variant="outline" className="text-orange-600 border-orange-200">Email Unverified</Badge>}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button 
+                                                            variant="outline" 
+                                                            size="sm" 
+                                                            className={u.isSuspended ? "text-green-600 border-green-200" : "text-red-600 border-red-200"}
+                                                            onClick={() => handleToggleUserSuspension(u.uid, u.isSuspended || false)}
+                                                            disabled={isResetting === 'suspension'}
+                                                        >
+                                                            {u.isSuspended ? "Restore" : "Suspend"}
+                                                        </Button>
+                                                        <Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${u.uid}`}><Eye className="w-4 h-4" /></Link></Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )) : <TableRow><TableCell colSpan={3} className="text-center py-8">System clear. No suspicious accounts found.</TableCell></TableRow>}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </TabsContent>
 
                 <TabsContent value="marketing">
                     <Card className="border-primary/10 shadow-lg">
                         <CardHeader className="bg-muted/30 border-b">
                             <CardTitle className="flex items-center gap-2 text-2xl font-headline">
-                                <Mail className="w-6 h-6 text-primary" /> Communication Hub
+                                <Mail className="w-6 h-6 text-primary" /> Marketing Hub
                             </CardTitle>
                             <CardDescription>Blast tailored emails to segments or specific students.</CardDescription>
                         </CardHeader>
@@ -695,7 +766,7 @@ export default function AdminDashboardPage() {
 
                                 <Button type="submit" className="w-full h-16 text-xl font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.01] transition-transform" disabled={isResetting !== null}>
                                     {isResetting === 'blast' ? <Loader2 className="animate-spin mr-3" /> : <Send className="mr-3 h-6 w-6" />}
-                                    Launch Blast Campaign
+                                    Launch Marketing Campaign
                                 </Button>
                             </form>
                         </CardContent>
