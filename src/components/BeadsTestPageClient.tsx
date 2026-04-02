@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation';
 import { generateTest } from '@/lib/questions';
 import type { Question, Difficulty, TestType, TestSettings } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { AlertTriangle, Loader2, Check } from 'lucide-react';
+import { AlertTriangle, Loader2, Check, PlayCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -30,11 +30,15 @@ import { Input } from './ui/input';
 import { calculatePoints } from '@/lib/scoring';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
-import PageGuide from './shared/PageGuide';
+import { PAGE_GUIDES } from '@/lib/constants';
+import { useSound } from '@/hooks/useSound';
 
 export default function BeadsTestPageClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
   const { user, recordDailyPractice, addPoints } = useAuth();
+  const { playSound } = useSound();
+  
+  const [hasStarted, setHasStarted] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>([]);
@@ -67,14 +71,18 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
   }, [currentQuestionIndex]);
   
    useEffect(() => {
-    if (testId === 'beads-identify' && inputRef.current) {
+    if (hasStarted && testId === 'beads-identify' && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [currentQuestionIndex, testId]);
+  }, [currentQuestionIndex, testId, hasStarted]);
+
+  const handleStart = () => {
+    setHasStarted(true);
+    playSound('points');
+  };
 
   const currentQuestion = useMemo(() => questions[currentQuestionIndex], [questions, currentQuestionIndex]);
 
-  // Determine dynamic rod count based on the question's target answer
   const dynamicRodCount = useMemo(() => {
     if (!currentQuestion) return 3;
     const ans = currentQuestion.answer;
@@ -196,6 +204,36 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
     );
   }
 
+  if (!hasStarted) {
+    return (
+      <div className="flex flex-col max-w-xl mx-auto h-full">
+        <Card className="shadow-2xl border-none rounded-[2rem] overflow-hidden bg-card animate-in zoom-in-95 duration-500">
+          <CardHeader className="bg-indigo-600 text-white text-center py-10">
+            <CardTitle className="text-3xl font-black uppercase tracking-tighter font-headline">Beads Mastery Rules</CardTitle>
+            <CardDescription className="text-white/80 font-bold text-lg">Learn the rules before you start!</CardDescription>
+          </CardHeader>
+          <CardContent className="p-8">
+            <div className="space-y-4">
+              {PAGE_GUIDES.bead_test.steps.map((step, i) => (
+                <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-muted/50 border border-muted-foreground/5 animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${i * 100}ms` }}>
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white text-xs font-black shadow-md">
+                    {i + 1}
+                  </div>
+                  <p className="text-base font-medium text-slate-700 leading-tight pt-1.5">{step}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+          <CardFooter className="p-8 pt-0">
+            <Button onClick={handleStart} className="w-full h-16 text-2xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.02] bg-indigo-600 hover:bg-indigo-700">
+              <PlayCircle className="mr-3 h-8 w-8" /> Start Training
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
   const renderQuestion = () => {
     if (currentQuestion.questionType === 'identify') {
       return (
@@ -237,7 +275,6 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
           <div className="flex justify-between items-center mb-4">
             <div className="space-y-1">
               <CardTitle className="text-2xl font-headline">{settings.title}</CardTitle>
-              <PageGuide guideKey="bead_test" triggerLabel="How to Play" className="h-7 text-[10px]" />
             </div>
           </div>
           <CardDescription>Question {currentQuestionIndex + 1} of {questions.length}</CardDescription>

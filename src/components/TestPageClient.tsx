@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation';
 import { generateTest } from '@/lib/questions';
 import type { Question, Difficulty, TestType, TestSettings } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Timer, AlertTriangle, Loader2 } from 'lucide-react';
+import { Timer, AlertTriangle, Loader2, PlayCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -29,12 +29,14 @@ import { calculatePoints } from '@/lib/scoring';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { useSound } from '@/hooks/useSound';
-import PageGuide from './shared/PageGuide';
+import { PAGE_GUIDES } from '@/lib/constants';
 
 export default function TestPageClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
   const { user, recordDailyPractice, addPoints } = useAuth();
   const { playSound } = useSound();
+  
+  const [hasStarted, setHasStarted] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>([]);
@@ -50,7 +52,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     const generatedQuestions = generateTest(testId, difficulty);
     setQuestions(generatedQuestions);
     setUserAnswers(new Array(generatedQuestions.length).fill(null));
-    setStartTime(Date.now());
     questionButtonRefs.current = new Array(generatedQuestions.length);
   }, [testId, difficulty]);
   
@@ -63,6 +64,12 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         });
     }
   }, [currentQuestionIndex]);
+
+  const handleStart = () => {
+    setHasStarted(true);
+    setStartTime(Date.now());
+    playSound('points');
+  };
 
   const finishTest = useCallback(async () => {
     if (isFinished) return;
@@ -134,8 +141,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   }, [userAnswers, questions, router, timeLeft, user, testId, difficulty, settings.timeLimit, isFinished, recordDailyPractice, addPoints]);
 
   useEffect(() => {
-    // If timeLimit is 0, it means unlimited time. Do not start the countdown.
-    if (questions.length === 0 || !startTime || isFinished || settings.timeLimit === 0) return;
+    if (!hasStarted || questions.length === 0 || !startTime || isFinished || settings.timeLimit === 0) return;
     
     if (timeLeft <= 0) {
       finishTest();
@@ -147,7 +153,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         const nextTime = prev - 1;
         
         if (nextTime === 60) {
-          // Exactly 1 minute remaining: Triple-Beep Alert
           playSound('timerWarning');
           setTimeout(() => playSound('timerWarning'), 200);
           setTimeout(() => playSound('timerWarning'), 400);
@@ -162,7 +167,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, finishTest, questions.length, startTime, isFinished, playSound, settings.timeLimit]);
+  }, [timeLeft, finishTest, questions.length, startTime, isFinished, playSound, settings.timeLimit, hasStarted]);
 
    useEffect(() => {
     if (!isFinished && questions.length > 0 && userAnswers.length === questions.length && !userAnswers.includes(null)) {
@@ -214,6 +219,36 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     );
   }
 
+  if (!hasStarted) {
+    return (
+      <div className="flex flex-col max-w-xl mx-auto h-full">
+        <Card className="shadow-2xl border-none rounded-[2rem] overflow-hidden bg-card animate-in zoom-in-95 duration-500">
+          <CardHeader className="bg-primary text-primary-foreground text-center py-10">
+            <CardTitle className="text-3xl font-black uppercase tracking-tighter font-headline">How to Take Timed Tests</CardTitle>
+            <CardDescription className="text-primary-foreground/80 font-bold text-lg">Follow these rules to maximize your score!</CardDescription>
+          </CardHeader>
+          <CardContent className="p-8">
+            <div className="space-y-4">
+              {PAGE_GUIDES.timed_test.steps.map((step, i) => (
+                <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-muted/50 border border-muted-foreground/5 animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${i * 100}ms` }}>
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-white text-xs font-black shadow-md">
+                    {i + 1}
+                  </div>
+                  <p className="text-base font-medium text-slate-700 leading-tight pt-1.5">{step}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+          <CardFooter className="p-8 pt-0">
+            <Button onClick={handleStart} className="w-full h-16 text-2xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.02]">
+              <PlayCircle className="mr-3 h-8 w-8" /> Start Test Now
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col max-w-3xl mx-auto h-full">
       <Card className="shadow-2xl relative overflow-hidden flex flex-col flex-grow">
@@ -221,7 +256,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
           <div className="flex justify-between items-center mb-4">
             <div className="space-y-1">
               <CardTitle className="text-2xl font-headline">{settings.title}</CardTitle>
-              <PageGuide guideKey="timed_test" triggerLabel="Test Rules" className="h-7 text-[10px]" />
             </div>
             {settings.timeLimit > 0 && (
               <div className={cn("flex items-center gap-2 font-semibold text-lg p-2 rounded-md transition-colors", timeLeft < 60 ? 'text-destructive-foreground bg-destructive animate-pulse' : 'text-foreground')}>

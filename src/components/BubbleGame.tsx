@@ -7,8 +7,8 @@ import Image from 'next/image';
 import type { GameLevel, Question } from '@/types';
 import { generateGameQuestions } from '@/lib/questions';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
-import { Heart, X, Star, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from './ui/card';
+import { Heart, X, Star, CheckCircle2, AlertCircle, PlayCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
@@ -19,7 +19,7 @@ import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/fire
 import { firebaseApp } from '@/lib/firebase';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
-import PageGuide from './shared/PageGuide';
+import { PAGE_GUIDES } from '@/lib/constants';
 
 interface Bubble {
   id: string;
@@ -138,7 +138,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(MAX_LIVES);
-  const [gameState, setGameState] = useState<'playing' | 'levelComplete' | 'gameOver'>('playing');
+  const [gameState, setGameState] = useState<'intro' | 'playing' | 'levelComplete' | 'gameOver'>('intro');
   const [finalMasteryPoints, setFinalMasteryPoints] = useState(0);
   const [showSubmissionAnim, setShowSubmissionAnim] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -172,6 +172,11 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     setQuestions(newQuestions);
   }, [level, levelId]);
   
+  const handleStart = () => {
+    setGameState('playing');
+    playSound('points');
+  };
+
   const finishGame = useCallback(async (finalScore: number, finalLives: number) => {
     if (isFinishingRef.current) return;
     isFinishingRef.current = true;
@@ -193,7 +198,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
       setFinalMasteryPoints(earnedPoints);
       addPoints(user.uid, earnedPoints);
 
-      // Save record to Firestore for Game History
       const db = getFirestore(firebaseApp);
       const resultData = {
         userId: user.uid,
@@ -376,7 +380,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                         <p className="text-sm sm:text-2xl font-black leading-none">{score}</p>
                     </div>
                 </div>
-                <PageGuide guideKey="bubble_game" triggerLabel="Rules" variant="ghost" className="text-white hover:bg-white/10 hidden sm:flex" />
             </div>
             
             <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-white/10 rounded-xl sm:rounded-2xl border border-white/5 mx-2 shrink-0">
@@ -423,6 +426,40 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                 </>
             )}
         </div>
+
+        {gameState === 'intro' && (
+            <div className="absolute inset-0 flex items-center justify-center p-4 z-[1000] animate-in fade-in zoom-in-95 duration-500">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+                <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white rounded-[3rem] overflow-hidden relative z-[1001]">
+                    <CardHeader className="bg-pink-500 text-white text-center py-10">
+                        <div className="mx-auto bg-white/20 p-4 rounded-full w-fit mb-4">
+                            <Star className="w-12 h-12 text-white animate-pulse" />
+                        </div>
+                        <CardTitle className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter">
+                            How to Play
+                        </CardTitle>
+                        <CardDescription className="text-white/80 font-bold text-lg mt-2">
+                            Master the Bubble Game!
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-8 space-y-4">
+                        {PAGE_GUIDES.bubble_game.steps.map((step, i) => (
+                            <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-muted/50 border border-muted-foreground/5 animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${i * 100}ms` }}>
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pink-500 text-white text-xs font-black shadow-md">
+                                    {i + 1}
+                                </div>
+                                <p className="text-base font-medium text-slate-700 leading-tight pt-1.5">{step}</p>
+                            </div>
+                        ))}
+                    </CardContent>
+                    <CardFooter className="p-8 pt-0">
+                        <Button onClick={handleStart} className="w-full h-16 text-2xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.02] bg-pink-500 hover:bg-pink-600 text-white">
+                            <PlayCircle className="mr-3 h-8 w-8" /> Start Popping!
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
+        )}
 
         {(gameState === 'levelComplete' || gameState === 'gameOver') && (
             <div className="absolute inset-0 flex items-center justify-center p-4 z-[1000] animate-in fade-in zoom-in-95 duration-500">
