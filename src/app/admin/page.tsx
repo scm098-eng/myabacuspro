@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
@@ -127,14 +126,6 @@ export default function AdminDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  const [emailSubject, setEmailSubject] = useState('');
-  const [emailMessage, setEmailMessage] = useState('');
-  const [targetAudience, setTargetAudience] = useState('all');
-  const [isSendingPromo, setIsSendingPromo] = useState(false);
-  const [marketingDraftContent, setMarketingDraftContent] = useState('');
-  const [marketingAttachments, setMarketingAttachments] = useState<File[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
   const [recentJoins, setRecentJoins] = useState<ProfileData[]>([]);
@@ -374,7 +365,10 @@ export default function AdminDashboardPage() {
     
     return { 
         filteredTeachers: teachersWithStats.filter(matches), 
-        filteredStudents: allStudents.filter(u => (profile?.role === 'admin' || u.teacherId === profile?.uid)).filter(matches),
+        filteredStudents: allStudents
+            .filter(u => profile?.role === 'admin' ? u.isAdminRead !== false : true) // Admins only see read students in main list
+            .filter(u => (profile?.role === 'admin' || u.teacherId === profile?.uid))
+            .filter(matches),
         summaryStats: { 
             totalTeachers: allTeachers.filter(t => t.status === 'approved' || t.role === 'admin').length, 
             totalStudents: allStudents.length, 
