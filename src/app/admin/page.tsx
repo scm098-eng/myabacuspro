@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
@@ -11,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, Users, ShieldCheck, Mail, UserCheck, Paperclip, FileText, Code, X, ShieldAlert, UserX } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, Users, ShieldCheck, Mail, UserCheck, Paperclip, FileText, Code, X, ShieldAlert, UserX, Image as ImageIcon, Type, Layout } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -26,6 +27,7 @@ import { parseISO, isValid, format, formatDistanceToNow } from 'date-fns';
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 
 /**
  * UTC standard Monday calculation (YYYY-MM-DD)
@@ -779,7 +781,7 @@ export default function AdminDashboardPage() {
                 <TabsContent value="blogs">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-headline">Blog Management</h2>
-                        <Button onClick={() => { setEditingBlog({ title: '', content: '', excerpt: '', category: 'News', slug: '' }); setDraftContent(''); setIsBlogDialogOpen(true); }}>
+                        <Button onClick={() => { setEditingBlog({ title: '', content: '', excerpt: '', category: 'News', slug: '', layout: 'standard', fontFamily: 'serif', lineSpacing: 'relaxed', dropCap: true, headlineWeight: 'black', headlineCase: 'normal', headlineSpacing: 'normal' }); setDraftContent(''); setIsBlogDialogOpen(true); }}>
                             <Plus className="mr-2 h-4 w-4" /> New Article
                         </Button>
                     </div>
@@ -943,21 +945,225 @@ export default function AdminDashboardPage() {
       </Dialog>
 
       <Dialog open={isBlogDialogOpen} onOpenChange={setIsBlogDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editingBlog?.id ? 'Edit Article' : 'New Article'}</DialogTitle></DialogHeader>
-          <form onSubmit={handleSaveBlog} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Title</Label><Input value={editingBlog?.title || ''} onChange={e => setEditingBlog(prev => ({ ...prev, title: e.target.value, slug: e.target.value.toLowerCase().replace(/ /g, '-') }))} required /></div>
-              <div className="space-y-2"><Label>Slug (URL)</Label><Input value={editingBlog?.slug || ''} onChange={e => setEditingBlog(prev => ({ ...prev, slug: e.target.value }))} required /></div>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 rounded-[2rem] border-none shadow-2xl">
+          <DialogHeader className="p-8 bg-muted/30 border-b">
+            <DialogTitle className="text-3xl font-headline">{editingBlog?.id ? 'Edit Article' : 'Create New Article'}</DialogTitle>
+            <DialogDescription>Content will be rendered as HTML. Use standard tags like h3, p, ul, li.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveBlog} className="p-8 space-y-10">
+            {/* --- BASIC INFO --- */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="font-bold">Title</Label>
+                <Input 
+                  value={editingBlog?.title || ''} 
+                  onChange={e => setEditingBlog(prev => ({ ...prev, title: e.target.value, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-') }))} 
+                  required 
+                  placeholder="The Future of Soroban"
+                  className="h-12 text-lg border-2 focus:ring-primary"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold">URL Slug</Label>
+                <Input 
+                  value={editingBlog?.slug || ''} 
+                  onChange={e => setEditingBlog(prev => ({ ...prev, slug: e.target.value }))} 
+                  required 
+                  placeholder="future-of-soroban"
+                  className="h-12 bg-muted/20 border-2"
+                />
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Category</Label><Input value={editingBlog?.category || ''} onChange={e => setEditingBlog(prev => ({ ...prev, category: e.target.value }))} required /></div>
-              <div className="space-y-2"><Label>Author</Label><Input value={editingBlog?.author || ''} onChange={e => setEditingBlog(prev => ({ ...prev, author: e.target.value }))} /></div>
+
+            {/* --- LAYOUT SETTINGS --- */}
+            <div className="bg-orange-50/30 p-8 rounded-3xl border-2 border-orange-100 space-y-8">
+              <div className="flex items-center gap-2 text-orange-700 font-bold uppercase tracking-tight text-xs">
+                <Layout className="w-4 h-4" /> Layout Settings
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">Page Layout</Label>
+                  <Select 
+                    value={editingBlog?.layout || 'standard'} 
+                    onValueChange={(val: any) => setEditingBlog(p => ({ ...p, layout: val }))}
+                  >
+                    <SelectTrigger className="h-12 border-2 bg-white">
+                      <SelectValue placeholder="Pick Layout" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standard">Standard (Traditional)</SelectItem>
+                      <SelectItem value="centered">Centered (Focused)</SelectItem>
+                      <SelectItem value="magazine">Magazine (Wide Hero)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">Typography Family</Label>
+                  <Select 
+                    value={editingBlog?.fontFamily || 'serif'} 
+                    onValueChange={(val: any) => setEditingBlog(p => ({ ...p, fontFamily: val }))}
+                  >
+                    <SelectTrigger className="h-12 border-2 bg-white">
+                      <SelectValue placeholder="Pick Font" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="serif">Merriweather (Classic Serif)</SelectItem>
+                      <SelectItem value="sans">Inter (Modern Sans)</SelectItem>
+                      <SelectItem value="modern">Space Grotesk (Tech Modern)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">Line Spacing</Label>
+                  <Select 
+                    value={editingBlog?.lineSpacing || 'relaxed'} 
+                    onValueChange={(val: any) => setEditingBlog(p => ({ ...p, lineSpacing: val }))}
+                  >
+                    <SelectTrigger className="h-12 border-2 bg-white">
+                      <SelectValue placeholder="Pick Spacing" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal (1.4)</SelectItem>
+                      <SelectItem value="relaxed">Relaxed (1.6)</SelectItem>
+                      <SelectItem value="wide">Wide (1.8)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 bg-white/50 p-4 rounded-2xl border-2 border-orange-100/50 w-fit">
+                <Switch 
+                  id="drop-cap"
+                  checked={editingBlog?.dropCap ?? true} 
+                  onCheckedChange={(val) => setEditingBlog(p => ({ ...p, dropCap: val }))} 
+                />
+                <Label htmlFor="drop-cap" className="font-bold cursor-pointer">Enable Large Drop-Cap</Label>
+              </div>
             </div>
-            <div className="space-y-2"><Label>Featured Image URL</Label><Input value={editingBlog?.image || ''} onChange={e => setEditingBlog(prev => ({ ...prev, image: e.target.value }))} /></div>
-            <div className="space-y-2"><Label>Excerpt (Meta Description)</Label><Textarea value={editingBlog?.excerpt || ''} onChange={setEditingBlog as any} rows={2} required /></div>
-            <div className="space-y-2"><Label>Content (HTML)</Label><Textarea value={draftContent} onChange={e => { setDraftContent(e.target.value); setEditingBlog(prev => ({ ...prev, content: plainTextToHtml(e.target.value) })); }} rows={10} required placeholder="Write your content here. Paragraphs will be converted to HTML automatically." /></div>
-            <DialogFooter><Button type="button" variant="ghost" onClick={() => setIsBlogDialogOpen(false)}>Cancel</Button><Button type="submit" disabled={isSavingBlog}>{isSavingBlog ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2 h-4 w-4" />} {editingBlog?.id ? 'Update' : 'Publish'}</Button></DialogFooter>
+
+            {/* --- HEADLINE IDENTITY --- */}
+            <div className="bg-slate-50 p-8 rounded-3xl border-2 border-slate-100 space-y-8">
+              <div className="flex items-center gap-2 text-slate-700 font-bold uppercase tracking-tight text-xs">
+                <Type className="w-4 h-4" /> Headline Identity
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">Headline Boldness</Label>
+                  <Select 
+                    value={editingBlog?.headlineWeight || 'black'} 
+                    onValueChange={(val: any) => setEditingBlog(p => ({ ...p, headlineWeight: val }))}
+                  >
+                    <SelectTrigger className="h-12 border-2 bg-white">
+                      <SelectValue placeholder="Pick Weight" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bold">Bold (700)</SelectItem>
+                      <SelectItem value="black">Extra Black (900)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">Headline Casing</Label>
+                  <Select 
+                    value={editingBlog?.headlineCase || 'normal'} 
+                    onValueChange={(val: any) => setEditingBlog(p => ({ ...p, headlineCase: val }))}
+                  >
+                    <SelectTrigger className="h-12 border-2 bg-white">
+                      <SelectValue placeholder="Pick Casing" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">Sentence Case</SelectItem>
+                      <SelectItem value="uppercase">All Caps (Impact)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">Letter Spacing</Label>
+                  <Select 
+                    value={editingBlog?.headlineSpacing || 'normal'} 
+                    onValueChange={(val: any) => setEditingBlog(p => ({ ...p, headlineSpacing: val }))}
+                  >
+                    <SelectTrigger className="h-12 border-2 bg-white">
+                      <SelectValue placeholder="Pick Spacing" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tight">Tight (-0.05em)</SelectItem>
+                      <SelectItem value="normal">Standard</SelectItem>
+                      <SelectItem value="wide">Wide (0.1em)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* --- IMAGE & CONTENT --- */}
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <ImageIcon className="w-4 h-4 text-primary" />
+                  <Label className="font-bold">Featured Image URL</Label>
+                </div>
+                <Input 
+                  value={editingBlog?.image || ''} 
+                  onChange={e => setEditingBlog(prev => ({ ...prev, image: e.target.value }))} 
+                  placeholder="https://images.unsplash.com/photo..."
+                  className="h-12 border-2"
+                />
+                {editingBlog?.image && (
+                  <div className="mt-4 relative aspect-video rounded-2xl overflow-hidden border-4 border-muted">
+                    <img src={editingBlog.image} alt="Preview" className="object-cover w-full h-full" />
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="font-bold">Category</Label>
+                  <Input value={editingBlog?.category || ''} onChange={e => setEditingBlog(prev => ({ ...prev, category: e.target.value }))} required className="h-12 border-2" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-bold">Author</Label>
+                  <Input value={editingBlog?.author || ''} onChange={e => setEditingBlog(prev => ({ ...prev, author: e.target.value }))} className="h-12 border-2" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="font-bold">Excerpt (Short Preview)</Label>
+                <Textarea value={editingBlog?.excerpt || ''} onChange={e => setEditingBlog(p => ({ ...p, excerpt: e.target.value })) as any} rows={2} required className="border-2" />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="font-bold">Main Content (HTML Support)</Label>
+                  <Badge variant="outline" className="font-bold text-[10px] uppercase">Auto-Paragraphs Enabled</Badge>
+                </div>
+                <Textarea 
+                  value={draftContent} 
+                  onChange={e => { 
+                    setDraftContent(e.target.value); 
+                    setEditingBlog(prev => ({ ...prev, content: plainTextToHtml(e.target.value) })); 
+                  }} 
+                  rows={15} 
+                  required 
+                  placeholder="Write your article here..."
+                  className="border-2 text-lg leading-relaxed focus:ring-primary font-serif p-6"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="p-8 border-t bg-muted/10">
+              <Button type="button" variant="ghost" onClick={() => setIsBlogDialogOpen(false)} className="font-bold">Cancel</Button>
+              <Button type="submit" disabled={isSavingBlog} className="h-12 px-8 font-black uppercase tracking-widest shadow-xl transition-transform hover:scale-[1.02]">
+                {isSavingBlog ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2 h-4 w-4" />} 
+                {editingBlog?.id ? 'Update Article' : 'Publish Article'}
+              </Button>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

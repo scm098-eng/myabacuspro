@@ -321,5 +321,4 @@ export interface BlogPost {
   headlineWeight?: 'bold' | 'black';
   headlineCase?: 'normal' | 'uppercase';
   headlineSpacing?: 'tight' | 'normal' | 'wide';
-  accentColor?: string;
 }
