@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, Users, ShieldCheck, Mail, ShieldX, UserCheck, Paperclip, FileText, Code } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, Users, ShieldCheck, Mail, ShieldX, UserCheck, Paperclip, FileText, Code, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
@@ -881,7 +881,7 @@ export default function AdminDashboardPage() {
               <div className="space-y-2"><Label>Author</Label><Input value={editingBlog?.author || ''} onChange={e => setEditingBlog(prev => ({ ...prev, author: e.target.value }))} /></div>
             </div>
             <div className="space-y-2"><Label>Featured Image URL</Label><Input value={editingBlog?.image || ''} onChange={e => setEditingBlog(prev => ({ ...prev, image: e.target.value }))} /></div>
-            <div className="space-y-2"><Label>Excerpt (Meta Description)</Label><Textarea value={editingBlog?.excerpt || ''} onChange={e => setEditingBlog(prev => ({ ...prev, excerpt: e.target.value }))} rows={2} required /></div>
+            <div className="space-y-2"><Label>Excerpt (Meta Description)</Label><Textarea value={editingBlog?.excerpt || ''} onChange={setEditingBlog as any} rows={2} required /></div>
             <div className="space-y-2"><Label>Content (HTML)</Label><Textarea value={draftContent} onChange={e => { setDraftContent(e.target.value); setEditingBlog(prev => ({ ...prev, content: plainTextToHtml(e.target.value) })); }} rows={10} required placeholder="Write your content here. Paragraphs will be converted to HTML automatically." /></div>
             <DialogFooter><Button type="button" variant="ghost" onClick={() => setIsBlogDialogOpen(false)}>Cancel</Button><Button type="submit" disabled={isSavingBlog}>{isSavingBlog ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2 h-4 w-4" />} {editingBlog?.id ? 'Update' : 'Publish'}</Button></DialogFooter>
           </form>
