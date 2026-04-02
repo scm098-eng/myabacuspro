@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -6,22 +5,30 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Rocket, Check, Sparkles } from 'lucide-react';
 import { APP_VERSION, UPDATE_NOTES } from '@/lib/constants';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function UpdateHighlights() {
+  const { user, isLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    const lastSeenVersion = localStorage.getItem('last_seen_version');
-    if (lastSeenVersion !== APP_VERSION) {
-      const timer = setTimeout(() => setIsOpen(true), 1000);
-      return () => clearTimeout(timer);
+    // Only check for updates if the user is logged in and loading is finished
+    if (!isLoading && user) {
+      const lastSeenVersion = localStorage.getItem('last_seen_version');
+      if (lastSeenVersion !== APP_VERSION) {
+        const timer = setTimeout(() => setIsOpen(true), 1000);
+        return () => clearTimeout(timer);
+      }
     }
-  }, []);
+  }, [user, isLoading]);
 
   const handleDismiss = () => {
     localStorage.setItem('last_seen_version', APP_VERSION);
     setIsOpen(false);
   };
+
+  // Do not render anything if user is not logged in or loading
+  if (!user || isLoading) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={(val) => {

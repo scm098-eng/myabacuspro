@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -6,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Brain, ChevronRight, CheckCircle2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 const STEPS = [
   {
@@ -35,16 +35,20 @@ const STEPS = [
 ];
 
 export default function OnboardingTour() {
+  const { user, isLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
-    const hasSeenTour = localStorage.getItem('onboarding_v1_complete');
-    if (!hasSeenTour) {
-      const timer = setTimeout(() => setIsOpen(true), 2000);
-      return () => clearTimeout(timer);
+    // Only trigger the tour if the user is logged in and loading is finished
+    if (!isLoading && user) {
+      const hasSeenTour = localStorage.getItem('onboarding_v1_complete');
+      if (!hasSeenTour) {
+        const timer = setTimeout(() => setIsOpen(true), 2000);
+        return () => clearTimeout(timer);
+      }
     }
-  }, []);
+  }, [user, isLoading]);
 
   const handleNext = () => {
     if (currentStep < STEPS.length - 1) {
@@ -54,6 +58,9 @@ export default function OnboardingTour() {
       setIsOpen(false);
     }
   };
+
+  // Do not render anything if user is not logged in or loading
+  if (!user || isLoading) return null;
 
   const step = STEPS[currentStep];
 
