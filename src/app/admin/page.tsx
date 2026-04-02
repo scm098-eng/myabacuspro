@@ -179,7 +179,7 @@ export default function AdminDashboardPage() {
           setBlogs(snap.docs.map(doc => ({ 
             id: doc.id, 
             ...doc.data(), 
-            createdAt: doc.data().createdAt // Use the raw data for normalization later
+            createdAt: doc.data().createdAt 
           } as BlogPost)));
         }
       );
@@ -190,7 +190,6 @@ export default function AdminDashboardPage() {
       });
       unsubscribers.push(winnerUnsub);
 
-      // Inbox for unread student signups
       const joinsUnsub = onSnapshot(
         query(
           collection(db, "users"), 

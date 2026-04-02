@@ -76,7 +76,7 @@ function getUTCPreviousMonthKey() {
 }
 
 /**
- * Email Template
+ * Email Templates
  */
 const progressReportHTML = (userName, type, metadata) => `
   <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 20px;">
@@ -95,6 +95,31 @@ const progressReportHTML = (userName, type, metadata) => `
     </div>
   </div>
 `;
+
+const birthdayEmailHTML = (userName) => `
+  <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 2px solid #ec4899; border-radius: 20px; background: #fffafb;">
+    <div style="text-align: center; margin-bottom: 25px;">
+      <div style="font-size: 60px;">🎂</div>
+      <h1 style="color: #ec4899; margin-top: 10px;">Happy Birthday, ${userName}!</h1>
+    </div>
+    <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi ${userName},</p>
+    <p style="font-size: 16px; color: #333; line-height: 1.6;">The entire MyAbacusPro team is wishing you a fantastic birthday! We hope your special day is filled with joy, celebration, and magic.</p>
+    <div style="background: #fdf2f8; padding: 20px; border-radius: 15px; border: 1px solid #fbcfe8; margin: 25px 0; text-align: center;">
+      <h3 style="margin-top: 0; color: #be185d;">A Birthday Gift for You!</h3>
+      <p style="color: #9d174d; font-weight: bold; font-size: 18px;">We've credited +100 Mastery Points to your account!</p>
+      <p style="font-size: 14px; color: #666;">Log in today to see your birthday surprise and keep your streak alive.</p>
+    </div>
+    <div style="text-align: center;">
+      <a href="https://myabacuspro.com/dashboard" style="background: #ec4899; color: white; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">Go to My Dashboard</a>
+    </div>
+    <p style="font-size: 14px; color: #666; text-align: center; margin-top: 30px;">Keep practicing and reaching for the stars!</p>
+  </div>
+`;
+
+/**
+ * Utility to wait (for rate limiting)
+ */
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function performWeeklyReset() {
     const currentWeekKey = getUTCMondayKey();
@@ -140,7 +165,10 @@ async function performWeeklyReset() {
                     subject: `Weekly Mastery Report`,
                     html: progressReportHTML(data.firstName, 'weekly', { periodPoints: data.weeklyPoints || 0 })
                 });
-            } catch (e) {}
+                await sleep(200); // 5 emails per second max
+            } catch (e) {
+                logger.error(`Weekly Email failed for ${data.email}`, e);
+            }
         }
 
         batch.update(userDoc.ref, {
@@ -204,7 +232,10 @@ async function performMonthlyReset() {
                     subject: `Monthly Mastery Report`,
                     html: progressReportHTML(data.firstName, 'monthly', { periodPoints: data.monthlyPoints || 0 })
                 });
-            } catch (e) {}
+                await sleep(200);
+            } catch (e) {
+                logger.error(`Monthly Email failed for ${data.email}`, e);
+            }
         }
 
         batch.update(userDoc.ref, {
@@ -230,6 +261,46 @@ exports.resetWeeklyPoints = onSchedule({ schedule: "0 0 * * 1", secrets: ["GMAIL
 
 exports.resetMonthlyPoints = onSchedule({ schedule: "0 0 1 * *", secrets: ["GMAIL_APP_PASSWORD"] }, async (event) => {
     try { await performMonthlyReset(); } catch (err) { logger.error("Monthly reset failed", err); }
+});
+
+exports.dailyBirthdayWish = onSchedule({ schedule: "0 9 * * *", secrets: ["GMAIL_APP_PASSWORD"] }, async (event) => {
+    const today = new Date();
+    const monthDayStr = `${String(today.getUTCMonth() + 1).padStart(2, '0')}-${String(today.getUTCDate()).padStart(2, '0')}`;
+
+    const studentsSnap = await db.collection('users').where('role', '==', 'student').get();
+    const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
+    
+    let count = 0;
+    for (const doc of studentsSnap.docs) {
+        const data = doc.data();
+        if (!data.dob) continue;
+        
+        // Match MM-DD (data.dob is string from profile input)
+        if (data.dob.includes(monthDayStr)) {
+            if (data.email) {
+                try {
+                    await transporter.sendMail({
+                        from: '"MyAbacusPro" <myabacuspro@gmail.com>',
+                        to: data.email,
+                        subject: `Happy Birthday, ${data.firstName || 'Student'}! 🎂`,
+                        html: birthdayEmailHTML(data.firstName || 'Student')
+                    });
+                    await sleep(500);
+                } catch (e) {
+                    logger.error(`Birthday email failed for ${data.email}`, e);
+                }
+            }
+            
+            await doc.ref.update({
+                totalPoints: FieldValue.increment(100),
+                weeklyPoints: FieldValue.increment(100),
+                monthlyPoints: FieldValue.increment(100),
+                updatedAt: FieldValue.serverTimestamp()
+            });
+            count++;
+        }
+    }
+    logger.info(`Daily Birthday Batch: ${count} wishes sent.`);
 });
 
 exports.manualResetWeekly = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (request) => {
