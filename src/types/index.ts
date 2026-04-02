@@ -243,6 +243,7 @@ export interface ProfileData {
   fcmToken?: string;
   lastAwardedRank?: string;
   isSuspended?: boolean;
+  isAdminRead?: boolean;
   emailVerified?: boolean;
   trialStartDate?: any;
   lastMarketingEmailSent?: any;
