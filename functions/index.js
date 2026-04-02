@@ -1,4 +1,3 @@
-
 /**
  * Firebase Cloud Functions v2 (Node.js) Code
  * filename: functions/index.js
@@ -137,7 +136,7 @@ async function performWeeklyReset() {
                     name: `${winner.firstName || ''} ${winner.surname || ''}`.trim(),
                     photo: winner.profilePhoto || '',
                     points: winner.weeklyPoints || 0,
-                    declaredAt: FieldValue.serverTimestamp(),
+                    declaredAt: admin.firestore.FieldValue.serverTimestamp(),
                     weekKey: lastWeekKey
                 }
             }, { merge: true });
@@ -172,7 +171,7 @@ async function performWeeklyReset() {
         batch.update(userDoc.ref, {
             weeklyPoints: 0,
             lastWeeklyReset: currentWeekKey,
-            updatedAt: FieldValue.serverTimestamp()
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
         count++;
 
@@ -211,7 +210,7 @@ async function performMonthlyReset() {
                     name: `${winner.firstName || ''} ${winner.surname || ''}`.trim(),
                     photo: winner.profilePhoto || '',
                     points: winner.monthlyPoints || 0,
-                    declaredAt: FieldValue.serverTimestamp(),
+                    declaredAt: admin.firestore.FieldValue.serverTimestamp(),
                     monthKey: lastMonthKey
                 }
             }, { merge: true });
@@ -246,7 +245,7 @@ async function performMonthlyReset() {
         batch.update(userDoc.ref, {
             monthlyPoints: 0,
             lastMonthlyReset: currentMonthKey,
-            updatedAt: FieldValue.serverTimestamp()
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
         count++;
 
@@ -316,7 +315,9 @@ exports.manualResetMonthly = onCall({
     }
 });
 
-exports.forceDeclareWinner = onCall(async (request) => {
+exports.forceDeclareWinner = onCall({
+    secrets: ["GMAIL_APP_PASSWORD"],
+}, async (request) => {
     const { data, auth } = request;
     if (!auth) {
         throw new HttpsError('unauthenticated', "Authentication required.");
@@ -354,7 +355,7 @@ exports.forceDeclareWinner = onCall(async (request) => {
                 name: fullName,
                 photo: winner.profilePhoto || '',
                 points: points,
-                declaredAt: FieldValue.serverTimestamp(),
+                declaredAt: admin.firestore.FieldValue.serverTimestamp(),
                 [periodField]: periodKey
             }
         }, { merge: true });
@@ -368,6 +369,6 @@ exports.forceDeclareWinner = onCall(async (request) => {
     } catch (err) {
         logger.error("Force Declare Error:", err);
         if (err instanceof HttpsError) throw err;
-        throw new HttpsError('failed-precondition', err.message || "The server encountered an unexpected error.");
+        throw new HttpsError('internal', err.message || "The server encountered an unexpected error.");
     }
 });
