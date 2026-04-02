@@ -116,6 +116,36 @@ const birthdayEmailHTML = (userName) => `
   </div>
 `;
 
+const winnerAnnouncementHTML = (userName, type, points) => `
+  <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 40px; border: 4px solid #fbbf24; border-radius: 30px; background: #fffcf0;">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <div style="font-size: 70px; margin-bottom: 10px;">🏆</div>
+      <h1 style="color: #92400e; margin: 0; text-transform: uppercase; letter-spacing: 2px;">Hail the Champion!</h1>
+      <p style="font-size: 18px; font-weight: bold; color: #b45309; margin-top: 10px;">${type} Winner Announced</p>
+    </div>
+    
+    <div style="background: white; padding: 30px; border-radius: 20px; border: 2px solid #fde68a; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+      <p style="font-size: 16px; color: #4b5563; margin-bottom: 5px;">Congratulations</p>
+      <h2 style="font-size: 32px; color: #1f2937; margin: 0 0 15px;">${userName}</h2>
+      <div style="display: inline-block; background: #fbbf24; color: #92400e; padding: 10px 25px; rounded-pill; font-weight: 900; font-size: 20px; border-radius: 50px;">
+        ${points.toLocaleString()} Mastery Points
+      </div>
+    </div>
+
+    <p style="font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+      Your incredible dedication and speed have placed you at the very top of our global community. You are officially the <strong>${type} Champion</strong>!
+    </p>
+
+    <div style="text-align: center; margin-top: 40px;">
+      <a href="https://myabacuspro.com/dashboard" style="background: #92400e; color: white; padding: 16px 35px; text-decoration: none; border-radius: 12px; font-weight: bold; display: inline-block; font-size: 18px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">Claim Your Glory</a>
+    </div>
+    
+    <p style="font-size: 12px; color: #9ca3af; text-align: center; margin-top: 40px;">
+      Keep practicing to defend your title next week!
+    </p>
+  </div>
+`;
+
 /**
  * Utility to wait (for rate limiting)
  */
@@ -124,6 +154,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 async function performWeeklyReset() {
     const currentWeekKey = getUTCMondayKey();
     const lastWeekKey = getUTCPreviousMondayKey();
+    const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
 
     const topUserSnap = await db.collection('users')
         .where('role', '==', 'student')
@@ -134,22 +165,36 @@ async function performWeeklyReset() {
 
     if (!topUserSnap.empty) {
         const winner = topUserSnap.docs[0].data();
+        const winnerId = topUserSnap.docs[0].id;
         if ((winner.weeklyPoints || 0) > 0) {
+            const fullName = `${winner.firstName || ''} ${winner.surname || ''}`.trim();
+            
             await db.collection('stats').doc('leaderboard').set({
                 lastWeeklyWinner: {
-                    uid: topUserSnap.docs[0].id,
-                    name: `${winner.firstName || ''} ${winner.surname || ''}`.trim(),
+                    uid: winnerId,
+                    name: fullName,
                     photo: winner.profilePhoto || '',
                     points: winner.weeklyPoints || 0,
                     declaredAt: FieldValue.serverTimestamp(),
                     weekKey: lastWeekKey
                 }
             }, { merge: true });
+
+            // Send Winner Email
+            if (winner.email) {
+                try {
+                    await transporter.sendMail({
+                        from: '"MyAbacusPro" <myabacuspro@gmail.com>',
+                        to: winner.email,
+                        subject: `🎉 CHAMPION! You won the Weekly Race!`,
+                        html: winnerAnnouncementHTML(winner.firstName || 'Champion', 'Weekly', winner.weeklyPoints || 0)
+                    });
+                } catch (e) { logger.error(`Weekly Winner Email failed for ${winner.email}`, e); }
+            }
         }
     }
 
     const usersSnap = await db.collection('users').where('role', '==', 'student').get();
-    const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
     let batch = db.batch();
     let count = 0;
 
@@ -165,9 +210,9 @@ async function performWeeklyReset() {
                     subject: `Weekly Mastery Report`,
                     html: progressReportHTML(data.firstName, 'weekly', { periodPoints: data.weeklyPoints || 0 })
                 });
-                await sleep(200); // 5 emails per second max
+                await sleep(200); 
             } catch (e) {
-                logger.error(`Weekly Email failed for ${data.email}`, e);
+                logger.error(`Weekly Report Email failed for ${data.email}`, e);
             }
         }
 
@@ -191,6 +236,7 @@ async function performWeeklyReset() {
 async function performMonthlyReset() {
     const currentMonthKey = getUTCMonthKey();
     const lastMonthKey = getUTCPreviousMonthKey();
+    const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
 
     const topUserSnap = await db.collection('users')
         .where('role', '==', 'student')
@@ -201,22 +247,36 @@ async function performMonthlyReset() {
 
     if (!topUserSnap.empty) {
         const winner = topUserSnap.docs[0].data();
+        const winnerId = topUserSnap.docs[0].id;
         if ((winner.monthlyPoints || 0) > 0) {
+            const fullName = `${winner.firstName || ''} ${winner.surname || ''}`.trim();
+            
             await db.collection('stats').doc('leaderboard').set({
                 lastMonthlyWinner: {
-                    uid: topUserSnap.docs[0].id,
-                    name: `${winner.firstName || ''} ${winner.surname || ''}`.trim(),
+                    uid: winnerId,
+                    name: fullName,
                     photo: winner.profilePhoto || '',
                     points: winner.monthlyPoints || 0,
                     declaredAt: FieldValue.serverTimestamp(),
                     monthKey: lastMonthKey
                 }
             }, { merge: true });
+
+            // Send Winner Email
+            if (winner.email) {
+                try {
+                    await transporter.sendMail({
+                        from: '"MyAbacusPro" <myabacuspro@gmail.com>',
+                        to: winner.email,
+                        subject: `🏆 Monthly Master! You are #1!`,
+                        html: winnerAnnouncementHTML(winner.firstName || 'Champion', 'Monthly', winner.monthlyPoints || 0)
+                    });
+                } catch (e) { logger.error(`Monthly Winner Email failed for ${winner.email}`, e); }
+            }
         }
     }
 
     const usersSnap = await db.collection('users').where('role', '==', 'student').get();
-    const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
     let batch = db.batch();
     let count = 0;
 
@@ -234,7 +294,7 @@ async function performMonthlyReset() {
                 });
                 await sleep(200);
             } catch (e) {
-                logger.error(`Monthly Email failed for ${data.email}`, e);
+                logger.error(`Monthly Report Email failed for ${data.email}`, e);
             }
         }
 
@@ -275,7 +335,6 @@ exports.dailyBirthdayWish = onSchedule({ schedule: "0 9 * * *", secrets: ["GMAIL
         const data = doc.data();
         if (!data.dob) continue;
         
-        // Match MM-DD (data.dob is string from profile input)
         if (data.dob.includes(monthDayStr)) {
             if (data.email) {
                 try {
@@ -331,12 +390,16 @@ exports.forceDeclareWinner = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (
     if (!winnerSnap.exists) throw new HttpsError('failed-precondition', "Student not found.");
     
     const winner = winnerSnap.data();
-    const periodKey = type === 'weekly' ? getUTCMondayKey() : getUTCMonthKey();
-    const points = type === 'weekly' ? (winner.weeklyPoints || 0) : (winner.monthlyPoints || 0);
-    const fullName = `${winner.firstName || ''} ${winner.surname || ''}`.trim() || 'Champion';
+    const periodKey = type === 'weekly' ? getUTCMondayKey() : (type === 'monthly' ? getUTCMonthKey() : 'Global');
+    
+    let points = 0;
+    if (type === 'weekly') points = winner.weeklyPoints || 0;
+    else if (type === 'monthly') points = winner.monthlyPoints || 0;
+    else points = winner.totalPoints || 0;
 
-    const updateKey = type === 'weekly' ? 'lastWeeklyWinner' : 'lastMonthlyWinner';
-    const periodField = type === 'weekly' ? 'weekKey' : 'monthKey';
+    const fullName = `${winner.firstName || ''} ${winner.surname || ''}`.trim() || 'Champion';
+    const updateKey = type === 'weekly' ? 'lastWeeklyWinner' : (type === 'monthly' ? 'lastMonthlyWinner' : 'lastGlobalWinner');
+    const periodField = type === 'weekly' ? 'weekKey' : (type === 'monthly' ? 'monthKey' : 'globalKey');
 
     await db.collection('stats').doc('leaderboard').set({
         [updateKey]: {
@@ -348,6 +411,19 @@ exports.forceDeclareWinner = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (
             [periodField]: periodKey
         }
     }, { merge: true });
+
+    // Send Winner Notification Email
+    if (winner.email) {
+        const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
+        try {
+            await transporter.sendMail({
+                from: '"MyAbacusPro" <myabacuspro@gmail.com>',
+                to: winner.email,
+                subject: `🏆 Official Champion: You are the ${type} Winner!`,
+                html: winnerAnnouncementHTML(winner.firstName || 'Champion', type.charAt(0).toUpperCase() + type.slice(1), points)
+            });
+        } catch (e) { logger.error(`Manual Winner Email failed for ${winner.email}`, e); }
+    }
 
     return { status: "success", message: `Declared ${fullName} as ${type} champion.` };
 });
