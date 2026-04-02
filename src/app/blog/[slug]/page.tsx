@@ -70,7 +70,7 @@ function getBlogTheme(post: BlogPost) {
     ),
     image: cn(
       "relative w-full overflow-hidden shadow-2xl mb-12",
-      layout === 'magazine' ? "aspect-[21/9] rounded-3xl" : "aspect-video rounded-[2.5rem]"
+      layout === 'magazine' ? "aspect-[16/9] rounded-3xl" : "aspect-[3/2] rounded-[2.5rem]"
     )
   };
 }

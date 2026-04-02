@@ -77,7 +77,7 @@ export default async function BlogListingPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {blogs.map((post) => (
           <Card key={post.slug || post.id} className="flex flex-col h-full overflow-hidden hover:shadow-2xl transition-all duration-300 group border-primary/10 bg-card">
-            <div className="relative h-48 w-full overflow-hidden">
+            <div className="relative aspect-[3/2] w-full overflow-hidden">
               <Image
                 src={post.image || 'https://picsum.photos/seed/math/600/400'}
                 alt={post.title}

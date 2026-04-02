@@ -1116,7 +1116,7 @@ export default function AdminDashboardPage() {
                   className="h-12 border-2"
                 />
                 {editingBlog?.image && (
-                  <div className="mt-4 relative aspect-video rounded-2xl overflow-hidden border-4 border-muted">
+                  <div className="mt-4 relative aspect-[3/2] rounded-2xl overflow-hidden border-4 border-muted">
                     <img src={editingBlog.image} alt="Preview" className="object-cover w-full h-full" />
                   </div>
                 )}
