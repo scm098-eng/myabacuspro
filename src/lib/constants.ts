@@ -135,6 +135,37 @@ export const PAGE_GUIDES = {
   }
 };
 
+export const FORMULA_GUIDES: Record<string, { title: string, steps: string[] }> = {
+  // Small Sister Addition
+  'basic-addition-plus-4': { title: "Small Sister +4", steps: ["Formula: +4 = +5 - 1", "To add 4: Pull down the 5-bead (heavenly).", "Then: Remove 1 earthly bead from the same rod.", "Rule: Only use this when you don't have enough earthly beads."] },
+  'basic-addition-plus-3': { title: "Small Sister +3", steps: ["Formula: +3 = +5 - 2", "To add 3: Pull down the 5-bead (heavenly).", "Then: Remove 2 earthly beads from the same rod."] },
+  'basic-addition-plus-2': { title: "Small Sister +2", steps: ["Formula: +2 = +5 - 3", "To add 2: Pull down the 5-bead (heavenly).", "Then: Remove 3 earthly beads from the same rod."] },
+  'basic-addition-plus-1': { title: "Small Sister +1", steps: ["Formula: +1 = +5 - 4", "To add 1: Pull down the 5-bead (heavenly).", "Then: Remove 4 earthly beads from the same rod."] },
+  
+  // Small Sister Subtraction
+  'basic-subtraction-minus-4': { title: "Small Sister -4", steps: ["Formula: -4 = -5 + 1", "To subtract 4: Push up the 5-bead (heavenly).", "Then: Add 1 earthly bead to the same rod."] },
+  'basic-subtraction-minus-3': { title: "Small Sister -3", steps: ["Formula: -3 = -5 + 2", "To subtract 3: Push up the 5-bead (heavenly).", "Then: Add 2 earthly beads to the same rod."] },
+  'basic-subtraction-minus-2': { title: "Small Sister -2", steps: ["Formula: -2 = -5 + 3", "To subtract 2: Push up the 5-bead (heavenly).", "Then: Add 3 earthly beads to the same rod."] },
+  'basic-subtraction-minus-1': { title: "Small Sister -1", steps: ["Formula: -1 = -5 + 4", "To subtract 1: Push up the 5-bead (heavenly).", "Then: Add 4 earthly beads to the same rod."] },
+
+  // Big Brother Addition (Sample)
+  'big-brother-addition-plus-9': { title: "Big Brother +9", steps: ["Formula: +9 = +10 - 1", "To add 9: Add 1 bead to the rod on the LEFT (+10).", "Then: Remove 1 earthly bead from the CURRENT rod (-1)."] },
+  'big-brother-addition-plus-8': { title: "Big Brother +8", steps: ["Formula: +8 = +10 - 2", "To add 8: Add 1 bead to the rod on the LEFT (+10).", "Then: Remove 2 earthly beads from the CURRENT rod (-2)."] },
+  'big-brother-addition-plus-7': { title: "Big Brother +7", steps: ["Formula: +7 = +10 - 3", "To add 7: Add 1 bead to the rod on the LEFT (+10).", "Then: Remove 3 earthly beads from the CURRENT rod (-3)."] },
+  'big-brother-addition-plus-6': { title: "Big Brother +6", steps: ["Formula: +6 = +10 - 4", "To add 6: Add 1 bead to the rod on the LEFT (+10).", "Then: Remove 4 earthly beads from the CURRENT rod (-4)."] },
+  'big-brother-addition-plus-5': { title: "Big Brother +5", steps: ["Formula: +5 = +10 - 5", "To add 5: Add 1 bead to the rod on the LEFT (+10).", "Then: Remove the 5-bead from the CURRENT rod (-5)."] },
+
+  // Big Brother Subtraction (Sample)
+  'big-brother-subtraction-minus-9': { title: "Big Brother -9", steps: ["Formula: -9 = -10 + 1", "To subtract 9: Remove 1 bead from the rod on the LEFT (-10).", "Then: Add 1 earthly bead to the CURRENT rod (+1)."] },
+  'big-brother-subtraction-minus-8': { title: "Big Brother -8", steps: ["Formula: -8 = -10 + 2", "To subtract 8: Remove 1 bead from the rod on the LEFT (-10).", "Then: Add 2 earthly beads to the CURRENT rod (+2)."] },
+
+  // Combination Addition (Sample)
+  'combination-plus-6': { title: "Combination +6", steps: ["Formula: +6 = +10 - 5 + 1", "To add 6: Add 1 bead to the rod on the LEFT (+10).", "Then: Push UP the 5-bead (-5) and Add 1 earthly bead (+1)."] },
+  'combination-plus-7': { title: "Combination +7", steps: ["Formula: +7 = +10 - 5 + 2", "To add 7: Add 1 bead to the rod on the LEFT (+10).", "Then: Push UP the 5-bead (-5) and Add 2 earthly beads (+2)."] },
+  'combination-plus-8': { title: "Combination +8", steps: ["Formula: +8 = +10 - 5 + 3", "To add 8: Add 1 bead to the rod on the LEFT (+10).", "Then: Push UP the 5-bead (-5) and Add 3 earthly beads (+3)."] },
+  'combination-plus-9': { title: "Combination +9", steps: ["Formula: +9 = +10 - 5 + 4", "To add 9: Add 1 bead to the rod on the LEFT (+10).", "Then: Push UP the 5-bead (-5) and Add 4 earthly beads (+4)."] },
+};
+
 export const APP_VERSION = "2.1.0";
 
 export const UPDATE_NOTES = [

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -7,7 +8,7 @@ import type { Question, Difficulty, TestType, TestSettings } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Timer, AlertTriangle, Loader2, PlayCircle, CheckCircle2 } from 'lucide-react';
+import { Timer, AlertTriangle, Loader2, PlayCircle, CheckCircle2, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -28,7 +29,7 @@ import { calculatePoints } from '@/lib/scoring';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { useSound } from '@/hooks/useSound';
-import { PAGE_GUIDES } from '@/lib/constants';
+import { PAGE_GUIDES, FORMULA_GUIDES } from '@/lib/constants';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 
@@ -221,6 +222,10 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   const progress = (currentQuestionIndex / questions.length) * 100;
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
+
+  // Determine if this is a formula test and load its specific guide
+  const formulaGuide = FORMULA_GUIDES[testId];
+  const activeGuide = formulaGuide || PAGE_GUIDES.timed_test;
   
   if (questions.length === 0) {
     return (
@@ -235,15 +240,22 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     return (
       <div className="flex flex-col max-w-xl mx-auto h-full px-4">
         <Card className="shadow-2xl border-none rounded-[2rem] overflow-hidden bg-card animate-in zoom-in-95 duration-500 max-h-[90vh] flex flex-col">
-          <CardHeader className="bg-primary text-primary-foreground text-center py-6 shrink-0">
-            <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tighter font-headline">Test Rules</CardTitle>
-            <CardDescription className="text-primary-foreground/80 font-bold text-sm sm:text-lg">Follow these to score high!</CardDescription>
+          <CardHeader className={cn("text-white text-center py-6 shrink-0", formulaGuide ? "bg-orange-600" : "bg-primary")}>
+            <div className="mx-auto bg-white/20 p-3 rounded-full w-fit mb-2">
+              {formulaGuide ? <BookOpen className="w-6 h-6" /> : <PlayCircle className="w-6 h-6" />}
+            </div>
+            <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tighter font-headline">
+              {activeGuide.title}
+            </CardTitle>
+            <CardDescription className="text-white/80 font-bold text-sm sm:text-lg">
+              {formulaGuide ? "Formula Mastery Guide" : "Follow these to score high!"}
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-6 sm:p-8 overflow-y-auto flex-1 scrollbar-none">
             <div className="space-y-4">
-              {PAGE_GUIDES.timed_test.steps.map((step, i) => (
+              {activeGuide.steps.map((step, i) => (
                 <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-muted/50 border border-muted-foreground/5 animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${i * 100}ms` }}>
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-white text-xs font-black shadow-md">
+                  <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white text-xs font-black shadow-md", formulaGuide ? "bg-orange-600" : "bg-primary")}>
                     {i + 1}
                   </div>
                   <p className="text-sm sm:text-base font-medium text-slate-700 leading-tight pt-1.5">{step}</p>
@@ -260,8 +272,11 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
               />
               <Label htmlFor="dont-show" className="text-xs font-bold text-muted-foreground uppercase cursor-pointer">Do not show rules again</Label>
             </div>
-            <Button onClick={handleStart} className="w-full h-14 sm:h-16 text-xl sm:text-2xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.02]">
-              <PlayCircle className="mr-3 h-6 w-6 sm:h-8 sm:w-8" /> Start Test
+            <Button 
+              onClick={handleStart} 
+              className={cn("w-full h-14 sm:h-16 text-xl sm:text-2xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.02]", formulaGuide ? "bg-orange-600 hover:bg-orange-700" : "")}
+            >
+              <PlayCircle className="mr-3 h-6 w-6 sm:h-8 sm:w-8" /> Start Practice
             </Button>
           </CardFooter>
         </Card>
