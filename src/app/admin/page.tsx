@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, Users, ShieldCheck, Mail, ShieldX, UserCheck } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, Users, ShieldCheck, Mail, ShieldX, UserCheck, Paperclip, FileText, Code } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
@@ -21,7 +21,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { parseISO, isValid, format, formatDistanceToNow, getDate, getMonth, isWithinInterval, add } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { parseISO, isValid, format, formatDistanceToNow } from 'date-fns';
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -82,20 +83,6 @@ const StatCard = ({ title, value, icon: Icon, subValue }: { title: string, value
     </Card>
 );
 
-const isBirthdaySoon = (dob: string | undefined) => {
-    if (!dob) return false;
-    try {
-      const today = new Date();
-      const birthday = parseISO(dob);
-      if (!isValid(birthday)) return false;
-      const nextBirthday = new Date(today.getFullYear(), getMonth(birthday), getDate(birthday));
-      if (nextBirthday < today) nextBirthday.setFullYear(today.getFullYear() + 1);
-      return isWithinInterval(nextBirthday, { start: today, end: add(today, { days: 7 }) });
-    } catch (e) {
-      return false;
-    }
-};
-
 const plainTextToHtml = (text: string) => {
   if (!text) return '';
   return text
@@ -139,14 +126,18 @@ export default function AdminDashboardPage() {
   const [editingBlog, setEditingBlog] = useState<Partial<BlogPost> | null>(null);
   const [draftContent, setDraftContent] = useState('');
 
-  // Marketing State
+  // Marketing (Communication Hub) State
   const [marketingForm, setMarketingForm] = useState({
     subject: '',
     message: '',
     targetAudience: 'all',
+    selectedStudentId: '',
+    messageMode: 'standard' as 'standard' | 'html',
     isTest: true,
     testEmail: ''
   });
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentWeekKey = useMemo(() => getUTCMondayKey(), []);
   const currentMonthKey = useMemo(() => getUTCMonthKey(), []);
@@ -185,7 +176,7 @@ export default function AdminDashboardPage() {
       const blogUnsub = onSnapshot(
         query(collection(db, "blogs"), orderBy("createdAt", "desc")), 
         (snap) => {
-          setBlogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost)));
+          setBlogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt } as BlogPost)));
         }
       );
       unsubscribers.push(blogUnsub);
@@ -323,10 +314,23 @@ export default function AdminDashboardPage() {
     try {
       const formData = new FormData();
       formData.append('subject', marketingForm.subject);
-      formData.append('message', marketingForm.message);
+      
+      const finalMessage = marketingForm.messageMode === 'standard' 
+        ? plainTextToHtml(marketingForm.message) 
+        : marketingForm.message;
+      
+      formData.append('message', finalMessage);
       formData.append('targetAudience', marketingForm.targetAudience);
       formData.append('isTest', String(marketingForm.isTest));
       formData.append('testEmail', marketingForm.testEmail);
+      
+      if (marketingForm.targetAudience === 'single' && marketingForm.selectedStudentId) {
+        formData.append('studentId', marketingForm.selectedStudentId);
+      }
+
+      attachments.forEach(file => {
+        formData.append('attachments', file);
+      });
 
       const res = await fetch('/api/admin/blast', {
         method: 'POST',
@@ -335,6 +339,7 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (data.success) {
         toast({ title: "Blast Complete", description: `Sent to ${data.count} recipients.` });
+        setAttachments([]);
       } else {
         throw new Error(data.error);
       }
@@ -368,6 +373,17 @@ export default function AdminDashboardPage() {
       toast({ title: "Save Failed", description: err.message, variant: "destructive" });
     } finally {
       setIsSavingBlog(false);
+    }
+  };
+
+  const handleDeleteBlog = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this article?")) return;
+    const db = getFirestore(firebaseApp);
+    try {
+      await deleteDoc(doc(db, "blogs", id));
+      toast({ title: "Article Deleted" });
+    } catch (e: any) {
+      toast({ title: "Deletion Failed", variant: "destructive" });
     }
   };
 
@@ -430,7 +446,7 @@ export default function AdminDashboardPage() {
                     {profile?.role === 'admin' && <TabsTrigger value="staff" className="h-10">Staff List</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="blogs" className="h-10">Blogs</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="moderation" className="h-10">Moderation</TabsTrigger>}
-                    {profile?.role === 'admin' && <TabsTrigger value="marketing" className="h-10">Marketing</TabsTrigger>}
+                    {profile?.role === 'admin' && <TabsTrigger value="marketing" className="h-10">Communication Hub</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="system" className="h-10">System</TabsTrigger>}
                 </TabsList>
 
@@ -538,40 +554,148 @@ export default function AdminDashboardPage() {
                 </TabsContent>
 
                 <TabsContent value="marketing">
-                    <Card>
-                        <CardHeader><CardTitle className="flex items-center gap-2"><Mail className="w-5 h-5 text-primary" /> Email Blast Tool</CardTitle><CardDescription>Send mass updates to your community.</CardDescription></CardHeader>
-                        <CardContent>
-                            <form onSubmit={handleBlastEmails} className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label>Campaign Subject</Label>
-                                        <Input value={marketingForm.subject} onChange={e => setMarketingForm(p => ({ ...p, subject: e.target.value }))} placeholder="e.g. Weekly Mastery Update" required />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Target Audience</Label>
-                                        <div className="flex gap-4">
-                                            <Button type="button" variant={marketingForm.targetAudience === 'all' ? 'default' : 'outline'} onClick={() => setMarketingForm(p => ({ ...p, targetAudience: 'all' }))} className="flex-1">All Students</Button>
-                                            <Button type="button" variant={marketingForm.targetAudience === 'pro' ? 'default' : 'outline'} onClick={() => setMarketingForm(p => ({ ...p, targetAudience: 'pro' }))} className="flex-1">Pro Only</Button>
-                                            <Button type="button" variant={marketingForm.targetAudience === 'teachers' ? 'default' : 'outline'} onClick={() => setMarketingForm(p => ({ ...p, targetAudience: 'teachers' }))} className="flex-1">Teachers</Button>
+                    <Card className="border-primary/10 shadow-lg">
+                        <CardHeader className="bg-muted/30 border-b">
+                            <CardTitle className="flex items-center gap-2 text-2xl font-headline">
+                                <Mail className="w-6 h-6 text-primary" /> Communication Hub
+                            </CardTitle>
+                            <CardDescription>Blast tailored emails to segments or specific students.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-8">
+                            <form onSubmit={handleBlastEmails} className="space-y-8">
+                                <div className="space-y-4">
+                                    <Label className="text-base font-bold">Target Audience</Label>
+                                    <Select 
+                                        value={marketingForm.targetAudience} 
+                                        onValueChange={(val) => setMarketingForm(p => ({ ...p, targetAudience: val }))}
+                                    >
+                                        <SelectTrigger className="h-14 text-lg border-2 border-primary/20 focus:border-primary">
+                                            <SelectValue placeholder="Select Audience" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Every Student</SelectItem>
+                                            <SelectItem value="pro">Pro Only</SelectItem>
+                                            <SelectItem value="free">Free Only</SelectItem>
+                                            <SelectItem value="teachers">Teachers Only</SelectItem>
+                                            <SelectItem value="single">Particular Student</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    {marketingForm.targetAudience === 'single' && (
+                                        <div className="animate-in fade-in slide-in-from-top-2">
+                                            <Select 
+                                                value={marketingForm.selectedStudentId} 
+                                                onValueChange={(val) => setMarketingForm(p => ({ ...p, selectedStudentId: val }))}
+                                            >
+                                                <SelectTrigger className="h-12">
+                                                    <SelectValue placeholder="Pick a student..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {allUsers.filter(u => u.role === 'student').map(s => (
+                                                        <SelectItem key={s.uid} value={s.uid}>{s.firstName} {s.surname} ({s.email})</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Message Content (Supports HTML)</Label>
-                                    <Textarea value={marketingForm.message} onChange={e => setMarketingForm(p => ({ ...p, message: e.target.value }))} rows={8} required />
-                                </div>
-                                <div className="flex items-center gap-6 p-4 bg-muted rounded-xl border border-border">
-                                    <div className="flex items-center gap-2">
-                                        <Checkbox checked={marketingForm.isTest} onCheckedChange={(val) => setMarketingForm(p => ({ ...p, isTest: !!val }))} />
-                                        <Label className="font-bold">Test Send Only</Label>
-                                    </div>
-                                    {marketingForm.isTest && (
-                                        <Input className="flex-1 bg-white" placeholder="test@example.com" value={marketingForm.testEmail} onChange={e => setMarketingForm(p => ({ ...p, testEmail: e.target.value }))} />
                                     )}
                                 </div>
-                                <Button type="submit" className="w-full h-12 text-lg font-black uppercase tracking-widest" disabled={isResetting !== null}>
-                                    {isResetting === 'blast' ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2 h-5 w-5" />}
-                                    Launch Blast
+
+                                <div className="space-y-2">
+                                    <Label className="text-base font-bold">Email Subject</Label>
+                                    <Input 
+                                        value={marketingForm.subject} 
+                                        onChange={e => setMarketingForm(p => ({ ...p, subject: e.target.value }))} 
+                                        placeholder="Enter subject line..." 
+                                        className="h-12 bg-muted/20"
+                                        required 
+                                    />
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-base font-bold">Email Message</Label>
+                                        <div className="flex bg-muted p-1 rounded-lg">
+                                            <Button 
+                                                type="button" 
+                                                variant={marketingForm.messageMode === 'standard' ? 'secondary' : 'ghost'} 
+                                                size="sm" 
+                                                className="h-8 rounded-md gap-2"
+                                                onClick={() => setMarketingForm(p => ({ ...p, messageMode: 'standard' }))}
+                                            >
+                                                <FileText className="w-3 h-3" /> Standard
+                                            </Button>
+                                            <Button 
+                                                type="button" 
+                                                variant={marketingForm.messageMode === 'html' ? 'secondary' : 'ghost'} 
+                                                size="sm" 
+                                                className="h-8 rounded-md gap-2"
+                                                onClick={() => setMarketingForm(p => ({ ...p, messageMode: 'html' }))}
+                                            >
+                                                <Code className="w-3 h-3" /> HTML Source
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <Textarea 
+                                        value={marketingForm.message} 
+                                        onChange={e => setMarketingForm(p => ({ ...p, message: e.target.value }))} 
+                                        rows={10} 
+                                        className="bg-muted/10 border-2 text-lg focus:border-primary"
+                                        placeholder={marketingForm.messageMode === 'standard' ? "Write your content here. Paragraphs will be added automatically." : "Enter raw HTML content here..."}
+                                        required 
+                                    />
+                                </div>
+
+                                <div className="p-6 bg-muted/30 rounded-2xl border-2 border-dashed border-primary/20 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Paperclip className="w-5 h-5 text-primary" />
+                                            <span className="font-bold">Attachments</span>
+                                        </div>
+                                        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                                            <Plus className="w-4 h-4 mr-2" /> Add Files
+                                        </Button>
+                                        <input 
+                                            type="file" 
+                                            multiple 
+                                            ref={fileInputRef} 
+                                            className="hidden" 
+                                            onChange={(e) => {
+                                                if (e.target.files) {
+                                                    setAttachments(prev => [...prev, ...Array.from(e.target.files!)]);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                    {attachments.length > 0 && (
+                                        <div className="flex flex-wrap gap-3">
+                                            {attachments.map((file, idx) => (
+                                                <Badge key={idx} className="bg-primary/10 text-primary hover:bg-primary/20 cursor-default px-3 py-1.5 gap-2 border-primary/20">
+                                                    <FileText className="w-3 h-3" />
+                                                    {file.name}
+                                                    <X className="w-3 h-3 cursor-pointer hover:text-destructive" onClick={() => setAttachments(p => p.filter((_, i) => i !== idx))} />
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center gap-6 p-6 bg-primary/5 rounded-2xl border-2 border-primary/10">
+                                    <div className="flex items-center gap-3">
+                                        <Checkbox 
+                                            id="test-mode"
+                                            checked={marketingForm.isTest} 
+                                            onCheckedChange={(val) => setMarketingForm(p => ({ ...p, isTest: !!val }))} 
+                                        />
+                                        <Label htmlFor="test-mode" className="font-black text-primary uppercase tracking-widest text-xs cursor-pointer">Test Send Only</Label>
+                                    </div>
+                                    {marketingForm.isTest && (
+                                        <Input className="flex-1 bg-white border-primary/20" placeholder="Enter recipient for test email..." value={marketingForm.testEmail} onChange={e => setMarketingForm(p => ({ ...p, testEmail: e.target.value }))} />
+                                    )}
+                                </div>
+
+                                <Button type="submit" className="w-full h-16 text-xl font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.01] transition-transform" disabled={isResetting !== null}>
+                                    {isResetting === 'blast' ? <Loader2 className="animate-spin mr-3" /> : <Send className="mr-3 h-6 w-6" />}
+                                    Launch Blast Campaign
                                 </Button>
                             </form>
                         </CardContent>

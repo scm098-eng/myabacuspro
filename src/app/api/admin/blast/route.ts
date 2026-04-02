@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
@@ -11,11 +10,6 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Diagnostics: Log environment health
-    console.log("--- BLAST DIAGNOSTICS ---");
-    console.log("GMAIL_PASS prefix:", process.env.GMAIL_APP_PASSWORD?.substring(0, 3) || "MISSING");
-
-    // 2. Parse FormData for attachments support
     const formData = await req.formData();
     
     const subject = formData.get('subject') as string;
@@ -23,15 +17,16 @@ export async function POST(req: NextRequest) {
     const targetAudience = formData.get('targetAudience') as string;
     const isTest = formData.get('isTest') === 'true';
     const testEmail = formData.get('testEmail') as string;
+    const studentId = formData.get('studentId') as string;
     const files = formData.getAll('attachments') as File[];
 
     console.log("--- BLAST TRIGGERED ---", { 
       target: targetAudience, 
       isTest,
-      attachmentsCount: files.length
+      attachmentsCount: files.length,
+      studentId: studentId || 'N/A'
     });
 
-    // 3. Validation
     if (!subject || !message) {
       return NextResponse.json({ error: "Subject and Message are required" }, { status: 400 });
     }
@@ -42,7 +37,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Mail server configuration missing" }, { status: 500 });
     }
 
-    // 4. Setup Firebase Admin & Firestore
     const adminApp = getFirebaseAdmin();
     const db = getFirestore(adminApp);
     let emailList: string[] = [];
@@ -53,21 +47,36 @@ export async function POST(req: NextRequest) {
     } else {
       let userQuery: any = db.collection('users');
       
-      if (targetAudience === 'teachers') {
-        userQuery = userQuery.where('role', '==', 'teacher').where('status', '==', 'approved');
+      if (targetAudience === 'single' && studentId) {
+        const studentSnap = await db.collection('users').doc(studentId).get();
+        if (studentSnap.exists && studentSnap.data()?.email) {
+          emailList.push(studentSnap.data()?.email);
+        }
+      } else if (targetAudience === 'teachers') {
+        const snapshot = await userQuery.where('role', '==', 'teacher').where('status', '==', 'approved').get();
+        snapshot.forEach((doc: any) => {
+          const data = doc.data();
+          if (data.email) emailList.push(data.email);
+        });
       } else if (targetAudience === 'pro') {
-        userQuery = userQuery.where('subscriptionStatus', '==', 'pro');
+        const snapshot = await userQuery.where('subscriptionStatus', '==', 'pro').get();
+        snapshot.forEach((doc: any) => {
+          const data = doc.data();
+          if (data.email) emailList.push(data.email);
+        });
       } else if (targetAudience === 'free') {
-        userQuery = userQuery.where('subscriptionStatus', '==', 'free');
+        const snapshot = await userQuery.where('subscriptionStatus', '==', 'free').get();
+        snapshot.forEach((doc: any) => {
+          const data = doc.data();
+          if (data.email) emailList.push(data.email);
+        });
       } else if (targetAudience === 'all') {
-        userQuery = userQuery.where('role', '==', 'student');
+        const snapshot = await userQuery.where('role', '==', 'student').get();
+        snapshot.forEach((doc: any) => {
+          const data = doc.data();
+          if (data.email) emailList.push(data.email);
+        });
       }
-
-      const snapshot = await userQuery.get();
-      snapshot.forEach((doc: any) => {
-        const data = doc.data();
-        if (data.email) emailList.push(data.email);
-      });
     }
 
     if (emailList.length === 0) {
@@ -97,16 +106,15 @@ export async function POST(req: NextRequest) {
           ${message}
         </div>
         <div style="text-align: center; margin-top: 30px;">
-            <a href="https://myabacuspro.com/pricing" style="background-color: #28a745; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-              Unlock Full Access
+            <a href="https://myabacuspro.com/dashboard" style="background-color: #28a745; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              Go to Dashboard
             </a>
         </div>
         <hr style="margin-top: 30px; border: 0; border-top: 1px solid #eee;" />
-        <p style="font-size: 12px; color: #999; text-align: center;">© 2026 MyAbacusPro Team. All rights reserved.</p>
+        <p style="font-size: 12px; color: #999; text-align: center;">© ${new Date().getFullYear()} MyAbacusPro Team. All rights reserved.</p>
       </div>
     `;
 
-    // 8. Sequential Sending with Delay (Gmail Rate Limit Protection)
     let successCount = 0;
     let failCount = 0;
 
@@ -120,8 +128,7 @@ export async function POST(req: NextRequest) {
           attachments: emailAttachments
         });
         successCount++;
-        // Small delay to keep Gmail happy and avoid burst detection
-        await sleep(250); 
+        await sleep(200); 
       } catch (err) {
         console.error(`FAILED to send to ${email}:`, err);
         failCount++;
