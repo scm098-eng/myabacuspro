@@ -14,7 +14,8 @@
         "subscriptionStatus": { "type": "string", "enum": ["free", "pro"] },
         "totalPoints": { "type": "number" },
         "totalDaysPracticed": { "type": "number" },
-        "isSuspended": { "type": "boolean" }
+        "isSuspended": { "type": "boolean" },
+        "isAdminRead": { "type": "boolean", "description": "Whether the admin has acknowledged this new signup." }
       },
       "required": ["uid", "email", "role"]
     },

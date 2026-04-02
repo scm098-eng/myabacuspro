@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -35,6 +36,7 @@ interface AuthContextType {
   updateUserProfile: (uid: string, data: UpdateProfilePayload) => Promise<void>;
   toggleUserSuspension: (uid: string, isSuspended: boolean) => Promise<void>;
   deleteUserAccount: (uid: string) => Promise<void>;
+  markUserAsRead: (uid: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   upgradeToPro: () => Promise<void>;
@@ -163,7 +165,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         // --- MANDATORY PROFILE COMPLETION FOR STUDENTS ---
-        // If they are a student and missing critical data (common after Google signup), force them to profile
         const isProfileIncomplete = profileData.role === 'student' && (!profileData.grade || !profileData.schoolName || !profileData.city || !profileData.addressLine1);
         const nonOnboardingPages = ['/profile', '/logout', '/suspended', '/login', '/signup', '/'];
         if (isProfileIncomplete && !nonOnboardingPages.includes(pathname)) {
@@ -252,6 +253,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role: isAdmin ? 'admin' : values.role,
           teacherId: values.teacherId || null, 
           isSuspended: false,
+          isAdminRead: false,
           status: isAdmin ? 'approved' : (values.role === 'teacher' ? 'pending' : null),
           currentStreak: 0,
           totalDaysPracticed: 0,
@@ -274,7 +276,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
 
-      // Always use student's full name for email
       triggerAutoEmail('welcome', user.email!, `${values.firstName} ${values.surname}`, {
         streak: 0,
         practiceDays: 0,
@@ -309,6 +310,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role: isAdmin ? 'admin' : 'student',
           teacherId: null,
           isSuspended: false,
+          isAdminRead: false,
           status: isAdmin ? 'approved' : null,
           currentStreak: 0,
           totalDaysPracticed: 0,
@@ -400,6 +402,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const permissionError = new FirestorePermissionError({
           path: userDocRef.path,
           operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    });
+  }, [profile, firestore]);
+
+  const markUserAsRead = useCallback(async (uid: string) => {
+    if (profile?.role !== 'admin') return;
+    const userDocRef = doc(firestore, 'users', uid);
+    await updateDoc(userDocRef, { isAdminRead: true, updatedAt: serverTimestamp() }).catch(async (error) => {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'update',
+          requestResourceData: { isAdminRead: true },
         });
         errorEmitter.emit('permission-error', permissionError);
       }
@@ -666,7 +683,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { 
     user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
-    sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, getAllUsers, getApprovedTeachers, 
+    sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, markUserAsRead, getAllUsers, getApprovedTeachers, 
     getUserTestHistory, getUserTestHistoryByDateRange, getUserProfile, approveTeacher, getCompletedGameLevels, 
     saveCompletedGameLevel, setLastLevelAttended, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining
   };

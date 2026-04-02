@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette, Type, Code, FileText, Paperclip, X, UserPlus, Zap, Settings, RefreshCw, AlertTriangle, Star } from 'lucide-react';
+import { Eye, UserCheck, Briefcase, Crown, Mail, Send, Loader2, Trophy, GraduationCap, Search, TrendingUp, Cake, Clock, BookOpen, Plus, Trash2, Edit, Palette, Type, Code, FileText, Paperclip, X, UserPlus, Zap, Settings, RefreshCw, AlertTriangle, Star, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -77,27 +77,6 @@ const isBirthdaySoon = (dob: string | undefined) => {
     }
 };
 
-const isBirthdayToday = (dob: string | undefined) => {
-    if (!dob) return false;
-    try {
-      const today = new Date();
-      const birthday = parseISO(dob);
-      if (!isValid(birthday)) return false;
-      return getMonth(today) === getMonth(birthday) && getDate(today) === getDate(birthday);
-    } catch (e) {
-      return false;
-    }
-}
-
-const isRecentJoin = (createdAt: any) => {
-  if (!createdAt) return false;
-  const joinDate = createdAt?.toDate ? createdAt.toDate() : new Date(createdAt);
-  if (!isValid(joinDate)) return false;
-  const now = new Date();
-  const diffInHours = (now.getTime() - joinDate.getTime()) / (1000 * 60 * 60);
-  return diffInHours <= 24; 
-};
-
 const plainTextToHtml = (text: string) => {
   if (!text) return '';
   return text
@@ -140,7 +119,7 @@ function normalizeDateDisplay(val: any): string {
 
 export default function AdminDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
-  const { profile, getAllUsers, approveTeacher, isLoading: authLoading, getStudentTitle, toggleUserSuspension } = useAuth();
+  const { profile, getAllUsers, approveTeacher, isLoading: authLoading, getStudentTitle, toggleUserSuspension, markUserAsRead } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -217,8 +196,15 @@ export default function AdminDashboardPage() {
       });
       unsubscribers.push(winnerUnsub);
 
+      // New Members Inbox Logic: Only show unread students
       const joinsUnsub = onSnapshot(
-        query(collection(db, "users"), orderBy("createdAt", "desc"), limit(5)),
+        query(
+          collection(db, "users"), 
+          where("role", "==", "student"),
+          where("isAdminRead", "==", false),
+          orderBy("createdAt", "desc"), 
+          limit(10)
+        ),
         (snap) => {
           setRecentJoins(snap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as ProfileData)));
         }
@@ -311,6 +297,17 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleMarkAsRead = async (e: React.MouseEvent, uid: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await markUserAsRead(uid);
+      toast({ title: "Member Acknowledged", description: "Moved to student directory." });
+    } catch (err) {
+      toast({ title: "Failed to update member status.", variant: "destructive" });
+    }
+  };
+
   const handleSaveBlog = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingBlog?.title || !editingBlog?.content || !editingBlog?.slug) return;
@@ -345,27 +342,6 @@ export default function AdminDashboardPage() {
     } catch (err: any) {
       toast({ title: "Delete Failed", variant: "destructive" });
     }
-  };
-
-  const handleSendPromo = async (isTest = false) => {
-    if (!emailSubject || !emailMessage) return;
-    setIsSendingPromo(true);
-    try {
-        const formData = new FormData();
-        formData.append('subject', emailSubject);
-        formData.append('message', emailMessage);
-        formData.append('targetAudience', isTest ? 'none' : targetAudience);
-        formData.append('isTest', isTest.toString());
-        if (isTest && profile?.email) formData.append('testEmail', profile.email);
-        marketingAttachments.forEach(file => formData.append('attachments', file));
-
-        const res = await fetch('/api/admin/blast', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
-        toast({ title: isTest ? "Test Sent" : "Campaign Sent" });
-    } catch (error: any) {
-        toast({ title: "Failed", description: error.message, variant: "destructive" });
-    } finally { setIsSendingPromo(false); }
   };
 
   const processedData = useMemo(() => {
@@ -437,7 +413,6 @@ export default function AdminDashboardPage() {
                     <TabsTrigger value="students" className="h-10">Students</TabsTrigger>
                     {profile?.role === 'admin' && <TabsTrigger value="teachers" className="h-10">Staff List</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="blogs" className="h-10">Blogs</TabsTrigger>}
-                    {profile?.role === 'admin' && <TabsTrigger value="marketing" className="h-10">Marketing</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="system" className="h-10">System</TabsTrigger>}
                 </TabsList>
 
@@ -571,14 +546,33 @@ export default function AdminDashboardPage() {
         <div className="space-y-8">
             {profile?.role === 'admin' && recentJoins.length > 0 && (
               <Card className="border-orange-200 bg-orange-50/30">
-                <CardHeader><CardTitle className="text-lg font-black flex items-center gap-2 text-orange-700"><UserPlus className="w-5 h-5" /> New Members</CardTitle></CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-lg font-black flex items-center gap-2 text-orange-700">
+                    <UserPlus className="w-5 h-5" /> New Members
+                  </CardTitle>
+                  <Badge className="bg-orange-600">{recentJoins.length}</Badge>
+                </CardHeader>
                 <CardContent className="p-0">
                   <div className="divide-y divide-orange-100">
                     {recentJoins.map((u) => (
-                      <Link key={u.uid} href={`/admin/user/${u.uid}`} className="flex items-center gap-3 p-4 hover:bg-orange-100/50">
-                        <Avatar className="h-10 w-10 border-2 border-white"><AvatarImage src={u.profilePhoto} /></Avatar>
-                        <div className="min-w-0 flex-1"><p className="text-sm font-bold truncate">{u.firstName} {u.surname}</p><p className="text-[9px] uppercase font-black text-orange-600">Joined {u.createdAt?.toDate ? formatDistanceToNow(u.createdAt.toDate(), { addSuffix: true }) : 'Just now'}</p></div>
-                      </Link>
+                      <div key={u.uid} className="group relative flex items-center gap-3 p-4 hover:bg-orange-100/50">
+                        <Link href={`/admin/user/${u.uid}`} className="flex items-center gap-3 flex-1 min-w-0">
+                          <Avatar className="h-10 w-10 border-2 border-white"><AvatarImage src={u.profilePhoto} /></Avatar>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-bold truncate">{u.firstName} {u.surname}</p>
+                            <p className="text-[9px] uppercase font-black text-orange-600">Joined {u.createdAt?.toDate ? formatDistanceToNow(u.createdAt.toDate(), { addSuffix: true }) : 'Just now'}</p>
+                          </div>
+                        </Link>
+                        <Button 
+                          onClick={(e) => handleMarkAsRead(e, u.uid)}
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-full bg-white/50 text-orange-600 hover:bg-orange-600 hover:text-white"
+                          title="Acknowledge and move to regular list"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 </CardContent>
