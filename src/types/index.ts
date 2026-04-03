@@ -3,6 +3,9 @@ export type TestType =
   | 'addition-subtraction'
   | 'multiplication'
   | 'division'
+  | 'addition-subtraction-input'
+  | 'multiplication-input'
+  | 'division-input'
   | 'beads-identify'
   | 'beads-set'
   | 'basic-add-sub-l1'
@@ -156,7 +159,7 @@ export interface TestSettings {
   numQuestions: number;
   timeLimit: number; // in seconds, 0 for no limit
   title: string;
-  icon: 'brain-circuit' | 'x' | 'divide' | 'puzzle' | 'eye';
+  icon: 'brain-circuit' | 'x' | 'divide' | 'puzzle' | 'eye' | 'keyboard';
 }
 
 export type SubscriptionStatus = 'free' | 'pro' | 'active';

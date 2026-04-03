@@ -42,15 +42,30 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
     medium: { numQuestions: 100, timeLimit: 600, title: 'Addition & Subtraction (Medium)', icon: 'brain-circuit' },
     hard: { numQuestions: 150, timeLimit: 900, title: 'Addition & Subtraction (Hard)', icon: 'brain-circuit' },
   },
-  multiplication: {
+  'addition-subtraction-input': {
+    easy: { numQuestions: 50, timeLimit: 300, title: 'Master: Add & Sub (Easy)', icon: 'keyboard' },
+    medium: { numQuestions: 100, timeLimit: 600, title: 'Master: Add & Sub (Medium)', icon: 'keyboard' },
+    hard: { numQuestions: 150, timeLimit: 900, title: 'Master: Add & Sub (Hard)', icon: 'keyboard' },
+  },
+  'multiplication': {
     easy: { numQuestions: 50, timeLimit: 300, title: 'Multiplication (Easy)', icon: 'x' },
     medium: { numQuestions: 100, timeLimit: 600, title: 'Multiplication (Medium)', icon: 'x' },
     hard: { numQuestions: 150, timeLimit: 900, title: 'Multiplication (Hard)', icon: 'x' },
   },
-  division: {
+  'multiplication-input': {
+    easy: { numQuestions: 50, timeLimit: 300, title: 'Master: Multiplication (Easy)', icon: 'keyboard' },
+    medium: { numQuestions: 100, timeLimit: 600, title: 'Master: Multiplication (Medium)', icon: 'keyboard' },
+    hard: { numQuestions: 150, timeLimit: 900, title: 'Master: Multiplication (Hard)', icon: 'keyboard' },
+  },
+  'division': {
     easy: { numQuestions: 50, timeLimit: 300, title: 'Division (Easy)', icon: 'divide' },
     medium: { numQuestions: 100, timeLimit: 600, title: 'Division (Medium)', icon: 'divide' },
     hard: { numQuestions: 150, timeLimit: 900, title: 'Division (Hard)', icon: 'divide' },
+  },
+  'division-input': {
+    easy: { numQuestions: 50, timeLimit: 300, title: 'Master: Division (Easy)', icon: 'keyboard' },
+    medium: { numQuestions: 100, timeLimit: 600, title: 'Master: Division (Medium)', icon: 'keyboard' },
+    hard: { numQuestions: 150, timeLimit: 900, title: 'Master: Division (Hard)', icon: 'keyboard' },
   },
   'basic-addition-plus-4': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +4 = +5 - 1', icon: 'puzzle' } },
   'basic-addition-plus-40': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +40 = +50 - 10', icon: 'puzzle' } },
@@ -398,8 +413,10 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
     return questions;
   }
 
-  if (preDefinedQuestions[testId]) {
-      const allQuestions = preDefinedQuestions[testId].filter(q => q.answer >= 0);
+  // Map input tests to their core data if applicable
+  const coreTestId = testId.replace('-input', '');
+  if (preDefinedQuestions[coreTestId]) {
+      const allQuestions = preDefinedQuestions[coreTestId].filter(q => q.answer >= 0);
       return shuffleArray([...allQuestions]).slice(0, settings.numQuestions);
   }
 
@@ -443,7 +460,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
       let questionText: string;
       let answer: number;
 
-      switch (testId) {
+      switch (coreTestId) {
         case 'addition-subtraction': {
           const numTerms = 4;
           let tempResult = getRandomInt(min, max);

@@ -1,8 +1,11 @@
 
 export const TEST_NAME_MAP: Record<string, string> = {
     'addition-subtraction': 'Add/Subtract',
+    'addition-subtraction-input': 'Add/Subtract (Master)',
     'multiplication': 'Multiplication',
+    'multiplication-input': 'Multiplication (Master)',
     'division': 'Division',
+    'division-input': 'Division (Master)',
     'beads-identify': 'Beads Value',
     'beads-set': 'Beads Set',
     'basic-add-sub-l1': 'Basic Add/Sub Level 1',
@@ -109,7 +112,7 @@ export const PAGE_GUIDES = {
     steps: [
       "Read the calculation displayed on the screen.",
       "Calculate the result mentally or using your abacus.",
-      "Click the correct answer from the options provided.",
+      "Choose the correct answer or type it in (Master Mode).",
       "Watch the timer! Faster accuracy earns more Mastery Points.",
       "Use the navigation bar to jump between questions."
     ]
@@ -181,7 +184,7 @@ export const UPDATE_NOTES = [
   },
   {
     title: "Bubble Game Elite Levels",
-    description: "Added 1,000 unique levels to the Bubble Game candy road!",
+    description: "Added 1,00,0 levels to the Bubble Game road! Check how far you can go.",
     icon: "🫧"
   }
 ];

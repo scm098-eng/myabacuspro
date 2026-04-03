@@ -8,7 +8,7 @@ import type { Question, Difficulty, TestType, TestSettings } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Timer, AlertTriangle, Loader2, PlayCircle, CheckCircle2, BookOpen } from 'lucide-react';
+import { Timer, AlertTriangle, Loader2, PlayCircle, CheckCircle2, BookOpen, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -32,6 +32,7 @@ import { useSound } from '@/hooks/useSound';
 import { PAGE_GUIDES, FORMULA_GUIDES } from '@/lib/constants';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 export default function TestPageClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
@@ -44,12 +45,16 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>([]);
   const [timeLeft, setTimeLeft] = useState(settings.timeLimit);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [inputValue, setInputValue] = useState('');
   const [isAnswered, setIsAnswered] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [isFinished, setIsFinished] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const isInputMode = useMemo(() => testId.includes('-input'), [testId]);
 
   useEffect(() => {
     const generatedQuestions = generateTest(testId, difficulty);
@@ -73,7 +78,11 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
             inline: 'center'
         });
     }
-  }, [currentQuestionIndex]);
+    // Auto-focus input if in input mode
+    if (hasStarted && isInputMode && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [currentQuestionIndex, hasStarted, isInputMode]);
 
   const handleStart = () => {
     if (dontShowAgain) {
@@ -191,20 +200,22 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   const jumpToQuestion = (index: number) => {
     setCurrentQuestionIndex(index);
     setSelectedOption(null);
+    setInputValue('');
     setIsAnswered(false);
   }
 
-  const handleAnswer = (answer: number) => {
+  const handleAnswer = (answer: number | null) => {
     if (isAnswered) return;
     
+    const finalAnswer = answer === null ? null : Number(answer);
     const newAnswers = [...userAnswers];
-    newAnswers[currentQuestionIndex] = answer;
+    newAnswers[currentQuestionIndex] = finalAnswer;
     
     setIsAnswered(true);
-    setSelectedOption(answer);
+    setSelectedOption(finalAnswer);
     setUserAnswers(newAnswers);
 
-    const isCorrect = answer === currentQuestion.answer;
+    const isCorrect = finalAnswer === currentQuestion.answer;
     if (isCorrect) {
       playSound('correct');
     } else {
@@ -216,6 +227,12 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         jumpToQuestion(currentQuestionIndex + 1);
       }
     }, 700);
+  };
+
+  const handleInputSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputValue || isAnswered) return;
+    handleAnswer(parseInt(inputValue, 10));
   };
   
   const currentQuestion = useMemo(() => questions[currentQuestionIndex], [questions, currentQuestionIndex]);
@@ -328,27 +345,56 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
               = ?
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-auto pt-6">
-            {currentQuestion.options.map((option, index) => {
-              const isCorrect = option === currentQuestion.answer;
-              const isSelected = selectedOption === option;
-              
-              return (
-                <Button
-                  key={index}
-                  onClick={() => handleAnswer(option)}
+
+          <div className="mt-auto pt-6">
+            {isInputMode ? (
+              <form onSubmit={handleInputSubmit} className="flex flex-col items-center gap-6 w-full animate-in fade-in slide-in-from-bottom-4">
+                <Input
+                  ref={inputRef}
+                  type="number"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
                   disabled={isAnswered}
+                  placeholder="Enter your result..."
                   className={cn(
-                    "h-16 sm:h-20 text-2xl sm:text-3xl font-bold transition-all duration-300 transform hover:scale-105",
-                    isAnswered && isSelected && !isCorrect && "bg-destructive hover:bg-destructive/90",
-                    isAnswered && isCorrect && "bg-green-50 hover:bg-green-50 text-green-700 border-green-500 border-2",
+                    "h-16 sm:h-20 text-3xl sm:text-5xl text-center font-black rounded-2xl border-4 focus:ring-primary shadow-inner",
+                    isAnswered && inputValue === currentQuestion.answer.toString() && "bg-green-50 text-green-700 border-green-500",
+                    isAnswered && inputValue !== currentQuestion.answer.toString() && "bg-red-50 text-red-700 border-red-500"
                   )}
-                  variant="outline"
+                  autoFocus
+                />
+                <Button 
+                  type="submit" 
+                  disabled={isAnswered || !inputValue} 
+                  className="h-14 sm:h-16 w-full sm:w-64 text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl hover:scale-[1.02] transition-transform"
                 >
-                  {option}
+                  <Send className="mr-2 h-6 w-6" /> Submit
                 </Button>
-              )
-            })}
+              </form>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {currentQuestion.options.map((option, index) => {
+                  const isCorrect = option === currentQuestion.answer;
+                  const isSelected = selectedOption === option;
+                  
+                  return (
+                    <Button
+                      key={index}
+                      onClick={() => handleAnswer(option)}
+                      disabled={isAnswered}
+                      className={cn(
+                        "h-16 sm:h-20 text-2xl sm:text-3xl font-bold transition-all duration-300 transform hover:scale-105",
+                        isAnswered && isSelected && !isCorrect && "bg-destructive hover:bg-destructive/90",
+                        isAnswered && isCorrect && "bg-green-50 hover:bg-green-50 text-green-700 border-green-500 border-2",
+                      )}
+                      variant="outline"
+                    >
+                      {option}
+                    </Button>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

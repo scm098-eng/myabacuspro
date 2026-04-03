@@ -3,18 +3,17 @@
 
 import { TestCard } from '@/components/TestCard';
 import type { TestType } from '@/types';
-import { X, Divide } from 'lucide-react';
+import { X, Divide, Keyboard, BrainCircuit } from 'lucide-react';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
 
 const PlusMinus = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -28,28 +27,51 @@ const PlusMinus = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-
-const generalTests: { id: TestType; title: string; description: string; icon: React.ElementType; iconBg: string }[] = [
+const foundationTests: { id: TestType; title: string; description: string; icon: React.ElementType; iconBg: string }[] = [
   {
     id: 'addition-subtraction',
     title: 'Addition & Subtraction',
-    description: 'A mix of addition and subtraction problems to test your foundational skills.',
+    description: 'Timed challenges with 4 options. Build speed and mental accuracy.',
     icon: PlusMinus,
     iconBg: 'bg-green-100',
   },
   {
     id: 'multiplication',
     title: 'Multiplication',
-    description: 'Challenge your multiplication knowledge from single to four-digit numbers.',
+    description: 'Practice multi-digit multiplication with helpful answer hints.',
     icon: X,
     iconBg: 'bg-yellow-100',
   },
   {
     id: 'division',
     title: 'Division',
-    description: 'Test your ability to divide numbers quickly and accurately.',
+    description: 'Master division operations across three difficulty tiers.',
     icon: Divide,
     iconBg: 'bg-blue-100',
+  },
+];
+
+const masterModeTests: { id: TestType; title: string; description: string; icon: React.ElementType; iconBg: string }[] = [
+  {
+    id: 'addition-subtraction-input',
+    title: 'Master Add & Sub',
+    description: 'Elite Level: No options provided. Type your answer to submit.',
+    icon: Keyboard,
+    iconBg: 'bg-slate-100',
+  },
+  {
+    id: 'multiplication-input',
+    title: 'Master Multiplication',
+    description: 'Elite Level: Calculate complex products and input directly.',
+    icon: Keyboard,
+    iconBg: 'bg-slate-100',
+  },
+  {
+    id: 'division-input',
+    title: 'Master Division',
+    description: 'Elite Level: Total accuracy required. Type the quotient to score.',
+    icon: Keyboard,
+    iconBg: 'bg-slate-100',
   },
 ];
 
@@ -72,33 +94,64 @@ export default function PracticeTestsPage() {
           <Skeleton className="h-6 w-1/2 mx-auto mt-4" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-64 w-full" />)}
+            {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-64 w-full" />)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-16">
       <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground font-headline sm:text-5xl">General Practice Tests</h1>
-        <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-          Choose a category and difficulty level to begin your training.
+        <h1 className="text-4xl font-black tracking-tight text-foreground font-headline sm:text-6xl uppercase">General Practice</h1>
+        <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground font-medium">
+          Choose between building your foundation with hints or testing your mastery with direct input.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {generalTests.map((test) => (
-          <TestCard
-            key={test.id}
-            testId={test.id}
-            title={test.title}
-            description={test.description}
-            Icon={test.icon}
-            iconBg={test.iconBg}
-          />
-        ))}
-      </div>
+      <section className="space-y-8">
+        <div className="flex items-center gap-4">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <BrainCircuit className="text-primary w-6 h-6" />
+            </div>
+            <h2 className="text-3xl font-black uppercase tracking-tight font-headline">Foundation Mode <span className="text-sm font-bold text-muted-foreground align-middle ml-2">(Multiple Choice)</span></h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {foundationTests.map((test) => (
+            <TestCard
+                key={test.id}
+                testId={test.id}
+                title={test.title}
+                description={test.description}
+                Icon={test.icon}
+                iconBg={test.iconBg}
+            />
+            ))}
+        </div>
+      </section>
+
+      <Separator />
+
+      <section className="space-y-8 pb-12">
+        <div className="flex items-center gap-4">
+            <div className="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center">
+                <Keyboard className="text-slate-700 w-6 h-6" />
+            </div>
+            <h2 className="text-3xl font-black uppercase tracking-tight font-headline">Mastery Mode <span className="text-sm font-bold text-muted-foreground align-middle ml-2">(Direct Input)</span></h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {masterModeTests.map((test) => (
+            <TestCard
+                key={test.id}
+                testId={test.id}
+                title={test.title}
+                description={test.description}
+                Icon={test.icon}
+                iconBg={test.iconBg}
+            />
+            ))}
+        </div>
+      </section>
     </div>
   );
 }
