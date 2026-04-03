@@ -31,14 +31,14 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://abacusace-mmnqw.web.app'),
+  metadataBase: new URL('https://myabacuspro.com'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: 'My Abacus Pro | Master Mental Math',
     description: 'Boost your calculation speed with timed challenges and Soroban abacus mastery.',
-    url: 'https://abacusace-mmnqw.web.app',
+    url: 'https://myabacuspro.com',
     siteName: 'My Abacus Pro',
     locale: 'en_US',
     type: 'website',

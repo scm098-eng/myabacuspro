@@ -1,18 +1,26 @@
+
 import { MetadataRoute } from 'next';
 import { blogPosts } from '@/lib/blog-posts';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://abacusace-mmnqw.web.app';
+  const baseUrl = 'https://myabacuspro.com';
   
   const routes = [
     '',
     '/about',
     '/tests',
+    '/tests/beads-value',
+    '/tests/basic',
+    '/tests/small-sister',
+    '/tests/big-brother',
+    '/tests/combination',
+    '/tests/practice',
     '/blog',
     '/pricing',
     '/faq',
     '/contact',
     '/tool-preview',
+    '/game',
     '/terms',
     '/privacy',
     '/cancellation-refund',

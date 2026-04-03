@@ -6,8 +6,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin/', '/profile/', '/dashboard/', '/api/'],
+      disallow: ['/admin/', '/profile/', '/dashboard/', '/progress/', '/api/'],
     },
-    sitemap: 'https://abacusace-mmnqw.web.app/sitemap.xml',
+    sitemap: 'https://myabacuspro.com/sitemap.xml',
   };
 }
