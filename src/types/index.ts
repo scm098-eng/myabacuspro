@@ -315,11 +315,11 @@ export interface BlogPost {
   image: string;
   createdAt: any;
   // Dynamic Style Settings
-  layout?: 'standard' | 'centered' | 'magazine';
-  fontFamily?: 'serif' | 'sans' | 'modern';
-  lineSpacing?: 'normal' | 'relaxed' | 'wide';
+  layout?: 'standard' | 'centered' | 'magazine' | 'minimalist' | 'columns';
+  fontFamily?: 'serif' | 'sans' | 'elegant' | 'impact';
+  lineSpacing?: 'tight' | 'normal' | 'relaxed' | 'wide';
   dropCap?: boolean;
-  headlineWeight?: 'bold' | 'black';
+  headlineWeight?: 'bold' | 'black' | 'medium';
   headlineCase?: 'normal' | 'uppercase';
   headlineSpacing?: 'tight' | 'normal' | 'wide';
   // Image Specifics

@@ -10,32 +10,16 @@ import { firebaseApp } from '@/lib/firebase';
 import { format, isValid, parseISO } from 'date-fns';
 import type { BlogPost } from '@/types';
 
-// Force dynamic rendering to always show fresh content
 export const dynamic = 'force-dynamic';
 
-/**
- * Robust date normalization helper.
- * Handles Firestore Timestamps, ISO strings, and Date objects.
- */
 function normalizeDate(val: any): string {
   if (!val) return new Date().toISOString();
-  
-  // Handle Firestore Timestamp
-  if (val && typeof val.toDate === 'function') {
-    return val.toDate().toISOString();
-  }
-  
-  // Handle ISO strings or other string formats
+  if (val && typeof val.toDate === 'function') return val.toDate().toISOString();
   if (typeof val === 'string') {
     const parsed = parseISO(val);
     if (isValid(parsed)) return val;
   }
-  
-  // Handle native Date objects
-  if (val instanceof Date && isValid(val)) {
-    return val.toISOString();
-  }
-
+  if (val instanceof Date && isValid(val)) return val.toISOString();
   return new Date().toISOString();
 }
 
@@ -46,6 +30,7 @@ async function getBlogs(): Promise<BlogPost[]> {
     const q = query(blogRef, orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
     
+    // Normalize and perform secondary client-side sort to ensure "Today" is always first
     return snapshot.docs.map(doc => {
       const data = doc.data();
       return {
@@ -53,7 +38,7 @@ async function getBlogs(): Promise<BlogPost[]> {
         ...data,
         createdAt: normalizeDate(data.createdAt)
       } as BlogPost;
-    });
+    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
     console.error("Failed to fetch blogs from Firestore:", error);
     return [];

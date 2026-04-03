@@ -52,16 +52,8 @@
   }
 }
 
-/* --- JAMES CLEAR BLOG STYLE & DYNAMIC ENGINE --- */
+/* --- BLOG TYPOGRAPHY ENGINE --- */
 
-.james-clear-style {
-  font-size: 20px;
-  max-width: 700px;
-  margin: 0 auto;
-  text-align: left;
-}
-
-/* Dynamic Font Stacks */
 .font-serif {
   font-family: 'Merriweather', Georgia, serif;
 }
@@ -70,48 +62,37 @@
   font-family: 'Inter', var(--font-inter), sans-serif;
 }
 
-.font-headline {
-  font-family: var(--font-inter), sans-serif;
+.font-elegant {
+  font-family: 'Lora', 'Palatino Linotype', serif;
 }
 
-/* The "Drop Cap" effect for the first letter of the first paragraph */
+.font-impact {
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Drop Cap Logic */
 .drop-cap-enabled p:first-of-type::first-letter {
-  font-size: 85px;
+  font-size: 4.5rem;
   font-weight: 900;
   float: left;
   line-height: 1;
-  padding-right: 12px;
-  margin-top: 4px;
-  color: #000;
+  padding-right: 0.75rem;
+  margin-top: 0.25rem;
+  color: hsl(var(--primary));
   text-transform: uppercase;
 }
 
-.james-clear-style h3 {
-  font-family: var(--font-inter), sans-serif;
-  font-weight: 900;
-  font-size: 28px;
-  margin-top: 50px;
-  margin-bottom: 20px;
-  color: #000;
-  letter-spacing: -0.02em;
+.james-clear-style {
+  font-size: 1.25rem;
+  line-height: 1.6;
+}
+
+.james-clear-style h2, .james-clear-style h3 {
+  @apply font-black tracking-tight text-slate-900 mt-12 mb-4;
 }
 
 .james-clear-style p {
-  margin-bottom: 1.5em;
-}
-
-/* Minimalist CTA box */
-.cta-section {
-  margin-top: 60px;
-}
-
-.cta-section h4 {
-  font-family: var(--font-inter), sans-serif;
-  font-weight: 900;
-}
-
-.cta-section a {
-  text-decoration: none;
+  @apply mb-6;
 }
 
 @layer utilities {
