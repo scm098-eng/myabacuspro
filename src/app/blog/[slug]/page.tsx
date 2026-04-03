@@ -93,7 +93,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: post.title,
     description: post.excerpt,
-    openGraph: { title: post.title, description: post.excerpt, images: [post.image || 'https://picsum.photos/seed/math/1200/600'] }
+    alternates: {
+      canonical: `https://myabacuspro.com/blog/${slug}`,
+    },
+    openGraph: { 
+      title: post.title, 
+      description: post.excerpt, 
+      url: `https://myabacuspro.com/blog/${slug}`,
+      images: [post.image || 'https://picsum.photos/seed/math/1200/600'] 
+    }
   };
 }
 

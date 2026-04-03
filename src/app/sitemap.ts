@@ -1,10 +1,11 @@
 
 import { MetadataRoute } from 'next';
-import { blogPosts } from '@/lib/blog-posts';
+import { getFirestoreDb } from '@/lib/firebase-admin';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://myabacuspro.com';
   
+  // 1. Define static routes
   const routes = [
     '',
     '/about',
@@ -31,12 +32,26 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: route === '' ? 1 : 0.8,
   }));
 
-  const blogRoutes = blogPosts.map((post) => ({
-    url: `${baseUrl}/blog/${post.slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'monthly' as const,
-    priority: 0.6,
-  }));
+  // 2. Fetch dynamic blog routes from Firestore
+  let blogRoutes: MetadataRoute.Sitemap = [];
+  try {
+    const db = getFirestoreDb();
+    const snapshot = await db.collection('blogs').get();
+    
+    blogRoutes = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      const lastMod = data.updatedAt?.toDate ? data.updatedAt.toDate() : (data.createdAt?.toDate ? data.createdAt.toDate() : new Date());
+      
+      return {
+        url: `${baseUrl}/blog/${data.slug || doc.id}`,
+        lastModified: lastMod,
+        changeFrequency: 'monthly' as const,
+        priority: 0.6,
+      };
+    });
+  } catch (error) {
+    console.error("Sitemap generation error (blogs):", error);
+  }
 
   return [...routes, ...blogRoutes];
 }

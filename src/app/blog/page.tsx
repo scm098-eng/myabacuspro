@@ -9,8 +9,20 @@ import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/fire
 import { firebaseApp } from '@/lib/firebase';
 import { format, isValid, parseISO } from 'date-fns';
 import type { BlogPost } from '@/types';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'Math & Mastery Blog | Mental Arithmetic Insights',
+  description: 'Expert training tips, scientific benefits of abacus learning, and the latest updates from My Abacus Pro.',
+  openGraph: {
+    title: 'My Abacus Pro Blog',
+    description: 'Master mental math with our expert-led articles and training guides.',
+    url: 'https://myabacuspro.com/blog',
+    type: 'website',
+  }
+};
 
 function normalizeDate(val: any): string {
   if (!val) return new Date().toISOString();
@@ -30,7 +42,6 @@ async function getBlogs(): Promise<BlogPost[]> {
     const q = query(blogRef, orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
     
-    // Normalize and perform secondary client-side sort to ensure "Today" is always first
     return snapshot.docs.map(doc => {
       const data = doc.data();
       return {
@@ -97,7 +108,7 @@ export default async function BlogListingPage() {
             <CardFooter className="pt-0 pb-6 px-6">
               <Button asChild className="w-full font-black uppercase tracking-widest text-xs h-12 shadow-lg">
                 <Link href={`/blog/${post.slug}`}>
-                  Read Article <ArrowRight className="ml-2 w-4 h-4" />
+                  Read Article <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             </CardFooter>
