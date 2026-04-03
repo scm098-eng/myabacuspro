@@ -62,7 +62,7 @@ function getBlogTheme(post: BlogPost) {
     ),
     imageContainer: cn(
       "relative overflow-hidden shadow-2xl mb-8 bg-slate-50 border",
-      imagePos === 'top' ? "aspect-[3/2] w-full rounded-[2.5rem]" : "aspect-[3/2] w-full md:w-1/2 rounded-2xl",
+      imagePos === 'top' ? "aspect-[3/2] w-full rounded-[2.5rem]" : "aspect-[2/3] w-full md:w-1/3 rounded-2xl",
       imagePos === 'left' && "md:float-left md:mr-10",
       imagePos === 'right' && "md:float-right md:ml-10"
     ),
@@ -111,9 +111,9 @@ export default async function BlogPostPage({ params }: PageProps) {
         <h1 className={theme.headline}>{post.title}</h1>
       </div>
       <div className="clearfix">
-        {post.layout !== 'minimalist' && (
+        {post.layout !== 'minimalist' && post.image && (
           <div className={theme.imageContainer}>
-            <Image src={post.image || 'https://picsum.photos/seed/math/1200/600'} alt={post.title} fill className={theme.imageFit} priority data-ai-hint="abacus learning" />
+            <Image src={post.image} alt={post.title} fill className={theme.imageFit} priority data-ai-hint="abacus learning" />
           </div>
         )}
         <div className={theme.content} dangerouslySetInnerHTML={{ __html: post.content }} />

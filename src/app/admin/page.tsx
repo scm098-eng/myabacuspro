@@ -567,7 +567,26 @@ export default function AdminDashboardPage() {
                       <div className="space-y-2"><Label className="text-xs font-bold uppercase text-muted-foreground">Image Alignment</Label><Select value={editingBlog?.imagePosition || 'top'} onValueChange={(val: any) => setEditingBlog(p => ({ ...p, imagePosition: val }))}><SelectTrigger className="h-12 border-2 bg-white"><SelectValue placeholder="Select Position" /></SelectTrigger><SelectContent><SelectItem value="top">Full Width Top</SelectItem><SelectItem value="left">Left Side wrap</SelectItem><SelectItem value="right">Right Side wrap</SelectItem></SelectContent></Select></div>
                       <div className="space-y-2"><Label className="text-xs font-bold uppercase text-muted-foreground">Image Fit Mode</Label><Select value={editingBlog?.imageFit || 'cover'} onValueChange={(val: any) => setEditingBlog(p => ({ ...p, imageFit: val }))}><SelectTrigger className="h-12 border-2 bg-white"><SelectValue placeholder="Select Fit" /></SelectTrigger><SelectContent><SelectItem value="cover">Cover (Fills Area)</SelectItem><SelectItem value="contain">Contain (Shows Full Image)</SelectItem></SelectContent></Select></div>
                     </div>
-                    <div className="space-y-2"><Label className="text-xs font-bold uppercase text-muted-foreground">Image URL (600x400 recommended)</Label><Input value={editingBlog?.image || ''} onChange={e => setEditingBlog(prev => ({ ...prev, image: e.target.value }))} placeholder="https://..." className="h-12 border-2" />{editingBlog?.image && (<div className="mt-4 relative aspect-[3/2] rounded-xl overflow-hidden border-2 bg-slate-100"><img src={editingBlog.image} alt="Editor Preview" className={cn("w-full h-full", editingBlog.imageFit === 'contain' ? 'object-contain' : 'object-cover')} /></div>)}</div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold uppercase text-muted-foreground">Image URL</Label>
+                      <Input value={editingBlog?.image || ''} onChange={e => setEditingBlog(prev => ({ ...prev, image: e.target.value }))} placeholder="https://..." className="h-12 border-2" />
+                      
+                      {editingBlog?.image ? (
+                        <div className={cn("mt-4 relative rounded-xl overflow-hidden border-2 bg-slate-100", editingBlog.imagePosition === 'top' ? "aspect-[3/2]" : "aspect-[2/3]")}>
+                          <img src={editingBlog.image} alt="Editor Preview" className={cn("w-full h-full", editingBlog.imageFit === 'contain' ? 'object-contain' : 'object-cover')} />
+                        </div>
+                      ) : (
+                        <div className={cn(
+                          "mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed bg-slate-50 text-slate-400 p-6",
+                          editingBlog?.imagePosition === 'top' ? "aspect-[3/2]" : "aspect-[2/3]"
+                        )}>
+                          <ImageIcon className="w-8 h-8 mb-2 opacity-20" />
+                          <p className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">
+                            {editingBlog?.imagePosition === 'top' ? "Landscape Required\n(1200 x 800)" : "Portrait Required\n(600 x 900)"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -588,9 +607,25 @@ export default function AdminDashboardPage() {
                   <p className="text-muted-foreground font-medium">By {editingBlog?.author || 'Author'} • Just Now</p>
                 </div>
                 <div className={cn("clearfix", editingBlog?.layout === 'columns' && "md:columns-2 md:gap-12")}>
-                  {editingBlog?.image && (
-                    <div className={cn("relative overflow-hidden shadow-2xl border bg-slate-50 mb-8", editingBlog.imagePosition === 'top' ? "aspect-[3/2] w-full rounded-[2rem]" : "aspect-[3/2] w-full md:w-1/2 rounded-2xl", editingBlog.imagePosition === 'left' && "md:float-left md:mr-8", editingBlog.imagePosition === 'right' && "md:float-right md:ml-8")}>
+                  {editingBlog?.image ? (
+                    <div className={cn("relative overflow-hidden shadow-2xl border bg-slate-50 mb-8", 
+                      editingBlog.imagePosition === 'top' ? "aspect-[3/2] w-full rounded-[2rem]" : "aspect-[2/3] w-full md:w-1/3 rounded-2xl", 
+                      editingBlog.imagePosition === 'left' && "md:float-left md:mr-8", 
+                      editingBlog.imagePosition === 'right' && "md:float-right md:ml-8"
+                    )}>
                       <img src={editingBlog.image} alt="Preview" className={cn("w-full h-full", editingBlog.imageFit === 'contain' ? 'object-contain' : 'object-cover')} />
+                    </div>
+                  ) : (
+                    <div className={cn(
+                      "flex flex-col items-center justify-center border-2 border-dashed bg-slate-50 text-slate-300 mb-8",
+                      editingBlog?.imagePosition === 'top' ? "aspect-[3/2] w-full rounded-[2rem]" : "aspect-[2/3] w-full md:w-1/3 rounded-2xl",
+                      editingBlog?.imagePosition === 'left' && "md:float-left md:mr-8",
+                      editingBlog?.imagePosition === 'right' && "md:float-right md:ml-8"
+                    )}>
+                      <ImageIcon className="w-8 h-8 mb-2 opacity-20" />
+                      <p className="text-[10px] font-black uppercase tracking-tighter text-center px-4">
+                        {editingBlog?.imagePosition === 'top' ? "Landscape Placeholder (1200x800)" : "Portrait Placeholder (600x900)"}
+                      </p>
                     </div>
                   )}
                   <div className={cn("james-clear-style prose lg:prose-xl max-w-none", editingBlog?.fontFamily === 'serif' ? "font-serif" : editingBlog?.fontFamily === 'elegant' ? "font-elegant" : editingBlog?.fontFamily === 'impact' ? "font-impact" : "font-sans", editingBlog?.lineSpacing === 'tight' ? "leading-snug" : editingBlog?.lineSpacing === 'relaxed' ? "leading-relaxed" : editingBlog?.lineSpacing === 'wide' ? "leading-loose" : "leading-normal", editingBlog?.dropCap && "drop-cap-enabled")} dangerouslySetInnerHTML={{ __html: editingBlog?.content || '<p>Content preview will appear here...</p>' }} />
