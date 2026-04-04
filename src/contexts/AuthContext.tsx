@@ -260,7 +260,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           monthlyPoints: 0,
           weeklyPoints: 0,
           totalPoints: 0,
-          lastAwardedRank: 'Junior Calculator',
+          lastAwardedRank: 'Math Beginner',
           lastWeeklyReset: getUTCMondayKey(),
           lastMonthlyReset: getUTCMonthKey()
       };
@@ -317,7 +317,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           monthlyPoints: 0,
           weeklyPoints: 0,
           totalPoints: 0,
-          lastAwardedRank: 'Junior Calculator',
+          lastAwardedRank: 'Math Beginner',
           lastWeeklyReset: getUTCMondayKey(),
           lastMonthlyReset: getUTCMonthKey()
         };

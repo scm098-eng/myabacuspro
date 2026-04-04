@@ -90,10 +90,11 @@ export const RANK_CRITERIA = [
   { name: "Flash Master", icon: "☄️", color: "#f97316", daysReq: 150, pointsReq: 60000, description: "Moving at the speed of thought. Truly impressive." },
   { name: "Elite Apprentice", icon: "🎖️", color: "#10b981", daysReq: 120, pointsReq: 45000, description: "A top-tier practitioner nearing absolute mastery." },
   { name: "Master Apprentice", icon: "💎", color: "#06b6d4", daysReq: 90, pointsReq: 30000, description: "Significant expertise across all complex formulas." },
-  { name: "Senior Apprentice", icon: "🎓", color: "#3b82f6", daysReq: 60, pointsReq: 15000, description: "Advanced skills and deep understanding of abacus logic." },
+  { name: "Senior Calculator", icon: "🧮", color: "#3b82f6", daysReq: 60, pointsReq: 15000, description: "Advanced skills and deep understanding of abacus logic." },
   { name: "Apprentice", icon: "🛠️", color: "#A52A2A", daysReq: 30, pointsReq: 5000, description: "Solid foundation in all core abacus techniques." },
   { name: "Rising Star", icon: "🌟", color: "#4ADE80", daysReq: 7, pointsReq: 1000, description: "An incredible start! You're destined for greatness." },
-  { name: "Junior Calculator", icon: "👶", color: "#ADD8E6", daysReq: 0, pointsReq: 0, description: "The journey to math mastery begins today." }
+  { name: "Junior Calculator", icon: "🧒", color: "#f97316", daysReq: 3, pointsReq: 300, description: "The engine is starting. You are now a Junior Calculator!" },
+  { name: "Math Beginner", icon: "👶", color: "#ADD8E6", daysReq: 0, pointsReq: 0, description: "The journey to math mastery begins today." }
 ];
 
 export const PAGE_GUIDES = {
