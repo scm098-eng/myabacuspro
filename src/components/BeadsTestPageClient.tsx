@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -219,31 +220,31 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
         <Card className="shadow-2xl border-none rounded-[2rem] overflow-hidden bg-card animate-in zoom-in-95 duration-500 max-h-[90vh] flex flex-col">
           <CardHeader className="bg-indigo-600 text-white text-center py-6 shrink-0">
             <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tighter font-headline">Beads Mastery</CardTitle>
-            <CardDescription className="text-white/80 font-bold text-sm sm:text-lg">Rules of Visualization</CardDescription>
+            <CardDescription className="text-white/80 font-bold text-xs sm:text-lg">Rules of Visualization</CardDescription>
           </CardHeader>
-          <CardContent className="p-6 sm:p-8 overflow-y-auto flex-1 scrollbar-none">
-            <div className="space-y-4">
+          <CardContent className="p-4 sm:p-8 overflow-y-auto flex-1 scrollbar-none">
+            <div className="space-y-3 sm:space-y-4">
               {PAGE_GUIDES.bead_test.steps.map((step, i) => (
-                <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-muted/50 border border-muted-foreground/5 animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${i * 100}ms` }}>
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white text-xs font-black shadow-md">
+                <div key={i} className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-muted/50 border border-muted-foreground/5 animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${i * 100}ms` }}>
+                  <div className="flex h-6 w-6 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white text-[10px] sm:text-xs font-black shadow-md">
                     {i + 1}
                   </div>
-                  <p className="text-sm sm:text-base font-medium text-slate-700 leading-tight pt-1.5">{step}</p>
+                  <p className="text-xs sm:text-base font-medium text-slate-700 leading-tight pt-1">{step}</p>
                 </div>
               ))}
             </div>
           </CardContent>
-          <CardFooter className="p-6 sm:p-8 pt-0 flex flex-col gap-4 bg-white/50 border-t shrink-0">
-            <div className="flex items-center space-x-2 py-2">
+          <CardFooter className="p-4 sm:p-8 pt-0 flex flex-col gap-3 sm:gap-4 bg-white/50 border-t shrink-0">
+            <div className="flex items-center space-x-2 py-1 sm:py-2">
               <Checkbox 
                 id="dont-show-beads" 
                 checked={dontShowAgain} 
                 onCheckedChange={(val) => setDontShowAgain(!!val)} 
               />
-              <Label htmlFor="dont-show-beads" className="text-xs font-bold text-muted-foreground uppercase cursor-pointer">Do not show rules again</Label>
+              <Label htmlFor="dont-show-beads" className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase cursor-pointer">Do not show rules again</Label>
             </div>
-            <Button onClick={handleStart} className="w-full h-14 sm:h-16 text-xl sm:text-2xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.02] bg-indigo-600 hover:bg-indigo-700">
-              <PlayCircle className="mr-3 h-6 w-6 sm:h-8 sm:w-8" /> Start Training
+            <Button onClick={handleStart} className="w-full h-12 sm:h-16 text-lg sm:text-2xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.02] bg-indigo-600 hover:bg-indigo-700">
+              <PlayCircle className="mr-2 sm:mr-3 h-5 w-5 sm:h-8 sm:w-8" /> Start Training
             </Button>
           </CardFooter>
         </Card>
@@ -255,7 +256,7 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
     if (currentQuestion.questionType === 'identify') {
       return (
         <div className="flex flex-col items-center w-full">
-            <p className="mb-4 text-base sm:text-lg font-semibold">What is the value shown?</p>
+            <p className="mb-4 text-sm sm:text-lg font-bold uppercase tracking-tight">What is the value shown?</p>
             <div className="w-full max-w-full overflow-x-auto">
                 <BeadDisplay value={currentQuestion.answer} rodCount={dynamicRodCount} />
             </div>
@@ -265,8 +266,8 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Enter answer"
-                className="mt-6 w-full max-w-[200px] text-center text-xl h-14"
+                placeholder="Enter result..."
+                className="mt-6 w-full max-w-[200px] text-center text-xl h-14 sm:h-16 rounded-xl border-4 shadow-inner placeholder:text-sm"
             />
         </div>
       );
@@ -274,8 +275,8 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
     if (currentQuestion.questionType === 'set') {
       return (
         <div className="flex flex-col items-center w-full">
-            <p className="mb-4 text-base sm:text-lg font-semibold">Set this value:</p>
-            <p className="text-4xl sm:text-6xl font-black mb-6 text-primary">{currentQuestion.answer}</p>
+            <p className="mb-4 text-sm sm:text-lg font-bold uppercase tracking-tight">Set this value:</p>
+            <p className="text-4xl sm:text-7xl font-black mb-6 text-primary leading-none">{currentQuestion.answer}</p>
             <div className="w-full max-w-full overflow-x-auto">
                 <BeadDisplay value={abacusValue} onChange={setAbacusValue} rodCount={dynamicRodCount} />
             </div>
@@ -286,19 +287,19 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
   }
 
   return (
-    <div className="flex flex-col max-w-3xl mx-auto h-full px-4">
+    <div className="flex flex-col max-w-3xl mx-auto h-full px-2 sm:px-4">
       <Card className="shadow-2xl relative overflow-hidden flex flex-col flex-grow">
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-6">
           <div className="flex justify-between items-center mb-2 sm:mb-4">
             <div className="space-y-1">
-              <CardTitle className="text-xl sm:text-2xl font-headline">{settings.title}</CardTitle>
+              <CardTitle className="text-base sm:text-2xl font-headline truncate pr-2">{settings.title}</CardTitle>
             </div>
           </div>
-          <CardDescription>Question {currentQuestionIndex + 1} of {questions.length}</CardDescription>
-          <Progress value={progress} className="w-full mt-2" />
+          <CardDescription className="text-xs sm:text-sm">Question {currentQuestionIndex + 1} of {questions.length}</CardDescription>
+          <Progress value={progress} className="w-full mt-2 h-1.5 sm:h-2" />
         </CardHeader>
-        <CardContent className="flex flex-col flex-grow">
-          <ScrollArea className="w-full whitespace-nowrap rounded-md border my-4">
+        <CardContent className="flex flex-col flex-grow p-4 sm:p-6">
+          <ScrollArea className="w-full whitespace-nowrap rounded-md border my-2 sm:my-4">
             <div className="flex w-max space-x-2 p-2">
                 {questions.map((_, index) => (
                     <Button
@@ -306,7 +307,7 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
                         ref={setQuestionButtonRef(index)}
                         onClick={() => jumpToQuestion(index)}
                         variant={currentQuestionIndex === index ? 'default' : 'outline'}
-                        className={cn("w-10 h-10", userAnswers[index] !== null && "bg-green-200 border-green-400 text-green-800 hover:bg-green-300")}
+                        className={cn("w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm", userAnswers[index] !== null && "bg-green-200 border-green-400 text-green-800 hover:bg-green-300")}
                     >
                         {index + 1}
                     </Button>
@@ -315,36 +316,36 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
         
-          <div className="text-center my-auto transition-opacity duration-300 grid grid-cols-1 gap-8 items-center" key={currentQuestionIndex}>
+          <div className="text-center my-auto transition-opacity duration-300 grid grid-cols-1 gap-4 sm:gap-8 items-center py-4" key={currentQuestionIndex}>
             {renderQuestion()}
           </div>
 
-          <div className="flex items-center justify-center gap-4 mt-auto pt-8">
-            <Button onClick={handleAnswerSubmit} className="h-14 sm:h-16 text-lg sm:text-xl font-bold px-8 w-full sm:w-auto rounded-2xl shadow-lg">
-              <Check className="mr-2 h-5 w-5 sm:h-6 sm:w-6"/>
-              Next Question
+          <div className="flex items-center justify-center gap-4 mt-auto pt-6 sm:pt-8">
+            <Button onClick={handleAnswerSubmit} className="h-12 sm:h-16 text-lg sm:text-xl font-black uppercase tracking-widest px-8 w-full sm:w-auto rounded-2xl shadow-xl hover:scale-[1.02] transition-transform">
+              <Check className="mr-2 h-5 w-5 sm:h-6 sm:w-6 stroke-[4px]"/>
+              Next
             </Button>
           </div>
         </CardContent>
       </Card>
-      <div className="mt-6 flex justify-end">
+      <div className="mt-4 sm:mt-6 flex justify-end">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="destructive" size="sm">
+            <Button variant="destructive" size="sm" className="font-bold">
                 <AlertTriangle className="mr-2 h-4 w-4" />
                 End Practice
             </Button>
           </AlertDialogTrigger>
-          <AlertDialogContent>
+          <AlertDialogContent className="rounded-2xl">
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure you want to end the practice session?</AlertDialogTitle>
               <AlertDialogDescription>
-                Your progress will be saved and you will be taken to the results page. You cannot undo this action.
+                Your progress will be saved and you will be taken to the results page.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => finishTest(userAnswers)}>Yes, end practice</AlertDialogAction>
+              <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => finishTest(userAnswers)} className="rounded-xl">Yes, end practice</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
