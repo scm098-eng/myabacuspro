@@ -90,11 +90,11 @@ export default function FAQPage() {
                                     {faq.isCustom ? (
                                         <div className="space-y-4">
                                             <p>{faq.answer}</p>
-                                            <div className="border rounded-lg overflow-hidden">
+                                            <div className="border rounded-lg overflow-hidden max-w-full overflow-x-auto">
                                                 <Table>
                                                     <TableHeader className="bg-muted/50">
                                                         <TableRow>
-                                                            <TableHead className="w-[140px] sm:w-auto px-2 sm:px-4">Rank</TableHead>
+                                                            <TableHead className="w-[100px] sm:w-[180px] px-2 sm:px-4">Rank</TableHead>
                                                             <TableHead className="text-center px-1 sm:px-4">Days</TableHead>
                                                             <TableHead className="text-center px-1 sm:px-4">Points</TableHead>
                                                         </TableRow>
@@ -102,12 +102,14 @@ export default function FAQPage() {
                                                     <TableBody>
                                                         {RANK_CRITERIA.slice().reverse().map((rank) => (
                                                             <TableRow key={rank.name} className="h-12 hover:bg-muted/30">
-                                                                <TableCell className="font-bold py-2 px-2 sm:px-4">
-                                                                    <span className="inline-block w-6 text-center">{rank.icon}</span>
-                                                                    <span className="text-[11px] sm:text-sm ml-1">{rank.name}</span>
+                                                                <TableCell className="font-bold py-2 px-2 sm:px-4 min-w-[100px]">
+                                                                    <div className="flex items-center gap-1">
+                                                                        <span className="inline-block w-5 text-center shrink-0">{rank.icon}</span>
+                                                                        <span className="text-[10px] sm:text-sm leading-tight">{rank.name}</span>
+                                                                    </div>
                                                                 </TableCell>
-                                                                <TableCell className="text-center text-[11px] sm:text-sm py-2 px-1 sm:px-4">{rank.daysReq}+</TableCell>
-                                                                <TableCell className="text-center text-[11px] sm:text-sm py-2 px-1 sm:px-4">{rank.pointsReq.toLocaleString()}+</TableCell>
+                                                                <TableCell className="text-center text-[11px] sm:text-sm py-2 px-1 sm:px-4 font-medium">{rank.daysReq}+</TableCell>
+                                                                <TableCell className="text-center text-[11px] sm:text-sm py-2 px-1 sm:px-4 font-medium">{rank.pointsReq.toLocaleString()}+</TableCell>
                                                             </TableRow>
                                                         ))}
                                                     </TableBody>
