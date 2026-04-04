@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,7 +18,8 @@ import { Separator } from '@/components/ui/separator';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import type { ProfileData, UserRole } from '@/types';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from '@/components/ui/skeleton';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -134,13 +135,25 @@ export default function LoginPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/login_bg.jpg?alt=media');
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-  const { sendPasswordReset } = useAuth();
+  const { user, profile, isLoading, sendPasswordReset } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   const forgotPasswordForm = useForm<z.infer<typeof forgotPasswordSchema>>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: { email: '' },
   });
+
+  // If user is already logged in, redirect them immediately to appropriate dashboard
+  useEffect(() => {
+    if (!isLoading && user && profile) {
+      if (profile.role === 'admin' || (profile.role === 'teacher' && profile.status === 'approved')) {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
+    }
+  }, [user, profile, isLoading, router]);
 
    async function onForgotPasswordSubmit(values: z.infer<typeof forgotPasswordSchema>) {
     setIsResetting(true);
@@ -151,6 +164,30 @@ export default function LoginPage() {
     } catch (error) {
        toast({ title: 'Error', description: 'Could not send reset link.', variant: 'destructive' });
     } finally { setIsResetting(false); }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Card className="w-full max-w-md mx-auto shadow-xl">
+          <CardHeader className="text-center">
+            <Skeleton className="h-8 w-48 mx-auto" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Skeleton className="h-10 w-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <Skeleton className="h-12 w-full mt-4" />
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

@@ -1,12 +1,15 @@
 
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Zap, Target, ArrowRight } from 'lucide-react';
+import { CheckCircle, Zap, Target, ArrowRight, Loader2 } from 'lucide-react';
 import { usePageBackground } from '@/hooks/usePageBackground';
+import { useAuth } from '@/hooks/useAuth';
 import placeholderImages from '@/lib/placeholder-images.json';
 
 const features = [
@@ -29,6 +32,28 @@ const features = [
 
 export default function Home() {
   usePageBackground('');
+  const { user, profile, isLoading } = useAuth();
+  const router = useRouter();
+
+  // If user is already logged in, send them to their dashboard automatically
+  useEffect(() => {
+    if (!isLoading && user && profile) {
+      if (profile.role === 'admin' || (profile.role === 'teacher' && profile.status === 'approved')) {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
+    }
+  }, [user, profile, isLoading, router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-muted-foreground font-bold animate-pulse">Restoring your session...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-16">
