@@ -2,11 +2,15 @@
 import { MetadataRoute } from 'next';
 import { getFirestoreDb } from '@/lib/firebase-admin';
 
+/**
+ * Dynamic Sitemap Generator
+ * Ensures all paths point to the canonical custom domain.
+ */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://myabacuspro.com';
   
   // 1. Define static routes
-  const routes = [
+  const staticPaths = [
     '',
     '/about',
     '/tests',
@@ -25,7 +29,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/terms',
     '/privacy',
     '/cancellation-refund',
-  ].map((route) => ({
+  ];
+
+  const routes = staticPaths.map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,

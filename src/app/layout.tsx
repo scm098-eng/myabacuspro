@@ -33,11 +33,11 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL('https://myabacuspro.com'),
   alternates: {
-    canonical: '/',
+    canonical: 'https://myabacuspro.com',
   },
   openGraph: {
-    title: 'My Abacus Pro | Master Mental Math',
-    description: 'Boost your calculation speed with timed challenges and Soroban abacus mastery.',
+    title: 'My Abacus Pro | Master Mental Math & Soroban Online',
+    description: 'Boost your calculation speed with timed challenges and Soroban abacus mastery training.',
     url: 'https://myabacuspro.com',
     siteName: 'My Abacus Pro',
     locale: 'en_US',
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'My Abacus Pro | Master Mental Math',
+    title: 'My Abacus Pro | Master Mental Math & Soroban Online',
     description: 'Timed math challenges and Soroban abacus mastery training.',
   },
   robots: {
