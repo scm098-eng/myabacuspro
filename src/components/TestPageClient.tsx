@@ -338,10 +338,10 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
           </ScrollArea>
         
           <div className="text-center my-auto transition-opacity duration-300 py-4" key={currentQuestionIndex}>
-            <p className="text-lg sm:text-3xl md:text-4xl font-black tracking-wider text-foreground whitespace-pre-wrap leading-tight">
+            <p className="text-xl sm:text-3xl md:text-4xl font-black tracking-tight text-foreground whitespace-pre-wrap leading-tight">
               {currentQuestion.text}
             </p>
-            <p className="text-lg sm:text-3xl md:text-4xl font-black tracking-wider text-foreground whitespace-pre-wrap mt-2 sm:mt-4">
+            <p className="text-xl sm:text-3xl md:text-4xl font-black tracking-tight text-foreground whitespace-pre-wrap mt-2 sm:mt-4">
               = ?
             </p>
           </div>
@@ -357,7 +357,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
                   disabled={isAnswered}
                   placeholder="Enter result..."
                   className={cn(
-                    "h-14 sm:h-20 text-2xl sm:text-5xl text-center font-black rounded-2xl border-4 focus:ring-primary shadow-inner placeholder:text-base sm:placeholder:text-2xl",
+                    "h-12 sm:h-20 text-lg sm:text-5xl text-center font-black rounded-2xl border-4 focus:ring-primary shadow-inner placeholder:text-base sm:placeholder:text-2xl",
                     isAnswered && inputValue === currentQuestion.answer.toString() && "bg-green-50 text-green-700 border-green-500",
                     isAnswered && inputValue !== currentQuestion.answer.toString() && "bg-red-50 text-red-700 border-red-500"
                   )}

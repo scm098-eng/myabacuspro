@@ -83,10 +83,10 @@ export const TEST_NAME_MAP: Record<string, string> = {
 
 export const RANK_CRITERIA = [
   { name: "Human Calculator", icon: "👑", color: "#FFD700", daysReq: 365, pointsReq: 250000, description: "The ultimate master. Speed and accuracy beyond all limits." },
-  { name: "Grandmaster", icon: "🔱", color: "#E5E4E2", daysReq: 270, pointsReq: 150000, description: "Elite status reserved for the most dedicated math warriors." },
+  { name: "Grandmaster", icon: "🏆", color: "#E5E4E2", daysReq: 270, pointsReq: 150000, description: "Elite status reserved for the most dedicated math warriors." },
   { name: "Math Titan", icon: "🏛️", color: "#94a3b8", daysReq: 240, pointsReq: 120000, description: "Unshakable precision and monumental focus." },
-  { name: "Supreme Ninja", icon: "⚔️", color: "#475569", daysReq: 210, pointsReq: 100000, description: "A legendary force in the world of mental arithmetic." },
-  { name: "Math Ninja", icon: "🥷", color: "#C0C0C0", daysReq: 180, pointsReq: 80000, description: "Lightning fast visualization and silent precision." },
+  { name: "Supreme Ninja", icon: "🥷", color: "#475569", daysReq: 210, pointsReq: 100000, description: "A legendary force in the world of mental arithmetic." },
+  { name: "Math Ninja", icon: "⚔️", color: "#C0C0C0", daysReq: 180, pointsReq: 80000, description: "Lightning fast visualization and silent precision." },
   { name: "Senior Calculator", icon: "🎓", color: "#3b82f6", daysReq: 150, pointsReq: 60000, description: "A seasoned expert with immense speed and deep abacus wisdom." },
   { name: "Elite Apprentice", icon: "🎖️", color: "#10b981", daysReq: 120, pointsReq: 45000, description: "A top-tier practitioner nearing absolute mastery." },
   { name: "Master Apprentice", icon: "💎", color: "#06b6d4", daysReq: 90, pointsReq: 30000, description: "Significant expertise across all complex formulas." },

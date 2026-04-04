@@ -234,7 +234,7 @@ function ResultsComponent() {
                 <div className="text-center relative">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-2">Mastery Points Earned</p>
                     <div className="relative inline-block">
-                      <p className="text-7xl font-black text-primary drop-shadow-sm">{earnedPoints}</p>
+                      <p className="text-5xl sm:text-7xl font-black text-primary drop-shadow-sm">{earnedPoints}</p>
                       {showSubmissionAnim && Array.from({ length: 20 }).map((_, i) => (
                         <FloatingParticle key={i} index={i} />
                       ))}
