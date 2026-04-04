@@ -70,10 +70,10 @@
 }
 
 /* Drop Cap Logic: Optimized for Tailwind Typography */
-.prose.drop-cap-enabled p:first-of-type::first-letter {
-  @apply float-left text-primary font-black mr-3 mt-2 leading-none text-7xl uppercase;
+.james-clear-style.drop-cap-enabled p:first-of-type::first-letter {
+  @apply float-left text-primary font-black mr-3 mt-2 leading-none text-7xl uppercase !important;
   font-family: inherit;
-  initial-letter: 3; /* Modern browser support */
+  initial-letter: 3;
 }
 
 .james-clear-style {
@@ -87,6 +87,31 @@
 
 .james-clear-style p {
   @apply mb-6;
+}
+
+/* --- BLOG TABLE STYLING --- */
+.james-clear-style table {
+  @apply w-full border-collapse my-10 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm !important;
+}
+
+.james-clear-style thead {
+  @apply bg-slate-50 border-b-2 border-slate-100 !important;
+}
+
+.james-clear-style th {
+  @apply p-4 text-left font-black uppercase tracking-widest text-[10px] sm:text-xs text-slate-900 !important;
+}
+
+.james-clear-style td {
+  @apply p-4 border-b border-slate-50 text-sm sm:text-base font-medium text-slate-600 !important;
+}
+
+.james-clear-style tr:last-child td {
+  @apply border-b-0 !important;
+}
+
+.james-clear-style tr:hover td {
+  @apply bg-slate-50/50 transition-colors !important;
 }
 
 @layer utilities {

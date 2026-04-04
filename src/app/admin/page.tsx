@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
@@ -76,6 +75,10 @@ const StatCard = ({ title, value, icon: Icon, subValue }: { title: string, value
 
 const plainTextToHtml = (text: string) => {
   if (!text) return '';
+  // If user is clearly using HTML, don't inject paragraphs
+  if (text.trim().startsWith('<') && text.trim().endsWith('>')) {
+    return text;
+  }
   return text
     .split('\n')
     .filter(p => p.trim() !== '')
