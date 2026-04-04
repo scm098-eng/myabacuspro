@@ -76,17 +76,17 @@ export default function FAQPage() {
                 <CardContent>
                     <Accordion type="single" collapsible className="w-full space-y-4">
                         {faqs.map((faq, index) => (
-                            <AccordionItem key={index} value={`item-${index}`} className="bg-card border rounded-xl px-6">
-                                <AccordionTrigger className="text-lg font-semibold hover:no-underline py-6">
+                            <AccordionItem key={index} value={`item-${index}`} className="bg-card border rounded-xl px-2 sm:px-6">
+                                <AccordionTrigger className="text-base sm:text-lg font-semibold hover:no-underline py-6">
                                     <div className="flex items-center gap-3 text-left">
                                         {faq.category === 'Leaderboard' && <Trophy className="w-5 h-5 text-yellow-500" />}
                                         {faq.category === 'Points' && <Target className="w-5 h-5 text-primary" />}
                                         {faq.category === 'Eligibility' && <Users className="w-5 h-5 text-blue-500" />}
                                         {faq.category === 'Ranks' && <BookOpen className="w-5 h-5 text-green-500" />}
-                                        {faq.question}
+                                        <span className="leading-tight">{faq.question}</span>
                                     </div>
                                 </AccordionTrigger>
-                                <AccordionContent className="text-base text-muted-foreground leading-relaxed whitespace-pre-wrap pb-6">
+                                <AccordionContent className="text-sm sm:text-base text-muted-foreground leading-relaxed whitespace-pre-wrap pb-6">
                                     {faq.isCustom ? (
                                         <div className="space-y-4">
                                             <p>{faq.answer}</p>
@@ -94,19 +94,20 @@ export default function FAQPage() {
                                                 <Table>
                                                     <TableHeader className="bg-muted/50">
                                                         <TableRow>
-                                                            <TableHead>Rank</TableHead>
-                                                            <TableHead className="text-center">Days</TableHead>
-                                                            <TableHead className="text-center">Points</TableHead>
+                                                            <TableHead className="w-[140px] sm:w-auto px-2 sm:px-4">Rank</TableHead>
+                                                            <TableHead className="text-center px-1 sm:px-4">Days</TableHead>
+                                                            <TableHead className="text-center px-1 sm:px-4">Points</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
                                                         {RANK_CRITERIA.slice().reverse().map((rank) => (
-                                                            <TableRow key={rank.name}>
-                                                                <TableCell className="font-bold">
-                                                                    <span className="mr-2">{rank.icon}</span> {rank.name}
+                                                            <TableRow key={rank.name} className="h-12 hover:bg-muted/30">
+                                                                <TableCell className="font-bold py-2 px-2 sm:px-4">
+                                                                    <span className="inline-block w-6 text-center">{rank.icon}</span>
+                                                                    <span className="text-[11px] sm:text-sm ml-1">{rank.name}</span>
                                                                 </TableCell>
-                                                                <TableCell className="text-center">{rank.daysReq}+</TableCell>
-                                                                <TableCell className="text-center">{rank.pointsReq.toLocaleString()}+</TableCell>
+                                                                <TableCell className="text-center text-[11px] sm:text-sm py-2 px-1 sm:px-4">{rank.daysReq}+</TableCell>
+                                                                <TableCell className="text-center text-[11px] sm:text-sm py-2 px-1 sm:px-4">{rank.pointsReq.toLocaleString()}+</TableCell>
                                                             </TableRow>
                                                         ))}
                                                     </TableBody>
