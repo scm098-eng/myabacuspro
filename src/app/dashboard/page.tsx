@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -224,7 +223,6 @@ export default function StudentDashboardPage() {
 
   const cycleCount = Math.floor(currentDays / 28);
   const startDayOfCurrentCycle = cycleCount * 28;
-  const daysCompletedInCurrentCycle = currentDays % 28;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">

@@ -149,17 +149,10 @@ export default function GameHomePage() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Loading Your Adventure...</CardTitle>
-          <CardDescription>Please wait while we get your progress.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-12">
+        <Skeleton className="h-12 w-3/4 mx-auto" />
+        <Skeleton className="h-64 w-full" />
+      </div>
     );
   }
 
@@ -180,7 +173,6 @@ export default function GameHomePage() {
             const isCompleted = completedLevels.includes(level.id);
             const isLeft = index % 2 === 0;
 
-            // Only show reachable levels to keep UI performance high
             const maxCompleted = Math.max(...completedLevels, 0);
             const maxReachable = Math.max(maxCompleted + 5, lastAttendedId + 3);
             
@@ -188,14 +180,12 @@ export default function GameHomePage() {
 
             return (
                 <div key={level.id} id={`level-node-${level.id}`} className="relative h-32 flex items-center">
-                    {/* Path */}
                     {index < gameLevels.length - 1 && (
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-32 h-full z-0">
                             <PathLine reverse={!isLeft} />
                         </div>
                     )}
 
-                    {/* Level Node */}
                     <div className={cn("absolute z-10", isLeft ? "left-0" : "right-0")}>
                         <LevelNode level={level} isLocked={isLocked} isCompleted={isCompleted} />
                     </div>

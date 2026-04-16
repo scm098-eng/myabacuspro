@@ -69,6 +69,20 @@
   font-family: 'Montserrat', sans-serif;
 }
 
+/* Highlights links so parents know where to click */
+.james-clear-style a {
+  color: #0056b3; /* A professional, deep blue */
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s ease;
+}
+
+.james-clear-style a:hover {
+  color: #003d80;
+  text-decoration-thickness: 2px;
+}
+
 /* Drop Cap Logic: Optimized for Tailwind Typography */
 .james-clear-style.drop-cap-enabled p:first-of-type::first-letter {
   @apply float-left text-primary font-black mr-3 mt-2 leading-none text-7xl uppercase !important;

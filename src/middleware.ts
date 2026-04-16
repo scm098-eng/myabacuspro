@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -27,8 +26,6 @@ export function middleware(request: NextRequest) {
   }
 
   // Blog path canonical check for missing /blog/ prefix in manual interlinks
-  // If a path is long and doesn't match any standard route, we try to prefix it with /blog
-  // (Safe only if blog slugs are unique and standard paths are known)
   const knownRootPaths = ['about', 'tests', 'blog', 'pricing', 'faq', 'contact', 'tool-preview', 'game', 'login', 'signup', 'profile', 'dashboard', 'progress', 'results', 'terms', 'privacy', 'cancellation-refund', 'subscription-success', 'suspended', 'admin'];
   const firstPathSegment = url.pathname.split('/')[1];
 
