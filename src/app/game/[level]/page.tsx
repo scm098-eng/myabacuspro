@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
 /**
- * Resolves level information dynamically for up to 1,000 levels.
- * Maps ranges to curriculum types and generates unique names.
+ * Dynamic Level Engine
+ * Maps any level ID (1-1000) to the corresponding curriculum type.
  */
 const getLevelInfo = (levelSlug: string): { type: GameLevel, name: string } | null => {
     const levelId = parseInt(levelSlug.replace('level-', ''), 10);
@@ -58,6 +58,7 @@ const getLevelInfo = (levelSlug: string): { type: GameLevel, name: string } | nu
     }
 
     // Elite levels (51-1000): Advanced mixed arithmetic
+    // Automatically loops through mastery-mix types
     const eliteIndex = ((levelId - 51) % 12) + 1;
     return { type: `mastery-mix-${eliteIndex}` as GameLevel, name: `Level ${levelId}: Elite Mastery` };
 };
