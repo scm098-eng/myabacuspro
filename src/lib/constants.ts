@@ -94,7 +94,7 @@ export const RANK_CRITERIA = [
   { name: "Apprentice", icon: "🛠️", color: "#A52A2A", daysReq: 90, pointsReq: 30000, description: "Solid foundation in all core abacus techniques." },
   { name: "Novice II", icon: "🥈", color: "#94a3b8", daysReq: 60, pointsReq: 15000, description: "Building a consistent practice habit." },
   { name: "Novice I", icon: "🥉", color: "#cd7f32", daysReq: 30, pointsReq: 5000, description: "The first major step in your journey." },
-  { name: "Rising Star", icon: "🌟", color: "#4ADE80", daysReq: 7, pointsReq: 1500, description: "An incredible start! You're destined for greatness." },
+  { name: "Rising Star", icon: "🌟", color: "#4ADE80", daysReq: 15, pointsReq: 1500, description: "An incredible start! You're destined for greatness." },
   { name: "Junior Calculator", icon: "🧒", color: "#f97316", daysReq: 3, pointsReq: 500, description: "The engine is starting. You are now a Junior Calculator!" },
   { name: "Math Beginner", icon: "👶", color: "#ADD8E6", daysReq: 0, pointsReq: 0, description: "The journey to math mastery begins today." }
 ];

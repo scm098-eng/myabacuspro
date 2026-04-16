@@ -118,7 +118,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = userDoc.data();
         const profileData = { ...data, uid: authUser.uid } as ProfileData;
         
-        // --- UTC CALENDAR RESET SYNC ---
         const currentWeekKey = getUTCMondayKey();
         const currentMonthKey = getUTCMonthKey();
         
@@ -669,13 +668,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const yesterdayStr = yesterday.toISOString().split('T')[0];
       const newStreak = data.lastPracticeDate === yesterdayStr ? (data.currentStreak || 0) + 1 : 1;
       
-      // Calculate cycle-based milestones for bonus days
       const currentDays = data.totalDaysPracticed || 0;
-      const dayInCycle = (currentDays % 28) + 1; // 1-28
+      const dayInCycle = (currentDays % 28) + 1; 
       
       let bonusDays = 0;
-      if (dayInCycle === 14) bonusDays = 1; // 2 Weeks Bonus
-      if (dayInCycle === 28) bonusDays = 2; // 4 Weeks Bonus
+      if (dayInCycle === 14) bonusDays = 1; 
+      if (dayInCycle === 28) bonusDays = 2; 
 
       await updateDoc(userRef, { 
         lastPracticeDate: today, 
@@ -684,7 +682,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         updatedAt: serverTimestamp() 
       });
       
-      // Base points for daily practice
       await addPoints(userId, 25);
     } catch (error: any) {
       if (error.code === 'permission-denied') {

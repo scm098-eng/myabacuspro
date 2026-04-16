@@ -17,11 +17,6 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-/**
- * Dynamic Metadata Generation
- * We enforce "noindex" if the site is accessed via non-canonical domains
- * as a secondary safety layer to the Middleware redirects.
- */
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
   const host = headersList.get('host');
@@ -39,7 +34,7 @@ export async function generateMetadata(): Promise<Metadata> {
     creator: 'My Abacus Pro',
     publisher: 'My Abacus Pro',
     alternates: {
-      canonical: '/', // Next.js automatically resolves this to the current path using metadataBase
+      canonical: '/', 
     },
     robots: {
       index: isCanonical,

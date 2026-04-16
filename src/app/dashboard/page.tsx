@@ -25,9 +25,6 @@ import { FirestorePermissionError } from '@/lib/errors';
 import { isToday, parseISO } from 'date-fns';
 import MilestoneCelebration from '@/components/MilestoneCelebration';
 
-/**
- * UTC standard Monday calculation (YYYY-MM-DD)
- */
 function getUTCMondayKey() {
     const now = new Date();
     const day = now.getUTCDay();
@@ -38,9 +35,6 @@ function getUTCMondayKey() {
     return monday.toISOString().split('T')[0];
 }
 
-/**
- * UTC standard Month calculation (YYYY-MM)
- */
 function getUTCMonthKey() {
     const now = new Date();
     return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
@@ -57,7 +51,6 @@ export default function StudentDashboardPage() {
   const [isRequestingNotifications, setIsRequestingNotifications] = useState(false);
   const [lastWinner, setLastWinner] = useState<any>(null);
   
-  // Celebration State
   const [showMilestone, setShowMilestone] = useState(false);
   const [milestoneDays, setMilestoneDays] = useState(0);
 
@@ -72,7 +65,6 @@ export default function StudentDashboardPage() {
   useEffect(() => {
     if (mounted && profile?.totalDaysPracticed) {
       const days = profile.totalDaysPracticed;
-      // Trigger milestone celebration every cycle (28 days) or week (7 days)
       if (days > 0 && days % 7 === 0) {
         const lastCelebrated = localStorage.getItem(`celebrated_day_${days}`);
         if (!lastCelebrated) {
@@ -119,7 +111,6 @@ export default function StudentDashboardPage() {
     const db = getFirestore(firebaseApp);
     let q;
     
-    // We strictly filter by the UTC calendar keys to enforce the reset visually
     if (leaderboardTab === 'weeklyPoints') {
       q = query(
         collection(db, "users"), 
@@ -211,12 +202,6 @@ export default function StudentDashboardPage() {
       <div className="space-y-8 max-w-6xl mx-auto p-4 sm:p-8">
         <Skeleton className="h-[120px] w-full rounded-2xl" />
         <Skeleton className="h-[220px] w-full rounded-3xl" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Skeleton className="h-32 rounded-2xl" />
-          <Skeleton className="h-32 rounded-2xl" />
-          <Skeleton className="h-32 rounded-2xl" />
-          <Skeleton className="h-32 rounded-2xl" />
-        </div>
       </div>
     );
   }
@@ -237,7 +222,6 @@ export default function StudentDashboardPage() {
   const daysProg = Math.min(1, currentDays / (nextRank.daysReq || 1));
   const progress = ((pointsProg + daysProg) / 2) * 100;
 
-  // Infinite Cycle Logic: Determine which 28-day cycle the student is in
   const cycleCount = Math.floor(currentDays / 28);
   const startDayOfCurrentCycle = cycleCount * 28;
   const daysCompletedInCurrentCycle = currentDays % 28;
@@ -257,48 +241,7 @@ export default function StudentDashboardPage() {
               </div>
               <div>
                 <h2 className="text-2xl font-black uppercase tracking-tighter">Happy Birthday, {profile.firstName}!</h2>
-                <p className="font-bold opacity-90">We've added <span className="underline decoration-2">+100 Mastery Points</span> to your account as a gift! 🎂</p>
-              </div>
-            </div>
-            <div className="shrink-0">
-              <div className="bg-white text-pink-600 px-6 py-2 rounded-xl font-black shadow-lg text-xs uppercase tracking-widest">
-                Birthday Bonus Applied
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {lastWinner && (
-        <Card className="bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 border-none shadow-xl rounded-2xl overflow-hidden animate-in fade-in zoom-in duration-700">
-          <CardContent className="p-0">
-            <div className="flex flex-col md:flex-row items-center">
-              <div className="bg-black/10 p-6 flex items-center justify-center">
-                <div className="relative">
-                  <Avatar className="h-20 w-20 border-4 border-white shadow-2xl">
-                    <AvatarImage src={lastWinner.photo} />
-                    <AvatarFallback className="bg-yellow-100 text-yellow-700 font-black">{lastWinner.name?.[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -top-3 -right-3 bg-white p-1.5 rounded-full shadow-lg">
-                    <Crown className="w-6 h-6 text-yellow-500 fill-yellow-500 animate-bounce" />
-                  </div>
-                </div>
-              </div>
-              <div className="flex-1 p-6 text-center md:text-left text-yellow-950">
-                <div className="flex flex-col sm:flex-row items-center gap-2 mb-1">
-                  <Badge className="bg-black/20 text-yellow-950 border-none font-black text-[10px] tracking-widest uppercase">Weekly Champion</Badge>
-                  <span className="text-[10px] font-bold opacity-70">RACE HAS RESET!</span>
-                </div>
-                <h2 className="text-2xl font-black uppercase tracking-tighter">Hail {lastWinner.name}!</h2>
-                <p className="text-sm font-bold opacity-90 leading-relaxed max-w-lg">
-                  They took the crown with <span className="underline decoration-2">{lastWinner.points.toLocaleString()} Points</span> last week. 
-                  The leaderboard is fresh—can you reach #1 this week?
-                </p>
-              </div>
-              <div className="p-6">
-                <Button onClick={() => router.push('/tests')} className="bg-yellow-950 text-yellow-400 hover:bg-black font-black rounded-xl px-8 h-12 shadow-2xl transition-transform hover:scale-105">
-                  CHALLENGE NOW
-                </Button>
+                <p className="font-bold opacity-90">We've added <span className="underline decoration-2">+100 Mastery Points</span> to your account! 🎂</p>
               </div>
             </div>
           </CardContent>
@@ -314,7 +257,7 @@ export default function StudentDashboardPage() {
               </div>
               <div>
                 <p className="font-black uppercase tracking-tight text-sm">Free Trial Ending Soon</p>
-                <p className="text-xs opacity-90 font-bold">You have <span className="underline decoration-2">{trialTimeRemainingText}</span> left. Upgrade to keep your progress!</p>
+                <p className="text-xs opacity-90 font-bold">You have <span className="underline decoration-2">{trialTimeRemainingText}</span> left.</p>
               </div>
             </div>
             <Button onClick={() => router.push('/pricing')} className="bg-white text-orange-600 hover:bg-orange-50 font-black rounded-xl px-6 h-10 shadow-lg shrink-0">
@@ -326,23 +269,12 @@ export default function StudentDashboardPage() {
 
       <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 text-white min-h-[220px] rounded-3xl flex items-center">
         <div className="absolute inset-0 opacity-20 bg-cover bg-center" style={{ backgroundImage: "url('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/abacus_hero.webp?alt=media')" }} />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent" />
         <CardContent className="relative z-10 p-8 w-full flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="space-y-4 text-center md:text-left">
             <h1 className="text-4xl md:text-5xl font-black font-headline uppercase leading-none">Road to Mastery</h1>
             <div className="flex flex-wrap gap-2 justify-center md:justify-start">
               <Badge className="bg-yellow-400 text-slate-900 font-bold px-4 py-1.5 rounded-full border-none shadow-md">RANK: {currentRank.name}</Badge>
               <Badge variant="outline" className="text-white border-white/20 px-4 py-1.5 rounded-full font-bold bg-white/5 backdrop-blur-sm">GOAL: {nextRank.name}</Badge>
-            </div>
-            <div className="flex flex-wrap gap-4 justify-center md:justify-start text-[10px] font-black uppercase tracking-widest text-slate-400 pt-2">
-              <div className="flex items-center gap-1.5 bg-black/30 px-3 py-1 rounded-lg border border-white/5">
-                <CalendarDays className={cn("w-3 h-3", daysNeeded === 0 ? "text-green-400" : "text-blue-400")} />
-                {daysNeeded === 0 ? "Days Requirement Met" : `${daysNeeded} More Day${daysNeeded === 1 ? '' : 's'} Needed`}
-              </div>
-              <div className="flex items-center gap-1.5 bg-black/30 px-3 py-1 rounded-lg border border-white/5">
-                <Star className={cn("w-3 h-3", pointsNeeded === 0 ? "text-green-400" : "text-yellow-400")} />
-                {pointsNeeded === 0 ? "Points Requirement Met" : `${pointsNeeded.toLocaleString()} Pts Needed`}
-              </div>
             </div>
           </div>
           <div className="w-full md:w-80 space-y-3 bg-black/20 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
@@ -351,9 +283,8 @@ export default function StudentDashboardPage() {
               <span>{Math.floor(progress)}%</span>
             </div>
             <div className="h-3 w-full bg-white/10 rounded-full p-0.5 shadow-inner">
-              <div className="h-full bg-gradient-to-r from-blue-500 to-sky-400 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(56,189,248,0.5)]" style={{ width: `${progress}%` }} />
+              <div className="h-full bg-gradient-to-r from-blue-500 to-sky-400 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }} />
             </div>
-            <p className="text-[8px] font-bold text-center text-slate-500 italic tracking-wide">Meet both requirements to unlock rank</p>
           </div>
         </CardContent>
       </Card>
@@ -366,17 +297,14 @@ export default function StudentDashboardPage() {
               <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
                 <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Weekly</p>
                 <p className="text-base sm:text-2xl font-black text-foreground">{(profile.weeklyPoints || 0).toLocaleString()}</p>
-                <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-tight">Points</p>
               </div>
               <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
                 <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Monthly</p>
                 <p className="text-base sm:text-2xl font-black text-foreground">{(profile.monthlyPoints || 0).toLocaleString()}</p>
-                <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-tight">Points</p>
               </div>
               <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
                 <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Total</p>
                 <p className="text-base sm:text-2xl font-black text-primary">{(profile.totalPoints || 0).toLocaleString()}</p>
-                <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-tight">Mastery Points</p>
               </div>
             </div>
         </CardContent></Card>
@@ -397,8 +325,6 @@ export default function StudentDashboardPage() {
               const weekOffset = w - 1;
               const globalWeekNum = (cycleCount * 4) + w;
               const startDayOfThisWeek = startDayOfCurrentCycle + (weekOffset * 7);
-              
-              // Bonus Day markers (at end of Week 2 and Week 4)
               const hasBonus = w === 2 || w === 4;
               const bonusLabel = w === 2 ? "+1 DAY" : "+2 DAYS";
 
@@ -426,7 +352,7 @@ export default function StudentDashboardPage() {
                       ))}
                       <div className={cn(
                         "w-9 h-9 sm:w-11 sm:h-11 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all duration-500", 
-                        currentDays >= (startDayOfThisWeek + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg animate-trophy-pop" : "bg-muted border-border opacity-50 grayscale"
+                        currentDays >= (startDayOfThisWeek + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale"
                       )}>
                         <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
@@ -443,19 +369,6 @@ export default function StudentDashboardPage() {
         </div>
 
         <div className="space-y-8">
-          {!profile.fcmToken && (
-            <Card className="bg-primary/5 rounded-2xl border-primary/20 border-2">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-black flex items-center gap-2 uppercase tracking-tight text-primary"><Bell className="w-5 h-5" /> Push Alerts</CardTitle>
-                <CardDescription className="text-xs font-bold text-muted-foreground">Get daily reminders at 7 PM IST.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button onClick={handleEnableNotifications} disabled={isRequestingNotifications} className="w-full rounded-xl h-12 font-black uppercase text-xs">
-                  {isRequestingNotifications ? <Loader2 className="animate-spin" /> : "Allow Notifications"}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
           <Card className="rounded-2xl overflow-hidden border-border shadow-sm">
             <CardHeader className="bg-muted/30 border-b pb-0">
               <CardTitle className="text-xl font-black flex items-center gap-2 uppercase tracking-tight mb-4 text-foreground"><Trophy className="text-yellow-500 w-6 h-6" /> Hall of Fame</CardTitle>
@@ -472,29 +385,21 @@ export default function StudentDashboardPage() {
                 {leaderboard.length > 0 ? leaderboard.map((s, i) => (
                   <div key={s.uid} className={cn("flex items-center justify-between p-4", s.uid === profile.uid ? "bg-primary/5" : "hover:bg-muted/30")}>
                     <div className="flex items-center gap-4 min-w-0">
-                      <span className={cn("w-6 text-sm font-black shrink-0", i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground")}>#{i + 1}</span>
+                      <span className={cn("w-6 text-sm font-black shrink-0", i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : "text-amber-600")}>#{i + 1}</span>
                       <Avatar className="h-10 w-10 border-2 border-white shrink-0"><AvatarImage src={s.photo}/><AvatarFallback className="font-bold">{s.name?.charAt(0)}</AvatarFallback></Avatar>
                       <div className="min-w-0 overflow-hidden">
                         <p className="text-sm font-bold truncate">{s.name}</p>
                         <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase inline-block truncate max-w-full" style={{ backgroundColor: s.title.color + '20', color: s.title.color }}>{s.title.name}</span>
                       </div>
                     </div>
-                    <div className="text-right shrink-0 ml-2"><p className="text-sm font-black text-primary">{s.points.toLocaleString()}</p><p className="text-[8px] font-black text-muted-foreground uppercase">Points</p></div>
+                    <div className="text-right shrink-0 ml-2"><p className="text-sm font-black text-primary">{s.points.toLocaleString()}</p></div>
                   </div>
                 )) : (
                   <div className="p-12 text-center text-muted-foreground space-y-2">
                     <Clock className="w-8 h-8 mx-auto opacity-20" />
                     <p className="text-xs font-bold uppercase tracking-widest">Fresh Period</p>
-                    <p className="text-[10px] opacity-60">Practice now to be #1 this week!</p>
                   </div>
                 )}
-              </div>
-              <div className="bg-primary/5 p-4 border-t border-border/50">
-                <div className="flex items-center gap-3 mb-2">
-                  <TrendingUp className="w-4 h-4 text-primary" />
-                  <p className="text-[11px] font-bold text-foreground uppercase tracking-tight">Your Performance</p>
-                </div>
-                <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">Keep practicing to climb the global ranks!</p>
               </div>
             </CardContent>
           </Card>
