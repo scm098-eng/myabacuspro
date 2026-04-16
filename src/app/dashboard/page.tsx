@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, Clock, Zap, Crown, Cake } from 'lucide-react';
+import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, Clock, Zap, Crown, Cake, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -71,6 +72,7 @@ export default function StudentDashboardPage() {
   useEffect(() => {
     if (mounted && profile?.totalDaysPracticed) {
       const days = profile.totalDaysPracticed;
+      // Trigger milestone celebration every cycle (28 days) or week (7 days)
       if (days > 0 && days % 7 === 0) {
         const lastCelebrated = localStorage.getItem(`celebrated_day_${days}`);
         if (!lastCelebrated) {
@@ -235,6 +237,11 @@ export default function StudentDashboardPage() {
   const daysProg = Math.min(1, currentDays / (nextRank.daysReq || 1));
   const progress = ((pointsProg + daysProg) / 2) * 100;
 
+  // Infinite Cycle Logic: Determine which 28-day cycle the student is in
+  const cycleCount = Math.floor(currentDays / 28);
+  const startDayOfCurrentCycle = cycleCount * 28;
+  const daysCompletedInCurrentCycle = currentDays % 28;
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       {showMilestone && (
@@ -377,29 +384,49 @@ export default function StudentDashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <h2 className="text-2xl font-black flex items-center gap-3"><CalendarDays className="text-primary w-7 h-7" /> Training Milestone</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-black flex items-center gap-3"><CalendarDays className="text-primary w-7 h-7" /> Training Milestone</h2>
+            <div className="flex items-center gap-2 bg-muted px-4 py-1.5 rounded-full border">
+                <span className="text-[10px] font-black uppercase text-muted-foreground">Cycle {cycleCount + 1}</span>
+                <span className="h-4 w-px bg-border" />
+                <span className="text-[10px] font-black uppercase text-primary">Days {startDayOfCurrentCycle + 1}-{startDayOfCurrentCycle + 28}</span>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map(w => {
-              const startDay = (w - 1) * 7;
-              const wp = Math.max(0, Math.min(7, currentDays - startDay));
-              const isWeekCompleted = currentDays >= (startDay + 7);
+              const weekOffset = w - 1;
+              const globalWeekNum = (cycleCount * 4) + w;
+              const startDayOfThisWeek = startDayOfCurrentCycle + (weekOffset * 7);
+              
+              // Bonus Day markers (at end of Week 2 and Week 4)
+              const hasBonus = w === 2 || w === 4;
+              const bonusLabel = w === 2 ? "+1 DAY" : "+2 DAYS";
 
               return (
-                <Card key={w} className="overflow-hidden border-border rounded-2xl shadow-sm bg-card/30">
+                <Card key={w} className="overflow-hidden border-border rounded-2xl shadow-sm bg-card/30 relative">
                   <CardHeader className="bg-muted/30 border-b p-4 flex flex-row items-center justify-between">
-                    <span className="font-black text-sm uppercase">Week {w}</span>
-                    <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">{wp}/7 Days</span>
+                    <span className="font-black text-sm uppercase">Week {globalWeekNum}</span>
+                    <div className="flex items-center gap-2">
+                        {hasBonus && (
+                            <Badge className="bg-orange-500 text-[8px] font-black tracking-widest px-2 py-0.5 border-none">
+                                <Sparkles className="w-2 h-2 mr-1" /> {bonusLabel}
+                            </Badge>
+                        )}
+                        <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                            {Math.min(7, Math.max(0, currentDays - startDayOfThisWeek))}/7
+                        </span>
+                    </div>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 overflow-x-auto scrollbar-none">
                     <div className="flex justify-start items-center gap-2.5 flex-nowrap min-w-max">
                       {[1, 2, 3, 4, 5, 6].map(d => (
-                        <div key={d} className={cn("w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square", currentDays >= (startDay + d) ? "bg-primary border-primary text-white shadow-md" : "bg-muted border-border text-muted-foreground")}>
-                          {currentDays >= (startDay + d) ? <Check className="w-5 h-5 stroke-[4px]" /> : <span className="text-[10px] sm:text-sm font-black">{d}</span>}
+                        <div key={d} className={cn("w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square", currentDays >= (startDayOfThisWeek + d) ? "bg-primary border-primary text-white shadow-md" : "bg-muted border-border text-muted-foreground")}>
+                          {currentDays >= (startDayOfThisWeek + d) ? <Check className="w-5 h-5 stroke-[4px]" /> : <span className="text-[10px] sm:text-sm font-black">{d}</span>}
                         </div>
                       ))}
                       <div className={cn(
                         "w-9 h-9 sm:w-11 sm:h-11 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all duration-500", 
-                        isWeekCompleted ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg animate-trophy-pop" : "bg-muted border-border opacity-50 grayscale"
+                        currentDays >= (startDayOfThisWeek + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg animate-trophy-pop" : "bg-muted border-border opacity-50 grayscale"
                       )}>
                         <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
                       </div>

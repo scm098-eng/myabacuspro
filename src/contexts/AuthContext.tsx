@@ -164,7 +164,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           router.push('/suspended');
         }
 
-        // --- MANDATORY PROFILE COMPLETION FOR STUDENTS ---
         const isProfileIncomplete = profileData.role === 'student' && (!profileData.grade || !profileData.schoolName || !profileData.city || !profileData.addressLine1);
         const nonOnboardingPages = ['/profile', '/logout', '/suspended', '/login', '/signup', '/'];
         if (isProfileIncomplete && !nonOnboardingPages.includes(pathname)) {
@@ -665,10 +664,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = userSnap.data() as ProfileData;
       const today = new Date().toISOString().split('T')[0];
       if (data.lastPracticeDate === today) return;
+      
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toISOString().split('T')[0];
       const newStreak = data.lastPracticeDate === yesterdayStr ? (data.currentStreak || 0) + 1 : 1;
-      await updateDoc(userRef, { lastPracticeDate: today, currentStreak: newStreak, totalDaysPracticed: increment(1), updatedAt: serverTimestamp() });
+      
+      // Calculate cycle-based milestones for bonus days
+      const currentDays = data.totalDaysPracticed || 0;
+      const dayInCycle = (currentDays % 28) + 1; // 1-28
+      
+      let bonusDays = 0;
+      if (dayInCycle === 14) bonusDays = 1; // 2 Weeks Bonus
+      if (dayInCycle === 28) bonusDays = 2; // 4 Weeks Bonus
+
+      await updateDoc(userRef, { 
+        lastPracticeDate: today, 
+        currentStreak: newStreak, 
+        totalDaysPracticed: increment(1 + bonusDays), 
+        updatedAt: serverTimestamp() 
+      });
+      
+      // Base points for daily practice
       await addPoints(userId, 25);
     } catch (error: any) {
       if (error.code === 'permission-denied') {

@@ -82,17 +82,19 @@ export const TEST_NAME_MAP: Record<string, string> = {
 };
 
 export const RANK_CRITERIA = [
-  { name: "Human Calculator", icon: "👑", color: "#FFD700", daysReq: 365, pointsReq: 250000, description: "The ultimate master. Speed and accuracy beyond all limits." },
-  { name: "Grandmaster", icon: "🏆", color: "#E5E4E2", daysReq: 270, pointsReq: 150000, description: "Elite status reserved for the most dedicated math warriors." },
-  { name: "Math Titan", icon: "🏛️", color: "#94a3b8", daysReq: 240, pointsReq: 120000, description: "Unshakable precision and monumental focus." },
-  { name: "Supreme Ninja", icon: "⚔️", color: "#475569", daysReq: 210, pointsReq: 100000, description: "A legendary force in the world of mental arithmetic." },
-  { name: "Math Ninja", icon: "🥷", color: "#C0C0C0", daysReq: 180, pointsReq: 80000, description: "Lightning fast visualization and silent precision." },
-  { name: "Senior Calculator", icon: "🎓", color: "#3b82f6", daysReq: 150, pointsReq: 60000, description: "A seasoned expert with immense speed and deep abacus wisdom." },
-  { name: "Elite Apprentice", icon: "🎖️", color: "#10b981", daysReq: 120, pointsReq: 45000, description: "A top-tier practitioner nearing absolute mastery." },
-  { name: "Master Apprentice", icon: "💎", color: "#06b6d4", daysReq: 90, pointsReq: 30000, description: "Significant expertise across all complex formulas." },
-  { name: "Senior Apprentice", icon: "🧮", color: "#6366f1", daysReq: 60, pointsReq: 15000, description: "Advanced skills and deep understanding of abacus logic." },
-  { name: "Apprentice", icon: "🛠️", color: "#A52A2A", daysReq: 30, pointsReq: 5000, description: "Solid foundation in all core abacus techniques." },
-  { name: "Rising Star", icon: "🌟", color: "#4ADE80", daysReq: 7, pointsReq: 1000, description: "An incredible start! You're destined for greatness." },
+  { name: "Human Calculator", icon: "👑", color: "#FFD700", daysReq: 360, pointsReq: 250000, description: "The ultimate master. Speed and accuracy beyond all limits." },
+  { name: "Grandmaster", icon: "🏆", color: "#E5E4E2", daysReq: 330, pointsReq: 150000, description: "Elite status reserved for the most dedicated math warriors." },
+  { name: "Math Titan", icon: "🏛️", color: "#94a3b8", daysReq: 300, pointsReq: 120000, description: "Unshakable precision and monumental focus." },
+  { name: "Supreme Ninja", icon: "⚔️", color: "#475569", daysReq: 270, pointsReq: 100000, description: "A legendary force in the world of mental arithmetic." },
+  { name: "Math Ninja", icon: "🥷", color: "#C0C0C0", daysReq: 240, pointsReq: 80000, description: "Lightning fast visualization and silent precision." },
+  { name: "Senior Calculator", icon: "🎓", color: "#3b82f6", daysReq: 210, pointsReq: 60000, description: "A seasoned expert with immense speed and deep abacus wisdom." },
+  { name: "Elite Apprentice", icon: "🎖️", color: "#10b981", daysReq: 180, pointsReq: 45000, description: "A top-tier practitioner nearing absolute mastery." },
+  { name: "Master Apprentice", icon: "💎", color: "#06b6d4", daysReq: 150, pointsReq: 30000, description: "Significant expertise across all complex formulas." },
+  { name: "Senior Apprentice", icon: "🧮", color: "#6366f1", daysReq: 120, pointsReq: 15000, description: "Advanced skills and deep understanding of abacus logic." },
+  { name: "Apprentice", icon: "🛠️", color: "#A52A2A", daysReq: 90, pointsReq: 5000, description: "Solid foundation in all core abacus techniques." },
+  { name: "Novice II", icon: "🥈", color: "#94a3b8", daysReq: 60, pointsReq: 2500, description: "Building a consistent practice habit." },
+  { name: "Novice I", icon: "🥉", color: "#cd7f32", daysReq: 30, pointsReq: 1000, description: "The first major step in your journey." },
+  { name: "Rising Star", icon: "🌟", color: "#4ADE80", daysReq: 7, pointsReq: 500, description: "An incredible start! You're destined for greatness." },
   { name: "Junior Calculator", icon: "🧒", color: "#f97316", daysReq: 3, pointsReq: 300, description: "The engine is starting. You are now a Junior Calculator!" },
   { name: "Math Beginner", icon: "👶", color: "#ADD8E6", daysReq: 0, pointsReq: 0, description: "The journey to math mastery begins today." }
 ];
@@ -152,40 +154,40 @@ export const FORMULA_GUIDES: Record<string, { title: string, steps: string[] }> 
   'basic-subtraction-minus-2': { title: "Small Sister -2", steps: ["Formula: -2 = -5 + 3", "To subtract 2: Push up the 5-bead (heavenly).", "Then: Add 3 earthly beads to the same rod."] },
   'basic-subtraction-minus-1': { title: "Small Sister -1", steps: ["Formula: -1 = -5 + 4", "To subtract 1: Push up the 5-bead (heavenly).", "Then: Add 4 earthly beads to the same rod."] },
 
-  // Big Brother Addition (Sample)
+  // Big Brother Addition
   'big-brother-addition-plus-9': { title: "Big Brother +9", steps: ["Formula: +9 = +10 - 1", "To add 9: Add 1 bead to the rod on the LEFT (+10).", "Then: Remove 1 earthly bead from the CURRENT rod (-1)."] },
   'big-brother-addition-plus-8': { title: "Big Brother +8", steps: ["Formula: +8 = +10 - 2", "To add 8: Add 1 bead to the rod on the LEFT (+10).", "Then: Remove 2 earthly beads from the CURRENT rod (-2)."] },
   'big-brother-addition-plus-7': { title: "Big Brother +7", steps: ["Formula: +7 = +10 - 3", "To add 7: Add 1 bead to the rod on the LEFT (+10).", "Then: Remove 3 earthly beads from the CURRENT rod (-3)."] },
   'big-brother-addition-plus-6': { title: "Big Brother +6", steps: ["Formula: +6 = +10 - 4", "To add 6: Add 1 bead to the rod on the LEFT (+10).", "Then: Remove 4 earthly beads from the CURRENT rod (-4)."] },
   'big-brother-addition-plus-5': { title: "Big Brother +5", steps: ["Formula: +5 = +10 - 5", "To add 5: Add 1 bead to the rod on the LEFT (+10).", "Then: Remove the 5-bead from the CURRENT rod (-5)."] },
 
-  // Big Brother Subtraction (Sample)
+  // Big Brother Subtraction
   'big-brother-subtraction-minus-9': { title: "Big Brother -9", steps: ["Formula: -9 = -10 + 1", "To subtract 9: Remove 1 bead from the rod on the LEFT (-10).", "Then: Add 1 earthly bead to the CURRENT rod (+1)."] },
   'big-brother-subtraction-minus-8': { title: "Big Brother -8", steps: ["Formula: -8 = -10 + 2", "To subtract 8: Remove 1 bead from the rod on the LEFT (-10).", "Then: Add 2 earthly beads to the CURRENT rod (+2)."] },
 
-  // Combination Addition (Sample)
+  // Combination Addition
   'combination-plus-6': { title: "Combination +6", steps: ["Formula: +6 = +10 - 5 + 1", "To add 6: Add 1 bead to the rod on the LEFT (+10).", "Then: Push UP the 5-bead (-5) and Add 1 earthly bead (+1)."] },
   'combination-plus-7': { title: "Combination +7", steps: ["Formula: +7 = +10 - 5 + 2", "To add 7: Add 1 bead to the rod on the LEFT (+10).", "Then: Push UP the 5-bead (-5) and Add 2 earthly beads (+2)."] },
   'combination-plus-8': { title: "Combination +8", steps: ["Formula: +8 = +10 - 5 + 3", "To add 8: Add 1 bead to the rod on the LEFT (+10).", "Then: Push UP the 5-bead (-5) and Add 3 earthly beads (+3)."] },
   'combination-plus-9': { title: "Combination +9", steps: ["Formula: +9 = +10 - 5 + 4", "To add 9: Add 1 bead to the rod on the LEFT (+10).", "Then: Push UP the 5-bead (-5) and Add 4 earthly beads (+4)."] },
 };
 
-export const APP_VERSION = "2.1.0";
+export const APP_VERSION = "2.2.0";
 
 export const UPDATE_NOTES = [
   {
     title: "New 30-Day Rank System",
-    description: "We've updated our mastery roadmap! Now unlock new ranks every 30 days of consistent practice.",
+    description: "We've synchronized our rank advancements to happen exactly every 30 days of consistent practice.",
     icon: "🏆"
   },
   {
-    title: "Visual Solution Modal",
-    description: "Review your test mistakes with a step-by-step visual abacus breakdown for every calculation.",
-    icon: "🧮"
+    title: "Consistency Bonus Days",
+    description: "Earn extra practice credits! Get +1 bonus day at Week 2 and +2 bonus days at Week 4 of every cycle.",
+    icon: "⚡"
   },
   {
-    title: "Bubble Game Elite Levels",
-    description: "Added 1,00,0 levels to the Bubble Game road! Check how far you can go.",
-    icon: "🫧"
+    title: "Infinite Milestone Road",
+    description: "Your training road now resets every 28 days, allowing you to track your progress endlessly across Weeks 1-4, 5-8, and beyond.",
+    icon: "🔄"
   }
 ];
