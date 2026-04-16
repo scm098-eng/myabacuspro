@@ -3,26 +3,34 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * SEO Middleware: Redirects all traffic from default Firebase subdomains 
- * to the primary custom domain (myabacuspro.com).
+ * SEO & Canonical Redirection Middleware
  * 
- * This resolves "Duplicate without user-selected canonical" issues in GSC
- * and ensures only the custom domain appears in Google Search.
+ * This middleware ensures that all traffic is consolidated onto the primary 
+ * custom domain (myabacuspro.com). It performs 301 redirects for:
+ * 1. Default Firebase subdomains (*.web.app, *.firebaseapp.com)
+ * 2. WWW version (www.myabacuspro.com)
+ * 
+ * This resolves "Duplicate content" issues in Google Search Console and 
+ * forces Google to index only the primary domain.
  */
 export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
-  const hostname = request.headers.get('host');
+  const host = request.headers.get('host');
 
-  // List of non-canonical domains to redirect FROM
+  // List of non-canonical domains that should be hidden from Search
   const nonCanonicalDomains = [
     'abacusace-mmnqw.web.app',
     'abacusace-mmnqw.firebaseapp.com',
-    'www.myabacuspro.com' // Consolidate www to non-www for clean SEO
+    'www.myabacuspro.com'
   ];
 
-  if (hostname && nonCanonicalDomains.includes(hostname)) {
+  if (host && nonCanonicalDomains.includes(host)) {
+    // Force protocol to https and host to primary domain
+    url.protocol = 'https';
     url.host = 'myabacuspro.com';
-    // Use a 301 Permanent Redirect for SEO value transfer
+    url.port = ''; // Ensure no port is carried over
+
+    // 301 Permanent Redirect is critical for SEO value transfer
     return NextResponse.redirect(url, 301);
   }
 
