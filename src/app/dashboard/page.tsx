@@ -214,14 +214,12 @@ export default function StudentDashboardPage() {
   const currentIndex = RANK_CRITERIA.findIndex(r => r.name === currentRank.name);
   const nextRank = currentIndex > 0 ? RANK_CRITERIA[currentIndex - 1] : RANK_CRITERIA[0];
   
-  const daysNeeded = Math.max(0, nextRank.daysReq - currentDays);
-  const pointsNeeded = Math.max(0, nextRank.pointsReq - currentPoints);
-  
   const pointsProg = Math.min(1, currentPoints / (nextRank.pointsReq || 1));
   const daysProg = Math.min(1, currentDays / (nextRank.daysReq || 1));
   const progress = ((pointsProg + daysProg) / 2) * 100;
 
-  const cycleCount = Math.floor(currentDays / 28);
+  // Milestone Cycle Logic (28 days per cycle)
+  const cycleCount = Math.floor(Math.max(0, currentDays - 1) / 28);
   const startDayOfCurrentCycle = cycleCount * 28;
 
   return (

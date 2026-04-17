@@ -1,4 +1,3 @@
-
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +9,7 @@ import { firebaseApp } from '@/lib/firebase';
 import { format, isValid, parseISO } from 'date-fns';
 import type { BlogPost } from '@/types';
 import type { Metadata } from 'next';
+import { extractFirstImage } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,9 +44,12 @@ async function getBlogs(): Promise<BlogPost[]> {
     
     return snapshot.docs.map(doc => {
       const data = doc.data();
+      // Logic to extract image from content if dedicated field is empty
+      const contentImage = extractFirstImage(data.content);
       return {
         id: doc.id,
         ...data,
+        image: data.image || contentImage,
         createdAt: normalizeDate(data.createdAt)
       } as BlogPost;
     }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -73,10 +76,10 @@ export default async function BlogListingPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {blogs.map((post) => (
           <Card key={post.slug || post.id} className="flex flex-col h-full overflow-hidden hover:shadow-2xl transition-all duration-300 group border-primary/10 bg-card">
-            {(post.showImage !== false) && (
-              <div className="relative aspect-[3/2] w-full overflow-hidden">
+            {(post.showImage !== false) && (post.image) && (
+              <div className="relative aspect-[3/2] w-full overflow-hidden bg-muted">
                 <Image
-                    src={post.image || 'https://picsum.photos/seed/math/600/400'}
+                    src={post.image}
                     alt={post.title}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-110"

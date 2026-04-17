@@ -215,7 +215,6 @@ export default function AdminDashboardPage() {
       } else {
         q = query(
           collection(db, "users"), 
-          where("role", "==", "student"), 
           orderBy("totalPoints", "desc"), 
           limit(10)
         );
@@ -399,7 +398,9 @@ export default function AdminDashboardPage() {
     };
   }, [allUsers, searchTerm, profile]);
 
-  if (isLoading || authLoading) return <div className="p-8"><Skeleton className="h-[600px] w-full" /></div>;
+  if (isLoading || authLoading) {
+    return <div className="p-8"><Skeleton className="h-[600px] w-full" /></div>;
+  }
 
   return (
     <div className="space-y-8">
@@ -513,7 +514,21 @@ export default function AdminDashboardPage() {
 
         <div className="space-y-8">
             {profile?.role === 'admin' && recentJoins.length > 0 && (<Card className="border-orange-200 bg-orange-50/30"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-lg font-black flex items-center gap-2 text-orange-700"><UserPlus className="w-5 h-5" /> New Members</CardTitle><Badge className="bg-orange-600">{recentJoins.length}</Badge></CardHeader><CardContent className="p-0"><div className="divide-y divide-orange-100">{recentJoins.map((u) => (<div key={u.uid} className="group relative flex items-center gap-3 p-4 hover:bg-orange-100/50"><Link href={`/admin/user/${u.uid}`} className="flex items-center gap-3 flex-1 min-w-0"><Avatar className="h-10 w-10 border-2 border-white"><AvatarImage src={u.profilePhoto} /></Avatar><div className="min-w-0 flex-1"><p className="text-sm font-bold truncate">{u.firstName} {u.surname}</p><p className="text-[9px] uppercase font-black text-orange-600">Joined {u.createdAt?.toDate ? formatDistanceToNow(u.createdAt.toDate(), { addSuffix: true }) : 'Just now'}</p></div></Link><Button onClick={(e) => handleMarkAsRead(e, u.uid)} variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white/50 text-orange-600 hover:bg-orange-600 hover:text-white" title="Acknowledge and move to regular list"><Check className="h-4 w-4" /></Button></div>))}</div></CardContent></Card>)}
-            <Card className="rounded-2xl overflow-hidden shadow-sm"><CardHeader className="bg-muted/30 border-b pb-0"><CardTitle className="text-xl font-bold flex items-center gap-2 uppercase mb-4"><Trophy className="text-yellow-500 w-6 h-6" /> Top Performers</CardTitle><Tabs defaultValue="totalPoints" onValueChange={setLeaderboardTab} className="w-full"><TabsList className="grid grid-cols-3 bg-slate-200/50 mb-2 h-10"><TabsTrigger value="weeklyPoints" className="text-[10px] font-bold">Weekly</TabsTrigger><TabsTrigger value="monthlyPoints" className="text-[10px] font-bold">Monthly</TabsTrigger><TabsTrigger value="totalPoints" className="text-[10px] font-bold">Global</TabsTrigger></TabsList></Tabs></CardHeader><CardContent className="p-0"><div className="divide-y divide-border/50">{leaderboard.length > 0 ? leaderboard.map((s, idx) => (<div key={s.uid} className="flex items-center justify-between p-4"><div className="flex items-center gap-4"><span className={cn("w-6 text-sm font-bold", idx === 0 ? "text-yellow-500" : idx === 1 ? "text-slate-400" : "text-muted-foreground")}>#{idx + 1}</span><Avatar className="h-10 w-10"><AvatarImage src={s.photo} /></Avatar><div className="flex flex-col"><span className="text-sm font-bold">{s.name}</span><span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: s.title.color + '20', color: s.title.color }}>{s.title.name}</span></div></div><div className="text-right"><span className="text-sm font-bold text-primary block">{s.points.toLocaleString()}</span><span className="text-[8px] font-bold text-muted-foreground uppercase">Points</span></div></div>)) : <div className="p-8 text-center text-muted-foreground text-xs uppercase font-bold tracking-widest">Fresh Period</div>}</div></CardContent></Card>
+            <Card className="rounded-2xl overflow-hidden shadow-sm"><CardHeader className="bg-muted/30 border-b pb-0"><CardTitle className="text-xl font-bold flex items-center gap-2 uppercase mb-4"><Trophy className="text-yellow-500 w-6 h-6" /> Top Performers</CardTitle><Tabs defaultValue="totalPoints" onValueChange={setLeaderboardTab} className="w-full"><TabsList className="grid grid-cols-3 bg-slate-200/50 mb-2 h-10"><TabsTrigger value="weeklyPoints" className="text-[10px] font-bold">Weekly</TabsTrigger><TabsTrigger value="monthlyPoints" className="text-[10px] font-bold">Monthly</TabsTrigger><TabsTrigger value="totalPoints" className="text-[10px] font-bold">Global</TabsTrigger></TabsList></Tabs></CardHeader><CardContent className="p-0"><div className="divide-y divide-border/50">{leaderboard.length > 0 ? leaderboard.map((s, idx) => (
+                <div key={s.uid} className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-4">
+                    <span className={cn("w-6 text-sm font-bold", idx === 0 ? "text-yellow-500" : idx === 1 ? "text-slate-400" : "text-muted-foreground")}>#{idx + 1}</span>
+                    <Avatar className="h-10 w-10"><AvatarImage src={s.photo} /></Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold">{s.name}</span>
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: s.title.color + '20', color: s.title.color }}>{s.title.name}</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-bold text-primary block">{s.points.toLocaleString()}</span>
+                    <span className="text-[8px] font-bold text-muted-foreground uppercase">Points</span>
+                  </div>
+                </div>)) : <div className="p-8 text-center text-muted-foreground text-xs uppercase font-bold tracking-widest">Fresh Period</div>}</div></CardContent></Card>
         </div>
       </div>
 

@@ -1,4 +1,3 @@
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -12,7 +11,7 @@ import { format, isValid, parseISO } from 'date-fns';
 import type { BlogPost } from '@/types';
 import { ShareButton } from '@/components/blog/ShareButton';
 import type { Metadata } from 'next';
-import { cn } from '@/lib/utils';
+import { cn, extractFirstImage } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface PageProps {
@@ -80,7 +79,13 @@ async function getBlogPost(slug: string): Promise<BlogPost | null> {
     if (snapshot.empty) return null;
     const doc = snapshot.docs[0];
     const data = doc.data();
-    return { id: doc.id, ...data, createdAt: normalizeDate(data.createdAt) } as BlogPost;
+    const contentImage = extractFirstImage(data.content);
+    return { 
+      id: doc.id, 
+      ...data, 
+      image: data.image || contentImage,
+      createdAt: normalizeDate(data.createdAt) 
+    } as BlogPost;
   } catch (error) {
     console.error("Error fetching blog post:", error);
     return null;
@@ -94,7 +99,15 @@ async function getRelatedPosts(category: string, currentId: string): Promise<Blo
     const q = query(blogRef, where('category', '==', category), limit(4));
     const snapshot = await getDocs(q);
     return snapshot.docs
-      .map(doc => ({ id: doc.id, ...doc.data() } as BlogPost))
+      .map(doc => {
+        const data = doc.data();
+        const contentImage = extractFirstImage(data.content);
+        return { 
+          id: doc.id, 
+          ...data,
+          image: data.image || contentImage
+        } as BlogPost;
+      })
       .filter(p => p.id !== currentId)
       .slice(0, 3);
   } catch (e) {
@@ -195,9 +208,9 @@ export default async function BlogPostPage({ params }: PageProps) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {relatedPosts.map((related) => (
                 <Card key={related.id} className="flex flex-col h-full overflow-hidden hover:shadow-xl transition-all group">
-                  {(related.showImage !== false) && (
+                  {(related.showImage !== false) && (related.image) && (
                     <div className="relative aspect-[3/2] overflow-hidden">
-                        <Image src={related.image || 'https://picsum.photos/seed/math/600/400'} alt={related.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <Image src={related.image} alt={related.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                     </div>
                   )}
                   <CardHeader className="flex-grow">

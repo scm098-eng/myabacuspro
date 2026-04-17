@@ -5,6 +5,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function extractFirstImage(html: string): string | null {
+  if (!html) return null;
+  const match = html.match(/<img[^>]+src="([^">]+)"/);
+  return match ? match[1] : null;
+}
+
 interface Step {
   operation: string;
   value: number;
