@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, Users, ShieldCheck, Mail, UserCheck, Paperclip, FileText, Code, X, ShieldAlert, UserX, Image as ImageIcon, Type, Layout, Eye as EyeIcon, Palette } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, ShieldCheck, Mail, UserCheck, Paperclip, FileText, Code, X, ShieldAlert, UserX, Image as ImageIcon, Type, Layout, Eye as EyeIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -110,7 +110,6 @@ export default function AdminDashboardPage() {
   const [isResetting, setIsResetting] = useState<'weekly' | 'monthly' | 'force' | 'blast' | 'suspension' | null>(null);
   const [forceWinnerDialog, setForceWinnerDialog] = useState<{ open: boolean, user: ProfileData | null }>({ open: false, user: null });
 
-  // Blog State
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [isBlogDialogOpen, setIsBlogDialogOpen] = useState(false);
   const [blogDialogMode, setBlogDialogMode] = useState<'edit' | 'preview'>('edit');
@@ -118,7 +117,6 @@ export default function AdminDashboardPage() {
   const [editingBlog, setEditingBlog] = useState<Partial<BlogPost> | null>(null);
   const [draftContent, setDraftContent] = useState('');
 
-  // Marketing State
   const [marketingForm, setMarketingForm] = useState({
     subject: '',
     message: '',
@@ -142,7 +140,7 @@ export default function AdminDashboardPage() {
             setAllUsers(users);
         }
     } catch(e) {
-        console.error("Failed to fetch users", e)
+        console.error("Failed to fetch users", e);
     } finally {
         setIsLoading(false);
     }
@@ -483,7 +481,7 @@ export default function AdminDashboardPage() {
                         </Card>
                         <Card className="border-red-200 bg-red-50/5">
                             <CardHeader><CardTitle className="flex items-center gap-2 text-red-700"><UserX className="w-5 h-5" /> Account Moderation</CardTitle><CardDescription>Review flagged, potential fake, or unverified student accounts.</CardDescription></CardHeader>
-                            <CardContent><Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Issue</TableHead><TableHead className="text-right">Management</TableHead></TableHeader><TableBody>{processedData.moderationList.length > 0 ? processedData.moderationList.map(u => (<TableRow key={u.uid}><TableCell><div className="font-bold">{u.firstName} {u.surname}</div><div className="text-[10px] text-muted-foreground">{u.email}</div></TableCell><TableCell><div className="flex flex-wrap gap-2">{u.isSuspended && <Badge variant="destructive">Suspended</Badge>}{!u.emailVerified && <Badge variant="outline" className="text-orange-600 border-orange-200">Email Unverified</Badge>}</div></TableCell><TableCell className="text-right"><div className="flex justify-end gap-2"><Button variant="outline" size="sm" className={u.isSuspended ? "text-green-600 border-green-200" : "text-red-600 border-red-200"} onClick={() => handleToggleUserSuspension(u.uid, u.isSuspended || false)} disabled={isResetting === 'suspension'}>{u.isSuspended ? "Restore" : "Suspend"}</Button><Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${u.uid}`}><Eye className="w-4 h-4" /></Link></Button></div></TableCell></TableRow>)) : <TableRow><TableCell colSpan={3} className="text-center py-8">System clear. No suspicious accounts found.</TableCell></TableRow>}</TableBody></Table></CardContent>
+                            <CardContent><Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Issue</TableHead><TableHead className="text-right">Management</TableHead></TableRow></TableHeader><TableBody>{processedData.moderationList.length > 0 ? processedData.moderationList.map(u => (<TableRow key={u.uid}><TableCell><div className="font-bold">{u.firstName} {u.surname}</div><div className="text-[10px] text-muted-foreground">{u.email}</div></TableCell><TableCell><div className="flex flex-wrap gap-2">{u.isSuspended && <Badge variant="destructive">Suspended</Badge>}{!u.emailVerified && <Badge variant="outline" className="text-orange-600 border-orange-200">Email Unverified</Badge>}</div></TableCell><TableCell className="text-right"><div className="flex justify-end gap-2"><Button variant="outline" size="sm" className={u.isSuspended ? "text-green-600 border-green-200" : "text-red-600 border-red-200"} onClick={() => handleToggleUserSuspension(u.uid, u.isSuspended || false)} disabled={isResetting === 'suspension'}>{u.isSuspended ? "Restore" : "Suspend"}</Button><Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${u.uid}`}><Eye className="w-4 h-4" /></Link></Button></div></TableCell></TableRow>)) : <TableRow><TableCell colSpan={3} className="text-center py-8">System clear. No suspicious accounts found.</TableCell></TableRow>}</TableBody></Table></CardContent>
                         </Card>
                     </div>
                 </TabsContent>
