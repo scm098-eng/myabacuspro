@@ -79,11 +79,11 @@ async function getBlogPost(slug: string): Promise<BlogPost | null> {
     if (snapshot.empty) return null;
     const doc = snapshot.docs[0];
     const data = doc.data();
-    const contentImage = extractFirstImage(data.content);
+    const contentImage = extractFirstImage(data.content || '');
     return { 
       id: doc.id, 
       ...data, 
-      image: data.image || contentImage,
+      image: (data.image && data.image.trim() !== '') ? data.image : contentImage,
       createdAt: normalizeDate(data.createdAt) 
     } as BlogPost;
   } catch (error) {
@@ -101,11 +101,11 @@ async function getRelatedPosts(category: string, currentId: string): Promise<Blo
     return snapshot.docs
       .map(doc => {
         const data = doc.data();
-        const contentImage = extractFirstImage(data.content);
+        const contentImage = extractFirstImage(data.content || '');
         return { 
           id: doc.id, 
           ...data,
-          image: data.image || contentImage
+          image: (data.image && data.image.trim() !== '') ? data.image : contentImage
         } as BlogPost;
       })
       .filter(p => p.id !== currentId)

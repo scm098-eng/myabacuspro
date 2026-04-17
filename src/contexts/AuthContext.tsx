@@ -43,6 +43,7 @@ interface AuthContextType {
   getApprovedTeachers: () => Promise<ProfileData[]>;
   getUserTestHistory: (userId: string) => Promise<TestResult[]>;
   getUserTestHistoryByDateRange: (userId: string, start: Date, end: Date) => Promise<TestResult[]>;
+  getUserTestHistoryByPeriod: (userId: string, type: 'weekly' | 'monthly') => Promise<TestResult[]>;
   getUserProfile: (userId: string) => Promise<ProfileData | null>;
   approveTeacher: (teacherId: string, callback?: () => void) => Promise<void>;
   getCompletedGameLevels: () => Promise<number[]>;
@@ -497,6 +498,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [firestore]);
 
+  const getUserTestHistoryByPeriod = useCallback(async (userId: string, type: 'weekly' | 'monthly'): Promise<TestResult[]> => {
+    const testCol = collection(firestore, 'testResults');
+    const now = new Date();
+    let startDate: Date;
+
+    if (type === 'weekly') {
+      const day = now.getUTCDay();
+      const diff = (day === 0 ? 6 : day - 1);
+      startDate = new Date(now);
+      startDate.setUTCDate(now.getUTCDate() - diff);
+      startDate.setUTCHours(0, 0, 0, 0);
+    } else {
+      startDate = new Date(now.getUTCFullYear(), now.getUTCMonth(), 1);
+    }
+
+    const q = query(testCol, where("userId", "==", userId), where("createdAt", ">=", startDate), orderBy('createdAt', 'desc'));
+    try {
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: testCol.path,
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+      return [];
+    }
+  }, [firestore]);
+
   const getUserTestHistoryByDateRange = useCallback(async (userId: string, start: Date, end: Date): Promise<TestResult[]> => {
     const testCol = collection(firestore, 'testResults');
     const q = query(testCol, where("userId", "==", userId), where("createdAt", ">=", start), where("createdAt", "<=", end));
@@ -696,7 +728,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = { 
     user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
     sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, markUserAsRead, getAllUsers, getApprovedTeachers, 
-    getUserTestHistory, getUserTestHistoryByDateRange, getUserProfile, approveTeacher, getCompletedGameLevels, 
+    getUserTestHistory, getUserTestHistoryByDateRange, getUserTestHistoryByPeriod, getUserProfile, approveTeacher, getCompletedGameLevels, 
     saveCompletedGameLevel, setLastLevelAttended, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining
   };
 

@@ -7,7 +7,8 @@ export function cn(...inputs: ClassValue[]) {
 
 export function extractFirstImage(html: string): string | null {
   if (!html) return null;
-  const match = html.match(/<img[^>]+src="([^">]+)"/);
+  // Robust regex to find the first <img> tag and capture its src attribute value
+  const match = html.match(/<img\s+[^>]*src=["']([^"']+)["']/i);
   return match ? match[1] : null;
 }
 

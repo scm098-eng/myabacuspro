@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { parseISO, isValid, format, formatDistanceToNow } from 'date-fns';
-import { cn } from "@/lib/utils";
+import { cn, extractFirstImage } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
@@ -629,13 +629,13 @@ export default function AdminDashboardPage() {
                   <p className="text-muted-foreground font-medium">By {editingBlog?.author || 'Author'} • Just Now</p>
                 </div>
                 <div className={cn("clearfix", editingBlog?.layout === 'columns' && "md:columns-2 md:gap-12")}>
-                  {(editingBlog?.showImage !== false) && editingBlog?.image ? (
+                  {(editingBlog?.showImage !== false) && (editingBlog?.image || extractFirstImage(editingBlog?.content || '')) ? (
                     <div className={cn("relative overflow-hidden shadow-2xl border bg-slate-50 mb-8", 
-                      editingBlog.imagePosition === 'top' ? "aspect-[3/2] w-full rounded-[2rem]" : "aspect-[2/3] w-full md:w-1/3 rounded-2xl", 
-                      editingBlog.imagePosition === 'left' && "md:float-left md:mr-8", 
-                      editingBlog.imagePosition === 'right' && "md:float-right md:ml-8"
+                      editingBlog?.imagePosition === 'top' ? "aspect-[3/2] w-full rounded-[2rem]" : "aspect-[2/3] w-full md:w-1/3 rounded-2xl", 
+                      editingBlog?.imagePosition === 'left' && "md:float-left md:mr-8", 
+                      editingBlog?.imagePosition === 'right' && "md:float-right md:ml-8"
                     )}>
-                      <img src={editingBlog.image} alt="Preview" className={cn("w-full h-full", editingBlog.imageFit === 'contain' ? 'object-contain' : 'object-cover')} />
+                      <img src={editingBlog?.image || extractFirstImage(editingBlog?.content || '') || ''} alt="Preview" className={cn("w-full h-full", editingBlog?.imageFit === 'contain' ? 'object-contain' : 'object-cover')} />
                     </div>
                   ) : (editingBlog?.showImage !== false) && (
                     <div className={cn(

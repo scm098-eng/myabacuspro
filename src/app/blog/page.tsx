@@ -44,12 +44,12 @@ async function getBlogs(): Promise<BlogPost[]> {
     
     return snapshot.docs.map(doc => {
       const data = doc.data();
-      // Logic to extract image from content if dedicated field is empty
-      const contentImage = extractFirstImage(data.content);
+      // Logic to extract image from content if dedicated field is empty or undefined
+      const contentImage = extractFirstImage(data.content || '');
       return {
         id: doc.id,
         ...data,
-        image: data.image || contentImage,
+        image: (data.image && data.image.trim() !== '') ? data.image : contentImage,
         createdAt: normalizeDate(data.createdAt)
       } as BlogPost;
     }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
