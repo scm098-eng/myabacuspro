@@ -73,20 +73,22 @@ export default async function BlogListingPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {blogs.map((post) => (
           <Card key={post.slug || post.id} className="flex flex-col h-full overflow-hidden hover:shadow-2xl transition-all duration-300 group border-primary/10 bg-card">
-            <div className="relative aspect-[3/2] w-full overflow-hidden">
-              <Image
-                src={post.image || 'https://picsum.photos/seed/math/600/400'}
-                alt={post.title}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-110"
-                data-ai-hint="abacus education"
-              />
-              <div className="absolute top-4 left-4">
-                <Badge className="bg-primary/90 backdrop-blur-sm uppercase font-black text-[10px] tracking-widest border-none">
-                  {post.category}
-                </Badge>
+            {(post.showImage !== false) && (
+              <div className="relative aspect-[3/2] w-full overflow-hidden">
+                <Image
+                    src={post.image || 'https://picsum.photos/seed/math/600/400'}
+                    alt={post.title}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    data-ai-hint="abacus education"
+                />
+                <div className="absolute top-4 left-4">
+                    <Badge className="bg-primary/90 backdrop-blur-sm uppercase font-black text-[10px] tracking-widest border-none">
+                    {post.category}
+                    </Badge>
+                </div>
               </div>
-            </div>
+            )}
             <CardHeader className="flex-grow">
               <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3 font-bold uppercase tracking-tight">
                 <span className="flex items-center gap-1">

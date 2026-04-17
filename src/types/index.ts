@@ -328,4 +328,5 @@ export interface BlogPost {
   // Image Specifics
   imagePosition?: 'top' | 'left' | 'right';
   imageFit?: 'cover' | 'contain';
+  showImage?: boolean;
 }

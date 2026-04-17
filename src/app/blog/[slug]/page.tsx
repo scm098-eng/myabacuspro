@@ -152,7 +152,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         </div>
 
         <div className="clearfix">
-          {post.layout !== 'minimalist' && post.image && (
+          {post.layout !== 'minimalist' && (post.showImage !== false) && post.image && (
             <div className={theme.imageContainer}>
               <Image src={post.image} alt={post.title} fill className={theme.imageFit} priority data-ai-hint="abacus learning" />
             </div>
@@ -195,9 +195,11 @@ export default async function BlogPostPage({ params }: PageProps) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {relatedPosts.map((related) => (
                 <Card key={related.id} className="flex flex-col h-full overflow-hidden hover:shadow-xl transition-all group">
-                  <div className="relative aspect-[3/2] overflow-hidden">
-                    <Image src={related.image} alt={related.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
-                  </div>
+                  {(related.showImage !== false) && (
+                    <div className="relative aspect-[3/2] overflow-hidden">
+                        <Image src={related.image || 'https://picsum.photos/seed/math/600/400'} alt={related.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                    </div>
+                  )}
                   <CardHeader className="flex-grow">
                     <CardTitle className="text-lg font-bold leading-tight group-hover:text-primary transition-colors">{related.title}</CardTitle>
                   </CardHeader>

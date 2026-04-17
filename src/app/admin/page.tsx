@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
@@ -75,7 +76,6 @@ const StatCard = ({ title, value, icon: Icon, subValue }: { title: string, value
 
 const plainTextToHtml = (text: string) => {
   if (!text) return '';
-  // If user is clearly using HTML, don't inject paragraphs
   if (text.trim().startsWith('<') && text.trim().endsWith('>')) {
     return text;
   }
@@ -354,6 +354,7 @@ export default function AdminDashboardPage() {
     const id = editingBlog.id || editingBlog.slug;
     const blogData = {
       ...editingBlog,
+      showImage: editingBlog.showImage ?? true,
       author: editingBlog.author || `${profile?.firstName} ${profile?.surname}`,
       createdAt: editingBlog.createdAt || serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -452,7 +453,7 @@ export default function AdminDashboardPage() {
                 <TabsContent value="blogs">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-headline">Blog Management</h2>
-                        <Button onClick={() => { setEditingBlog({ title: '', content: '', excerpt: '', category: 'News', slug: '', layout: 'standard', fontFamily: 'serif', lineSpacing: 'relaxed', dropCap: true, headlineWeight: 'black', headlineCase: 'normal', headlineSpacing: 'normal', imagePosition: 'top', imageFit: 'cover' }); setDraftContent(''); setBlogDialogMode('edit'); setIsBlogDialogOpen(true); }}>
+                        <Button onClick={() => { setEditingBlog({ title: '', content: '', excerpt: '', category: 'News', slug: '', layout: 'standard', fontFamily: 'serif', lineSpacing: 'relaxed', dropCap: true, headlineWeight: 'black', headlineCase: 'normal', headlineSpacing: 'normal', imagePosition: 'top', imageFit: 'cover', showImage: true }); setDraftContent(''); setBlogDialogMode('edit'); setIsBlogDialogOpen(true); }}>
                             <Plus className="mr-2 h-4 w-4" /> New Article
                         </Button>
                     </div>
@@ -483,7 +484,7 @@ export default function AdminDashboardPage() {
                         </Card>
                         <Card className="border-red-200 bg-red-50/5">
                             <CardHeader><CardTitle className="flex items-center gap-2 text-red-700"><UserX className="w-5 h-5" /> Account Moderation</CardTitle><CardDescription>Review flagged, potential fake, or unverified student accounts.</CardDescription></CardHeader>
-                            <CardContent><Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Issue</TableHead><TableHead className="text-right">Management</TableHead></TableRow></TableHeader><TableBody>{processedData.moderationList.length > 0 ? processedData.moderationList.map(u => (<TableRow key={u.uid}><TableCell><div className="font-bold">{u.firstName} {u.surname}</div><div className="text-[10px] text-muted-foreground">{u.email}</div></TableCell><TableCell><div className="flex flex-wrap gap-2">{u.isSuspended && <Badge variant="destructive">Suspended</Badge>}{!u.emailVerified && <Badge variant="outline" className="text-orange-600 border-orange-200">Email Unverified</Badge>}</div></TableCell><TableCell className="text-right"><div className="flex justify-end gap-2"><Button variant="outline" size="sm" className={u.isSuspended ? "text-green-600 border-green-200" : "text-red-600 border-red-200"} onClick={() => handleToggleUserSuspension(u.uid, u.isSuspended || false)} disabled={isResetting === 'suspension'}>{u.isSuspended ? "Restore" : "Suspend"}</Button><Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${u.uid}`}><Eye className="w-4 h-4" /></Link></Button></div></TableCell></TableRow>)) : <TableRow><TableCell colSpan={3} className="text-center py-8">System clear. No suspicious accounts found.</TableCell></TableRow>}</TableBody></Table></CardContent>
+                            <CardContent><Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Issue</TableHead><TableHead className="text-right">Management</TableHead></TableHeader><TableBody>{processedData.moderationList.length > 0 ? processedData.moderationList.map(u => (<TableRow key={u.uid}><TableCell><div className="font-bold">{u.firstName} {u.surname}</div><div className="text-[10px] text-muted-foreground">{u.email}</div></TableCell><TableCell><div className="flex flex-wrap gap-2">{u.isSuspended && <Badge variant="destructive">Suspended</Badge>}{!u.emailVerified && <Badge variant="outline" className="text-orange-600 border-orange-200">Email Unverified</Badge>}</div></TableCell><TableCell className="text-right"><div className="flex justify-end gap-2"><Button variant="outline" size="sm" className={u.isSuspended ? "text-green-600 border-green-200" : "text-red-600 border-red-200"} onClick={() => handleToggleUserSuspension(u.uid, u.isSuspended || false)} disabled={isResetting === 'suspension'}>{u.isSuspended ? "Restore" : "Suspend"}</Button><Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${u.uid}`}><Eye className="w-4 h-4" /></Link></Button></div></TableCell></TableRow>)) : <TableRow><TableCell colSpan={3} className="text-center py-8">System clear. No suspicious accounts found.</TableCell></TableRow>}</TableBody></Table></CardContent>
                         </Card>
                     </div>
                 </TabsContent>
@@ -564,7 +565,13 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="bg-indigo-50/30 p-8 rounded-3xl border-2 border-indigo-100 space-y-8">
-                  <div className="flex items-center gap-2 text-indigo-700 font-bold uppercase tracking-tight text-xs"><ImageIcon className="w-4 h-4" /> Image Adjustment Settings</div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-indigo-700 font-bold uppercase tracking-tight text-xs"><ImageIcon className="w-4 h-4" /> Image Adjustment Settings</div>
+                    <div className="flex items-center gap-2">
+                        <Label htmlFor="show-image" className="text-xs font-bold uppercase text-muted-foreground">Show Featured Image</Label>
+                        <Switch id="show-image" checked={editingBlog?.showImage ?? true} onCheckedChange={(val) => setEditingBlog(p => ({ ...p, showImage: val }))} />
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
                       <div className="space-y-2"><Label className="text-xs font-bold uppercase text-muted-foreground">Image Alignment</Label><Select value={editingBlog?.imagePosition || 'top'} onValueChange={(val: any) => setEditingBlog(p => ({ ...p, imagePosition: val }))}><SelectTrigger className="h-12 border-2 bg-white"><SelectValue placeholder="Select Position" /></SelectTrigger><SelectContent><SelectItem value="top">Full Width Top</SelectItem><SelectItem value="left">Left Side wrap</SelectItem><SelectItem value="right">Right Side wrap</SelectItem></SelectContent></Select></div>
@@ -610,7 +617,7 @@ export default function AdminDashboardPage() {
                   <p className="text-muted-foreground font-medium">By {editingBlog?.author || 'Author'} • Just Now</p>
                 </div>
                 <div className={cn("clearfix", editingBlog?.layout === 'columns' && "md:columns-2 md:gap-12")}>
-                  {editingBlog?.image ? (
+                  {(editingBlog?.showImage !== false) && editingBlog?.image ? (
                     <div className={cn("relative overflow-hidden shadow-2xl border bg-slate-50 mb-8", 
                       editingBlog.imagePosition === 'top' ? "aspect-[3/2] w-full rounded-[2rem]" : "aspect-[2/3] w-full md:w-1/3 rounded-2xl", 
                       editingBlog.imagePosition === 'left' && "md:float-left md:mr-8", 
@@ -618,7 +625,7 @@ export default function AdminDashboardPage() {
                     )}>
                       <img src={editingBlog.image} alt="Preview" className={cn("w-full h-full", editingBlog.imageFit === 'contain' ? 'object-contain' : 'object-cover')} />
                     </div>
-                  ) : (
+                  ) : (editingBlog?.showImage !== false) && (
                     <div className={cn(
                       "flex flex-col items-center justify-center border-2 border-dashed bg-slate-50 text-slate-300 mb-8",
                       editingBlog?.imagePosition === 'top' ? "aspect-[3/2] w-full rounded-[2rem]" : "aspect-[2/3] w-full md:w-1/3 rounded-2xl",
