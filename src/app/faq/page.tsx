@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -29,7 +28,7 @@ const faqs = [
     category: 'Points',
     question: 'How exactly are Practice Points calculated?',
     answer:
-      'Your Mastery Points are earned through effort, speed, and precision: \n\n• **Consistency**: +25 points for your first practice session each day (resets at midnight). \n• **Accuracy**: +1 point per correct answer in Practice Tests, and +5 points per correct answer in the Bubble Game. \n• **Completion**: +5 bonus points for finishing any Practice Test session. \n• **Speed Bonus**: In Practice Tests, earn +5 points (Green Light) or +2 points (Yellow Light) if you finish before the target time with high accuracy. \n• **Mastery Bonus**: Earn +20 extra points for clearing a Bubble Game level with 90% accuracy or higher.',
+      'Your Mastery Points are earned through effort, speed, and precision: \n\n• **Consistency**: +25 points for your first practice session each day (resets at midnight). \n• **Accuracy**: +1 point per correct answer in both Practice Tests and the Bubble Game. \n• **Completion**: +5 bonus points for finishing any Practice Test session. \n• **Speed Bonus**: In Practice Tests, earn +5 points (Green Light) or +2 points (Yellow Light) if you finish before the target time with high accuracy. \n• **Mastery Bonus**: Earn +20 extra points for clearing a Bubble Game level with 90% accuracy or higher.',
   },
   {
     category: 'Leaderboard',

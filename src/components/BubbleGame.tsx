@@ -191,7 +191,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     if (isFinishingRef.current) return;
     isFinishingRef.current = true;
 
-    const correctAnswers = finalScore / 10;
+    const correctAnswers = finalScore;
     const accuracy = (correctAnswers / (questions.length || 1)) * 100;
     
     if (user) {
@@ -256,7 +256,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   }, [questions.length, user, levelId, saveCompletedGameLevel, recordDailyPractice, addPoints, playSound, levelName]);
 
   const advanceQuestion = useCallback((isCorrectOutcome?: boolean) => {
-    const nextScore = isCorrectOutcome ? score + 10 : score;
+    const nextScore = isCorrectOutcome ? score + 1 : score;
     const nextIndex = currentQuestionIndex + 1;
 
     if (nextIndex >= questions.length) {
@@ -342,7 +342,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
     const isCorrect = bubble.isCorrect;
     if (isCorrect) {
-      setScore(s => s + 10);
+      setScore(s => s + 1);
       playSound('correct');
     } else {
       setLives(l => l - 1);

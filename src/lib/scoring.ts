@@ -14,9 +14,8 @@ export const calculatePoints = ({ correct, total, answered, timeInSeconds, targe
   const accuracy = total > 0 ? (correct / total) * 100 : 0;
   
   // 1. Mastery Points
-  // Bubble game: 5 points per right answer.
-  // General Practice: 1 point per right answer.
-  let points = isGame ? (correct * 5) : (correct * 1);
+  // 1 point per right answer across all activities (Tests and Game)
+  let points = correct * 1;
 
   // 2. Base Completion Reward (Practice Only)
   // Only award if the user finished the entire set of questions
