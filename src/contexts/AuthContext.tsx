@@ -144,7 +144,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (data.emailVerified !== authUser.emailVerified) {
-          await updateDoc(userDocRef, { emailVerified: authUser.emailVerified });
+          // Perform in background to speed up load
+          updateDoc(userDocRef, { emailVerified: authUser.emailVerified }).catch(e => console.error("Email verified sync failed", e));
           profileData.emailVerified = authUser.emailVerified;
         }
 
@@ -153,22 +154,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             profileData.role = 'admin';
             profileData.subscriptionStatus = 'pro';
             if (profileData.status !== 'approved' || !profileData.emailVerified) {
-              await updateDoc(userDocRef, { status: 'approved', role: 'admin', subscriptionStatus: 'pro', emailVerified: true });
+              // Perform in background
+              updateDoc(userDocRef, { status: 'approved', role: 'admin', subscriptionStatus: 'pro', emailVerified: true }).catch(e => console.error("Admin sync failed", e));
             }
         }
 
         setProfile(profileData);
-
-        if (profileData.isSuspended && pathname !== '/suspended') {
-          router.push('/suspended');
-        }
-
-        const isProfileIncomplete = profileData.role === 'student' && (!profileData.grade || !profileData.schoolName || !profileData.city || !profileData.addressLine1);
-        const nonOnboardingPages = ['/profile', '/logout', '/suspended', '/login', '/signup', '/'];
-        if (isProfileIncomplete && !nonOnboardingPages.includes(pathname)) {
-          router.push('/profile');
-        }
-        
         return profileData;
       }
       return null;
@@ -182,21 +173,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         return null;
     }
-  }, [firestore, pathname, router]);
+  }, [firestore]);
 
+  // Handle Auth State Changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setIsLoading(true);
       setUser(user);
       if (user) {
+        setIsLoading(true);
         await fetchProfile(user);
+        setIsLoading(false);
       } else {
         setProfile(null);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
     return () => unsubscribe();
   }, [auth, fetchProfile]);
+
+  // Handle Redirections and Onboarding
+  useEffect(() => {
+    if (!isLoading && profile) {
+      if (profile.isSuspended && pathname !== '/suspended') {
+        router.push('/suspended');
+        return;
+      }
+
+      const isProfileIncomplete = profile.role === 'student' && (!profile.grade || !profile.schoolName || !profile.city || !profile.addressLine1);
+      const nonOnboardingPages = ['/profile', '/logout', '/suspended', '/login', '/signup', '/'];
+      if (isProfileIncomplete && !nonOnboardingPages.includes(pathname)) {
+        router.push('/profile');
+      }
+    }
+  }, [profile, isLoading, pathname, router]);
 
   const isTrialActive = useMemo(() => {
     if (!profile || profile.role !== 'student' || profile.subscriptionStatus === 'pro') return false;
