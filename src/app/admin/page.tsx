@@ -11,10 +11,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, ShieldCheck, Mail, UserCheck, Paperclip, FileText, Code, X, ShieldAlert, UserX, Image as ImageIcon, Type, Layout, Eye as EyeIcon } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, ShieldAlert, UserX, Image as ImageIcon, Type, Layout, Eye as EyeIcon, Mail, UserCheck, Paperclip, FileText, Code, X, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -116,6 +117,7 @@ export default function AdminDashboardPage() {
   const [isSavingBlog, setIsSavingBlog] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Partial<BlogPost> | null>(null);
   const [draftContent, setDraftContent] = useState('');
+  const [blogImageFile, setBlogImageFile] = useState<File | null>(null);
 
   const [marketingForm, setMarketingForm] = useState({
     subject: '',
@@ -348,8 +350,23 @@ export default function AdminDashboardPage() {
     setIsSavingBlog(true);
     const db = getFirestore(firebaseApp);
     const id = editingBlog.id || editingBlog.slug;
+
+    let finalImageUrl = editingBlog.image || '';
+
+    if (blogImageFile) {
+      try {
+        const storage = getStorage(firebaseApp);
+        const storageRef = ref(storage, `blog_images/${id}_${Date.now()}`);
+        const uploadResult = await uploadBytes(storageRef, blogImageFile);
+        finalImageUrl = await getDownloadURL(uploadResult.ref);
+      } catch (err) {
+        console.error("Storage upload failed", err);
+      }
+    }
+
     const blogData = {
       ...editingBlog,
+      image: finalImageUrl,
       showImage: editingBlog.showImage ?? true,
       author: editingBlog.author || `${profile?.firstName} ${profile?.surname}`,
       createdAt: editingBlog.createdAt || serverTimestamp(),
@@ -360,6 +377,7 @@ export default function AdminDashboardPage() {
       toast({ title: "Blog Updated" });
       setIsBlogDialogOpen(false);
       setEditingBlog(null);
+      setBlogImageFile(null);
     } catch (err: any) {
       toast({ title: "Save Failed", description: err.message, variant: "destructive" });
     } finally {
@@ -451,7 +469,7 @@ export default function AdminDashboardPage() {
                 <TabsContent value="blogs">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-headline">Blog Management</h2>
-                        <Button onClick={() => { setEditingBlog({ title: '', content: '', excerpt: '', category: 'News', slug: '', layout: 'standard', fontFamily: 'serif', lineSpacing: 'relaxed', dropCap: true, headlineWeight: 'black', headlineCase: 'normal', headlineSpacing: 'normal', imagePosition: 'top', imageFit: 'cover', showImage: true }); setDraftContent(''); setBlogDialogMode('edit'); setIsBlogDialogOpen(true); }}>
+                        <Button onClick={() => { setEditingBlog({ title: '', content: '', excerpt: '', category: 'News', slug: '', layout: 'standard', fontFamily: 'serif', lineSpacing: 'relaxed', dropCap: true, headlineWeight: 'black', headlineCase: 'normal', headlineSpacing: 'normal', imagePosition: 'top', imageFit: 'cover', showImage: true }); setDraftContent(''); setBlogImageFile(null); setBlogDialogMode('edit'); setIsBlogDialogOpen(true); }}>
                             <Plus className="mr-2 h-4 w-4" /> New Article
                         </Button>
                     </div>
@@ -462,7 +480,7 @@ export default function AdminDashboardPage() {
                                     <div className="flex justify-between items-start">
                                         <div><CardTitle className="text-lg">{blog.title}</CardTitle><CardDescription>{blog.category} • {blog.author}</CardDescription></div>
                                         <div className="flex gap-2">
-                                            <Button variant="ghost" size="sm" onClick={() => { setEditingBlog(blog); setDraftContent(htmlToPlainText(blog.content)); setBlogDialogMode('edit'); setIsBlogDialogOpen(true); }}><Edit className="w-4 h-4" /></Button>
+                                            <Button variant="ghost" size="sm" onClick={() => { setEditingBlog(blog); setDraftContent(htmlToPlainText(blog.content)); setBlogImageFile(null); setBlogDialogMode('edit'); setIsBlogDialogOpen(true); }}><Edit className="w-4 h-4" /></Button>
                                             <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDeleteBlog(blog.id)}><Trash2 className="w-4 h-4" /></Button>
                                         </div>
                                     </div>
@@ -553,7 +571,7 @@ export default function AdminDashboardPage() {
             {blogDialogMode === 'edit' ? (
               <form id="blog-save-form" onSubmit={handleSaveBlog} className="p-8 space-y-10">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2"><Label className="font-bold">Title</Label><Input value={editingBlog?.title || ''} onChange={e => setEditingBlog(prev => ({ ...prev, title: e.target.value, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-') }))} required placeholder="The Future of Soroban" className="h-12 text-lg border-2" /></div>
+                  <div className="space-y-2"><Label className="font-bold">Title</Label><Input value={editingBlog?.title || ''} onChange={e => setEditingBlog(prev => ({ ...prev, title: e.target.value, slug: (prev?.slug || e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-')) }))} required placeholder="The Future of Soroban" className="h-12 text-lg border-2" /></div>
                   <div className="space-y-2"><Label className="font-bold">URL Slug</Label><Input value={editingBlog?.slug || ''} onChange={e => setEditingBlog(prev => ({ ...prev, slug: e.target.value }))} required placeholder="future-of-soroban" className="h-12 bg-muted/20 border-2" /></div>
                 </div>
 
@@ -585,17 +603,41 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       <div className="space-y-2"><Label className="text-xs font-bold uppercase text-muted-foreground">Image Alignment</Label><Select value={editingBlog?.imagePosition || 'top'} onValueChange={(val: any) => setEditingBlog(p => ({ ...p, imagePosition: val }))}><SelectTrigger className="h-12 border-2 bg-white"><SelectValue placeholder="Select Position" /></SelectTrigger><SelectContent><SelectItem value="top">Full Width Top</SelectItem><SelectItem value="left">Left Side wrap</SelectItem><SelectItem value="right">Right Side wrap</SelectItem></SelectContent></Select></div>
                       <div className="space-y-2"><Label className="text-xs font-bold uppercase text-muted-foreground">Image Fit Mode</Label><Select value={editingBlog?.imageFit || 'cover'} onValueChange={(val: any) => setEditingBlog(p => ({ ...p, imageFit: val }))}><SelectTrigger className="h-12 border-2 bg-white"><SelectValue placeholder="Select Fit" /></SelectTrigger><SelectContent><SelectItem value="cover">Cover (Fills Area)</SelectItem><SelectItem value="contain">Contain (Shows Full Image)</SelectItem></SelectContent></Select></div>
+                      <div className="space-y-4 pt-4 border-t border-indigo-100">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground">Upload or Provide URL</Label>
+                        <div className="flex flex-col gap-3">
+                          <Button type="button" variant="outline" className="h-12 border-2 bg-white gap-2 font-bold" onClick={() => document.getElementById('blog-image-upload')?.click()}>
+                            <Upload className="w-4 h-4" /> {blogImageFile ? 'Change File' : 'Upload Image Attachment'}
+                          </Button>
+                          <input 
+                            id="blog-image-upload" 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setBlogImageFile(file);
+                                setEditingBlog(prev => ({ ...prev, image: URL.createObjectURL(file) }));
+                              }
+                            }}
+                          />
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-muted-foreground pointer-events-none">URL</span>
+                            <Input value={editingBlog?.image || ''} onChange={e => { setEditingBlog(prev => ({ ...prev, image: e.target.value })); setBlogImageFile(null); }} placeholder="https://..." className="h-12 pl-12 border-2 bg-white" />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs font-bold uppercase text-muted-foreground">Image URL</Label>
-                      <Input value={editingBlog?.image || ''} onChange={e => setEditingBlog(prev => ({ ...prev, image: e.target.value }))} placeholder="https://..." className="h-12 border-2" />
-                      
-                      {editingBlog?.image ? (
-                        <div className={cn("mt-4 relative rounded-xl overflow-hidden border-2 bg-slate-100", editingBlog.imagePosition === 'top' ? "aspect-[3/2]" : "aspect-[2/3]")}>
-                          <img src={editingBlog.image} alt="Editor Preview" className={cn("w-full h-full", editingBlog.imageFit === 'contain' ? 'object-contain' : 'object-cover')} />
+                      <Label className="text-xs font-bold uppercase text-muted-foreground">Image Preview</Label>
+                      {(editingBlog?.image || blogImageFile) ? (
+                        <div className={cn("mt-4 relative rounded-xl overflow-hidden border-2 bg-slate-100", editingBlog?.imagePosition === 'top' ? "aspect-[3/2]" : "aspect-[2/3]")}>
+                          <img src={editingBlog?.image || ''} alt="Editor Preview" className={cn("w-full h-full", editingBlog?.imageFit === 'contain' ? 'object-contain' : 'object-cover')} />
+                          {blogImageFile && <div className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-lg">File Attached</div>}
                         </div>
                       ) : (
                         <div className={cn(
