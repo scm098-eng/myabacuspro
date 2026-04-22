@@ -353,14 +353,26 @@ export default function AdminDashboardPage() {
 
     let finalImageUrl = editingBlog.image || '';
 
+    // CRITICAL: Check if image is a local blob URL. Blobs won't work once session ends.
+    if (finalImageUrl.startsWith('blob:')) {
+        finalImageUrl = ''; 
+    }
+
     if (blogImageFile) {
       try {
         const storage = getStorage(firebaseApp);
         const storageRef = ref(storage, `blog_images/${id}_${Date.now()}`);
         const uploadResult = await uploadBytes(storageRef, blogImageFile);
         finalImageUrl = await getDownloadURL(uploadResult.ref);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Storage upload failed", err);
+        toast({ 
+            title: "Image Upload Failed", 
+            description: "Permissions issue or file too large. Article not saved.", 
+            variant: "destructive" 
+        });
+        setIsSavingBlog(false);
+        return; // HALT SAVING: We don't want to save a broken blob URL
       }
     }
 
