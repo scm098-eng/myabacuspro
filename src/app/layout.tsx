@@ -7,7 +7,6 @@ import { Footer } from '@/components/shared/Footer';
 import { ClientProviders } from './client-providers';
 import WinnerMarquee from '@/components/WinnerMarquee';
 import { headers } from 'next/headers';
-import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -72,12 +71,12 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} h-full`}>
       <head>
         <link rel="canonical" href="https://myabacuspro.com" />
-        <Script 
+        {/* Raw script tag used to avoid 'data-nscript' attribute which AdSense verification rejects */}
+        <script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4545290153947218"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
+        ></script>
       </head>
       <body className="font-body antialiased h-full">
         <ClientProviders>
