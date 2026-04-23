@@ -137,7 +137,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
-  const [score, setScore] = useState(0); // This is visual score (10 per bubble)
+  const [score, setScore] = useState(0); 
   const [lives, setLives] = useState(MAX_LIVES);
   const [gameState, setGameState] = useState<'intro' | 'playing' | 'levelComplete' | 'gameOver'>('intro');
   const [finalMasteryPoints, setFinalMasteryPoints] = useState(0);
@@ -196,7 +196,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     
     if (user) {
       const { earnedPoints } = calculatePoints({
-        correct: correctAnswers, // 1 Mastery Point per correct answer
+        correct: correctAnswers, 
         total: questions.length,
         answered: questions.length,
         timeInSeconds: 0,
@@ -213,7 +213,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         userId: user.uid,
         testId: 'bubble-game',
         difficulty: levelName,
-        score: correctAnswers, // Recording actual correct count
+        score: correctAnswers, 
         totalQuestions: questions.length,
         accuracy: accuracy,
         timeSpent: 0,
@@ -342,7 +342,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
     const isCorrect = bubble.isCorrect;
     if (isCorrect) {
-      setScore(s => s + 10); // Visual score increases by 10
+      setScore(s => s + 10); 
       playSound('correct');
     } else {
       setLives(l => l - 1);

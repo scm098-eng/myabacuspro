@@ -118,40 +118,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const currentWeekKey = getUTCMondayKey();
         const currentMonthKey = getUTCMonthKey();
         
-        let needsUpdate = false;
         const updatePayload: any = {};
+        let hasSyncWork = false;
 
         if (profileData.lastWeeklyReset !== currentWeekKey) {
             profileData.weeklyPoints = 0;
             profileData.lastWeeklyReset = currentWeekKey;
             updatePayload.weeklyPoints = 0;
             updatePayload.lastWeeklyReset = currentWeekKey;
-            needsUpdate = true;
+            hasSyncWork = true;
         }
         if (profileData.lastMonthlyReset !== currentMonthKey) {
             profileData.monthlyPoints = 0;
             profileData.lastMonthlyReset = currentMonthKey;
             updatePayload.monthlyPoints = 0;
             updatePayload.lastMonthlyReset = currentMonthKey;
-            needsUpdate = true;
-        }
-
-        if (needsUpdate) {
-            updateDoc(userDocRef, updatePayload).catch(e => console.error("Individual reset sync failed", e));
+            hasSyncWork = true;
         }
 
         if (data.emailVerified !== authUser.emailVerified) {
-          updateDoc(userDocRef, { emailVerified: authUser.emailVerified }).catch(e => console.error("Email verified sync failed", e));
+          updatePayload.emailVerified = authUser.emailVerified;
           profileData.emailVerified = authUser.emailVerified;
+          hasSyncWork = true;
         }
 
         const userEmail = authUser.email?.toLowerCase() || '';
         if (ADMIN_EMAILS.includes(userEmail)) {
             profileData.role = 'admin';
             profileData.subscriptionStatus = 'pro';
-            if (profileData.status !== 'approved' || !profileData.emailVerified) {
-              updateDoc(userDocRef, { status: 'approved', role: 'admin', subscriptionStatus: 'pro', emailVerified: true }).catch(e => console.error("Admin sync failed", e));
+            if (profileData.status !== 'approved') {
+              updatePayload.status = 'approved';
+              updatePayload.role = 'admin';
+              updatePayload.subscriptionStatus = 'pro';
+              updatePayload.emailVerified = true;
+              hasSyncWork = true;
             }
+        }
+
+        if (hasSyncWork) {
+            updateDoc(userDocRef, updatePayload).catch(e => console.error("Profile sync failed", e));
         }
 
         setProfile(profileData);

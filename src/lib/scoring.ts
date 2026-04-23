@@ -18,20 +18,17 @@ export const calculatePoints = ({ correct, total, answered, timeInSeconds, targe
   let points = correct * 1;
 
   // 2. Base Completion Reward (Practice Only)
-  // Only award if the user finished the entire set of questions
   if (!isGame && answered === total && total > 0) {
     points += 5;
   }
 
   // 3. Time Bonus (Traffic Light System - Practice Tests Only)
-  // Only award if the test was fully completed with high accuracy
   if (!isGame && answered === total && accuracy >= 80) {
     if (timeInSeconds <= targetTime * 0.7) points += 5; // Green
     else if (timeInSeconds <= targetTime) points += 2;   // Yellow
   }
 
   // 4. Level Completion Bonus (Bubble Game 90% Accuracy or higher)
-  // Reduced to 5 to match practice tests and keep points balanced
   if (isGame && accuracy >= 90) {
     points += 5; 
   }

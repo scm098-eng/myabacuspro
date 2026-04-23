@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 
@@ -16,7 +15,6 @@ export function getFirebaseAdmin(): App {
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "abacusace-mmnqw";
 
   try {
-    console.log("Initializing Firebase Admin for project:", projectId);
     return initializeApp({
       projectId: projectId,
     });
