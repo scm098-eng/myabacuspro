@@ -8,7 +8,6 @@ service firebase.storage {
     }
 
     // Rules for user profile photos
-    // Code uses: ref(storage, "profile_photos/" + user.uid)
     match /profile_photos/{userId} {
       allow write: if request.auth != null && 
                       request.auth.uid == userId &&
@@ -17,10 +16,9 @@ service firebase.storage {
     }
 
     // Rules for blog images
-    // Path: blog_images/{imageId}
     match /blog_images/{imageId} {
       allow write: if request.auth != null && 
-                      // Only allow admins to upload blog assets
+                      // Use firestore rule to check if the user is an admin
                       firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
                       request.resource.size < 10 * 1024 * 1024 &&
                       request.resource.contentType.matches('image/.*');

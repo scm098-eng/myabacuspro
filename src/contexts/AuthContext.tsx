@@ -20,7 +20,7 @@ import { doc, setDoc, getDoc, serverTimestamp, getFirestore, collection, getDocs
 import { ref, uploadBytes, getDownloadURL, getStorage } from 'firebase/storage';
 import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload } from '@/types';
 import { useRouter, usePathname } from 'next/navigation';
-import { RANK_CRITERIA } from '@/lib/constants';
+import { RANK_CRITERIA, ADMIN_EMAILS, EXCLUDED_FROM_TEACHER_LIST } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 
@@ -61,9 +61,6 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
-
-const ADMIN_EMAILS = ['pallavib202@gmail.com', 'myabacuspro@gmail.com'];
-const EXCLUDED_FROM_TEACHER_LIST = ['scm098@gmail.com', 'satishmane@gmail.com'];
 
 const sanitizeForFirestore = (data: any) => {
   const clean: any = {};
@@ -188,6 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, [auth, fetchProfile]);
 
+  // Separation of concerns: Handle redirects based on profile state separately from fetching
   useEffect(() => {
     if (!isLoading && profile) {
       if (profile.isSuspended && pathname !== '/suspended') {

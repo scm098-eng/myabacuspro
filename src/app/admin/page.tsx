@@ -28,6 +28,7 @@ import { cn, extractFirstImage } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
+import { ADMIN_EMAILS } from '@/lib/constants';
 
 function getUTCMondayKey() {
     const now = new Date();
@@ -190,7 +191,11 @@ export default function AdminDashboardPage() {
           limit(10)
         ),
         (snap) => {
-          setRecentJoins(snap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as ProfileData)));
+          // Filter out admins who signed up as students
+          const joins = snap.docs
+            .map(doc => ({ uid: doc.id, ...doc.data() } as ProfileData))
+            .filter(u => !ADMIN_EMAILS.includes(u.email?.toLowerCase()));
+          setRecentJoins(joins);
         }
       );
       unsubscribers.push(joinsUnsub);
@@ -204,7 +209,7 @@ export default function AdminDashboardPage() {
           where("role", "==", "student"), 
           where("lastWeeklyReset", "==", currentWeekKey),
           orderBy("weeklyPoints", "desc"), 
-          limit(10)
+          limit(20)
         );
       } else if (leaderboardTab === 'monthlyPoints') {
         q = query(
@@ -212,27 +217,32 @@ export default function AdminDashboardPage() {
           where("role", "==", "student"), 
           where("lastMonthlyReset", "==", currentMonthKey),
           orderBy("monthlyPoints", "desc"), 
-          limit(10)
+          limit(20)
         );
       } else {
         q = query(
           collection(db, "users"), 
+          where("role", "==", "student"),
           orderBy("totalPoints", "desc"), 
-          limit(10)
+          limit(20)
         );
       }
 
       const leaderboardUnsub = onSnapshot(q, (snapshot) => {
-          const data = snapshot.docs.map(doc => {
-            const ud = doc.data() as ProfileData;
-            return { 
-              uid: doc.id, 
-              name: `${ud.firstName} ${ud.surname}`, 
-              photo: ud.profilePhoto, 
-              points: (ud as any)[leaderboardTab] || 0, 
-              title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) 
-            };
-          });
+          const data = snapshot.docs
+            .map(doc => {
+              const ud = doc.data() as ProfileData;
+              return { 
+                uid: doc.id,
+                email: ud.email?.toLowerCase(),
+                name: `${ud.firstName} ${ud.surname}`, 
+                photo: ud.profilePhoto, 
+                points: (ud as any)[leaderboardTab] || 0, 
+                title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) 
+              };
+            })
+            .filter(s => !ADMIN_EMAILS.includes(s.email))
+            .slice(0, 10);
           setLeaderboard(data);
       });
       unsubscribers.push(leaderboardUnsub);
@@ -353,11 +363,7 @@ export default function AdminDashboardPage() {
 
     let finalImageUrl = editingBlog.image || '';
 
-    // CRITICAL: Check if image is a local blob URL. Blobs won't work once session ends.
-    if (finalImageUrl.startsWith('blob:')) {
-        finalImageUrl = ''; 
-    }
-
+    // Step 1: Handle Image Attachment/Upload properly
     if (blogImageFile) {
       try {
         const storage = getStorage(firebaseApp);
@@ -368,12 +374,15 @@ export default function AdminDashboardPage() {
         console.error("Storage upload failed", err);
         toast({ 
             title: "Image Upload Failed", 
-            description: "Permissions issue or file too large. Article not saved.", 
+            description: "Permissions issue or file too large. Ensure you are an Admin in Storage Rules.", 
             variant: "destructive" 
         });
         setIsSavingBlog(false);
-        return; // HALT SAVING: We don't want to save a broken blob URL
+        return; 
       }
+    } else if (finalImageUrl.startsWith('blob:')) {
+      // Discard temporary blob URL if upload didn't happen
+      finalImageUrl = ''; 
     }
 
     const blogData = {
@@ -384,6 +393,7 @@ export default function AdminDashboardPage() {
       createdAt: editingBlog.createdAt || serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
+
     try {
       await setDoc(doc(db, "blogs", id), blogData, { merge: true });
       toast({ title: "Blog Updated" });
@@ -412,7 +422,12 @@ export default function AdminDashboardPage() {
     const sl = searchTerm.toLowerCase();
     const matches = (u: ProfileData) => (u.firstName?.toLowerCase().includes(sl) || u.surname?.toLowerCase().includes(sl) || u.email?.toLowerCase().includes(sl));
     const allStaff = allUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
-    const allStudents = allUsers.filter(u => u.role === 'student');
+    
+    // Explicitly exclude administrators from student lists
+    const allStudents = allUsers
+      .filter(u => u.role === 'student')
+      .filter(u => !ADMIN_EMAILS.includes(u.email?.toLowerCase()));
+
     return { 
         filteredStaff: allStaff.filter(matches).map(s => {
           const students = allStudents.filter(stu => stu.teacherId === s.uid);

@@ -17,7 +17,7 @@ import { getMessaging, getToken } from 'firebase/messaging';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RANK_CRITERIA } from '@/lib/constants';
+import { RANK_CRITERIA, ADMIN_EMAILS } from '@/lib/constants';
 import confetti from 'canvas-confetti';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
@@ -116,7 +116,7 @@ export default function StudentDashboardPage() {
         where("role", "==", "student"), 
         where("lastWeeklyReset", "==", currentWeekKey),
         orderBy("weeklyPoints", "desc"), 
-        limit(10)
+        limit(20)
       );
     } else if (leaderboardTab === 'monthlyPoints') {
       q = query(
@@ -124,14 +124,14 @@ export default function StudentDashboardPage() {
         where("role", "==", "student"), 
         where("lastMonthlyReset", "==", currentMonthKey),
         orderBy("monthlyPoints", "desc"), 
-        limit(10)
+        limit(20)
       );
     } else {
       q = query(
         collection(db, "users"), 
         where("role", "==", "student"), 
         orderBy("totalPoints", "desc"), 
-        limit(10)
+        limit(20)
       );
     }
     
@@ -141,14 +141,16 @@ export default function StudentDashboardPage() {
           .map(doc => {
             const ud = doc.data() as ProfileData;
             return { 
-              uid: doc.id, 
+              uid: doc.id,
+              email: ud.email?.toLowerCase(),
               name: `${ud.firstName} ${ud.surname}`, 
               photo: ud.profilePhoto, 
               points: ud[leaderboardTab as keyof ProfileData] || 0, 
               title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) 
             };
           })
-          .filter(s => s.points > 0);
+          .filter(s => s.points > 0 && !ADMIN_EMAILS.includes(s.email))
+          .slice(0, 10);
         setLeaderboard(data);
       },
       async (error) => {

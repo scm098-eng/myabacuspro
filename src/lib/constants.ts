@@ -80,6 +80,18 @@ export const TEST_NAME_MAP: Record<string, string> = {
     'bubble-game': 'Bubble Game',
 };
 
+export const ADMIN_EMAILS = [
+  'scm098@gmail.com', 
+  'satishmane@gmail.com', 
+  'pallavib202@gmail.com', 
+  'myabacuspro@gmail.com'
+];
+
+export const EXCLUDED_FROM_TEACHER_LIST = [
+  'scm098@gmail.com', 
+  'satishmane@gmail.com'
+];
+
 export const RANK_CRITERIA = [
   { name: "Human Calculator", icon: "👑", color: "#FFD700", daysReq: 360, pointsReq: 1000000, description: "The ultimate master. Speed and accuracy beyond all limits." },
   { name: "Grandmaster", icon: "🏆", color: "#E5E4E2", daysReq: 330, pointsReq: 750000, description: "Elite status reserved for the most dedicated math warriors." },
