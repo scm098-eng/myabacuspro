@@ -220,7 +220,6 @@ export default function StudentDashboardPage() {
   const daysProg = Math.min(1, currentDays / (nextRank.daysReq || 1));
   const progress = ((pointsProg + daysProg) / 2) * 100;
 
-  // Milestone Cycle Logic (28 days per cycle)
   const cycleCount = Math.floor(Math.max(0, currentDays - 1) / 28);
   const startDayOfCurrentCycle = cycleCount * 28;
 

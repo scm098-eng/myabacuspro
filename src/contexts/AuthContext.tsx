@@ -185,7 +185,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, [auth, fetchProfile]);
 
-  // Separation of concerns: Handle redirects based on profile state separately from fetching
   useEffect(() => {
     if (!isLoading && profile) {
       if (profile.isSuspended && pathname !== '/suspended') {

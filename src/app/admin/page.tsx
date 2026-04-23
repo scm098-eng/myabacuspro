@@ -191,7 +191,6 @@ export default function AdminDashboardPage() {
           limit(10)
         ),
         (snap) => {
-          // Filter out admins who signed up as students
           const joins = snap.docs
             .map(doc => ({ uid: doc.id, ...doc.data() } as ProfileData))
             .filter(u => !ADMIN_EMAILS.includes(u.email?.toLowerCase()));
@@ -363,7 +362,6 @@ export default function AdminDashboardPage() {
 
     let finalImageUrl = editingBlog.image || '';
 
-    // Step 1: Handle Image Attachment/Upload properly
     if (blogImageFile) {
       try {
         const storage = getStorage(firebaseApp);
@@ -381,7 +379,6 @@ export default function AdminDashboardPage() {
         return; 
       }
     } else if (finalImageUrl.startsWith('blob:')) {
-      // Discard temporary blob URL if upload didn't happen
       finalImageUrl = ''; 
     }
 
@@ -422,8 +419,6 @@ export default function AdminDashboardPage() {
     const sl = searchTerm.toLowerCase();
     const matches = (u: ProfileData) => (u.firstName?.toLowerCase().includes(sl) || u.surname?.toLowerCase().includes(sl) || u.email?.toLowerCase().includes(sl));
     const allStaff = allUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
-    
-    // Explicitly exclude administrators from student lists
     const allStudents = allUsers
       .filter(u => u.role === 'student')
       .filter(u => !ADMIN_EMAILS.includes(u.email?.toLowerCase()));
