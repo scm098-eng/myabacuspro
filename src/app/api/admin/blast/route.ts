@@ -47,10 +47,10 @@ export async function POST(req: NextRequest) {
     } else {
       let userQuery: any = db.collection('users');
       
-      if (targetAudience === 'single' && studentId) {
-        const studentSnap = await db.collection('users').doc(studentId).get();
-        if (studentSnap.exists && studentSnap.data()?.email) {
-          emailList.push(studentSnap.data()?.email);
+      if ((targetAudience === 'single' || targetAudience === 'staff_single') && studentId) {
+        const userSnap = await db.collection('users').doc(studentId).get();
+        if (userSnap.exists && userSnap.data()?.email) {
+          emailList.push(userSnap.data()?.email);
         }
       } else if (targetAudience === 'teachers') {
         const snapshot = await userQuery.where('role', '==', 'teacher').where('status', '==', 'approved').get();
