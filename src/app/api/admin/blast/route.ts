@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const db = getFirestore(adminApp);
     let recipients: { email: string; name: string }[] = [];
 
-    // Build Recipient List with Names
+    // Build Recipient List with Full Names (First + Surname)
     if (isTest && testEmail) {
       recipients = [{ email: testEmail, name: "Test User" }];
     } else {
@@ -51,34 +51,47 @@ export async function POST(req: NextRequest) {
         const userSnap = await db.collection('users').doc(studentId).get();
         if (userSnap.exists && userSnap.data()?.email) {
           const data = userSnap.data();
+          const fullName = `${data?.firstName || ''} ${data?.surname || ''}`.trim();
           recipients.push({ 
             email: data?.email, 
-            name: data?.firstName || 'Student' 
+            name: fullName || 'User' 
           });
         }
       } else if (targetAudience === 'teachers') {
         const snapshot = await userQuery.where('role', '==', 'teacher').where('status', '==', 'approved').get();
         snapshot.forEach((doc: any) => {
           const data = doc.data();
-          if (data.email) recipients.push({ email: data.email, name: data.firstName || 'Teacher' });
+          if (data.email) {
+            const fullName = `${data.firstName || ''} ${data.surname || ''}`.trim();
+            recipients.push({ email: data.email, name: fullName || 'Teacher' });
+          }
         });
       } else if (targetAudience === 'pro') {
         const snapshot = await userQuery.where('role', '==', 'student').where('subscriptionStatus', '==', 'pro').get();
         snapshot.forEach((doc: any) => {
           const data = doc.data();
-          if (data.email) recipients.push({ email: data.email, name: data.firstName || 'Student' });
+          if (data.email) {
+            const fullName = `${data.firstName || ''} ${data.surname || ''}`.trim();
+            recipients.push({ email: data.email, name: fullName || 'Student' });
+          }
         });
       } else if (targetAudience === 'free') {
         const snapshot = await userQuery.where('role', '==', 'student').where('subscriptionStatus', '==', 'free').get();
         snapshot.forEach((doc: any) => {
           const data = doc.data();
-          if (data.email) recipients.push({ email: data.email, name: data.firstName || 'Student' });
+          if (data.email) {
+            const fullName = `${data.firstName || ''} ${data.surname || ''}`.trim();
+            recipients.push({ email: data.email, name: fullName || 'Student' });
+          }
         });
       } else if (targetAudience === 'all') {
         const snapshot = await userQuery.where('role', '==', 'student').get();
         snapshot.forEach((doc: any) => {
           const data = doc.data();
-          if (data.email) recipients.push({ email: data.email, name: data.firstName || 'Student' });
+          if (data.email) {
+            const fullName = `${data.firstName || ''} ${data.surname || ''}`.trim();
+            recipients.push({ email: data.email, name: fullName || 'Student' });
+          }
         });
       }
     }
