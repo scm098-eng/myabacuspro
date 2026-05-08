@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, RefreshCw, Zap, Check, Plus, Edit, Trash2, Loader2, Send, UserPlus, ShieldAlert, UserX, Image as ImageIcon, Type, Layout, Eye as EyeIcon, Mail, UserCheck, Paperclip, FileText, Code, X, Upload } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, Zap, Plus, Edit, Trash2, Loader2, Send, ShieldAlert, UserX, Image as ImageIcon, Eye as EyeIcon, Mail, UserCheck, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -23,10 +23,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { parseISO, isValid, format, formatDistanceToNow } from 'date-fns';
+import { parseISO, isValid, format } from 'date-fns';
 import { cn, extractFirstImage } from "@/lib/utils";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { ADMIN_EMAILS } from '@/lib/constants';
 
@@ -107,7 +106,6 @@ export default function AdminDashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
-  const [recentJoins, setRecentJoins] = useState<ProfileData[]>([]);
   const [winnersData, setWinnersData] = useState<any>(null);
   const [isResetting, setIsResetting] = useState<'weekly' | 'monthly' | 'force' | 'blast' | 'suspension' | null>(null);
   const [forceWinnerDialog, setForceWinnerDialog] = useState<{ open: boolean, user: ProfileData | null }>({ open: false, user: null });
@@ -130,7 +128,6 @@ export default function AdminDashboardPage() {
     testEmail: ''
   });
   const [attachments, setAttachments] = useState<File[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentWeekKey = useMemo(() => getUTCMondayKey(), []);
   const currentMonthKey = useMemo(() => getUTCMonthKey(), []);
@@ -173,10 +170,6 @@ export default function AdminDashboardPage() {
           if (snap.exists()) setWinnersData(snap.data());
       });
       unsubscribers.push(winnerUnsub);
-      const joinsUnsub = onSnapshot(query(collection(db, "users"), where("role", "==", "student"), where("isAdminRead", "==", false), orderBy("createdAt", "desc"), limit(10)), (snap) => {
-          setRecentJoins(snap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as ProfileData)).filter(u => !ADMIN_EMAILS.includes(u.email?.toLowerCase())));
-      });
-      unsubscribers.push(joinsUnsub);
     }
 
     if (profile.role === 'admin' || profile.role === 'teacher') {
@@ -221,12 +214,6 @@ export default function AdminDashboardPage() {
       }
     } catch (e: any) { toast({ title: "Failed", description: e.message, variant: "destructive" }); }
     finally { setIsResetting(null); }
-  };
-
-  const handleMarkAsRead = async (e: React.MouseEvent, uid: string) => {
-    e.preventDefault(); e.stopPropagation();
-    try { await markUserAsRead(uid); toast({ title: "Member Acknowledged" }); }
-    catch (err) { toast({ title: "Failed to update member status.", variant: "destructive" }); }
   };
 
   const handleApproveTeacher = async (uid: string) => {
@@ -276,7 +263,10 @@ export default function AdminDashboardPage() {
         toast({ title: "Image Upload Failed", variant: "destructive" });
         setIsSavingBlog(false); return;
       }
-    } else if (finalImageUrl.startsWith('blob:')) { finalImageUrl = ''; }
+    } else if (finalImageUrl.startsWith('blob:')) { 
+      toast({ title: "Upload Incomplete", description: "The image is still a temporary URL. Please re-upload.", variant: "destructive" });
+      setIsSavingBlog(false); return;
+    }
 
     const blogData = { ...editingBlog, image: finalImageUrl, author: editingBlog.author || `${profile?.firstName} ${profile?.surname}`, createdAt: editingBlog.createdAt || serverTimestamp(), updatedAt: serverTimestamp() };
     try {
