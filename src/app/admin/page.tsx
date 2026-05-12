@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -97,7 +97,7 @@ const htmlToPlainText = (html: string) => {
 
 export default function AdminDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
-  const { profile, getAllUsers, isLoading: authLoading, getStudentTitle, markUserAsRead, approveTeacher, toggleUserSuspension } = useAuth();
+  const { profile, getAllUsers, isLoading: authLoading, getStudentTitle, approveTeacher, toggleUserSuspension } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -254,6 +254,7 @@ export default function AdminDashboardPage() {
     const id = editingBlog.id || editingBlog.slug;
     let finalImageUrl = editingBlog.image || '';
 
+    // Upload image to Firebase Storage if a new file was selected
     if (blogImageFile) {
       try {
         const storageRef = ref(getStorage(firebaseApp), `blog_images/${id}_${Date.now()}`);
@@ -264,11 +265,19 @@ export default function AdminDashboardPage() {
         setIsSavingBlog(false); return;
       }
     } else if (finalImageUrl.startsWith('blob:')) { 
+      // Protect against saving temporary local URLs if upload didn't happen
       toast({ title: "Upload Incomplete", description: "The image is still a temporary URL. Please re-upload.", variant: "destructive" });
       setIsSavingBlog(false); return;
     }
 
-    const blogData = { ...editingBlog, image: finalImageUrl, author: editingBlog.author || `${profile?.firstName} ${profile?.surname}`, createdAt: editingBlog.createdAt || serverTimestamp(), updatedAt: serverTimestamp() };
+    const blogData = { 
+      ...editingBlog, 
+      image: finalImageUrl, 
+      author: editingBlog.author || `${profile?.firstName} ${profile?.surname}`, 
+      createdAt: editingBlog.createdAt || serverTimestamp(), 
+      updatedAt: serverTimestamp() 
+    };
+    
     try {
       await setDoc(doc(getFirestore(firebaseApp), "blogs", id), blogData, { merge: true });
       toast({ title: "Blog Updated" }); setIsBlogDialogOpen(false); setEditingBlog(null); setBlogImageFile(null);
@@ -372,7 +381,22 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="space-y-8">
-            <Card className="rounded-2xl overflow-hidden shadow-sm"><CardHeader className="bg-muted/30 border-b pb-0"><CardTitle className="text-xl font-bold flex items-center gap-2 uppercase mb-4"><Trophy className="text-yellow-500 w-6 h-6" /> Top Performers</CardTitle><Tabs defaultValue="totalPoints" onValueChange={setLeaderboardTab} className="w-full"><TabsList className="grid grid-cols-3 bg-slate-200/50 mb-2 h-10"><TabsTrigger value="weeklyPoints" className="text-[10px] font-bold">Weekly</TabsTrigger><TabsTrigger value="monthlyPoints" className="text-[10px] font-bold">Monthly</TabsTrigger><TabsTrigger value="totalPoints" className="text-[10px] font-bold">Global</TabsTrigger></TabsList></Tabs></CardHeader><CardContent className="p-0"><div className="divide-y divide-border/50">{leaderboard.length > 0 ? leaderboard.map((s, idx) => (<div key={s.uid} className="flex items-center justify-between p-4"><div className="flex items-center gap-4"><span className={cn("w-6 text-sm font-bold", idx === 0 ? "text-yellow-500" : "text-muted-foreground")}>#{idx + 1}</span><Avatar className="h-10 w-10"><AvatarImage src={s.photo} /></Avatar><div><span className="text-sm font-bold block">{s.name}</span><span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: s.title.color + '20', color: s.title.color }}>{s.title.name}</span></div></div><div className="text-right"><span className="text-sm font-bold text-primary block">{s.points.toLocaleString()}</span><span className="text-[8px] font-bold text-muted-foreground uppercase">Points</span></div></div>)) : <div className="p-8 text-center text-muted-foreground text-xs uppercase font-bold tracking-widest">Fresh Period</div>}</div></CardContent></Card>
+            <Card className="rounded-2xl overflow-hidden shadow-sm"><CardHeader className="bg-muted/30 border-b pb-0"><CardTitle className="text-xl font-bold flex items-center gap-2 uppercase mb-4"><Trophy className="text-yellow-500 w-6 h-6" /> Top Performers</CardTitle><Tabs defaultValue="totalPoints" onValueChange={setLeaderboardTab} className="w-full"><TabsList className="grid grid-cols-3 bg-slate-200/50 mb-2 h-10"><TabsTrigger value="weeklyPoints" className="text-[10px] font-bold">Weekly</TabsTrigger><TabsTrigger value="monthlyPoints" className="text-[10px] font-bold">Monthly</TabsTrigger><TabsTrigger value="totalPoints" className="text-[10px] font-bold">Global</TabsTrigger></TabsList></Tabs></CardHeader><CardContent className="p-0"><div className="divide-y divide-border/50">{leaderboard.length > 0 ? leaderboard.map((s, idx) => (
+              <div key={s.uid} className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-4">
+                  <span className={cn("w-6 text-sm font-bold", idx === 0 ? "text-yellow-500" : "text-muted-foreground")}>#{idx + 1}</span>
+                  <Avatar className="h-10 w-10"><AvatarImage src={s.photo} /></Avatar>
+                  <div>
+                    <span className="text-sm font-bold block">{s.name}</span>
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: s.title.color + '20', color: s.title.color }}>{s.title.name}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-sm font-bold text-primary block">{s.points.toLocaleString()}</span>
+                  <span className="text-[8px] font-bold text-muted-foreground uppercase">Points</span>
+                </div>
+              </div>
+            )) : <div className="p-8 text-center text-muted-foreground text-xs uppercase font-bold tracking-widest">Fresh Period</div>}</div></CardContent></Card>
         </div>
       </div>
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -35,7 +34,7 @@ export default function Home() {
   const { user, profile, isLoading } = useAuth();
   const router = useRouter();
 
-  // If user is already logged in, send them to their dashboard automatically
+  // If user is already logged in, redirect them immediately to their specific dashboard
   useEffect(() => {
     if (!isLoading && user && profile) {
       if (profile.role === 'admin' || (profile.role === 'teacher' && profile.status === 'approved')) {
@@ -46,11 +45,13 @@ export default function Home() {
     }
   }, [user, profile, isLoading, router]);
 
-  if (isLoading) {
+  if (isLoading || (user && profile)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="text-muted-foreground font-bold animate-pulse">Restoring your session...</p>
+        <p className="text-muted-foreground font-bold animate-pulse">
+          {user ? 'Redirecting to your dashboard...' : 'Loading My Abacus Pro...'}
+        </p>
       </div>
     );
   }

@@ -71,7 +71,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} h-full`}>
       <head>
         <link rel="canonical" href="https://myabacuspro.com" />
-        {/* Raw script tag used to avoid 'data-nscript' attribute which AdSense verification rejects */}
+        {/* AdSense Verification Script - Raw HTML to avoid data-nscript issues */}
         <script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4545290153947218"

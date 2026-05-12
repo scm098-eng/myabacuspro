@@ -21,8 +21,6 @@ import { ref, uploadBytes, getDownloadURL, getStorage } from 'firebase/storage';
 import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload } from '@/types';
 import { useRouter, usePathname } from 'next/navigation';
 import { RANK_CRITERIA, ADMIN_EMAILS, EXCLUDED_FROM_TEACHER_LIST } from '@/lib/constants';
-import { errorEmitter } from '@/lib/error-emitter';
-import { FirestorePermissionError } from '@/lib/errors';
 
 interface AuthContextType {
   user: User | null;
@@ -121,22 +119,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [firestore]);
 
   useEffect(() => {
-    let profileUnsub: () => void = () => {};
+    let profileUnsub: (() => void) | undefined;
 
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       setUser(authUser);
-      profileUnsub(); // Clean up existing listener
+      
+      // Clean up previous real-time listener if any
+      if (profileUnsub) {
+        profileUnsub();
+        profileUnsub = undefined;
+      }
 
       if (authUser) {
         setIsLoading(true);
         const userDocRef = doc(firestore, 'users', authUser.uid);
         
+        // Setup real-time listener for the user profile
         profileUnsub = onSnapshot(userDocRef, (snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.data() as ProfileData;
             const profileData = { ...data, uid: authUser.uid };
             
-            // Sync/Reset Logic in background if needed
+            // Background maintenance sync (non-blocking)
             const currentWeekKey = getUTCMondayKey();
             const currentMonthKey = getUTCMonthKey();
             const updatePayload: any = {};
@@ -165,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
 
             if (hasSyncWork) {
-              updateDoc(userDocRef, updatePayload).catch(e => console.warn("Sync update deferred", e));
+              updateDoc(userDocRef, updatePayload).catch(e => console.warn("Background sync deferred", e));
             }
 
             setProfile(profileData);
@@ -185,19 +189,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       unsubscribe();
-      profileUnsub();
+      if (profileUnsub) profileUnsub();
     };
   }, [auth, firestore]);
 
+  // Handle Suspensions and Incomplete Profiles automatically
   useEffect(() => {
     if (!isLoading && profile) {
       if (profile.isSuspended && pathname !== '/suspended') {
         router.push('/suspended');
         return;
       }
+      
       const isProfileIncomplete = profile.role === 'student' && (!profile.grade || !profile.schoolName || !profile.city || !profile.addressLine1);
-      const nonOnboardingPages = ['/profile', '/logout', '/suspended', '/login', '/signup', '/'];
-      if (isProfileIncomplete && !nonOnboardingPages.includes(pathname)) {
+      const publicPaths = ['/profile', '/logout', '/suspended', '/login', '/signup', '/'];
+      
+      if (isProfileIncomplete && !publicPaths.includes(pathname)) {
         router.push('/profile');
       }
     }
@@ -270,6 +277,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       delete (rawData as any).confirmPassword;
 
       await setDoc(userDocRef, sanitizeForFirestore(rawData));
+      // Address email specifically to the student's first name
       triggerAutoEmail('welcome', user.email!, values.firstName);
   }, [auth, firestore, storage]);
 
