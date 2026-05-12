@@ -255,7 +255,6 @@ export default function AdminDashboardPage() {
     const id = editingBlog.id || editingBlog.slug;
     let finalImageUrl = editingBlog.image || '';
 
-    // Step 1: Handle Image Upload if a new file is present
     if (blogImageFile) {
       try {
         const storageRef = ref(getStorage(firebaseApp), `blog_images/${id}_${Date.now()}`);
@@ -264,7 +263,7 @@ export default function AdminDashboardPage() {
       } catch (err) {
         toast({ title: "Image Upload Failed", description: "Storage rules blocked the file or size exceeded 10MB.", variant: "destructive" });
         setIsSavingBlog(false); 
-        return; // Exit early to prevent saving local blob URL
+        return; 
       }
     } else if (finalImageUrl.startsWith('blob:')) { 
       toast({ title: "Incomplete Upload", description: "The image is still a temporary preview. Please re-upload.", variant: "destructive" });
@@ -272,7 +271,6 @@ export default function AdminDashboardPage() {
       return; 
     }
 
-    // Step 2: Prepare final data object
     const blogData = { 
       ...editingBlog, 
       image: finalImageUrl, 
@@ -281,7 +279,6 @@ export default function AdminDashboardPage() {
       updatedAt: serverTimestamp() 
     };
     
-    // Step 3: Save to Firestore
     try {
       await setDoc(doc(getFirestore(firebaseApp), "blogs", id), blogData, { merge: true });
       toast({ title: "Blog Article Saved" }); 

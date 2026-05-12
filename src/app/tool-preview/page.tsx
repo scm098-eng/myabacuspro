@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useEffect, useState, useMemo } from 'react';
@@ -301,8 +300,6 @@ function ToolPreviewContent() {
 }
 
 export default function ToolPreviewPage() {
-  usePageBackground('');
-
   return (
     <Suspense fallback={<div className="p-20 text-center font-bold">Loading Abacus Lab...</div>}>
       <ToolPreviewContent />
