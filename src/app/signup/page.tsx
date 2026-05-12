@@ -98,7 +98,7 @@ async function getCroppedImg(image: HTMLImageElement, crop: Crop, fileName: stri
 export default function SignupPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/signup_bg.jpg?alt=media');
   const router = useRouter();
-  const { signup, sendVerificationEmail, loginWithGoogle, getApprovedTeachers } = useAuth();
+  const { signup, sendVerificationEmail, loginWithGoogle, getApprovedTeachers, user, profile, isLoading } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -127,6 +127,17 @@ export default function SignupPage() {
   const selectedRole = watch('role');
   const selectedCountry = watch('country');
 
+  // If user is already logged in, redirect them immediately to their specific dashboard
+  useEffect(() => {
+    if (!isLoading && user && profile) {
+      if (profile.role === 'admin' || (profile.role === 'teacher' && profile.status === 'approved')) {
+        router.replace('/admin');
+      } else {
+        router.replace('/dashboard');
+      }
+    }
+  }, [user, profile, isLoading, router]);
+
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === 'country') {
@@ -147,7 +158,6 @@ export default function SignupPage() {
   const handleGoogleSignup = async () => {
     try {
       await loginWithGoogle();
-      // Google login users are guided to profile completion via AuthContext redirection
       router.push('/profile');
     } catch (e: any) {
       toast({ title: 'Sign-up Failed', description: e.message, variant: "destructive" });
@@ -184,6 +194,17 @@ export default function SignupPage() {
       setIsPhotoDialogOpen(false);
     }
   };
+
+  if (isLoading || (user && profile)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-muted-foreground font-bold animate-pulse text-center">
+          {user ? 'Redirecting to your dashboard...' : 'Loading My Abacus Pro...'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
