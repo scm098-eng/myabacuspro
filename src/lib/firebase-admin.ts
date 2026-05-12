@@ -26,6 +26,7 @@ export function getFirebaseAdmin(): App {
 
 /**
  * Helper to get Firestore directly using the modular initialization logic.
+ * Exporting this explicitly fixes sitemap build failures.
  */
 export function getFirestoreDb(): Firestore {
   return getFirestore(getFirebaseAdmin());

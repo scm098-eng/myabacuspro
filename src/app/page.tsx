@@ -38,9 +38,9 @@ export default function Home() {
   useEffect(() => {
     if (!isLoading && user && profile) {
       if (profile.role === 'admin' || (profile.role === 'teacher' && profile.status === 'approved')) {
-        router.push('/admin');
+        router.replace('/admin');
       } else {
-        router.push('/dashboard');
+        router.replace('/dashboard');
       }
     }
   }, [user, profile, isLoading, router]);

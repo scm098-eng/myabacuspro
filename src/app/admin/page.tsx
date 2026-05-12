@@ -179,10 +179,11 @@ export default function AdminDashboardPage() {
       else q = query(collection(db, "users"), where("role", "==", "student"), orderBy("totalPoints", "desc"), limit(20));
 
       const leaderboardUnsub = onSnapshot(q, (snapshot) => {
-          setLeaderboard(snapshot.docs.map(doc => {
+          const filtered = snapshot.docs.map(doc => {
               const ud = doc.data() as ProfileData;
               return { uid: doc.id, email: ud.email?.toLowerCase(), name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: (ud as any)[leaderboardTab] || 0, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
-          }).filter(s => !ADMIN_EMAILS.includes(s.email)).slice(0, 10));
+          }).filter(s => !ADMIN_EMAILS.includes(s.email)).slice(0, 10);
+          setLeaderboard(filtered);
       });
       unsubscribers.push(leaderboardUnsub);
     }
@@ -254,22 +255,24 @@ export default function AdminDashboardPage() {
     const id = editingBlog.id || editingBlog.slug;
     let finalImageUrl = editingBlog.image || '';
 
-    // Upload image to Firebase Storage if a new file was selected
+    // Step 1: Handle Image Upload if a new file is present
     if (blogImageFile) {
       try {
         const storageRef = ref(getStorage(firebaseApp), `blog_images/${id}_${Date.now()}`);
         const uploadResult = await uploadBytes(storageRef, blogImageFile);
         finalImageUrl = await getDownloadURL(uploadResult.ref);
       } catch (err) {
-        toast({ title: "Image Upload Failed", variant: "destructive" });
-        setIsSavingBlog(false); return;
+        toast({ title: "Image Upload Failed", description: "Storage rules blocked the file or size exceeded 10MB.", variant: "destructive" });
+        setIsSavingBlog(false); 
+        return; // Exit early to prevent saving local blob URL
       }
     } else if (finalImageUrl.startsWith('blob:')) { 
-      // Protect against saving temporary local URLs if upload didn't happen
-      toast({ title: "Upload Incomplete", description: "The image is still a temporary URL. Please re-upload.", variant: "destructive" });
-      setIsSavingBlog(false); return;
+      toast({ title: "Incomplete Upload", description: "The image is still a temporary preview. Please re-upload.", variant: "destructive" });
+      setIsSavingBlog(false); 
+      return; 
     }
 
+    // Step 2: Prepare final data object
     const blogData = { 
       ...editingBlog, 
       image: finalImageUrl, 
@@ -278,9 +281,13 @@ export default function AdminDashboardPage() {
       updatedAt: serverTimestamp() 
     };
     
+    // Step 3: Save to Firestore
     try {
       await setDoc(doc(getFirestore(firebaseApp), "blogs", id), blogData, { merge: true });
-      toast({ title: "Blog Updated" }); setIsBlogDialogOpen(false); setEditingBlog(null); setBlogImageFile(null);
+      toast({ title: "Blog Article Saved" }); 
+      setIsBlogDialogOpen(false); 
+      setEditingBlog(null); 
+      setBlogImageFile(null);
     } catch (err: any) { toast({ title: "Save Failed", description: err.message, variant: "destructive" }); }
     finally { setIsSavingBlog(false); }
   };
@@ -345,7 +352,7 @@ export default function AdminDashboardPage() {
                 <TabsContent value="students">
                     <Card>
                         <CardHeader><CardTitle className="font-headline">Student Directory</CardTitle></CardHeader>
-                        <CardContent><Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader><TableBody>{processedData.filteredStudents.length > 0 ? processedData.filteredStudents.map((s) => (<TableRow key={s.uid}><TableCell><div className="flex items-center gap-2"><Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto}/></Avatar><div><p className="text-sm font-bold">{s.firstName} {s.surname}</p><p className="text-[10px] text-muted-foreground">{s.email}</p></div></div></TableCell><TableCell><Badge variant={s.subscriptionStatus === 'pro' ? 'default' : 'outline'}>{s.subscriptionStatus}</Badge></TableCell><TableCell className="text-right"><div className="flex justify-end gap-2">{profile?.role === 'admin' && (<Button variant="ghost" size="sm" onClick={() => setForceWinnerDialog({ open: true, user: s })}><Trophy className="w-4 h-4 text-yellow-600" /></Button>)}<Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link></Button></div></TableCell></TableRow>)) : <TableRow><TableCell colSpan={3} className="text-center py-8">No acknowledged students found.</TableCell></TableRow>}</TableBody></Table></CardContent>
+                        <CardContent><Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader><TableBody>{processedData.filteredStudents.length > 0 ? processedData.filteredStudents.map((s) => (<TableRow key={s.uid}><TableCell><div className="flex items-center gap-2"><Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto}/></Avatar><div><p className="text-sm font-bold">{s.firstName} {s.surname}</p><p className="text-[10px] text-muted-foreground">{s.email}</p></div></div></TableCell><TableCell><Badge variant={s.subscriptionStatus === 'pro' ? 'default' : 'outline'}>{s.subscriptionStatus}</Badge></TableCell><TableCell className="text-right"><div className="flex justify-end gap-2">{profile?.role === 'admin' && (<Button variant="ghost" size="sm" onClick={() => setForceWinnerDialog({ open: true, user: s })}><Trophy className="w-4 h-4 text-yellow-600" /></Button>)}<Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link></Button></div></TableCell></TableRow>)) : <TableRow><TableCell colSpan={3} className="text-center py-8">No students found.</TableCell></TableRow>}</TableBody></Table></CardContent>
                     </Card>
                 </TabsContent>
 
@@ -369,7 +376,7 @@ export default function AdminDashboardPage() {
                 </TabsContent>
 
                 <TabsContent value="marketing">
-                    <Card><CardHeader className="bg-muted/30 border-b"><CardTitle className="flex items-center gap-2 text-2xl font-headline"><Mail className="w-6 h-6 text-primary" /> Marketing Hub</CardTitle></CardHeader><CardContent className="pt-8"><form onSubmit={handleBlastEmails} className="space-y-8"><div className="space-y-4"><Label className="text-base font-bold">Target Audience</Label><Select value={marketingForm.targetAudience} onValueChange={(val) => setMarketingForm(p => ({ ...p, targetAudience: val, selectedStudentId: '' }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Every Student</SelectItem><SelectItem value="pro">Pro Only</SelectItem><SelectItem value="teachers">Teachers Only</SelectItem><SelectItem value="single">Particular Student</SelectItem><SelectItem value="staff_single">Particular Staff</SelectItem></SelectContent></Select>{(marketingForm.targetAudience === 'single' || marketingForm.targetAudience === 'staff_single') && (<div className="animate-in fade-in slide-in-from-top-2"><Select value={marketingForm.selectedStudentId} onValueChange={(val) => setMarketingForm(p => ({ ...p, selectedStudentId: val }))}><SelectTrigger><SelectValue placeholder="Pick a member..." /></SelectTrigger><SelectContent>{marketingForm.targetAudience === 'single' ? allUsers.filter(u => u.role === 'student').map(s => (<SelectItem key={s.uid} value={s.uid}>{s.firstName} {s.surname} ({s.email})</SelectItem>)) : allUsers.filter(u => u.role === 'teacher' || u.role === 'admin').map(s => (<SelectItem key={s.uid} value={s.uid}>{s.firstName} {s.surname} ({s.email})</SelectItem>))}</SelectContent></Select></div>)}</div><div className="space-y-2"><Label className="text-base font-bold">Email Subject</Label><Input value={marketingForm.subject} onChange={e => setMarketingForm(p => ({ ...p, subject: e.target.value }))} required /></div><div className="space-y-4"><Label className="text-base font-bold">Email Message</Label><Textarea value={marketingForm.message} onChange={e => setMarketingForm(p => ({ ...p, message: e.target.value }))} rows={10} required /></div><Button type="submit" className="w-full h-14" disabled={isResetting !== null}>{isResetting === 'blast' ? <Loader2 className="animate-spin mr-3" /> : <Send className="mr-3 h-6 w-6" />}Launch Marketing Campaign</Button></form></CardContent></Card>
+                    <Card><CardHeader className="bg-muted/30 border-b"><CardTitle className="flex items-center gap-2 text-2xl font-headline"><Mail className="w-6 h-6 text-primary" /> Marketing Hub</CardTitle></CardHeader><CardContent className="pt-8"><form onSubmit={handleBlastEmails} className="space-y-8"><div className="space-y-4"><Label className="text-base font-bold">Target Audience</Label><Select value={marketingForm.targetAudience} onValueChange={(val) => setMarketingForm(p => ({ ...p, targetAudience: val, selectedStudentId: '' }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Every Student</SelectItem><SelectItem value="pro">Pro Only</SelectItem><SelectItem value="teachers">Teachers Only</SelectItem><SelectItem value="single">Particular Student</SelectItem><SelectItem value="staff_single">Particular Staff</SelectItem></SelectContent></Select>{(marketingForm.targetAudience === 'single' || marketingForm.targetAudience === 'staff_single') && (<div className="animate-in fade-in slide-in-from-top-2"><Select value={marketingForm.selectedStudentId} onValueChange={(val) => setMarketingForm(p => ({ ...p, selectedStudentId: val }))}><SelectTrigger><SelectValue placeholder="Pick a member..." /></SelectTrigger><SelectContent>{marketingForm.targetAudience === 'single' ? allUsers.filter(u => u.role === 'student').map(s => (<SelectItem key={s.uid} value={s.uid}>{s.firstName} {s.surname} ({s.email})</SelectItem>)) : allUsers.filter(u => u.role === 'teacher' || u.role === 'admin').map(s => (<SelectItem key={s.uid} value={s.uid}>{s.firstName} {s.surname} ({s.email})</SelectItem>))}</SelectContent></Select></div>)}</div><div className="space-y-2"><Label className="text-base font-bold">Email Subject</Label><Input value={marketingForm.subject} onChange={e => setMarketingForm(p => ({ ...p, subject: e.target.value }))} required /></div><div className="space-y-4"><Label className="text-base font-bold">Email Message (Use {"{{name}}"} for personalization)</Label><Textarea value={marketingForm.message} onChange={e => setMarketingForm(p => ({ ...p, message: e.target.value }))} rows={10} required /></div><Button type="submit" className="w-full h-14" disabled={isResetting !== null}>{isResetting === 'blast' ? <Loader2 className="animate-spin mr-3" /> : <Send className="mr-3 h-6 w-6" />}Launch Marketing Campaign</Button></form></CardContent></Card>
                 </TabsContent>
 
                 <TabsContent value="system">
@@ -399,10 +406,6 @@ export default function AdminDashboardPage() {
             )) : <div className="p-8 text-center text-muted-foreground text-xs uppercase font-bold tracking-widest">Fresh Period</div>}</div></CardContent></Card>
         </div>
       </div>
-
-      <Dialog open={forceWinnerDialog.open} onOpenChange={(val) => !val && setForceWinnerDialog({ open: false, user: null })}>
-        <DialogContent className="max-w-md"><DialogHeader><DialogTitle className="flex items-center gap-2"><Trophy className="w-5 h-5 text-yellow-500" /> Declare Champion</DialogTitle></DialogHeader><div className="grid grid-cols-1 gap-4 py-4"><Button onClick={() => handleForceDeclareWinner('weekly')} variant="outline" disabled={isResetting !== null}>Weekly Champion</Button><Button onClick={() => handleForceDeclareWinner('monthly')} variant="outline" disabled={isResetting !== null}>Monthly Master</Button></div></DialogContent>
-      </Dialog>
 
       <Dialog open={isBlogDialogOpen} onOpenChange={setIsBlogDialogOpen}>
         <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden p-0 rounded-[2rem] border-none shadow-2xl flex flex-col">

@@ -72,10 +72,12 @@ const sanitizeForFirestore = (data: any) => {
 };
 
 const triggerAutoEmail = (type: string, userEmail: string, userName: string, metadata?: any) => {
+  // Always ensure we use only the first name for student-centric automated system emails
+  const studentFirstName = userName.split(' ')[0];
   fetch('/api/email/auto', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type, userEmail, userName: userName.split(' ')[0], metadata })
+    body: JSON.stringify({ type, userEmail, userName: studentFirstName, metadata })
   }).catch(e => console.warn("Failed to trigger auto-email:", e));
 };
 
@@ -124,7 +126,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       setUser(authUser);
       
-      // Clean up previous real-time listener if any
       if (profileUnsub) {
         profileUnsub();
         profileUnsub = undefined;
@@ -134,41 +135,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(true);
         const userDocRef = doc(firestore, 'users', authUser.uid);
         
-        // Setup real-time listener for the user profile
+        // REAL-TIME profile listener ensures points update without refresh
         profileUnsub = onSnapshot(userDocRef, (snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.data() as ProfileData;
             const profileData = { ...data, uid: authUser.uid };
             
-            // Background maintenance sync (non-blocking)
+            // Sync logic runs in background without blocking state updates
             const currentWeekKey = getUTCMondayKey();
             const currentMonthKey = getUTCMonthKey();
             const updatePayload: any = {};
-            let hasSyncWork = false;
+            let needsSync = false;
 
             if (data.lastWeeklyReset !== currentWeekKey) {
                 updatePayload.weeklyPoints = 0;
                 updatePayload.lastWeeklyReset = currentWeekKey;
-                hasSyncWork = true;
+                needsSync = true;
             }
             if (data.lastMonthlyReset !== currentMonthKey) {
                 updatePayload.monthlyPoints = 0;
                 updatePayload.lastMonthlyReset = currentMonthKey;
-                hasSyncWork = true;
+                needsSync = true;
             }
             if (data.emailVerified !== authUser.emailVerified) {
               updatePayload.emailVerified = authUser.emailVerified;
-              hasSyncWork = true;
+              needsSync = true;
             }
             const userEmail = authUser.email?.toLowerCase() || '';
             if (ADMIN_EMAILS.includes(userEmail) && data.role !== 'admin') {
                 updatePayload.role = 'admin';
                 updatePayload.subscriptionStatus = 'pro';
                 updatePayload.status = 'approved';
-                hasSyncWork = true;
+                needsSync = true;
             }
 
-            if (hasSyncWork) {
+            if (needsSync) {
               updateDoc(userDocRef, updatePayload).catch(e => console.warn("Background sync deferred", e));
             }
 
@@ -193,19 +194,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [auth, firestore]);
 
-  // Handle Suspensions and Incomplete Profiles automatically
+  // Handle Suspensions and Incomplete Profiles
   useEffect(() => {
     if (!isLoading && profile) {
       if (profile.isSuspended && pathname !== '/suspended') {
-        router.push('/suspended');
+        router.replace('/suspended');
         return;
       }
       
       const isProfileIncomplete = profile.role === 'student' && (!profile.grade || !profile.schoolName || !profile.city || !profile.addressLine1);
-      const publicPaths = ['/profile', '/logout', '/suspended', '/login', '/signup', '/'];
+      const allowedPaths = ['/profile', '/logout', '/suspended', '/login', '/signup', '/'];
       
-      if (isProfileIncomplete && !publicPaths.includes(pathname)) {
-        router.push('/profile');
+      if (isProfileIncomplete && !allowedPaths.includes(pathname)) {
+        router.replace('/profile');
       }
     }
   }, [profile, isLoading, pathname, router]);
@@ -277,7 +278,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       delete (rawData as any).confirmPassword;
 
       await setDoc(userDocRef, sanitizeForFirestore(rawData));
-      // Address email specifically to the student's first name
       triggerAutoEmail('welcome', user.email!, values.firstName);
   }, [auth, firestore, storage]);
 
