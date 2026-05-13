@@ -1,12 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { CheckCircle, Zap, Target, ArrowRight, Loader2, BookOpen, Calendar, User } from 'lucide-react';
+import { CheckCircle, Zap, Target, ArrowRight, Loader2, BookOpen, Calendar } from 'lucide-react';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { useAuth } from '@/hooks/useAuth';
 import placeholderImages from '@/lib/placeholder-images.json';
@@ -36,21 +35,9 @@ const features = [
 
 export default function Home() {
   usePageBackground('');
-  const { user, profile, isLoading } = useAuth();
-  const router = useRouter();
+  const { isLoading } = useAuth();
   const [latestBlogs, setLatestBlogs] = useState<BlogPost[]>([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
-
-  // If user is already logged in, redirect them immediately to their specific dashboard
-  useEffect(() => {
-    if (!isLoading && user && profile) {
-      if (profile.role === 'admin' || (profile.role === 'teacher' && profile.status === 'approved')) {
-        router.replace('/admin');
-      } else {
-        router.replace('/dashboard');
-      }
-    }
-  }, [user, profile, isLoading, router]);
 
   // Fetch 6 latest blogs for the Content Hub section
   useEffect(() => {
@@ -74,12 +61,12 @@ export default function Home() {
     fetchBlogs();
   }, []);
 
-  if (isLoading || (user && profile)) {
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <p className="text-muted-foreground font-bold animate-pulse">
-          {user ? 'Redirecting to your dashboard...' : 'Loading My Abacus Pro...'}
+          Loading My Abacus Pro...
         </p>
       </div>
     );
