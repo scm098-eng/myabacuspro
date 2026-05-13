@@ -125,6 +125,7 @@ export default function SignupPage() {
   const selectedRole = watch('role');
   const selectedCountry = watch('country');
 
+  // Automatic Redirection for logged-in users
   useEffect(() => {
     if (!isLoading && user && profile) {
       if (profile.role === 'admin' || (profile.role === 'teacher' && profile.status === 'approved')) {

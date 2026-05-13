@@ -129,7 +129,7 @@ export default function Home() {
       </section>
 
       {/* --- CONTENT HUB: LATEST FROM BLOG --- */}
-      <section className="w-full bg-muted/30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-20" aria-labelledby="blog-heading">
+      <section className="w-full bg-muted/10 p-6 sm:p-10 lg:p-14 rounded-[2.5rem] border border-primary/5" aria-labelledby="blog-heading">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-4">
             <div className="text-center md:text-left">
