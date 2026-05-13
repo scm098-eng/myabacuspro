@@ -1,15 +1,20 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Zap, Target, ArrowRight, Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { CheckCircle, Zap, Target, ArrowRight, Loader2, BookOpen, Calendar, User } from 'lucide-react';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { useAuth } from '@/hooks/useAuth';
 import placeholderImages from '@/lib/placeholder-images.json';
+import { getFirestore, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { firebaseApp } from '@/lib/firebase';
+import { format } from 'date-fns';
+import type { BlogPost } from '@/types';
+import { Badge } from '@/components/ui/badge';
 
 const features = [
   {
@@ -33,6 +38,8 @@ export default function Home() {
   usePageBackground('');
   const { user, profile, isLoading } = useAuth();
   const router = useRouter();
+  const [latestBlogs, setLatestBlogs] = useState<BlogPost[]>([]);
+  const [blogsLoading, setBlogsLoading] = useState(true);
 
   // If user is already logged in, redirect them immediately to their specific dashboard
   useEffect(() => {
@@ -44,6 +51,28 @@ export default function Home() {
       }
     }
   }, [user, profile, isLoading, router]);
+
+  // Fetch 6 latest blogs for the Content Hub section
+  useEffect(() => {
+    async function fetchBlogs() {
+      try {
+        const db = getFirestore(firebaseApp);
+        const blogRef = collection(db, 'blogs');
+        const q = query(blogRef, orderBy('createdAt', 'desc'), limit(6));
+        const snapshot = await getDocs(q);
+        const fetchedBlogs = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as BlogPost));
+        setLatestBlogs(fetchedBlogs);
+      } catch (error) {
+        console.error("Failed to fetch homepage blogs:", error);
+      } finally {
+        setBlogsLoading(false);
+      }
+    }
+    fetchBlogs();
+  }, []);
 
   if (isLoading || (user && profile)) {
     return (
@@ -57,7 +86,7 @@ export default function Home() {
   }
 
   return (
-    <div className="space-y-16">
+    <div className="space-y-24">
       <section aria-labelledby="hero-heading">
         <div className="space-y-6 text-center">
           <h1 id="hero-heading" className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-foreground font-headline">
@@ -109,6 +138,71 @@ export default function Home() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      </section>
+
+      {/* --- CONTENT HUB: LATEST FROM BLOG --- */}
+      <section className="w-full bg-muted/30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-20" aria-labelledby="blog-heading">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-4">
+            <div className="text-center md:text-left">
+              <h2 id="blog-heading" className="text-3xl font-black font-headline uppercase tracking-tight">Latest from our <span className="text-primary">Blog</span></h2>
+              <p className="text-muted-foreground font-medium">Expert training tips and mental arithmetic insights.</p>
+            </div>
+            <Button asChild variant="outline" className="rounded-full border-primary/20 hover:border-primary text-primary">
+              <Link href="/blog">View All Articles <BookOpen className="ml-2 h-4 w-4" /></Link>
+            </Button>
+          </div>
+
+          {blogsLoading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {latestBlogs.map((post) => (
+                <Card key={post.id} className="flex flex-col h-full overflow-hidden hover:shadow-2xl transition-all duration-300 group border-primary/5 bg-card">
+                  {post.image && (
+                    <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
+                      <Image
+                        src={post.image}
+                        alt={post.title}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        data-ai-hint="abacus blog"
+                      />
+                      <div className="absolute top-3 left-3">
+                        <Badge className="bg-primary/90 backdrop-blur-sm uppercase font-black text-[9px] tracking-widest border-none">
+                          {post.category}
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
+                  <CardHeader className="flex-grow">
+                    <div className="flex items-center gap-3 text-[10px] text-muted-foreground mb-3 font-bold uppercase tracking-tight">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" /> 
+                        {post.createdAt?.toDate ? format(post.createdAt.toDate(), 'MMM d, yyyy') : 'Recently'}
+                      </span>
+                    </div>
+                    <CardTitle className="text-xl font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                      {post.title}
+                    </CardTitle>
+                    <p className="text-muted-foreground text-sm line-clamp-3 mt-3 leading-relaxed">
+                      {post.excerpt}
+                    </p>
+                  </CardHeader>
+                  <CardFooter className="pt-0 pb-6 px-6">
+                    <Button asChild variant="link" className="p-0 h-auto font-black uppercase tracking-widest text-[10px] text-primary">
+                      <Link href={`/blog/${post.slug || post.id}`} className="flex items-center">
+                        Read Story <ArrowRight className="ml-1 w-3 h-3" />
+                      </Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>
