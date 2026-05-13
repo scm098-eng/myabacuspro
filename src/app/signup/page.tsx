@@ -64,7 +64,6 @@ const formSchema = z.object({
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
   confirmPassword: z.string(),
   role: z.enum(['student', 'teacher'], { required_error: 'You must select a role.' }),
-  teacherId: z.string().min(1, { message: "Teacher assignment is required." }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -98,12 +97,11 @@ async function getCroppedImg(image: HTMLImageElement, crop: Crop, fileName: stri
 export default function SignupPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/signup_bg.jpg?alt=media');
   const router = useRouter();
-  const { signup, sendVerificationEmail, loginWithGoogle, getApprovedTeachers, user, profile, isLoading } = useAuth();
+  const { signup, sendVerificationEmail, loginWithGoogle, user, profile, isLoading } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [teachers, setTeachers] = useState<ProfileData[]>([]);
   const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false);
   const [imgSrc, setImgSrc] = useState('');
   const [crop, setCrop] = useState<Crop>({ unit: '%', width: 90, height: 90, x: 5, y: 5 });
@@ -118,7 +116,7 @@ export default function SignupPage() {
     defaultValues: {
       email: '', password: '', confirmPassword: '', firstName: '', middleName: '', surname: '',
       country: 'India', addressLine1: '', city: '', taluka: '', district: '', state: '', pincode: '',
-      schoolName: '', mobileNo: '', whatsappNo: '', dob: '', grade: '', role: 'student', teacherId: '',
+      schoolName: '', mobileNo: '', whatsappNo: '', dob: '', grade: '', role: 'student',
     },
   });
 
@@ -127,7 +125,6 @@ export default function SignupPage() {
   const selectedRole = watch('role');
   const selectedCountry = watch('country');
 
-  // If user is already logged in, redirect them immediately to their specific dashboard
   useEffect(() => {
     if (!isLoading && user && profile) {
       if (profile.role === 'admin' || (profile.role === 'teacher' && profile.status === 'approved')) {
@@ -150,10 +147,6 @@ export default function SignupPage() {
     });
     return () => subscription.unsubscribe();
   }, [watch, setValue, form]);
-
-  useEffect(() => {
-    getApprovedTeachers().then(setTeachers);
-  }, [getApprovedTeachers]);
   
   const handleGoogleSignup = async () => {
     try {
@@ -234,7 +227,7 @@ export default function SignupPage() {
                <div className="space-y-6">
                  <div className="flex items-center gap-2 text-primary border-b pb-2">
                     <User className="w-5 h-5" />
-                    <h3 className="text-xl font-headline font-bold uppercase tracking-tight">Student Details</h3>
+                    <h3 className="text-xl font-headline font-bold uppercase tracking-tight">Personal Details</h3>
                  </div>
                  
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -247,28 +240,14 @@ export default function SignupPage() {
                       <div className="space-y-2"><Label>Age</Label><Input value={ageValue !== null ? `${ageValue} years old` : 'Select DOB'} disabled /></div>
                   </div>
                   {selectedRole === 'student' && (
-                    <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField control={form.control} name="schoolName" render={({ field }) => (
                           <FormItem><FormLabel>School Name *</FormLabel><FormControl><Input placeholder="Enter your school name" {...field} /></FormControl><FormMessage /></FormItem>
                       )} />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField control={form.control} name="teacherId" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Assigned Teacher *</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Pick a Teacher" /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                  {teachers.map(t => <SelectItem key={t.uid} value={t.uid}>{t.firstName} {t.surname}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="grade" render={({ field }) => (
-                            <FormItem><FormLabel>Grade/Std. *</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Grade" /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                        )} />
-                      </div>
-                    </>
+                      <FormField control={form.control} name="grade" render={({ field }) => (
+                          <FormItem><FormLabel>Grade/Std. *</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Grade" /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                      )} />
+                    </div>
                   )}
                </div>
 

@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, Zap, Plus, Edit, Trash2, Loader2, Send, ShieldAlert, UserX, Image as ImageIcon, Eye as EyeIcon, Mail, UserCheck, Upload } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, Zap, Plus, Edit, Trash2, Loader2, Send, ShieldAlert, UserX, Image as ImageIcon, Mail, UserCheck, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -106,7 +106,6 @@ export default function AdminDashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
-  const [winnersData, setWinnersData] = useState<any>(null);
   const [isResetting, setIsResetting] = useState<'weekly' | 'monthly' | 'force' | 'blast' | 'suspension' | null>(null);
   const [forceWinnerDialog, setForceWinnerDialog] = useState<{ open: boolean, user: ProfileData | null }>({ open: false, user: null });
 
@@ -166,10 +165,6 @@ export default function AdminDashboardPage() {
           setBlogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost)));
       });
       unsubscribers.push(blogUnsub);
-      const winnerUnsub = onSnapshot(doc(db, "stats", "leaderboard"), (snap) => {
-          if (snap.exists()) setWinnersData(snap.data());
-      });
-      unsubscribers.push(winnerUnsub);
     }
 
     if (profile.role === 'admin' || profile.role === 'teacher') {
@@ -196,25 +191,10 @@ export default function AdminDashboardPage() {
       const functions = getFunctions(firebaseApp, 'us-central1');
       const resetFn = httpsCallable(functions, type === 'weekly' ? 'manualResetWeekly' : 'manualResetMonthly');
       const result: any = await resetFn();
-      toast({ title: "Reset Successful", description: `Winner declared and reports sent to ${result.data.count || 0} students.` });
+      toast({ title: "Reset Successful", description: `Reports sent to ${result.data.count || 0} students.` });
     } catch (e: any) {
       toast({ title: "Reset Failed", description: e.message, variant: "destructive" });
     } finally { setIsResetting(null); }
-  };
-
-  const handleForceDeclareWinner = async (type: 'weekly' | 'monthly') => {
-    if (!forceWinnerDialog.user) return;
-    setIsResetting('force');
-    try {
-      const functions = getFunctions(firebaseApp, 'us-central1');
-      const forceFn = httpsCallable(functions, 'forceDeclareWinner');
-      const result: any = await forceFn({ uid: forceWinnerDialog.user.uid, type });
-      if (result.data.status === 'success') {
-        toast({ title: "Success", description: result.data.message });
-        setForceWinnerDialog({ open: false, user: null });
-      }
-    } catch (e: any) { toast({ title: "Failed", description: e.message, variant: "destructive" }); }
-    finally { setIsResetting(null); }
   };
 
   const handleApproveTeacher = async (uid: string) => {
@@ -261,14 +241,10 @@ export default function AdminDashboardPage() {
         const uploadResult = await uploadBytes(storageRef, blogImageFile);
         finalImageUrl = await getDownloadURL(uploadResult.ref);
       } catch (err) {
-        toast({ title: "Image Upload Failed", description: "Storage rules blocked the file or size exceeded 10MB.", variant: "destructive" });
+        toast({ title: "Image Upload Failed", variant: "destructive" });
         setIsSavingBlog(false); 
         return; 
       }
-    } else if (finalImageUrl.startsWith('blob:')) { 
-      toast({ title: "Incomplete Upload", description: "The image is still a temporary preview. Please re-upload.", variant: "destructive" });
-      setIsSavingBlog(false); 
-      return; 
     }
 
     const blogData = { 
@@ -284,7 +260,6 @@ export default function AdminDashboardPage() {
       toast({ title: "Blog Article Saved" }); 
       setIsBlogDialogOpen(false); 
       setEditingBlog(null); 
-      setBlogImageFile(null);
     } catch (err: any) { toast({ title: "Save Failed", description: err.message, variant: "destructive" }); }
     finally { setIsSavingBlog(false); }
   };
@@ -312,7 +287,9 @@ export default function AdminDashboardPage() {
     };
   }, [allUsers, searchTerm, profile]);
 
-  if (isLoading || authLoading) return <div className="p-8"><Skeleton className="h-[600px] w-full" /></div>;
+  if (isLoading || authLoading) {
+    return <div className="p-8"><Skeleton className="h-[600px] w-full" /></div>;
+  }
 
   return (
     <div className="space-y-8">
@@ -349,7 +326,7 @@ export default function AdminDashboardPage() {
                 <TabsContent value="students">
                     <Card>
                         <CardHeader><CardTitle className="font-headline">Student Directory</CardTitle></CardHeader>
-                        <CardContent><Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader><TableBody>{processedData.filteredStudents.length > 0 ? processedData.filteredStudents.map((s) => (<TableRow key={s.uid}><TableCell><div className="flex items-center gap-2"><Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto}/></Avatar><div><p className="text-sm font-bold">{s.firstName} {s.surname}</p><p className="text-[10px] text-muted-foreground">{s.email}</p></div></div></TableCell><TableCell><Badge variant={s.subscriptionStatus === 'pro' ? 'default' : 'outline'}>{s.subscriptionStatus}</Badge></TableCell><TableCell className="text-right"><div className="flex justify-end gap-2">{profile?.role === 'admin' && (<Button variant="ghost" size="sm" onClick={() => setForceWinnerDialog({ open: true, user: s })}><Trophy className="w-4 h-4 text-yellow-600" /></Button>)}<Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link></Button></div></TableCell></TableRow>)) : <TableRow><TableCell colSpan={3} className="text-center py-8">No students found.</TableCell></TableRow>}</TableBody></Table></CardContent>
+                        <CardContent><Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader><TableBody>{processedData.filteredStudents.length > 0 ? processedData.filteredStudents.map((s) => (<TableRow key={s.uid}><TableCell><div className="flex items-center gap-2"><Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto}/></Avatar><div><p className="text-sm font-bold">{s.firstName} {s.surname}</p><p className="text-[10px] text-muted-foreground">{s.email}</p></div></div></TableCell><TableCell><Badge variant={s.subscriptionStatus === 'pro' ? 'default' : 'outline'}>{s.subscriptionStatus}</Badge></TableCell><TableCell className="text-right"><div className="flex justify-end gap-2"><Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link></Button></div></TableCell></TableRow>)) : <TableRow><TableCell colSpan={3} className="text-center py-8">No students found.</TableCell></TableRow>}</TableBody></Table></CardContent>
                     </Card>
                 </TabsContent>
 
@@ -361,8 +338,8 @@ export default function AdminDashboardPage() {
                 </TabsContent>
 
                 <TabsContent value="blogs">
-                    <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-headline">Blog Management</h2><Button onClick={() => { setEditingBlog({ title: '', content: '', excerpt: '', category: 'News', slug: '', layout: 'standard', fontFamily: 'serif', lineSpacing: 'relaxed', dropCap: true, headlineWeight: 'black', headlineCase: 'normal', headlineSpacing: 'normal', imagePosition: 'top', imageFit: 'cover', showImage: true }); setDraftContent(''); setBlogImageFile(null); setBlogDialogMode('edit'); setIsBlogDialogOpen(true); }}><Plus className="mr-2 h-4 w-4" /> New Article</Button></div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{blogs.map(blog => (<Card key={blog.id}><CardHeader><div className="flex justify-between items-start"><div><CardTitle className="text-lg">{blog.title}</CardTitle><CardDescription>{blog.category} • {blog.author}</CardDescription></div><div className="flex gap-2"><Button variant="ghost" size="sm" onClick={() => { setEditingBlog(blog); setDraftContent(htmlToPlainText(blog.content)); setBlogImageFile(null); setBlogDialogMode('edit'); setIsBlogDialogOpen(true); }}><Edit className="w-4 h-4" /></Button><Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDeleteBlog(blog.id)}><Trash2 className="w-4 h-4" /></Button></div></div></CardHeader><CardContent><p className="text-xs text-muted-foreground line-clamp-2">{blog.excerpt}</p></CardContent><CardFooter className="text-[10px] text-muted-foreground italic">Last Updated: {normalizeDateDisplay(blog.createdAt)}</CardFooter></Card>))}</div>
+                    <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-headline">Blog Management</h2><Button onClick={() => { setEditingBlog({ title: '', content: '', excerpt: '', category: 'News', slug: '' }); setDraftContent(''); setBlogImageFile(null); setBlogDialogMode('edit'); setIsBlogDialogOpen(true); }}><Plus className="mr-2 h-4 w-4" /> New Article</Button></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{blogs.map(blog => (<Card key={blog.id}><CardHeader><div className="flex justify-between items-start"><div><CardTitle className="text-lg">{blog.title}</CardTitle><CardDescription>{blog.category}</CardDescription></div><div className="flex gap-2"><Button variant="ghost" size="sm" onClick={() => { setEditingBlog(blog); setDraftContent(htmlToPlainText(blog.content)); setIsBlogDialogOpen(true); }}><Edit className="w-4 h-4" /></Button><Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDeleteBlog(blog.id)}><Trash2 className="w-4 h-4" /></Button></div></div></CardHeader><CardContent><p className="text-xs text-muted-foreground line-clamp-2">{blog.excerpt}</p></CardContent></Card>))}</div>
                 </TabsContent>
 
                 <TabsContent value="moderation">
@@ -406,18 +383,18 @@ export default function AdminDashboardPage() {
 
       <Dialog open={isBlogDialogOpen} onOpenChange={setIsBlogDialogOpen}>
         <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden p-0 rounded-[2rem] border-none shadow-2xl flex flex-col">
-          <DialogHeader className="p-6 bg-muted/30 border-b shrink-0 flex flex-row items-center justify-between"><div><DialogTitle className="text-2xl font-headline">{editingBlog?.id ? 'Manage Article' : 'Create Article'}</DialogTitle></div><div className="flex bg-muted p-1 rounded-xl gap-1"><Button variant={blogDialogMode === 'edit' ? 'default' : 'ghost'} size="sm" onClick={() => setBlogDialogMode('edit')} className="rounded-lg h-9 px-4"><Edit className="w-4 h-4 mr-2" /> Editor</Button><Button variant={blogDialogMode === 'preview' ? 'default' : 'ghost'} size="sm" onClick={() => setBlogDialogMode('preview')} className="rounded-lg h-9 px-4"><EyeIcon className="w-4 h-4 mr-2" /> Preview</Button></div></DialogHeader>
+          <DialogHeader className="p-6 bg-muted/30 border-b shrink-0 flex flex-row items-center justify-between"><div><DialogTitle className="text-2xl font-headline">{editingBlog?.id ? 'Manage Article' : 'Create Article'}</DialogTitle></div><div className="flex bg-muted p-1 rounded-xl gap-1"><Button variant={blogDialogMode === 'edit' ? 'default' : 'ghost'} size="sm" onClick={() => setBlogDialogMode('edit')} className="rounded-lg h-9 px-4"><Edit className="w-4 h-4 mr-2" /> Editor</Button></div></DialogHeader>
           <div className="flex-1 overflow-y-auto">
             {blogDialogMode === 'edit' ? (
               <form id="blog-save-form" onSubmit={handleSaveBlog} className="p-8 space-y-10">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div className="space-y-2"><Label className="font-bold">Title</Label><Input value={editingBlog?.title || ''} onChange={e => setEditingBlog(prev => ({ ...prev, title: e.target.value, slug: (prev?.slug || e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-')) }))} required className="h-12 text-lg border-2" /></div><div className="space-y-2"><Label className="font-bold">URL Slug</Label><Input value={editingBlog?.slug || ''} onChange={e => setEditingBlog(prev => ({ ...prev, slug: e.target.value }))} required className="h-12 bg-muted/20 border-2" /></div></div>
-                <div className="bg-indigo-50/30 p-8 rounded-3xl border-2 border-indigo-100 space-y-8"><div className="flex items-center justify-between"><div className="flex items-center gap-2 text-indigo-700 font-bold uppercase tracking-tight text-xs"><ImageIcon className="w-4 h-4" /> Featured Image</div><div className="flex items-center gap-2"><Label htmlFor="show-image" className="text-xs font-bold uppercase text-muted-foreground">Show Image</Label><Switch id="show-image" checked={editingBlog?.showImage ?? true} onCheckedChange={(val) => setEditingBlog(p => ({ ...p, showImage: val }))} /></div></div><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="space-y-6"><Button type="button" variant="outline" className="w-full h-12 border-2 bg-white gap-2 font-bold" onClick={() => document.getElementById('blog-image-upload')?.click()}><Upload className="w-4 h-4" /> {blogImageFile ? 'Change File' : 'Upload Image'}</Button><input id="blog-image-upload" type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) { setBlogImageFile(file); setEditingBlog(prev => ({ ...prev, image: URL.createObjectURL(file) })); } }} /><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-muted-foreground pointer-events-none">URL</span><Input value={editingBlog?.image || ''} onChange={e => { setEditingBlog(prev => ({ ...prev, image: e.target.value })); setBlogImageFile(null); }} placeholder="https://..." className="h-12 pl-12 border-2 bg-white" /></div></div><div className="space-y-2"><Label className="text-xs font-bold uppercase text-muted-foreground">Image Preview</Label>{(editingBlog?.image || blogImageFile) ? (<div className="mt-4 relative rounded-xl overflow-hidden border-2 bg-slate-100 aspect-[3/2]"><img src={editingBlog?.image || ''} alt="Editor Preview" className="w-full h-full object-cover" /></div>) : (<div className="mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed bg-slate-50 text-slate-400 aspect-[3/2]"><ImageIcon className="w-8 h-8 opacity-20" /></div>)}</div></div></div>
-                <div className="space-y-6"><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div className="space-y-2"><Label className="font-bold">Category</Label><Input value={editingBlog?.category || ''} onChange={e => setEditingBlog(prev => ({ ...prev, category: e.target.value }))} required className="h-12 border-2" /></div><div className="space-y-2"><Label className="font-bold">Author Override</Label><Input value={editingBlog?.author || ''} onChange={e => setEditingBlog(prev => ({ ...prev, author: e.target.value }))} className="h-12 border-2" /></div></div><div className="space-y-2"><Label className="font-bold">Excerpt (Social Summary)</Label><Textarea value={editingBlog?.excerpt || ''} onChange={e => setEditingBlog(p => ({ ...p, excerpt: e.target.value })) as any} rows={2} required className="border-2" /></div><div className="space-y-2"><div className="flex items-center justify-between mb-2"><Label className="font-bold">Main Story (HTML Supported)</Label></div><Textarea value={draftContent} onChange={e => { setDraftContent(e.target.value); setEditingBlog(prev => ({ ...prev, content: plainTextToHtml(e.target.value) })); }} rows={12} required placeholder="Write your story here..." className="border-2 text-lg leading-relaxed font-serif p-6" /></div></div>
+                <div className="bg-indigo-50/30 p-8 rounded-3xl border-2 border-indigo-100 space-y-8"><div className="flex items-center justify-between"><div className="flex items-center gap-2 text-indigo-700 font-bold uppercase tracking-tight text-xs"><ImageIcon className="w-4 h-4" /> Featured Image</div></div><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="space-y-6"><Button type="button" variant="outline" className="w-full h-12 border-2 bg-white gap-2 font-bold" onClick={() => document.getElementById('blog-image-upload')?.click()}><Upload className="w-4 h-4" /> {blogImageFile ? 'Change File' : 'Upload Image'}</Button><input id="blog-image-upload" type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) { setBlogImageFile(file); setEditingBlog(prev => ({ ...prev, image: URL.createObjectURL(file) })); } }} /><div className="relative"><Input value={editingBlog?.image || ''} onChange={e => { setEditingBlog(prev => ({ ...prev, image: e.target.value })); setBlogImageFile(null); }} placeholder="https://..." className="h-12 border-2 bg-white" /></div></div><div className="space-y-2">{(editingBlog?.image || blogImageFile) && (<div className="mt-4 relative rounded-xl overflow-hidden border-2 bg-slate-100 aspect-[3/2]"><img src={editingBlog?.image || ''} alt="Editor Preview" className="w-full h-full object-cover" /></div>)}</div></div></div>
+                <div className="space-y-6"><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div className="space-y-2"><Label className="font-bold">Category</Label><Input value={editingBlog?.category || ''} onChange={e => setEditingBlog(prev => ({ ...prev, category: e.target.value }))} required className="h-12 border-2" /></div></div><div className="space-y-2"><Label className="font-bold">Excerpt (Social Summary)</Label><Textarea value={editingBlog?.excerpt || ''} onChange={e => setEditingBlog(p => ({ ...p, excerpt: e.target.value })) as any} rows={2} required className="border-2" /></div><div className="space-y-2"><Label className="font-bold">Main Story (HTML Supported)</Label><Textarea value={draftContent} onChange={e => { setDraftContent(e.target.value); setEditingBlog(prev => ({ ...prev, content: plainTextToHtml(e.target.value) })); }} rows={12} required placeholder="Write your story here..." className="border-2 text-lg leading-relaxed font-serif p-6" /></div></div>
               </form>
             ) : (
               <div className="p-8 max-w-4xl mx-auto space-y-12">
-                <div className="text-center space-y-4"><Badge className="bg-primary text-white uppercase font-black text-[10px] px-4 py-1.5 rounded-full">{editingBlog?.category}</Badge><h1 className="text-4xl md:text-6xl font-black text-slate-900 leading-tight">{editingBlog?.title || 'Article Headline Preview'}</h1><p className="text-muted-foreground font-medium">By {editingBlog?.author || 'Author'} • Just Now</p></div>
-                <div className="clearfix">{(editingBlog?.showImage !== false) && (editingBlog?.image || extractFirstImage(editingBlog?.content || '')) && (<div className="relative overflow-hidden shadow-2xl border bg-slate-50 mb-8 aspect-[3/2] w-full rounded-[2rem]"><img src={editingBlog?.image || extractFirstImage(editingBlog?.content || '') || ''} alt="Preview" className="w-full h-full object-cover" /></div>)}<div className="james-clear-style prose lg:prose-xl max-w-none font-serif leading-relaxed" dangerouslySetInnerHTML={{ __html: editingBlog?.content || '<p>Content preview will appear here...</p>' }} /></div>
+                <div className="text-center space-y-4"><Badge className="bg-primary text-white uppercase font-black text-[10px] px-4 py-1.5 rounded-full">{editingBlog?.category}</Badge><h1 className="text-4xl md:text-6xl font-black text-slate-900 leading-tight">{editingBlog?.title || 'Article Headline Preview'}</h1></div>
+                <div className="james-clear-style prose lg:prose-xl max-w-none font-serif leading-relaxed" dangerouslySetInnerHTML={{ __html: editingBlog?.content || '<p>Content preview will appear here...</p>' }} />
               </div>
             )}
           </div>
