@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Calendar, User, ArrowRight } from 'lucide-react';
+import { ChevronLeft, Calendar, User, ArrowRight, BrainCircuit, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { getFirestore, collection, query, where, limit, getDocs } from 'firebase/firestore';
@@ -173,13 +173,27 @@ export default async function BlogPostPage({ params }: PageProps) {
           <div className={theme.content} dangerouslySetInnerHTML={{ __html: post.content }} />
         </div>
 
+        {/* Enhanced Educational CTA for Google Crawler */}
         <div className="max-w-[700px] mx-auto mt-20">
-          <div className="cta-section bg-gradient-to-br from-primary/5 to-transparent p-10 rounded-[2.5rem] border border-primary/10">
-            <h4 className="text-2xl font-black uppercase tracking-tight text-slate-900 mb-4">Ready to master mental math?</h4>
-            <p className="text-lg font-medium text-slate-600 mb-8">Join thousands of students building lightning-fast calculation skills on our digital platform.</p>
-            <Button asChild size="lg" className="h-14 px-10 text-lg font-black rounded-2xl shadow-xl hover:scale-105 transition-transform">
-              <Link href="/signup">Try Our Free Practice Tool</Link>
-            </Button>
+          <div className="cta-section bg-gradient-to-br from-primary/5 to-transparent p-10 rounded-[2.5rem] border-2 border-primary/10 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              <BrainCircuit className="w-24 h-24 text-primary" />
+            </div>
+            <div className="relative z-10 space-y-6">
+              <h4 className="text-2xl font-black uppercase tracking-tight text-slate-900 leading-tight">Put these techniques <span className="text-primary">into practice</span></h4>
+              <p className="text-lg font-medium text-slate-600 leading-relaxed">
+                Want to build the lightning-fast calculation skills mentioned in this article? Our specialized practice tools allow you to drill these specific formulas.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button asChild size="lg" className="flex-1 h-14 px-8 text-base font-black rounded-2xl shadow-xl hover:scale-105 transition-transform uppercase tracking-wider">
+                  <Link href="/practice-features">View Practice Features</Link>
+                </Button>
+                <Button asChild variant="outline" size="lg" className="flex-1 h-14 px-8 text-base font-black rounded-2xl uppercase tracking-wider">
+                  <Link href="/signup">Free Registration</Link>
+                </Button>
+              </div>
+              <p className="text-xs text-center text-muted-foreground font-bold">Used by 1,000+ students worldwide to master Soroban techniques.</p>
+            </div>
           </div>
           
           <Separator className="my-16" />
@@ -207,7 +221,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {relatedPosts.map((related) => (
-                <Card key={related.id} className="flex flex-col h-full overflow-hidden hover:shadow-xl transition-all group">
+                <Card key={related.id} className="flex flex-col h-full overflow-hidden hover:shadow-xl transition-all group border-none rounded-3xl">
                   {(related.showImage !== false) && (related.image) && (
                     <div className="relative aspect-[3/2] overflow-hidden">
                         <Image src={related.image} alt={related.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />

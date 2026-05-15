@@ -5,7 +5,7 @@ import { getAuth } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import type { ProfileData } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Loader2, Zap } from 'lucide-react';
+import { Check, Star, Loader2, Zap, ShieldCheck, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Badge } from '@/components/ui/badge';
@@ -15,9 +15,10 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 // --- CONFIGURATION ---
-const RAZORPAY_PLAN_ID = 'plan_S89FukHU9XcnKu'; // Monthly Recurring
+const RAZORPAY_PLAN_ID = 'plan_S89FukHU9XcnKu';
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!;
 
 const PLANS = [
@@ -61,7 +62,7 @@ declare global {
 }
 
 interface DynamicSubscriptionButtonProps {
-    user: User;
+    user: User | null;
     profile: ProfileData | null;
     selectedPlan: typeof PLANS[0];
     onSuccess: (response: any) => void;
@@ -72,6 +73,14 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, onSuccess, onE
     const [isProcessing, setIsProcessing] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
+
+    if (!user) {
+        return (
+            <Button asChild className="w-full h-14 text-lg font-bold rounded-xl shadow-lg">
+                <Link href="/login">Login to Upgrade</Link>
+            </Button>
+        );
+    }
 
     const loadRazorpayScript = () => {
         return new Promise((resolve, reject) => {
@@ -112,7 +121,6 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, onSuccess, onE
             const functions = getFunctions(firebaseApp);
             let result: any;
 
-            // Logic selection based on plan type
             if (selectedPlan.type === 'recurring') {
                 const createSubscription = httpsCallable<any, any>(functions, 'createRazorpaySubscription');
                 result = await createSubscription({ 
@@ -193,11 +201,7 @@ export default function PricingPage() {
     const router = useRouter();
     const { toast } = useToast();
 
-    useEffect(() => {
-        if (!isLoading && !user) router.push('/login');
-    }, [isLoading, user, router]);
-
-    if (isLoading || !user) {
+    if (isLoading) {
         return (
             <div className="max-w-6xl mx-auto p-4">
                 <Skeleton className="h-12 w-3/4 mx-auto mb-12" />
@@ -213,15 +217,15 @@ export default function PricingPage() {
     const isAlreadyPro = profile?.subscriptionStatus === 'pro';
 
     return (
-        <div className="max-w-6xl mx-auto py-12 px-4">
-            <div className="text-center mb-16">
-                <h1 className="text-4xl font-extrabold sm:text-6xl tracking-tight text-gray-900">Upgrade to Abacus Pro</h1>
-                <p className="mt-4 text-xl text-muted-foreground max-w-2xl mx-auto">Choose the plan that fits your learning pace and master mental math today.</p>
+        <div className="max-w-6xl mx-auto py-12 px-4 space-y-24">
+            <div className="text-center space-y-4">
+                <h1 className="text-4xl font-extrabold sm:text-6xl tracking-tight text-gray-900 font-headline uppercase">Upgrade to <span className="text-primary">Abacus Pro</span></h1>
+                <p className="mt-4 text-xl text-muted-foreground max-w-2xl mx-auto font-medium">Unlock the full power of mental math training and join the global leaderboard.</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start relative">
                 {PLANS.map((plan) => (
-                    <Card key={plan.id} className={`relative flex flex-col h-full transition-all duration-300 hover:shadow-2xl ${
+                    <Card key={plan.id} className={`relative flex flex-col h-full transition-all duration-300 hover:shadow-2xl rounded-[2rem] overflow-hidden ${
                         plan.isBestValue 
                         ? 'border-orange-500 border-4 scale-105 z-10 bg-white' 
                         : 'border-2 border-gray-100 bg-white/80'
@@ -235,7 +239,7 @@ export default function PricingPage() {
                         )}
                         
                         <CardHeader className="text-center pb-2">
-                            <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+                            <CardTitle className="text-2xl font-bold uppercase">{plan.name}</CardTitle>
                             <CardDescription className="min-h-[40px] mt-2 font-medium">{plan.description}</CardDescription>
                             
                             <div className="mt-6 flex flex-col items-center">
@@ -256,14 +260,14 @@ export default function PricingPage() {
                                     'Unlimited Practice Tests',
                                     'Access All Difficulty Levels',
                                     'Advanced Progress Analytics',
-                                    'Ad-Free Learning Experience',
-                                    'Priority Support'
+                                    'Full Bubble Game Access',
+                                    'Hall of Fame Placement'
                                 ].map((feature) => (
                                     <li key={feature} className="flex items-start gap-3">
                                         <div className="mt-1 bg-green-100 p-1 rounded-full shrink-0">
                                             <Check className="h-4 w-4 text-green-600" />
                                         </div>
-                                        <span className="text-sm font-medium text-gray-700">{feature}</span>
+                                        <span className="text-sm font-bold text-gray-700">{feature}</span>
                                     </li>
                                 ))}
                             </ul>
@@ -271,7 +275,7 @@ export default function PricingPage() {
 
                         <CardFooter className="pt-6 pb-8 px-8">
                             {isAlreadyPro ? (
-                                <Button className="w-full py-6 text-lg font-bold cursor-default" variant="secondary">
+                                <Button className="w-full py-6 text-lg font-bold cursor-default rounded-xl" variant="secondary">
                                     Current Plan Active
                                 </Button>
                             ) : (
@@ -288,16 +292,60 @@ export default function PricingPage() {
                 ))}
             </div>
 
-            <div className="mt-20 text-center flex flex-col items-center justify-center gap-4">
-                <div className="flex -space-x-2">
-                    {[1,2,3,4].map(i => (
-                        <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-gray-200" />
-                    ))}
+            {/* Structured Comparison Table for Google Crawler */}
+            <section className="space-y-8">
+                <div className="text-center">
+                    <h2 className="text-3xl font-black uppercase font-headline">Free vs Pro Comparison</h2>
+                    <p className="text-muted-foreground font-medium">See exactly why 1,000+ students upgraded to Pro.</p>
                 </div>
-                <p className="text-muted-foreground font-medium flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                    Join 1,000+ students mastering Abacus mental math.
-                </p>
+                <Card className="rounded-[2rem] overflow-hidden border-2 shadow-xl">
+                    <Table>
+                        <TableHeader className="bg-muted/50">
+                            <TableRow>
+                                <TableHead className="w-[300px] font-black uppercase text-xs">Feature</TableHead>
+                                <TableHead className="text-center font-black uppercase text-xs">Free Plan</TableHead>
+                                <TableHead className="text-center font-black uppercase text-xs text-primary">Pro Member</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow>
+                                <TableCell className="font-bold">Basic Practice Tests</TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-600" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-600" /></TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="font-bold">Formula-Specific Training</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-muted-foreground/30" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-600" /></TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="font-bold">Bubble Game Levels</TableCell>
+                                <TableCell className="text-center">First 5 Levels</TableCell>
+                                <TableCell className="text-center font-bold text-primary">All 1000+ Levels</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="font-bold">Progress Analytics</TableCell>
+                                <TableCell className="text-center">Basic</TableCell>
+                                <TableCell className="text-center font-bold text-primary">Advanced Trends</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="font-bold">Hall of Fame Access</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-muted-foreground/30" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-600" /></TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </Card>
+            </section>
+
+            <div className="text-center space-y-6 pt-12 border-t">
+                <div className="flex justify-center gap-4">
+                    <ShieldCheck className="w-12 h-12 text-primary" />
+                    <div className="text-left">
+                        <p className="font-black uppercase tracking-tight">100% Secure Payments</p>
+                        <p className="text-sm text-muted-foreground font-medium">Processed via Razorpay with industry-standard encryption.</p>
+                    </div>
+                </div>
             </div>
         </div>
     );

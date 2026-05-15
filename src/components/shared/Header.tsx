@@ -52,7 +52,7 @@ export function Header() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/about', label: 'About' },
-    { href: '/tests', label: 'Practice & Games' },
+    { href: user ? '/tests' : '/practice-features', label: 'Practice & Games' },
     { href: '/blog', label: 'Blog' },
     { href: '/pricing', label: 'Pricing' },
     { href: '/contact', label: 'Contact us' },
