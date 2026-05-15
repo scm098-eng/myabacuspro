@@ -16,5 +16,17 @@
     "width": 600,
     "height": 400,
     "hint": "support contact"
+  },
+  "anzanFeature": {
+    "src": "https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Anzan%20image.webp?alt=media&token=b9b96c4f-bbfc-4cb7-8df9-4db3bb58d38e",
+    "width": 1200,
+    "height": 800,
+    "hint": "anzan mental"
+  },
+  "timedFeature": {
+    "src": "https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Timed%20Challenges.webp?alt=media&token=80429df7-9f5c-44ad-a550-0c0a7f175e21",
+    "width": 1200,
+    "height": 800,
+    "hint": "math challenges"
   }
 }

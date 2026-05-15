@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { usePageBackground } from '@/hooks/usePageBackground';
-import { BrainCircuit, Zap, Target, Trophy, BookOpen, Layers, MousePointer2, Timer } from 'lucide-react';
+import { BrainCircuit, Zap, Target, Trophy, BookOpen, Layers, MousePointer2, Timer, Sparkles, Rocket } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import placeholderImages from '@/lib/placeholder-images.json';
@@ -19,7 +19,7 @@ export default function PracticeFeaturesPage() {
           Master the <span className="text-primary">Ancient Art</span> of Calculation
         </h1>
         <p className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground font-medium leading-relaxed">
-          My Abacus Pro is more than a calculator—it's a comprehensive brain development platform designed to turn students into human calculators through visualization and formula mastery.
+          My Abacus Pro is more than a digital calculator—it's a comprehensive brain development platform designed to turn students into human calculators through visualization and formula mastery.
         </p>
         <div className="flex justify-center gap-4">
           <Button asChild size="lg" className="h-14 px-10 text-lg font-black rounded-2xl shadow-xl">
@@ -37,23 +37,23 @@ export default function PracticeFeaturesPage() {
           <h2 className="text-3xl font-black uppercase tracking-tight font-headline">Timed Challenges & Mastery Modes</h2>
           <div className="space-y-4 text-muted-foreground font-medium leading-relaxed text-lg">
             <p>
-              Speed is the ultimate test of abacus mastery. Our platform offers two distinct modes of practice to build your "concentration muscle."
+              Speed is the ultimate test of abacus mastery. Our platform offers two distinct modes of practice to build your "concentration muscle," specifically tuned for competitive standards.
             </p>
             <p>
-              <strong>Foundation Mode:</strong> Perfect for beginners, this mode provides multiple-choice options, allowing students to build confidence and accuracy in Addition, Subtraction, Multiplication, and Division.
+              <strong>Foundation Mode:</strong> Perfect for beginners, this mode provides multiple-choice options, allowing students to build confidence and accuracy in Addition, Subtraction, Multiplication, and Division. It reduces math anxiety by providing a safety net while learning new formulas.
             </p>
             <p>
-              <strong>Mastery Mode:</strong> For the elite calculators. No hints, no options. Students must calculate the result mentally and input the answer directly. This develops high-speed information processing that rivals electronic calculators.
+              <strong>Mastery Mode:</strong> For the elite calculators. No hints, no options. Students must calculate the result mentally and input the answer directly. This develops high-speed information processing that rivals electronic calculators and prepares students for international abacus competitions.
             </p>
           </div>
         </div>
         <div className="relative aspect-video rounded-[2.5rem] overflow-hidden border-4 border-muted shadow-2xl">
           <Image 
-            src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/abacus_hero.webp?alt=media"
-            alt="Timed math challenges"
+            src={placeholderImages.timedFeature.src}
+            alt="Timed math challenges arena"
             fill
             className="object-cover"
-            data-ai-hint="math test"
+            data-ai-hint={placeholderImages.timedFeature.hint}
           />
         </div>
       </section>
@@ -62,11 +62,11 @@ export default function PracticeFeaturesPage() {
       <section className="grid md:grid-cols-2 gap-12 items-center">
         <div className="order-2 md:order-1 relative aspect-video rounded-[2.5rem] overflow-hidden border-4 border-muted shadow-2xl">
           <Image 
-            src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/student_learning.webp?alt=media"
-            alt="Visual bead recognition"
+            src={placeholderImages.anzanFeature.src}
+            alt="Anzan Mental Visualization Training"
             fill
             className="object-cover"
-            data-ai-hint="abacus tool"
+            data-ai-hint={placeholderImages.anzanFeature.hint}
           />
         </div>
         <div className="order-1 md:order-2 space-y-6">
@@ -79,10 +79,10 @@ export default function PracticeFeaturesPage() {
               At the heart of our pedagogy is "Beads Value" mastery. We teach students to recognize the value of abacus beads at a glance, bypassing the need to count.
             </p>
             <p>
-              This visual training activates the right hemisphere of the brain, creating a mental image of the abacus. Through our <strong>Identify</strong> and <strong>Set</strong> modes, students practice from single digits to 4-digit complexity.
+              This visual training activates the right hemisphere of the brain, creating a permanent mental image of the abacus. Through our specialized <strong>Identify</strong> and <strong>Set</strong> modes, students practice from single digits to 4-digit complexity.
             </p>
             <p>
-              By mastering visualization, students can eventually perform complex arithmetic entirely in their heads—a skill known as Anzan that provides a lifelong cognitive edge.
+              By mastering visualization (Anzan), students can perform complex arithmetic entirely in their heads—a skill that provides a lifelong cognitive edge in focus, memory retention, and spatial reasoning.
             </p>
           </div>
         </div>
@@ -93,29 +93,54 @@ export default function PracticeFeaturesPage() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
         <div className="relative z-10 space-y-12">
           <div className="text-center space-y-4">
-            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter italic">A Structured Journey</h2>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto font-medium">From first movement to human calculator, we guide you through every formula.</p>
+            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter italic">A Structured Digital Curriculum</h2>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto font-medium">From first movement to human calculator, we guide you through every critical formula.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white/5 p-8 rounded-3xl border border-white/10 hover:bg-white/10 transition-colors">
               <h3 className="text-xl font-black uppercase mb-4 text-purple-400">Small Sister</h3>
-              <p className="text-sm text-slate-300">Master the base-5 heavenly bead logic. We cover all +1 to +4 and -1 to -4 variations for foundation building.</p>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                The foundation of the Soroban. Master the base-5 heavenly bead logic. We cover all +1 to +4 and -1 to -4 variations for early-stage brain development and tactile accuracy.
+              </p>
             </div>
             <div className="bg-white/5 p-8 rounded-3xl border border-white/10 hover:bg-white/10 transition-colors">
               <h3 className="text-xl font-black uppercase mb-4 text-red-400">Big Brother</h3>
-              <p className="text-sm text-slate-300">Learn the power of base-10 carries and borrows. These formulas are the engine of multi-digit speed.</p>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Learn the power of base-10 carries and borrows. These formulas are the engine of multi-digit speed. Our digital modules provide instant feedback on every carry-over movement.
+              </p>
             </div>
             <div className="bg-white/5 p-8 rounded-3xl border border-white/10 hover:bg-white/10 transition-colors">
               <h3 className="text-xl font-black uppercase mb-4 text-green-400">Combinations</h3>
-              <p className="text-sm text-slate-300">The peak of Soroban logic. Use simultaneous base-5 and base-10 techniques for complex calculations.</p>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                The peak of Soroban logic. Use simultaneous base-5 and base-10 techniques for high-speed complex calculations. These levels are designed for advanced students seeking grandmaster status.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
+      {/* Gamified Learning Section */}
+      <section className="text-center space-y-8 py-12">
+        <div className="mx-auto bg-pink-100 p-4 rounded-3xl w-fit">
+          <Rocket className="h-10 w-10 text-pink-600" />
+        </div>
+        <h2 className="text-3xl font-black uppercase tracking-tight font-headline">Gamified Engagement for All Ages</h2>
+        <div className="max-w-3xl mx-auto text-muted-foreground font-medium leading-relaxed text-lg space-y-6">
+          <p>
+            Learning doesn't have to be a chore. Our <strong>Bubble Game</strong> integrates formula practice with fast-paced action. Students must "pop" the correct answer bubbles as they float across the screen, demanding rapid mental calculation and hand-eye coordination.
+          </p>
+          <p>
+            With over 1,000 levels of progressive difficulty, the game ensures that students are always challenged at the edge of their ability. Every cleared level contributes to their global <strong>Hall of Fame</strong> ranking, fostering a healthy sense of competition and achievement.
+          </p>
+        </div>
+      </section>
+
       {/* CTA Section */}
-      <section className="text-center py-12">
+      <section className="text-center py-12 border-t">
         <h2 className="text-3xl font-black uppercase tracking-tight mb-6">Ready to Build a Better Brain?</h2>
+        <p className="text-muted-foreground font-medium mb-10 max-w-2xl mx-auto">
+          Join a community of dedicated learners and teachers using the most advanced digital abacus training tools available today.
+        </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Button asChild size="lg" className="h-16 px-12 text-xl font-black rounded-2xl shadow-xl">
             <Link href="/signup">Join 1,000+ Students</Link>
