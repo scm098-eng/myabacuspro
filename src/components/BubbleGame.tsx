@@ -67,17 +67,6 @@ const Fish = memo(({ className, duration, flip = false }: { className: string, d
 ));
 Fish.displayName = 'Fish';
 
-const Seaweed = memo(({ className }: { className: string }) => (
-    <div className={cn("absolute bottom-0 w-12 h-40 origin-bottom select-none pointer-events-none opacity-30", className)}>
-        <div className="relative w-full h-full transform-gpu animate-[sway_8s_ease-in-out_infinite]">
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-full bg-green-600 rounded-t-full" />
-            <div className="absolute bottom-0 left-0 w-2 h-3/4 bg-green-500 rounded-t-full transform rotate-[-15deg] origin-bottom" />
-            <div className="absolute bottom-0 right-0 w-2 h-2/3 bg-green-700 rounded-t-full transform rotate-[15deg] origin-bottom" />
-        </div>
-    </div>
-));
-Seaweed.displayName = 'Seaweed';
-
 const BackgroundBubbles = memo(() => (
   <div className="absolute inset-0 pointer-events-none overflow-hidden">
     {[...Array(20)].map((_, i) => (
@@ -371,21 +360,18 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
+          {/* subtle overlay to help bubble contrast without blurring the scenery */}
+          <div className="absolute inset-0 bg-black/10" />
         </div>
 
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
             <BackgroundBubbles />
-            <Seaweed className="left-[5%] bottom-[-5px] scale-90" />
-            <Seaweed className="left-[15%] bottom-[-10px] scale-110" />
-            <Seaweed className="right-[10%] bottom-[-5px] scale-100" />
-            <Seaweed className="right-[25%] bottom-[-15px] scale-75" />
             
             <Fish className="top-[20%] animate-[swimRight_12s_linear_infinite]" duration="12s" />
             <Fish className="top-[45%] animate-[swimLeft_15s_linear_infinite]" duration="15s" flip />
             <Fish className="top-[70%] animate-[swimRight_18s_linear_infinite]" duration="18s" />
 
-            <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-yellow-300/40 to-transparent" style={{clipPath: 'polygon(0 60%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
+            <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-yellow-300/20 to-transparent" style={{clipPath: 'polygon(0 60%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
         </div>
 
         <div className="absolute top-0 left-0 right-0 p-2 sm:p-6 bg-black/40 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50 animate-in slide-in-from-top duration-500">
