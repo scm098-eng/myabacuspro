@@ -190,7 +190,6 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     if (isFinishingRef.current) return;
     isFinishingRef.current = true;
 
-    // Actual correct answers count is score / 10
     const correctAnswers = finalScore / 10;
     const accuracy = (correctAnswers / (questions.length || 1)) * 100;
     
@@ -354,7 +353,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-cyan-400 to-blue-600 flex flex-col items-center justify-center overflow-hidden touch-none">
+    <div className="fixed inset-0 z-[9999] bg-slate-900 flex flex-col items-center justify-center overflow-hidden touch-none">
         <style jsx global>{`
           @keyframes float-to-profile {
             0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
@@ -362,6 +361,18 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             100% { transform: translate(calc(-50% + var(--target-x)), calc(-50% + var(--target-y))) scale(0.1); opacity: 0; }
           }
         `}</style>
+
+        {/* Dynamic Background Image */}
+        <div className="absolute inset-0 z-0">
+          <Image 
+            src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Game%20Background.webp?alt=media&token=b0e1441c-f974-40b6-83e1-bdf957109a0c"
+            alt="Game Environment"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
+        </div>
 
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
             <BackgroundBubbles />
@@ -374,10 +385,10 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             <Fish className="top-[45%] animate-[swimLeft_15s_linear_infinite]" duration="15s" flip />
             <Fish className="top-[70%] animate-[swimRight_18s_linear_infinite]" duration="18s" />
 
-            <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-yellow-300 to-yellow-200/80 opacity-80" style={{clipPath: 'polygon(0 60%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
+            <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-yellow-300/40 to-transparent" style={{clipPath: 'polygon(0 60%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
         </div>
 
-        <div className="absolute top-0 left-0 right-0 p-2 sm:p-6 bg-black/30 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50 animate-in slide-in-from-top duration-500">
+        <div className="absolute top-0 left-0 right-0 p-2 sm:p-6 bg-black/40 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50 animate-in slide-in-from-top duration-500">
             <div className="flex items-center gap-2 sm:gap-8 text-white min-w-0 flex-1">
                 <div className="min-w-0 flex-1 sm:flex-none">
                     <h2 className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-sky-200 leading-tight">Level</h2>
