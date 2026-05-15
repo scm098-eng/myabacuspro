@@ -28,5 +28,11 @@
     "width": 1200,
     "height": 800,
     "hint": "math challenges"
+  },
+  "gameFeature": {
+    "src": "https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Game.webp?alt=media&token=0619f30a-8f41-499a-a49e-9da7b9aa2c4e",
+    "width": 1200,
+    "height": 800,
+    "hint": "bubble game"
   }
 }

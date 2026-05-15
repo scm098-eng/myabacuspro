@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -120,18 +121,29 @@ export default function PracticeFeaturesPage() {
       </section>
 
       {/* Gamified Learning Section */}
-      <section className="text-center space-y-8 py-12">
-        <div className="mx-auto bg-pink-100 p-4 rounded-3xl w-fit">
-          <Rocket className="h-10 w-10 text-pink-600" />
+      <section className="grid md:grid-cols-2 gap-12 items-center py-12">
+        <div className="space-y-6">
+          <div className="bg-pink-100 p-4 rounded-3xl w-fit">
+            <Rocket className="h-10 w-10 text-pink-600" />
+          </div>
+          <h2 className="text-3xl font-black uppercase tracking-tight font-headline">Gamified Engagement for All Ages</h2>
+          <div className="space-y-4 text-muted-foreground font-medium leading-relaxed text-lg">
+            <p>
+              Learning doesn't have to be a chore. Our <strong>Bubble Game</strong> integrates formula practice with fast-paced action. Students must "pop" the correct answer bubbles as they float across the screen, demanding rapid mental calculation and hand-eye coordination.
+            </p>
+            <p>
+              With over 1,000 levels of progressive difficulty, the game ensures that students are always challenged at the edge of their ability. Every cleared level contributes to their global <strong>Hall of Fame</strong> ranking, fostering a healthy sense of competition and achievement.
+            </p>
+          </div>
         </div>
-        <h2 className="text-3xl font-black uppercase tracking-tight font-headline">Gamified Engagement for All Ages</h2>
-        <div className="max-w-3xl mx-auto text-muted-foreground font-medium leading-relaxed text-lg space-y-6">
-          <p>
-            Learning doesn't have to be a chore. Our <strong>Bubble Game</strong> integrates formula practice with fast-paced action. Students must "pop" the correct answer bubbles as they float across the screen, demanding rapid mental calculation and hand-eye coordination.
-          </p>
-          <p>
-            With over 1,000 levels of progressive difficulty, the game ensures that students are always challenged at the edge of their ability. Every cleared level contributes to their global <strong>Hall of Fame</strong> ranking, fostering a healthy sense of competition and achievement.
-          </p>
+        <div className="relative aspect-video rounded-[2.5rem] overflow-hidden border-4 border-muted shadow-2xl">
+          <Image 
+            src={placeholderImages.gameFeature.src}
+            alt="Interactive Bubble Game environment"
+            fill
+            className="object-cover"
+            data-ai-hint={placeholderImages.gameFeature.hint}
+          />
         </div>
       </section>
 
