@@ -218,7 +218,9 @@ export default function ExamArenaPage() {
                     <BeadDisplay value={currentQ.answer} rodCount={currentQ.answer > 999 ? 4 : 3} />
                   </div>
                 ) : (
-                  <p className="text-4xl md:text-7xl font-black tracking-tight text-slate-800">{currentQ.text} = ?</p>
+                  <p className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-slate-800 leading-tight px-4">
+                    {currentQ.text} = ?
+                  </p>
                 )}
             </div>
             
