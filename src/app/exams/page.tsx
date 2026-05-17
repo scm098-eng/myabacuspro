@@ -126,34 +126,34 @@ export default function ExamDashboardPage() {
   const groupDetails = [
     { 
       id: 'A', 
-      title: 'Group A: Foundation', 
-      desc: 'Perfect for beginners starting their journey.', 
-      focus: ['Beads Value Identification', 'Direct Addition & Subtraction', 'Single Digit Focus (0-9)'],
-      tools: 'Physical or Digital Abacus Allowed',
+      title: 'Group A: Direct Mastery', 
+      desc: 'Foundation level using direct bead movements without formulas.', 
+      focus: ['Beads Value Identification', 'Single Digit Basic Add & Sub', 'Double Digit Basic Add & Sub'],
+      tools: 'Abacus Tool Allowed',
       icon: <Brain className="w-8 h-8 text-blue-500" />
     },
     { 
       id: 'B', 
-      title: 'Group B: Formula Master', 
-      desc: 'Demonstrate your knowledge of all core Soroban formulas.', 
-      focus: ['Small Sister & Big Brother Formulas', 'Single & Double Digit Arithmetic', 'Complex Addition/Subtraction'],
-      tools: 'Physical or Digital Abacus Allowed',
+      title: 'Group B: Formula Champion', 
+      desc: 'Comprehensive test of all primary abacus formulas.', 
+      focus: ['Small Sister & Big Brother Formulas', 'Combination Formulas Mastery', 'Single & Double Digit Arithmetic'],
+      tools: 'Abacus Tool Allowed',
       icon: <Calculator className="w-8 h-8 text-green-500" />
     },
     { 
       id: 'C', 
-      title: 'Group C: Anzan Pro', 
-      desc: 'High-speed mental arithmetic without any visual aids.', 
-      focus: ['Mental Visualization (Anzan)', 'S/D/T Digit Combinations', 'Fast Formula Processing'],
-      tools: 'NO TOOLS ALLOWED (Mental Only)',
+      title: 'Group C: Anzan Expert', 
+      desc: 'Advanced mental arithmetic without using any physical aids.', 
+      focus: ['Single Digit Mental Math', 'Double Digit Mental Math', 'Triple Digit Mental Math'],
+      tools: 'MENTAL ONLY (No Tool)',
       icon: <Zap className="w-8 h-8 text-orange-500" />
     },
     { 
       id: 'D', 
       title: 'Group D: Elite Grandmaster', 
-      desc: 'The ultimate test of mental calculation speed.', 
-      focus: ['Multi-Digit Mental Add/Sub', 'Multiplication & Division Arena', 'Competitive Level Accuracy'],
-      tools: 'NO TOOLS ALLOWED (Mental Only)',
+      desc: 'The ultimate assessment of speed and complex calculations.', 
+      focus: ['Advanced Mental Add & Sub', 'Mental Multiplication', 'Mental Division'],
+      tools: 'MENTAL ONLY (No Tool)',
       icon: <Trophy className="w-8 h-8 text-purple-500" />
     }
   ];
@@ -370,4 +370,3 @@ export default function ExamDashboardPage() {
     </div>
   );
 }
-

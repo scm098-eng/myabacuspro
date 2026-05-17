@@ -16,32 +16,32 @@ export function generateExamQuestions(group: ExamGroup): Question[] {
   
   switch (group) {
     case 'A':
-      // Beads Value Practice & Basic Addition & Subtraction (Direct moves)
+      // Group A: Direct moves for both Single and Double digits
       questions = [
-        ...generateTest('beads-identify', 'level-4').slice(0, 10),
-        ...generateTest('basic-add-sub-l1', 'easy').slice(0, 10),
-        ...generateTest('basic-add-sub-l2', 'easy').slice(0, 10)
+        ...generateTest('beads-identify', 'level-2').slice(0, 10), // Single digit beads
+        ...generateTest('basic-add-sub-l1', 'easy').slice(0, 10),  // Single digit direct
+        ...generateTest('basic-add-sub-l2', 'easy').slice(0, 10)   // Double digit direct
       ];
       break;
     case 'B':
-      // All Formula Addition & Subtraction With Tool (Single & Double Digit)
+      // Group B: Small Sister, Big Brother, AND Combination (With Tool)
       questions = [
-        ...generateTest('basic-addition-plus-4', 'easy').slice(0, 5),
-        ...generateTest('big-brother-addition-plus-9', 'easy').slice(0, 5),
-        ...generateTest('combination-plus-6', 'easy').slice(0, 5),
-        ...generateTest('addition-subtraction', 'medium').slice(0, 15)
+        ...generateTest('basic-addition-plus-4', 'easy').slice(0, 5),   // Small Sister
+        ...generateTest('big-brother-addition-plus-9', 'easy').slice(0, 5), // Big Brother
+        ...generateTest('combination-plus-6', 'easy').slice(0, 5),      // Combination
+        ...generateTest('addition-subtraction', 'medium').slice(0, 15)   // General Mixed
       ];
       break;
     case 'C':
-      // All Formula Addition & Subtraction Without Tool (S, D, T Digits)
+      // Group C: Single, Double & Triple Digit Mental Calculation (Without Tool)
       questions = [
-        ...generateTest('addition-subtraction-input', 'easy').slice(0, 10),
-        ...generateTest('addition-subtraction-input', 'medium').slice(0, 10),
-        ...generateTest('addition-subtraction-input', 'hard').slice(0, 10)
+        ...generateTest('addition-subtraction-input', 'easy').slice(0, 10),   // Single
+        ...generateTest('addition-subtraction-input', 'medium').slice(0, 10), // Double
+        ...generateTest('addition-subtraction-input', 'hard').slice(0, 10)    // Triple
       ];
       break;
     case 'D':
-      // All Formula Without Tool + Multiplication & Division
+      // Group D: Elite Multi-Digit Mental + Multi/Div
       questions = [
         ...generateTest('addition-subtraction-input', 'medium').slice(0, 10),
         ...generateTest('multiplication-input', 'medium').slice(0, 10),
