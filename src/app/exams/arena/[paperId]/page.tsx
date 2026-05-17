@@ -152,6 +152,13 @@ export default function ExamArenaPage() {
     newAnswers[currentIdx] = val;
     setAnswers(newAnswers);
     playSound('correct');
+    
+    // Auto-advance to next question after a short delay for feedback
+    setTimeout(() => {
+      if (currentIdx < questions.length - 1) {
+        setCurrentIdx(prev => prev + 1);
+      }
+    }, 300);
   };
 
   const handleNext = () => {
@@ -211,7 +218,7 @@ export default function ExamArenaPage() {
         
         <CardContent className="p-8 text-center flex-grow flex flex-col justify-center">
           <div className="space-y-8">
-            <div className="py-12 bg-muted/30 rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center">
+            <div className="py-12 bg-muted/30 rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center min-h-[300px] justify-center">
                 {currentQ.questionType === 'identify' ? (
                   <div className="w-full max-w-md">
                     <p className="text-xs font-black uppercase text-muted-foreground tracking-widest mb-6">Identify Abacus Value</p>
@@ -272,7 +279,7 @@ export default function ExamArenaPage() {
                     : "Great job! You have answered all questions. Would you like to submit your exam now?"}
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter className="gap-2 sm:gap-0">
+              <AlertDialogFooter>
                 <AlertDialogCancel className="rounded-xl h-12 font-bold">Review Answers</AlertDialogCancel>
                 <AlertDialogAction onClick={finishExam} className="rounded-xl h-12 bg-green-600 hover:bg-green-700 font-black uppercase tracking-widest">
                   Submit Now
