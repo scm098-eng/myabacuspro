@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -161,12 +160,6 @@ export default function ExamArenaPage() {
     }, 300);
   };
 
-  const handleNext = () => {
-    if (currentIdx < questions.length - 1) {
-      setCurrentIdx(prev => prev + 1);
-    }
-  };
-
   const handlePrev = () => {
     if (currentIdx > 0) {
       setCurrentIdx(prev => prev - 1);
@@ -254,14 +247,7 @@ export default function ExamArenaPage() {
             <ChevronLeft className="w-6 h-6" />
           </Button>
           
-          <Button 
-            onClick={handleNext} 
-            disabled={currentIdx === questions.length - 1} 
-            className="flex-1 h-16 text-lg sm:text-xl font-black uppercase tracking-widest rounded-2xl shadow-md transition-transform hover:scale-[1.01]" 
-            variant="secondary"
-          >
-            Confirm & Next <ChevronRight className="ml-2 w-5 h-5" />
-          </Button>
+          <div className="flex-1" />
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
