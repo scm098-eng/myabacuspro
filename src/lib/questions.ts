@@ -352,10 +352,11 @@ function generateDirectQuestion(max: number, numTerms: number = 3): Question {
     }
 
     if (successCount >= numTerms - 1) {
+      const answer = currentVal;
       return {
         text: numbers.join(' '),
-        answer: currentVal,
-        options: generateOptions(currentVal)
+        answer: answer,
+        options: generateOptions(answer)
       };
     }
   }
@@ -464,11 +465,12 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
 
       const minRange = Math.pow(10, digits - 1);
       const maxRange = Math.pow(10, digits) - 1;
+      const answer = getRandomInt(minRange, maxRange);
       
       questions.push({ 
         text: '', 
-        answer: getRandomInt(minRange, maxRange), 
-        options: [], 
+        answer: answer, 
+        options: generateOptions(answer), 
         questionType 
       });
     }

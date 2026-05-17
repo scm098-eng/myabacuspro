@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -6,8 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Loader2, Timer, ShieldAlert, Send, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Loader2, Timer, ShieldAlert, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { generateExamQuestions } from '@/lib/exam-utils';
 import type { ExamApplication, Question } from '@/types';
 import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
@@ -43,13 +43,11 @@ export default function ExamArenaPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
-  const [inputValue, setInputValue] = useState('');
   const [timeLeft, setTimeLeft] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const inputRef = useRef<HTMLInputElement>(null);
   const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const isFinal = paperId === 'final';
 
@@ -94,7 +92,6 @@ export default function ExamArenaPage() {
   }, [currentIdx]);
 
   const finishExam = useCallback(async () => {
-    // Note: We use the answers state directly here
     if (isFinished || isSubmitting || !user || !application) return;
     setIsSubmitting(true);
 
@@ -150,40 +147,27 @@ export default function ExamArenaPage() {
     return () => clearInterval(interval);
   }, [loading, isFinished, timeLeft, finishExam]);
 
-  const handleNext = () => {
-    const val = inputValue === '' ? null : parseInt(inputValue, 10);
+  const handleSelectOption = (val: number) => {
     const newAnswers = [...answers];
     newAnswers[currentIdx] = val;
     setAnswers(newAnswers);
-    
+    playSound('correct');
+  };
+
+  const handleNext = () => {
     if (currentIdx < questions.length - 1) {
       setCurrentIdx(prev => prev + 1);
-      setInputValue(newAnswers[currentIdx + 1]?.toString() || '');
-    } else {
-      setInputValue(newAnswers[currentIdx]?.toString() || '');
     }
   };
 
   const handlePrev = () => {
-    const val = inputValue === '' ? null : parseInt(inputValue, 10);
-    const newAnswers = [...answers];
-    newAnswers[currentIdx] = val;
-    setAnswers(newAnswers);
-
     if (currentIdx > 0) {
       setCurrentIdx(prev => prev - 1);
-      setInputValue(newAnswers[currentIdx - 1]?.toString() || '');
     }
   };
 
   const jumpTo = (i: number) => {
-    const currentVal = inputValue === '' ? null : parseInt(inputValue, 10);
-    const newAnswers = [...answers];
-    newAnswers[currentIdx] = currentVal;
-    setAnswers(newAnswers);
-    
     setCurrentIdx(i);
-    setInputValue(newAnswers[i]?.toString() || '');
   };
 
   if (loading) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /><p className="mt-4 font-bold uppercase tracking-widest">Entering Arena...</p></div>;
@@ -191,6 +175,7 @@ export default function ExamArenaPage() {
   const mins = Math.floor(timeLeft / 60);
   const secs = timeLeft % 60;
   const currentQ = questions[currentIdx];
+  const selectedAnswer = answers[currentIdx];
 
   return (
     <div className="max-w-4xl mx-auto py-4">
@@ -237,17 +222,20 @@ export default function ExamArenaPage() {
                 )}
             </div>
             
-            <div className="max-w-xs mx-auto">
-              <Input 
-                ref={inputRef}
-                type="number" 
-                value={inputValue} 
-                onChange={e => setInputValue(e.target.value)} 
-                onKeyDown={e => e.key === 'Enter' && handleNext()}
-                className="h-20 text-4xl text-center font-black rounded-2xl border-4 focus:ring-primary shadow-inner"
-                autoFocus
-                placeholder="..."
-              />
+            <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+              {currentQ.options.map((opt, i) => (
+                <Button 
+                  key={i}
+                  variant={selectedAnswer === opt ? 'default' : 'outline'}
+                  className={cn(
+                    "h-16 text-2xl font-black rounded-2xl border-2 transition-all",
+                    selectedAnswer === opt ? "bg-primary text-white scale-105 shadow-lg" : "hover:border-primary/50"
+                  )}
+                  onClick={() => handleSelectOption(opt)}
+                >
+                  {opt}
+                </Button>
+              ))}
             </div>
           </div>
         </CardContent>
@@ -257,7 +245,12 @@ export default function ExamArenaPage() {
             <ChevronLeft className="w-6 h-6" />
           </Button>
           
-          <Button onClick={handleNext} disabled={currentIdx === questions.length - 1} className="flex-1 h-16 text-lg sm:text-xl font-black uppercase tracking-widest rounded-2xl shadow-md transition-transform hover:scale-[1.01]" variant="secondary">
+          <Button 
+            onClick={handleNext} 
+            disabled={currentIdx === questions.length - 1} 
+            className="flex-1 h-16 text-lg sm:text-xl font-black uppercase tracking-widest rounded-2xl shadow-md transition-transform hover:scale-[1.01]" 
+            variant="secondary"
+          >
             Confirm & Next <ChevronRight className="ml-2 w-5 h-5" />
           </Button>
 
