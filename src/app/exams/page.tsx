@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -128,7 +127,7 @@ export default function ExamDashboardPage() {
       id: 'A', 
       title: 'Group A: Direct Mastery', 
       desc: 'Foundation level using direct bead movements without formulas.', 
-      focus: ['Beads Value Identification', 'Single Digit Basic Add & Sub', 'Double Digit Basic Add & Sub'],
+      focus: ['Single & Double Digit Basic Add & Sub', 'Visual Beads Identification'],
       tools: 'Abacus Tool Allowed',
       icon: <Brain className="w-8 h-8 text-blue-500" />
     },
@@ -144,7 +143,7 @@ export default function ExamDashboardPage() {
       id: 'C', 
       title: 'Group C: Anzan Expert', 
       desc: 'Advanced mental arithmetic without using any physical aids.', 
-      focus: ['Single Digit Mental Math', 'Double Digit Mental Math', 'Triple Digit Mental Math'],
+      focus: ['Single, Double & Triple Digit Mental Math', 'Pure Visual Anzan Mastery'],
       tools: 'MENTAL ONLY (No Tool)',
       icon: <Zap className="w-8 h-8 text-orange-500" />
     },
@@ -292,7 +291,7 @@ export default function ExamDashboardPage() {
                         </div>
                         <div className="bg-muted p-4 rounded-2xl text-center">
                           <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Questions</p>
-                          <p className="text-xl font-bold">30 Steps</p>
+                          <p className="text-xl font-bold">150 Questions</p>
                         </div>
                       </div>
                       <div className="bg-orange-50 border border-orange-100 p-4 rounded-2xl flex items-start gap-3">
