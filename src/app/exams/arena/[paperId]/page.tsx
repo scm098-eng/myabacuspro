@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
-import { Loader2, Timer, CheckCircle2, ShieldAlert, AlertTriangle, Send } from 'lucide-react';
+import { Loader2, Timer, ShieldAlert, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import { generateExamQuestions } from '@/lib/exam-utils';
 import type { ExamApplication, Question } from '@/types';
 import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
@@ -19,11 +19,13 @@ import { useSound } from '@/hooks/useSound';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import BeadDisplay from '@/components/BeadDisplay';
 
 export default function ExamArenaPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/test_wrapper_bg.jpg?alt=media');
   const { paperId } = useParams() as { paperId: string };
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const { playSound } = useSound();
@@ -36,7 +38,9 @@ export default function ExamArenaPage() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const inputRef = useRef<HTMLInputElement>(null);
   const isFinal = paperId === 'final';
 
   useEffect(() => {
@@ -53,7 +57,9 @@ export default function ExamArenaPage() {
         }
         const app = { id: snap.docs[0].id, ...snap.docs[0].data() } as ExamApplication;
         setApplication(app);
-        setQuestions(generateExamQuestions(app.group));
+        const generated = generateExamQuestions(app.group);
+        setQuestions(generated);
+        setAnswers(new Array(generated.length).fill(null));
         setTimeLeft(app.timeLimit);
         setLoading(false);
       } catch (error) {
@@ -68,8 +74,8 @@ export default function ExamArenaPage() {
   }, [user, router, toast]);
 
   const finishExam = useCallback(async (finalAnswers: (number | null)[]) => {
-    if (isFinished || !user || !application) return;
-    setIsFinished(true);
+    if (isFinished || isSubmitting || !user || !application) return;
+    setIsSubmitting(true);
 
     const score = finalAnswers.reduce((acc, ans, i) => (ans === questions[i].answer ? acc + 1 : acc), 0);
     const accuracy = (score / questions.length) * 100;
@@ -82,31 +88,32 @@ export default function ExamArenaPage() {
       totalQuestions: questions.length,
       accuracy,
       isFinal,
-      submittedAt: serverTimestamp()
+      submittedAt: serverTimestamp(),
+      // Store full question/answer set for Admin audit
+      details: questions.map((q, i) => ({
+        text: q.text || `Identify Beads (Answer: ${q.answer})`,
+        correct: q.answer,
+        student: finalAnswers[i]
+      }))
     };
 
     try {
       const db = getFirestore(firebaseApp);
-      addDoc(collection(db, "examResults"), payload)
-        .catch(async (serverError) => {
-          const permissionError = new FirestorePermissionError({
-            path: 'examResults',
-            operation: 'create',
-            requestResourceData: payload,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-        });
-
+      await addDoc(collection(db, "examResults"), payload);
+      
+      setIsFinished(true);
       if (isFinal) {
-        toast({ title: "Final Exam Submitted", description: "Your results have been sent to the Admin." });
+        toast({ title: "Official Exam Submitted", description: "Your results are stored for admin verification." });
       } else {
-        toast({ title: "Practice Paper Complete", description: `You scored ${score}/${questions.length}.` });
+        toast({ title: "Practice Paper Complete", description: `Result: ${score}/${questions.length}` });
       }
       router.push('/exams');
     } catch (e: any) {
-      toast({ title: "Error Saving Results", description: e.message, variant: "destructive" });
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examResults', operation: 'create' }));
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [isFinished, user, application, questions, isFinal, paperId, router, toast]);
+  }, [isFinished, isSubmitting, user, application, questions, isFinal, paperId, router, toast]);
 
   useEffect(() => {
     if (loading || isFinished || timeLeft <= 0) return;
@@ -137,16 +144,34 @@ export default function ExamArenaPage() {
     }
   };
 
-  if (loading) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /><p className="mt-4 font-bold">Preparing Exam Arena...</p></div>;
+  const handlePrev = () => {
+    if (currentIdx > 0) {
+      setCurrentIdx(prev => prev - 1);
+      setInputValue(answers[currentIdx - 1]?.toString() || '');
+    }
+  };
+
+  const jumpTo = (i: number) => {
+    const currentVal = inputValue === '' ? null : parseInt(inputValue, 10);
+    const newAnswers = [...answers];
+    newAnswers[currentIdx] = currentVal;
+    setAnswers(newAnswers);
+    
+    setCurrentIdx(i);
+    setInputValue(newAnswers[i]?.toString() || '');
+  };
+
+  if (loading) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /><p className="mt-4 font-bold uppercase tracking-widest">Entering Arena...</p></div>;
 
   const progress = (currentIdx / questions.length) * 100;
   const mins = Math.floor(timeLeft / 60);
   const secs = timeLeft % 60;
+  const currentQ = questions[currentIdx];
 
   return (
-    <div className="max-w-3xl mx-auto py-8">
-      <Card className="rounded-[2.5rem] shadow-2xl border-none overflow-hidden">
-        <CardHeader className="bg-slate-900 text-white p-6 border-b border-white/10">
+    <div className="max-w-4xl mx-auto py-4">
+      <Card className="rounded-[2.5rem] shadow-2xl border-none overflow-hidden flex flex-col min-h-[600px]">
+        <CardHeader className="bg-slate-900 text-white p-6 border-b border-white/10 shrink-0">
           <div className="flex justify-between items-center">
              <div>
                <CardTitle className="text-xl font-black uppercase tracking-tight">{isFinal ? 'Official Final Exam' : `Practice Paper #${paperId.split('-')[1]}`}</CardTitle>
@@ -156,38 +181,65 @@ export default function ExamArenaPage() {
                <Timer className="w-6 h-6" /> {mins}:{secs.toString().padStart(2, '0')}
              </div>
           </div>
-          <div className="mt-6">
-            <Progress value={progress} className="h-2 bg-white/10" />
-            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mt-2">Question {currentIdx + 1} of {questions.length}</p>
-          </div>
-        </CardHeader>
-        <CardContent className="p-10 text-center space-y-10">
-          <div className="py-12 bg-muted/30 rounded-[3rem] border-2 border-dashed border-slate-200">
-             <p className="text-5xl md:text-7xl font-black tracking-tight text-slate-800">{questions[currentIdx]?.text} = ?</p>
-          </div>
           
-          <div className="max-w-xs mx-auto">
-            <Input 
-              type="number" 
-              value={inputValue} 
-              onChange={e => setInputValue(e.target.value)} 
-              onKeyDown={e => e.key === 'Enter' && handleNext()}
-              className="h-20 text-4xl text-center font-black rounded-2xl border-4 focus:ring-primary shadow-inner"
-              autoFocus
-              placeholder="..."
-            />
+          <ScrollArea className="w-full whitespace-nowrap mt-6 bg-white/5 p-2 rounded-xl border border-white/10">
+            <div className="flex w-max space-x-2">
+                {questions.map((_, index) => (
+                    <Button
+                        key={index}
+                        onClick={() => jumpTo(index)}
+                        variant={currentIdx === index ? 'default' : 'ghost'}
+                        className={cn("w-10 h-10 text-xs font-black rounded-lg", currentIdx === index ? "bg-primary text-white" : "text-slate-400 hover:text-white", answers[index] !== null && currentIdx !== index && "text-green-400")}
+                    >
+                        {index + 1}
+                    </Button>
+                ))}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </CardHeader>
+        
+        <CardContent className="p-8 text-center flex-grow flex flex-col justify-center">
+          <div className="space-y-8">
+            <div className="py-12 bg-muted/30 rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center">
+                {currentQ.questionType === 'identify' ? (
+                  <div className="w-full max-w-md">
+                    <p className="text-xs font-black uppercase text-muted-foreground tracking-widest mb-6">Identify Abacus Value</p>
+                    <BeadDisplay value={currentQ.answer} rodCount={currentQ.answer > 999 ? 4 : 3} />
+                  </div>
+                ) : (
+                  <p className="text-4xl md:text-7xl font-black tracking-tight text-slate-800">{currentQ.text} = ?</p>
+                )}
+            </div>
+            
+            <div className="max-w-xs mx-auto">
+              <Input 
+                ref={inputRef}
+                type="number" 
+                value={inputValue} 
+                onChange={e => setInputValue(e.target.value)} 
+                onKeyDown={e => e.key === 'Enter' && handleNext()}
+                className="h-20 text-4xl text-center font-black rounded-2xl border-4 focus:ring-primary shadow-inner"
+                autoFocus
+                placeholder="..."
+              />
+            </div>
           </div>
         </CardContent>
-        <CardFooter className="p-10 pt-0">
-          <Button onClick={handleNext} className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.02]">
-            {currentIdx === questions.length - 1 ? 'Finish Exam' : 'Next Step'} <Send className="ml-2 w-6 h-6" />
+
+        <CardFooter className="p-8 pt-0 flex gap-4 shrink-0">
+          <Button variant="outline" onClick={handlePrev} disabled={currentIdx === 0} className="h-16 px-8 rounded-2xl border-2">
+            <ChevronLeft className="w-6 h-6" />
+          </Button>
+          <Button onClick={handleNext} disabled={isSubmitting} className="flex-1 h-16 text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.01]">
+            {isSubmitting ? <Loader2 className="animate-spin" /> : (currentIdx === questions.length - 1 ? 'Finish Submission' : 'Confirm & Next')} <Send className="ml-2 w-5 h-5" />
           </Button>
         </CardFooter>
       </Card>
       
-      <div className="mt-8 flex justify-center gap-4">
-        <div className="flex items-center gap-2 px-6 py-2 bg-white rounded-full shadow-sm border text-xs font-bold text-muted-foreground uppercase">
-           <ShieldAlert className="w-4 h-4 text-orange-500" /> Secure Exam Session Active
+      <div className="mt-6 flex justify-center gap-4">
+        <div className="flex items-center gap-2 px-6 py-2 bg-white rounded-full shadow-sm border text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+           <ShieldAlert className="w-3 h-3 text-orange-500" /> Integrity Control Active
         </div>
       </div>
     </div>

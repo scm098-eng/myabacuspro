@@ -14,43 +14,52 @@ export function getExamTimeLimit(age: number): number {
 export function generateExamQuestions(group: ExamGroup): Question[] {
   let questions: Question[] = [];
   
+  const fillToTarget = (qPool: Question[], target: number) => {
+    const uniquePool = [...qPool];
+    while (uniquePool.length < target) {
+        uniquePool.push(...qPool.map(q => ({...q}))); 
+    }
+    return uniquePool.slice(0, target);
+  };
+
   switch (group) {
     case 'A':
       // Group A: Direct moves for both Single and Double digits
       questions = [
-        ...generateTest('beads-identify', 'level-2').slice(0, 10), // Single digit beads
-        ...generateTest('basic-add-sub-l1', 'easy').slice(0, 10),  // Single digit direct
-        ...generateTest('basic-add-sub-l2', 'easy').slice(0, 10)   // Double digit direct
+        ...generateTest('beads-identify', 'level-2'), 
+        ...generateTest('basic-add-sub-l1', 'easy'),  
+        ...generateTest('basic-add-sub-l2', 'easy')   
       ];
       break;
     case 'B':
       // Group B: Small Sister, Big Brother, AND Combination (With Tool)
       questions = [
-        ...generateTest('basic-addition-plus-4', 'easy').slice(0, 5),   // Small Sister
-        ...generateTest('big-brother-addition-plus-9', 'easy').slice(0, 5), // Big Brother
-        ...generateTest('combination-plus-6', 'easy').slice(0, 5),      // Combination
-        ...generateTest('addition-subtraction', 'medium').slice(0, 15)   // General Mixed
+        ...generateTest('basic-addition-plus-4', 'easy'),   
+        ...generateTest('big-brother-addition-plus-9', 'easy'), 
+        ...generateTest('combination-plus-6', 'easy'),      
+        ...generateTest('addition-subtraction', 'medium')   
       ];
       break;
     case 'C':
       // Group C: Single, Double & Triple Digit Mental Calculation (Without Tool)
       questions = [
-        ...generateTest('addition-subtraction-input', 'easy').slice(0, 10),   // Single
-        ...generateTest('addition-subtraction-input', 'medium').slice(0, 10), // Double
-        ...generateTest('addition-subtraction-input', 'hard').slice(0, 10)    // Triple
+        ...generateTest('addition-subtraction-input', 'easy'),   
+        ...generateTest('addition-subtraction-input', 'medium'), 
+        ...generateTest('addition-subtraction-input', 'hard')    
       ];
       break;
     case 'D':
       // Group D: Elite Multi-Digit Mental + Multi/Div
       questions = [
-        ...generateTest('addition-subtraction-input', 'medium').slice(0, 10),
-        ...generateTest('multiplication-input', 'medium').slice(0, 10),
-        ...generateTest('division-input', 'medium').slice(0, 10)
+        ...generateTest('addition-subtraction-input', 'medium'),
+        ...generateTest('multiplication-input', 'medium'),
+        ...generateTest('division-input', 'medium')
       ];
       break;
   }
   
-  return questions.slice(0, 30); // Standardize exam length
+  // User requested 150 questions for all papers
+  return fillToTarget(questions, 150); 
 }
 
 export function isFinalExamAvailable(): boolean {
