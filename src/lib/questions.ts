@@ -293,9 +293,7 @@ function isDirectFull(val: number, delta: number, op: '+' | '-'): boolean {
   return true;
 }
 
-function generateDirectQuestion(max: number): Question {
-  const numTerms = 3;
-  
+function generateDirectQuestion(max: number, numTerms: number = 3): Question {
   // Outer loop to ensure we always get a valid sum with the requested number of terms
   while (true) {
     let currentVal = getRandomInt(max === 9 ? 1 : 10, max);
@@ -308,7 +306,6 @@ function generateDirectQuestion(max: number): Question {
       while (attempts < 50) { 
         const op = Math.random() > 0.5 ? '+' : '-';
         // Use deltas that are more likely to result in "Direct" moves
-        // For level 2 (0-99), smaller deltas like 1-40 work better for direct moves
         const delta = getRandomInt(1, max > 9 ? 40 : max); 
         const nextVal = op === '+' ? currentVal + delta : currentVal - delta;
         
@@ -326,7 +323,7 @@ function generateDirectQuestion(max: number): Question {
     }
 
     // Only return if we actually generated a calculation sum (at least one operation)
-    if (successCount > 0) {
+    if (successCount >= numTerms - 1) {
       return {
         text: numbers.join(' '),
         answer: currentVal,
@@ -408,7 +405,9 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
     const max = testId === 'basic-add-sub-l1' ? 9 : 99;
     const questions: Question[] = [];
     for (let i = 0; i < settings.numQuestions; i++) {
-      questions.push(generateDirectQuestion(max));
+      // Use 4 to 5 terms for basic addition/subtraction
+      const numTerms = getRandomInt(4, 5);
+      questions.push(generateDirectQuestion(max, numTerms));
     }
     return questions;
   }

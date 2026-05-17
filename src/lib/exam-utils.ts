@@ -24,11 +24,13 @@ export function generateExamQuestions(group: ExamGroup): Question[] {
 
   switch (group) {
     case 'A':
-      // Group A: Direct moves for both Single and Double digits
+      // Group A: Mix of 1, 2, and 3 digit Beads + 4-5 step Direct moves
       questions = [
-        ...generateTest('beads-identify', 'level-2'), 
-        ...generateTest('basic-add-sub-l1', 'easy'),  
-        ...generateTest('basic-add-sub-l2', 'easy')   
+        ...generateTest('beads-identify', 'level-2'), // 1-Digit Beads
+        ...generateTest('beads-identify', 'level-4'), // 2-Digit Beads
+        ...generateTest('beads-identify', 'level-6'), // 3-Digit Beads
+        ...generateTest('basic-add-sub-l1', 'easy'),  // 1-Digit Add/Sub (4-5 steps)
+        ...generateTest('basic-add-sub-l2', 'easy')   // 2-Digit Add/Sub (4-5 steps)
       ];
       break;
     case 'B':
