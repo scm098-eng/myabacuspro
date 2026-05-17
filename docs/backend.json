@@ -19,6 +19,35 @@
       },
       "required": ["uid", "email", "role"]
     },
+    "ExamApplication": {
+      "title": "ExamApplication",
+      "description": "Student request to participate in an official exam group.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "group": { "type": "string", "enum": ["A", "B", "C", "D"] },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "appliedAt": { "type": "string", "format": "date-time" },
+        "age": { "type": "number" },
+        "timeLimit": { "type": "number", "description": "Calculated based on age" }
+      }
+    },
+    "ExamResult": {
+      "title": "ExamResult",
+      "description": "Record of a completed exam paper.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "paperId": { "type": "string" },
+        "group": { "type": "string" },
+        "score": { "type": "number" },
+        "totalQuestions": { "type": "number" },
+        "accuracy": { "type": "number" },
+        "isFinal": { "type": "boolean" },
+        "submittedAt": { "type": "string", "format": "date-time" }
+      }
+    },
     "TestResult": {
       "title": "TestResult",
       "description": "Record of a completed practice test.",
@@ -56,6 +85,14 @@
     "/users/{userId}": {
       "schema": "#/backend/entities/UserProfile",
       "description": "User profiles and statistics."
+    },
+    "/examApplications/{appId}": {
+      "schema": "#/backend/entities/ExamApplication",
+      "description": "Applications for official exams."
+    },
+    "/examResults/{resultId}": {
+      "schema": "#/backend/entities/ExamResult",
+      "description": "Official exam and practice paper results."
     },
     "/testResults/{resultId}": {
       "schema": "#/backend/entities/TestResult",

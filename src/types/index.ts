@@ -92,6 +92,31 @@ export type TestType =
   | 'mastery-mix-12'
   | 'bubble-game';
 
+export type ExamGroup = 'A' | 'B' | 'C' | 'D';
+
+export interface ExamApplication {
+  id: string;
+  userId: string;
+  studentName: string;
+  group: ExamGroup;
+  status: 'pending' | 'approved' | 'rejected';
+  appliedAt: any;
+  age: number;
+  timeLimit: number;
+}
+
+export interface ExamResult {
+  id: string;
+  userId: string;
+  paperId: string; // paper-1 to paper-20 or final
+  group: ExamGroup;
+  score: number;
+  totalQuestions: number;
+  accuracy: number;
+  isFinal: boolean;
+  submittedAt: any;
+}
+
 export type GameLevel =
   | 'small-sister-plus-4'
   | 'small-sister-plus-3'
@@ -157,7 +182,7 @@ export interface Question {
 
 export interface TestSettings {
   numQuestions: number;
-  timeLimit: number; // in seconds, 0 for no limit
+  timeLimit: number; 
   title: string;
   icon: 'brain-circuit' | 'x' | 'divide' | 'puzzle' | 'eye' | 'keyboard';
 }
@@ -317,7 +342,6 @@ export interface BlogPost {
   author: string;
   image: string;
   createdAt: any;
-  // Dynamic Style Settings
   layout?: 'standard' | 'centered' | 'magazine' | 'minimalist' | 'columns';
   fontFamily?: 'serif' | 'sans' | 'elegant' | 'impact';
   lineSpacing?: 'tight' | 'normal' | 'relaxed' | 'wide';
@@ -325,7 +349,6 @@ export interface BlogPost {
   headlineWeight?: 'bold' | 'black' | 'medium';
   headlineCase?: 'normal' | 'uppercase';
   headlineSpacing?: 'tight' | 'normal' | 'wide';
-  // Image Specifics
   imagePosition?: 'top' | 'left' | 'right';
   imageFit?: 'cover' | 'contain';
   showImage?: boolean;

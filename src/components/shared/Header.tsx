@@ -1,8 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Brain, Menu, Crown } from 'lucide-react';
+import { Brain, Menu, Crown, FileCheck } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import {
   DropdownMenu,
@@ -59,6 +60,10 @@ export function Header() {
     { href: '/tool-preview', label: 'Abacus Tool' },
   ];
   
+  if (user && profile?.subscriptionStatus === 'pro') {
+    navLinks.splice(3, 0, { href: '/exams', label: 'Official Exams' });
+  }
+
   const displayName = profile?.firstName ? `${profile.firstName} ${profile.surname}` : user?.email?.split('@')[0] || 'User';
   const displayInitial = (profile?.firstName?.[0] || '') + (profile?.surname?.[0] || displayName.charAt(0).toUpperCase());
   const canSeeDashboard = profile?.role === 'admin' || (profile?.role === 'teacher' && profile.status === 'approved');
@@ -105,9 +110,19 @@ export function Header() {
                 Admin Dashboard
               </DropdownMenuItem>
             )}
+            {profile?.role === 'admin' && (
+               <DropdownMenuItem onClick={() => router.push('/admin/exams')}>
+                Manage Exams
+              </DropdownMenuItem>
+            )}
             {profile?.role === 'student' && (
               <DropdownMenuItem onClick={() => router.push('/dashboard')}>
                 My Dashboard
+              </DropdownMenuItem>
+            )}
+            {profile?.subscriptionStatus === 'pro' && (
+               <DropdownMenuItem onClick={() => router.push('/exams')} className="text-indigo-600 font-bold">
+                 <FileCheck className="w-4 h-4 mr-2" /> Official Exams
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={() => router.push('/profile')}>
@@ -223,7 +238,9 @@ export function Header() {
                                             
                                             <div className="grid grid-cols-1 gap-2">
                                                 {canSeeDashboard && <Button className="w-full justify-start" variant="outline" onClick={() => handleLinkClick('/admin')}>Admin Dashboard</Button>}
+                                                {profile?.role === 'admin' && <Button className="w-full justify-start" variant="outline" onClick={() => handleLinkClick('/admin/exams')}>Manage Exams</Button>}
                                                 {profile?.role === 'student' && <Button className="w-full justify-start" variant="outline" onClick={() => handleLinkClick('/dashboard')}>My Dashboard</Button>}
+                                                {profile?.subscriptionStatus === 'pro' && <Button className="w-full justify-start text-indigo-600 font-bold" variant="outline" onClick={() => handleLinkClick('/exams')}>Official Exams</Button>}
                                                 <Button className="w-full justify-start" variant="ghost" onClick={() => handleLinkClick('/profile')}>Profile</Button>
                                                 <Button className="w-full justify-start" variant="ghost" onClick={() => handleLinkClick('/progress')}>Progress Report</Button>
                                                 {profile?.subscriptionStatus !== 'pro' && profile?.role === 'student' && (
