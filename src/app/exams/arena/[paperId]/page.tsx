@@ -41,6 +41,7 @@ export default function ExamArenaPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const isFinal = paperId === 'final';
 
   useEffect(() => {
@@ -72,6 +73,17 @@ export default function ExamArenaPage() {
     };
     fetchApplication();
   }, [user, router, toast]);
+
+  // Handle automatic scrolling of the navigation bar to center the active question
+  useEffect(() => {
+    if (questionButtonRefs.current[currentIdx]) {
+      questionButtonRefs.current[currentIdx]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center'
+      });
+    }
+  }, [currentIdx]);
 
   const finishExam = useCallback(async (finalAnswers: (number | null)[]) => {
     if (isFinished || isSubmitting || !user || !application) return;
@@ -187,6 +199,7 @@ export default function ExamArenaPage() {
                 {questions.map((_, index) => (
                     <Button
                         key={index}
+                        ref={(el) => { questionButtonRefs.current[index] = el; }}
                         onClick={() => jumpTo(index)}
                         variant={currentIdx === index ? 'default' : 'ghost'}
                         className={cn("w-10 h-10 text-xs font-black rounded-lg", currentIdx === index ? "bg-primary text-white" : "text-slate-400 hover:text-white", answers[index] !== null && currentIdx !== index && "text-green-400")}
