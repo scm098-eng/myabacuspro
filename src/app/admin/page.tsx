@@ -11,10 +11,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, Zap, Plus, Edit, Trash2, Loader2, Send, ShieldAlert, UserX, Image as ImageIcon, Mail, UserCheck, Upload } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, Zap, Plus, Edit, Trash2, Loader2, Send, ShieldAlert, UserX, Image as ImageIcon, Mail, UserCheck, Upload, CheckCircle2, Bell } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
@@ -42,23 +42,6 @@ function getUTCMondayKey() {
 function getUTCMonthKey() {
     const now = new Date();
     return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
-}
-
-function normalizeDateDisplay(val: any): string {
-  if (!val) return 'Just now';
-  let date: Date;
-  if (val && typeof val.toDate === 'function') {
-    date = val.toDate();
-  } else if (typeof val === 'string') {
-    date = parseISO(val);
-  } else if (val instanceof Date) {
-    date = val;
-  } else if (val && typeof val.seconds === 'number') {
-    date = new Date(val.seconds * 1000);
-  } else {
-    return 'Just now';
-  }
-  return isValid(date) ? format(date, 'PPp') : 'Just now';
 }
 
 const StatCard = ({ title, value, icon: Icon, subValue }: { title: string, value: string | number, icon: React.ElementType, subValue?: string }) => (
@@ -97,7 +80,7 @@ const htmlToPlainText = (html: string) => {
 
 export default function AdminDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
-  const { profile, getAllUsers, isLoading: authLoading, getStudentTitle, approveTeacher, toggleUserSuspension } = useAuth();
+  const { profile, getAllUsers, isLoading: authLoading, getStudentTitle, approveTeacher, toggleUserSuspension, markUserAsRead } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -106,8 +89,7 @@ export default function AdminDashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
-  const [isResetting, setIsResetting] = useState<'weekly' | 'monthly' | 'force' | 'blast' | 'suspension' | null>(null);
-  const [forceWinnerDialog, setForceWinnerDialog] = useState<{ open: boolean, user: ProfileData | null }>({ open: false, user: null });
+  const [isResetting, setIsResetting] = useState<'weekly' | 'monthly' | 'force' | 'blast' | 'suspension' | 'markRead' | null>(null);
 
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [isBlogDialogOpen, setIsBlogDialogOpen] = useState(false);
@@ -209,6 +191,19 @@ export default function AdminDashboardPage() {
     finally { setIsResetting(null); }
   };
 
+  const handleMarkAsRead = async (uid: string) => {
+    setIsResetting('markRead');
+    try {
+      await markUserAsRead(uid);
+      toast({ title: "Signup Acknowledged" });
+      fetchData();
+    } catch (err) {
+      toast({ title: "Update Failed", variant: "destructive" });
+    } finally {
+      setIsResetting(null);
+    }
+  }
+
   const handleBlastEmails = async (e: React.FormEvent) => {
     e.preventDefault(); setIsResetting('blast');
     try {
@@ -275,13 +270,15 @@ export default function AdminDashboardPage() {
     const matches = (u: ProfileData) => (u.firstName?.toLowerCase().includes(sl) || u.surname?.toLowerCase().includes(sl) || u.email?.toLowerCase().includes(sl));
     const allStaff = allUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
     const allStudents = allUsers.filter(u => u.role === 'student').filter(u => !ADMIN_EMAILS.includes(u.email?.toLowerCase()));
+    
     return { 
         filteredStaff: allStaff.filter(matches).map(s => {
           const students = allStudents.filter(stu => stu.teacherId === s.uid);
           return { ...s, proCount: students.filter(stu => stu.subscriptionStatus === 'pro').length, freeCount: students.filter(stu => stu.subscriptionStatus !== 'pro').length };
         }),
-        filteredStudents: allStudents.filter(u => profile?.role === 'admin' ? u.isAdminRead !== false : true).filter(u => (profile?.role === 'admin' || u.teacherId === profile?.uid)).filter(matches),
+        filteredStudents: allStudents.filter(u => (profile?.role === 'admin' || u.teacherId === profile?.uid)).filter(matches),
         pendingTeachers: allUsers.filter(u => u.role === 'teacher' && u.status === 'pending'),
+        unreadStudents: allStudents.filter(u => u.isAdminRead === false),
         moderationList: allUsers.filter(u => u.isSuspended || u.emailVerified === false),
         summaryStats: { totalTeachers: allStaff.length, totalStudents: allStudents.length, proUsers: allStudents.filter(s => s.subscriptionStatus === 'pro').length }
     };
@@ -315,7 +312,14 @@ export default function AdminDashboardPage() {
         <div className="lg:col-span-2 space-y-8">
             <Tabs defaultValue="students" className="w-full">
                 <TabsList className="bg-muted p-1 mb-8 overflow-x-auto justify-start h-auto flex-wrap">
-                    <TabsTrigger value="students" className="h-10">Students</TabsTrigger>
+                    <TabsTrigger value="students" className="h-10 relative">
+                      Students
+                      {profile?.role === 'admin' && processedData.unreadStudents.length > 0 && (
+                        <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-background">
+                          {processedData.unreadStudents.length}
+                        </span>
+                      )}
+                    </TabsTrigger>
                     {profile?.role === 'admin' && <TabsTrigger value="staff" className="h-10">Staff List</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="blogs" className="h-10">Blogs</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="moderation" className="h-10">Moderation</TabsTrigger>}
@@ -326,7 +330,53 @@ export default function AdminDashboardPage() {
                 <TabsContent value="students">
                     <Card>
                         <CardHeader><CardTitle className="font-headline">Student Directory</CardTitle></CardHeader>
-                        <CardContent><Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader><TableBody>{processedData.filteredStudents.length > 0 ? processedData.filteredStudents.map((s) => (<TableRow key={s.uid}><TableCell><div className="flex items-center gap-2"><Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto}/></Avatar><div><p className="text-sm font-bold">{s.firstName} {s.surname}</p><p className="text-[10px] text-muted-foreground">{s.email}</p></div></div></TableCell><TableCell><Badge variant={s.subscriptionStatus === 'pro' ? 'default' : 'outline'}>{s.subscriptionStatus}</Badge></TableCell><TableCell className="text-right"><div className="flex justify-end gap-2"><Button asChild variant="ghost" size="sm"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link></Button></div></TableCell></TableRow>)) : <TableRow><TableCell colSpan={3} className="text-center py-8">No students found.</TableCell></TableRow>}</TableBody></Table></CardContent>
+                        <CardContent>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>User</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Action</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {processedData.filteredStudents.length > 0 ? processedData.filteredStudents.map((s) => (
+                                <TableRow key={s.uid} className={cn(s.isAdminRead === false && "bg-orange-50/50")}>
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      <div className="relative">
+                                        <Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto}/></Avatar>
+                                        {s.isAdminRead === false && (
+                                          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-orange-500 ring-1 ring-white" />
+                                        )}
+                                      </div>
+                                      <div>
+                                        <div className="flex items-center gap-2">
+                                          <p className="text-sm font-bold">{s.firstName} {s.surname}</p>
+                                          {s.isAdminRead === false && <Badge variant="secondary" className="text-[8px] h-3.5 px-1 bg-orange-100 text-orange-700 border-orange-200">NEW</Badge>}
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground">{s.email}</p>
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell><Badge variant={s.subscriptionStatus === 'pro' ? 'default' : 'outline'}>{s.subscriptionStatus}</Badge></TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex justify-end gap-2">
+                                      {profile?.role === 'admin' && s.isAdminRead === false && (
+                                        <Button variant="ghost" size="sm" onClick={() => handleMarkAsRead(s.uid)} disabled={isResetting === 'markRead'} className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50">
+                                          <CheckCircle2 className="w-4 h-4" />
+                                        </Button>
+                                      )}
+                                      <Button asChild variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                        <Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4" /></Link>
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              )) : <TableRow><TableCell colSpan={3} className="text-center py-8">No students found.</TableCell></TableRow>}
+                            </TableBody>
+                          </Table>
+                        </CardContent>
                     </Card>
                 </TabsContent>
 
