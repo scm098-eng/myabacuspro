@@ -239,6 +239,37 @@ function shuffleArray<T>(array: T[]): T[] {
   return array;
 }
 
+/**
+ * Enhanced shuffler that ensures no two consecutive questions have the same answer.
+ */
+export function deDuplicateQuestions(questions: Question[]): Question[] {
+  if (questions.length < 2) return questions;
+  
+  const result = [...questions];
+  // 1. Initial Fisher-Yates shuffle
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+
+  // 2. Scan and break consecutive identical answers
+  for (let i = 0; i < result.length - 1; i++) {
+    if (result[i].answer === result[i + 1].answer) {
+      // Find a candidate further down the list with a different answer
+      for (let j = i + 2; j < result.length; j++) {
+        if (result[j].answer !== result[i].answer) {
+          // Swap result[i+1] with result[j]
+          const temp = result[i + 1];
+          result[i + 1] = result[j];
+          result[j] = temp;
+          break;
+        }
+      }
+    }
+  }
+  return result;
+}
+
 export function generateOptions(correctAnswer: number): number[] {
   const options = new Set<number>([correctAnswer]);
   const safeAnswer = Math.max(0, correctAnswer);
@@ -294,7 +325,6 @@ function isDirectFull(val: number, delta: number, op: '+' | '-'): boolean {
 }
 
 function generateDirectQuestion(max: number, numTerms: number = 3): Question {
-  // Outer loop to ensure we always get a valid sum with the requested number of terms
   while (true) {
     let currentVal = getRandomInt(max === 9 ? 1 : 10, max);
     let numbers: (number | string)[] = [currentVal];
@@ -305,7 +335,6 @@ function generateDirectQuestion(max: number, numTerms: number = 3): Question {
       let foundOp = false;
       while (attempts < 50) { 
         const op = Math.random() > 0.5 ? '+' : '-';
-        // Use deltas that are more likely to result in "Direct" moves
         const delta = getRandomInt(1, max > 9 ? 40 : max); 
         const nextVal = op === '+' ? currentVal + delta : currentVal - delta;
         
@@ -319,10 +348,9 @@ function generateDirectQuestion(max: number, numTerms: number = 3): Question {
         }
         attempts++;
       }
-      if (!foundOp) break; // Try a new starting number
+      if (!foundOp) break; 
     }
 
-    // Only return if we actually generated a calculation sum (at least one operation)
     if (successCount >= numTerms - 1) {
       return {
         text: numbers.join(' '),
@@ -333,10 +361,6 @@ function generateDirectQuestion(max: number, numTerms: number = 3): Question {
   }
 }
 
-/**
- * Generates elite multi-step mixed arithmetic for levels 51+
- * Steps: 3, 4, or 5 based on progress. All non-negative.
- */
 function generateEliteMultiStepMath(levelId: number): Question[] {
     const questions: Question[] = [];
     const count = 20;
@@ -372,7 +396,7 @@ function generateEliteMultiStepMath(levelId: number): Question[] {
         });
     }
     
-    return questions;
+    return deDuplicateQuestions(questions);
 }
 
 export function generateGameQuestions(level: GameLevel, levelId?: number): Question[] {
@@ -394,7 +418,7 @@ export function generateGameQuestions(level: GameLevel, levelId?: number): Quest
     }
 
     const positiveOnlyQuestions = allQuestions.filter(q => q.answer >= 0);
-    return shuffleArray(positiveOnlyQuestions).slice(0, 20); 
+    return deDuplicateQuestions(positiveOnlyQuestions).slice(0, 20); 
 }
 
 export function generateTest(testId: TestType, difficulty: Difficulty): Question[] {
@@ -405,18 +429,16 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
     const max = testId === 'basic-add-sub-l1' ? 9 : 99;
     const questions: Question[] = [];
     for (let i = 0; i < settings.numQuestions; i++) {
-      // Use 4 to 5 terms for basic addition/subtraction
       const numTerms = getRandomInt(4, 5);
       questions.push(generateDirectQuestion(max, numTerms));
     }
-    return questions;
+    return deDuplicateQuestions(questions);
   }
 
-  // Map input tests to their core data if applicable
   const coreTestId = testId.replace('-input', '');
   if (preDefinedQuestions[coreTestId]) {
       const allQuestions = preDefinedQuestions[coreTestId].filter(q => q.answer >= 0);
-      return shuffleArray([...allQuestions]).slice(0, settings.numQuestions);
+      return deDuplicateQuestions([...allQuestions]).slice(0, settings.numQuestions);
   }
 
   const questions: Question[] = [];
@@ -431,13 +453,13 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
       else if (levelNum <= 4) maxDigits = 2;
       else if (levelNum <= 6) maxDigits = 3;
       else if (levelNum <= 8) maxDigits = 4;
-      else maxDigits = 4; // Mix logic
+      else maxDigits = 4;
 
       let digits = 1;
       if (levelNum <= 8) {
-          digits = maxDigits; // Fixed digit count for levels 1-8
+          digits = maxDigits;
       } else {
-          digits = getRandomInt(1, 4); // Full mix for 9-12
+          digits = getRandomInt(1, 4);
       }
 
       const minRange = Math.pow(10, digits - 1);
@@ -450,7 +472,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
         questionType 
       });
     }
-    return shuffleArray(questions);
+    return deDuplicateQuestions(questions);
   }
 
   const [min, max] = getNumberRange(difficulty);
@@ -505,7 +527,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
         answer: answer,
       });
   }
-  return questions;
+  return deDuplicateQuestions(questions);
 }
 
 function getNumberRange(difficulty: Difficulty): [number, number] {

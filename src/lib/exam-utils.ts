@@ -1,6 +1,6 @@
 
 import type { Question, ExamGroup } from '@/types';
-import { generateTest } from './questions';
+import { generateTest, deDuplicateQuestions } from './questions';
 
 export const EXAM_DATE = new Date('2026-07-04T00:00:00');
 
@@ -11,31 +11,36 @@ export function getExamTimeLimit(age: number): number {
   return 10 * 60; // Default fallback
 }
 
-export function generateExamQuestions(group: ExamGroup): Question[] {
-  let questions: Question[] = [];
-  
-  const fillToTarget = (qPool: Question[], target: number) => {
-    const uniquePool = [...qPool];
-    while (uniquePool.length < target) {
-        uniquePool.push(...qPool.map(q => ({...q}))); 
-    }
-    return uniquePool.slice(0, target);
-  };
+/**
+ * Standard Fisher-Yates Shuffle
+ */
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
 
+export function generateExamQuestions(group: ExamGroup): Question[] {
+  let initialPool: Question[] = [];
+  
+  // 1. Gather group-specific questions from base logic
   switch (group) {
     case 'A':
       // Group A: Mix of 1, 2, and 3 digit Beads + 4-5 step Direct moves
-      questions = [
+      initialPool = [
         ...generateTest('beads-identify', 'level-2'), // 1-Digit Beads
         ...generateTest('beads-identify', 'level-4'), // 2-Digit Beads
-        ...generateTest('beads-identify', 'level-6'), // 3-Digit Beads
+        ...generateTest('beads-identify', 'level-6'), // Triple Digit Beads
         ...generateTest('basic-add-sub-l1', 'easy'),  // 1-Digit Add/Sub (4-5 steps)
         ...generateTest('basic-add-sub-l2', 'easy')   // 2-Digit Add/Sub (4-5 steps)
       ];
       break;
     case 'B':
       // Group B: Small Sister, Big Brother, AND Combination (With Tool)
-      questions = [
+      initialPool = [
         ...generateTest('basic-addition-plus-4', 'easy'),   
         ...generateTest('big-brother-addition-plus-9', 'easy'), 
         ...generateTest('combination-plus-6', 'easy'),      
@@ -44,7 +49,7 @@ export function generateExamQuestions(group: ExamGroup): Question[] {
       break;
     case 'C':
       // Group C: Single, Double & Triple Digit Mental Calculation (Without Tool)
-      questions = [
+      initialPool = [
         ...generateTest('addition-subtraction-input', 'easy'),   
         ...generateTest('addition-subtraction-input', 'medium'), 
         ...generateTest('addition-subtraction-input', 'hard')    
@@ -52,7 +57,7 @@ export function generateExamQuestions(group: ExamGroup): Question[] {
       break;
     case 'D':
       // Group D: Elite Multi-Digit Mental + Multi/Div
-      questions = [
+      initialPool = [
         ...generateTest('addition-subtraction-input', 'medium'),
         ...generateTest('multiplication-input', 'medium'),
         ...generateTest('division-input', 'medium')
@@ -60,8 +65,16 @@ export function generateExamQuestions(group: ExamGroup): Question[] {
       break;
   }
   
-  // User requested 150 questions for all papers
-  return fillToTarget(questions, 150); 
+  // 2. Expand to 150 questions by duplicating and shuffling the pool
+  let expandedPool = [...initialPool];
+  while (expandedPool.length < 150) {
+    // Append a shuffled clone of the original pool to maintain diversity
+    expandedPool = expandedPool.concat(shuffleArray([...initialPool]));
+  }
+
+  // 3. Final global shuffle and consecutive answer de-duplication
+  // This ensures the "jumbling style" and prevents back-to-back identical answers
+  return deDuplicateQuestions(expandedPool.slice(0, 150)); 
 }
 
 export function isFinalExamAvailable(): boolean {
