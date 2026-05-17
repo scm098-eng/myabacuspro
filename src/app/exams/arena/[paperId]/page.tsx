@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -7,9 +6,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
-import { Loader2, Timer, ShieldAlert, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Timer, ShieldAlert, Send, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { generateExamQuestions } from '@/lib/exam-utils';
 import type { ExamApplication, Question } from '@/types';
 import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
@@ -21,6 +19,17 @@ import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import BeadDisplay from '@/components/BeadDisplay';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function ExamArenaPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/test_wrapper_bg.jpg?alt=media');
@@ -74,7 +83,6 @@ export default function ExamArenaPage() {
     fetchApplication();
   }, [user, router, toast]);
 
-  // Handle automatic scrolling of the navigation bar to center the active question
   useEffect(() => {
     if (questionButtonRefs.current[currentIdx]) {
       questionButtonRefs.current[currentIdx]?.scrollIntoView({
@@ -85,11 +93,12 @@ export default function ExamArenaPage() {
     }
   }, [currentIdx]);
 
-  const finishExam = useCallback(async (finalAnswers: (number | null)[]) => {
+  const finishExam = useCallback(async () => {
+    // Note: We use the answers state directly here
     if (isFinished || isSubmitting || !user || !application) return;
     setIsSubmitting(true);
 
-    const score = finalAnswers.reduce((acc, ans, i) => (ans === questions[i].answer ? acc + 1 : acc), 0);
+    const score = answers.reduce((acc, ans, i) => (ans === questions[i].answer ? acc + 1 : acc), 0);
     const accuracy = (score / questions.length) * 100;
 
     const payload = {
@@ -101,11 +110,10 @@ export default function ExamArenaPage() {
       accuracy,
       isFinal,
       submittedAt: serverTimestamp(),
-      // Store full question/answer set for Admin audit
       details: questions.map((q, i) => ({
         text: q.text || `Identify Beads (Answer: ${q.answer})`,
         correct: q.answer,
-        student: finalAnswers[i]
+        student: answers[i]
       }))
     };
 
@@ -125,7 +133,7 @@ export default function ExamArenaPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [isFinished, isSubmitting, user, application, questions, isFinal, paperId, router, toast]);
+  }, [isFinished, isSubmitting, user, application, questions, isFinal, paperId, router, toast, answers]);
 
   useEffect(() => {
     if (loading || isFinished || timeLeft <= 0) return;
@@ -133,33 +141,38 @@ export default function ExamArenaPage() {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(interval);
-          finishExam(answers);
+          finishExam();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [loading, isFinished, timeLeft, finishExam, answers]);
+  }, [loading, isFinished, timeLeft, finishExam]);
 
   const handleNext = () => {
     const val = inputValue === '' ? null : parseInt(inputValue, 10);
     const newAnswers = [...answers];
     newAnswers[currentIdx] = val;
     setAnswers(newAnswers);
-    setInputValue('');
     
     if (currentIdx < questions.length - 1) {
       setCurrentIdx(prev => prev + 1);
+      setInputValue(newAnswers[currentIdx + 1]?.toString() || '');
     } else {
-      finishExam(newAnswers);
+      setInputValue(newAnswers[currentIdx]?.toString() || '');
     }
   };
 
   const handlePrev = () => {
+    const val = inputValue === '' ? null : parseInt(inputValue, 10);
+    const newAnswers = [...answers];
+    newAnswers[currentIdx] = val;
+    setAnswers(newAnswers);
+
     if (currentIdx > 0) {
       setCurrentIdx(prev => prev - 1);
-      setInputValue(answers[currentIdx - 1]?.toString() || '');
+      setInputValue(newAnswers[currentIdx - 1]?.toString() || '');
     }
   };
 
@@ -175,7 +188,6 @@ export default function ExamArenaPage() {
 
   if (loading) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /><p className="mt-4 font-bold uppercase tracking-widest">Entering Arena...</p></div>;
 
-  const progress = (currentIdx / questions.length) * 100;
   const mins = Math.floor(timeLeft / 60);
   const secs = timeLeft % 60;
   const currentQ = questions[currentIdx];
@@ -240,13 +252,39 @@ export default function ExamArenaPage() {
           </div>
         </CardContent>
 
-        <CardFooter className="p-8 pt-0 flex gap-4 shrink-0">
-          <Button variant="outline" onClick={handlePrev} disabled={currentIdx === 0} className="h-16 px-8 rounded-2xl border-2">
+        <CardFooter className="p-8 pt-0 flex flex-wrap gap-4 shrink-0">
+          <Button variant="outline" onClick={handlePrev} disabled={currentIdx === 0} className="h-16 px-6 sm:px-8 rounded-2xl border-2">
             <ChevronLeft className="w-6 h-6" />
           </Button>
-          <Button onClick={handleNext} disabled={isSubmitting} className="flex-1 h-16 text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.01]">
-            {isSubmitting ? <Loader2 className="animate-spin" /> : (currentIdx === questions.length - 1 ? 'Finish Submission' : 'Confirm & Next')} <Send className="ml-2 w-5 h-5" />
+          
+          <Button onClick={handleNext} disabled={currentIdx === questions.length - 1} className="flex-1 h-16 text-lg sm:text-xl font-black uppercase tracking-widest rounded-2xl shadow-md transition-transform hover:scale-[1.01]" variant="secondary">
+            Confirm & Next <ChevronRight className="ml-2 w-5 h-5" />
           </Button>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button disabled={isSubmitting} className="w-full sm:w-auto h-16 px-10 text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl bg-green-600 hover:bg-green-700">
+                {isSubmitting ? <Loader2 className="animate-spin" /> : <CheckCircle2 className="mr-2 w-6 h-6" />}
+                End Exam
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="rounded-3xl border-none shadow-2xl">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-2xl font-black uppercase tracking-tight">Finish and Submit?</AlertDialogTitle>
+                <AlertDialogDescription className="text-lg font-medium">
+                  {answers.filter(a => a === null).length > 0 
+                    ? `Warning: You still have ${answers.filter(a => a === null).length} unanswered questions. Are you sure you want to end the exam now?`
+                    : "Great job! You have answered all questions. Would you like to submit your exam now?"}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="gap-2 sm:gap-0">
+                <AlertDialogCancel className="rounded-xl h-12 font-bold">Review Answers</AlertDialogCancel>
+                <AlertDialogAction onClick={finishExam} className="rounded-xl h-12 bg-green-600 hover:bg-green-700 font-black uppercase tracking-widest">
+                  Submit Now
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardFooter>
       </Card>
       
