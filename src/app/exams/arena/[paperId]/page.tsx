@@ -16,6 +16,8 @@ import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDoc
 import { firebaseApp } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 
 export default function ExamArenaPage() {
@@ -42,17 +44,25 @@ export default function ExamArenaPage() {
     const db = getFirestore(firebaseApp);
     const fetchApplication = async () => {
       const q = query(collection(db, "examApplications"), where("userId", "==", user.uid), where("status", "==", "approved"), limit(1));
-      const snap = await getDocs(q);
-      if (snap.empty) {
-        toast({ title: "Not Eligible", description: "You need an approved exam application.", variant: "destructive" });
-        router.push('/exams');
-        return;
+      try {
+        const snap = await getDocs(q);
+        if (snap.empty) {
+          toast({ title: "Not Eligible", description: "You need an approved exam application.", variant: "destructive" });
+          router.push('/exams');
+          return;
+        }
+        const app = { id: snap.docs[0].id, ...snap.docs[0].data() } as ExamApplication;
+        setApplication(app);
+        setQuestions(generateExamQuestions(app.group));
+        setTimeLeft(app.timeLimit);
+        setLoading(false);
+      } catch (error) {
+        const permissionError = new FirestorePermissionError({
+          path: 'examApplications',
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
       }
-      const app = { id: snap.docs[0].id, ...snap.docs[0].data() } as ExamApplication;
-      setApplication(app);
-      setQuestions(generateExamQuestions(app.group));
-      setTimeLeft(app.timeLimit);
-      setLoading(false);
     };
     fetchApplication();
   }, [user, router, toast]);
@@ -64,18 +74,28 @@ export default function ExamArenaPage() {
     const score = finalAnswers.reduce((acc, ans, i) => (ans === questions[i].answer ? acc + 1 : acc), 0);
     const accuracy = (score / questions.length) * 100;
 
+    const payload = {
+      userId: user.uid,
+      paperId,
+      group: application.group,
+      score,
+      totalQuestions: questions.length,
+      accuracy,
+      isFinal,
+      submittedAt: serverTimestamp()
+    };
+
     try {
       const db = getFirestore(firebaseApp);
-      await addDoc(collection(db, "examResults"), {
-        userId: user.uid,
-        paperId,
-        group: application.group,
-        score,
-        totalQuestions: questions.length,
-        accuracy,
-        isFinal,
-        submittedAt: serverTimestamp()
-      });
+      addDoc(collection(db, "examResults"), payload)
+        .catch(async (serverError) => {
+          const permissionError = new FirestorePermissionError({
+            path: 'examResults',
+            operation: 'create',
+            requestResourceData: payload,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        });
 
       if (isFinal) {
         toast({ title: "Final Exam Submitted", description: "Your results have been sent to the Admin." });

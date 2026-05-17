@@ -38,17 +38,16 @@ service cloud.firestore {
     
     // --- EXAM RULES ---
     match /examApplications/{appId} {
-      allow read: if request.auth != null && (isOwner(resource.data.userId) || isAdmin());
-      allow create: if request.auth != null && isNotSuspended();
+      allow read, list: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
+      allow create: if request.auth != null && isNotSuspended() && request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin();
-      allow list: if request.auth != null && (isAdmin() || isTeacher());
     }
 
     match /examResults/{resultId} {
       // Final exam results are strictly restricted. Students can see their paper IDs list but not content if isFinal is true.
-      allow read: if request.auth != null && (isAdmin() || (isOwner(resource.data.userId) && resource.data.isFinal == false));
-      allow list: if request.auth != null && (isAdmin() || isTeacher());
-      allow create: if request.auth != null && isNotSuspended();
+      allow list: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
+      allow read: if request.auth != null && (isAdmin() || (resource.data.userId == request.auth.uid && resource.data.isFinal == false));
+      allow create: if request.auth != null && isNotSuspended() && request.resource.data.userId == request.auth.uid;
     }
     
     // --- BLOG RULES ---

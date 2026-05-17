@@ -17,6 +17,8 @@ import { CheckCircle2, XCircle, Search, Trophy, FileText, UserCheck, BarChart3, 
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 export default function AdminExamsPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
@@ -37,14 +39,32 @@ export default function AdminExamsPage() {
 
   useEffect(() => {
     const db = getFirestore(firebaseApp);
-    const unsubApps = onSnapshot(query(collection(db, "examApplications"), orderBy("appliedAt", "desc")), (snap) => {
-      setApplications(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamApplication)));
-      setLoading(false);
-    });
+    const unsubApps = onSnapshot(query(collection(db, "examApplications"), orderBy("appliedAt", "desc")), 
+      (snap) => {
+        setApplications(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamApplication)));
+        setLoading(false);
+      },
+      async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'examApplications',
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    );
 
-    const unsubResults = onSnapshot(query(collection(db, "examResults"), orderBy("submittedAt", "desc")), (snap) => {
-      setAllResults(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamResult)));
-    });
+    const unsubResults = onSnapshot(query(collection(db, "examResults"), orderBy("submittedAt", "desc")), 
+      (snap) => {
+        setAllResults(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamResult)));
+      },
+      async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'examResults',
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    );
 
     return () => {
       unsubApps();
@@ -55,7 +75,15 @@ export default function AdminExamsPage() {
   const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected') => {
     try {
       const db = getFirestore(firebaseApp);
-      await updateDoc(doc(db, "examApplications", id), { status });
+      updateDoc(doc(db, "examApplications", id), { status })
+        .catch(async (serverError) => {
+          const permissionError = new FirestorePermissionError({
+            path: `examApplications/${id}`,
+            operation: 'update',
+            requestResourceData: { status },
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        });
       toast({ title: `Application ${status}` });
     } catch (e: any) {
       toast({ title: "Update Failed", description: e.message, variant: "destructive" });

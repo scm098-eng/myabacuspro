@@ -17,6 +17,9 @@ import { format, differenceInYears } from 'date-fns';
 import { getExamTimeLimit, EXAM_DATE, isFinalExamAvailable } from '@/lib/exam-utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
+import { cn } from '@/lib/utils';
 
 export default function ExamDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
@@ -43,18 +46,36 @@ export default function ExamDashboardPage() {
     
     // Listen for application
     const appQuery = query(collection(db, "examApplications"), where("userId", "==", user.uid));
-    const unsubscribeApp = onSnapshot(appQuery, (snap) => {
-      if (!snap.empty) {
-        setApplication({ id: snap.docs[0].id, ...snap.docs[0].data() } as ExamApplication);
+    const unsubscribeApp = onSnapshot(appQuery, 
+      (snap) => {
+        if (!snap.empty) {
+          setApplication({ id: snap.docs[0].id, ...snap.docs[0].data() } as ExamApplication);
+        }
+        setLoading(false);
+      },
+      async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'examApplications',
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
       }
-      setLoading(false);
-    });
+    );
 
     // Listen for results
     const resultsQuery = query(collection(db, "examResults"), where("userId", "==", user.uid));
-    const unsubscribeResults = onSnapshot(resultsQuery, (snap) => {
-      setExamResults(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamResult)));
-    });
+    const unsubscribeResults = onSnapshot(resultsQuery, 
+      (snap) => {
+        setExamResults(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamResult)));
+      },
+      async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'examResults',
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    );
 
     return () => {
       unsubscribeApp();
@@ -66,20 +87,27 @@ export default function ExamDashboardPage() {
     if (!user || !profile) return;
     setIsApplying(true);
     
+    const payload = {
+      userId: user.uid,
+      studentName: `${profile.firstName} ${profile.surname}`,
+      group,
+      status: 'pending',
+      appliedAt: serverTimestamp(),
+      age: differenceInYears(new Date(), new Date(profile.dob)),
+      timeLimit: getExamTimeLimit(differenceInYears(new Date(), new Date(profile.dob)))
+    };
+
     try {
       const db = getFirestore(firebaseApp);
-      const age = differenceInYears(new Date(), new Date(profile.dob));
-      const timeLimit = getExamTimeLimit(age);
-
-      await addDoc(collection(db, "examApplications"), {
-        userId: user.uid,
-        studentName: `${profile.firstName} ${profile.surname}`,
-        group,
-        status: 'pending',
-        appliedAt: serverTimestamp(),
-        age,
-        timeLimit
-      });
+      addDoc(collection(db, "examApplications"), payload)
+        .catch(async (serverError) => {
+          const permissionError = new FirestorePermissionError({
+            path: 'examApplications',
+            operation: 'create',
+            requestResourceData: payload,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        });
       toast({ title: "Application Submitted", description: "Admin will review your form soon." });
     } catch (e: any) {
       toast({ title: "Submission Failed", description: e.message, variant: "destructive" });
