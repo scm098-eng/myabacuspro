@@ -1,25 +1,5 @@
-
-import { initializeApp, getApps, getApp, type App } from 'firebase-admin/app';
-import { getFirestore, type Firestore } from 'firebase-admin/firestore';
-
 /**
- * Standardized Firebase Admin initialization using modular exports.
- * This resolves bundling issues in Next.js server environments.
+ * Standardized Firebase Admin proxy.
+ * Redirects all legacy imports to the central src/lib/firebase-admin source.
  */
-export function getFirebaseAdmin(): App {
-  const apps = getApps();
-  if (apps.length > 0) {
-    return apps[0];
-  }
-
-  try {
-    return initializeApp();
-  } catch (e) {
-    console.error("Firebase Admin Init Error:", e);
-    throw e;
-  }
-}
-
-export function getFirestoreDb(): Firestore {
-  return getFirestore(getFirebaseAdmin());
-}
+export { getFirebaseAdmin, getFirestoreDb } from '@/lib/firebase-admin';

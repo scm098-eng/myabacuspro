@@ -4,7 +4,7 @@ import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 /**
  * Initializes the Firebase Admin SDK using Application Default Credentials (ADC).
  * Explicitly passing the projectId helps the Auth library resolve metadata
- * in restricted server environments.
+ * in restricted server environments like Firebase App Hosting.
  */
 export function getFirebaseAdmin(): App {
   const apps = getApps();
@@ -26,7 +26,7 @@ export function getFirebaseAdmin(): App {
 
 /**
  * Helper to get Firestore directly using the modular initialization logic.
- * Exporting this explicitly fixes sitemap build failures.
+ * Exporting this explicitly fixes sitemap build failures in production.
  */
 export function getFirestoreDb(): Firestore {
   return getFirestore(getFirebaseAdmin());

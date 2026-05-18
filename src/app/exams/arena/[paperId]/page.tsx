@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -7,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Timer, ShieldAlert, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Loader2, Timer, ShieldAlert, ChevronLeft, CheckCircle2 } from 'lucide-react';
 import { generateExamQuestions } from '@/lib/exam-utils';
 import type { ExamApplication, Question } from '@/types';
 import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
@@ -92,10 +91,16 @@ export default function ExamArenaPage() {
   }, [currentIdx]);
 
   const finishExam = useCallback(async () => {
-    if (isFinished || isSubmitting || !user || !application) return;
+    if (isFinished || isSubmitting || !user || !application || questions.length === 0) return;
     setIsSubmitting(true);
 
-    const score = answers.reduce((acc, ans, i) => (ans === questions[i].answer ? acc + 1 : acc), 0);
+    const score = answers.reduce((acc: number, ans, i) => {
+      if (ans !== null && questions[i] && ans === questions[i].answer) {
+        return acc + 1;
+      }
+      return acc;
+    }, 0);
+
     const accuracy = (score / questions.length) * 100;
     const answeredCount = answers.filter(a => a !== null).length;
 
@@ -107,8 +112,8 @@ export default function ExamArenaPage() {
       totalQuestions: questions.length,
       accuracy,
       isFinal,
-      timeLeft, // save remaining time
-      answeredCount, // save attended questions count
+      timeLeft, 
+      answeredCount,
       submittedAt: serverTimestamp(),
       details: questions.map((q, i) => ({
         text: q.text || `Identify Beads (Answer: ${q.answer})`,
@@ -156,7 +161,6 @@ export default function ExamArenaPage() {
     setAnswers(newAnswers);
     playSound('correct');
     
-    // Auto-advance to next question after a short delay for feedback
     setTimeout(() => {
       if (currentIdx < questions.length - 1) {
         setCurrentIdx(prev => prev + 1);
