@@ -10,7 +10,9 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   const host = request.headers.get('host');
+  const pathname = url.pathname;
 
+  // 1. Domain Canonicalization
   const nonCanonicalDomains = [
     'abacusace-mmnqw.web.app',
     'abacusace-mmnqw.firebaseapp.com',
@@ -25,17 +27,27 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // Blog path canonical check for missing /blog/ prefix in manual interlinks
+  // 2. Blog path canonical check for missing /blog/ prefix in manual interlinks
+  // This logic is intended for legacy SEO links that don't have the /blog/ prefix.
+  // We MUST exclude core app routes to prevent 404s like /exams/arena/paper-10.
   const knownRootPaths = [
     'about', 'tests', 'blog', 'pricing', 'faq', 'contact', 'tool-preview', 
     'game', 'login', 'signup', 'profile', 'dashboard', 'progress', 'results', 
     'terms', 'privacy', 'cancellation-refund', 'subscription-success', 'suspended', 
-    'admin', 'exams'
+    'admin', 'exams', 'api', '_next', 'favicon.ico'
   ];
-  const firstPathSegment = url.pathname.split('/')[1];
+  
+  const segments = pathname.split('/').filter(Boolean);
+  const firstPathSegment = segments[0];
 
-  if (firstPathSegment && !knownRootPaths.includes(firstPathSegment) && url.pathname.length > 20) {
-     url.pathname = `/blog${url.pathname}`;
+  // If it's a known app route or already starts with /blog, do nothing.
+  if (!firstPathSegment || knownRootPaths.includes(firstPathSegment)) {
+     return NextResponse.next();
+  }
+
+  // Only redirect unknown long paths (likely old blog slugs) to the /blog/ prefix
+  if (pathname.length > 20 && !pathname.startsWith('/blog/')) {
+     url.pathname = `/blog${pathname}`;
      return NextResponse.redirect(url, 301);
   }
 
