@@ -41,12 +41,14 @@ service cloud.firestore {
       allow read, list: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
       allow create: if request.auth != null && isNotSuspended() && request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin();
+      // Allow student to delete their own application (used for re-applying after rejection)
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
     match /examResults/{resultId} {
-      // Final exam results are strictly restricted. Students can see their paper IDs list but not content if isFinal is true.
-      allow list: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
-      allow read: if request.auth != null && (isAdmin() || (resource.data.userId == request.auth.uid && resource.data.isFinal == false));
+      // Allow students to see their own attempts list and metadata.
+      // Content visibility is managed in the UI (Final scores only visible to Admin).
+      allow list, read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
       allow create: if request.auth != null && isNotSuspended() && request.resource.data.userId == request.auth.uid;
     }
     
