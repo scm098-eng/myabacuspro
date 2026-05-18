@@ -26,7 +26,12 @@ export function middleware(request: NextRequest) {
   }
 
   // Blog path canonical check for missing /blog/ prefix in manual interlinks
-  const knownRootPaths = ['about', 'tests', 'blog', 'pricing', 'faq', 'contact', 'tool-preview', 'game', 'login', 'signup', 'profile', 'dashboard', 'progress', 'results', 'terms', 'privacy', 'cancellation-refund', 'subscription-success', 'suspended', 'admin'];
+  const knownRootPaths = [
+    'about', 'tests', 'blog', 'pricing', 'faq', 'contact', 'tool-preview', 
+    'game', 'login', 'signup', 'profile', 'dashboard', 'progress', 'results', 
+    'terms', 'privacy', 'cancellation-refund', 'subscription-success', 'suspended', 
+    'admin', 'exams'
+  ];
   const firstPathSegment = url.pathname.split('/')[1];
 
   if (firstPathSegment && !knownRootPaths.includes(firstPathSegment) && url.pathname.length > 20) {
