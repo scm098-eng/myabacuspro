@@ -9,11 +9,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
 import { format } from 'date-fns';
-import { CheckCircle2, XCircle, Search, Trophy, Eye, FileText, ScrollText } from 'lucide-react';
+import { CheckCircle2, XCircle, Search, Trophy, Eye, FileText, ScrollText, RefreshCcw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,6 +21,7 @@ import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 export default function AdminExamsPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
@@ -72,6 +73,13 @@ export default function AdminExamsPage() {
     updateDoc(doc(db, "examApplications", id), { status })
       .then(() => toast({ title: `Application ${status}` }))
       .catch(() => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'update' })));
+  };
+
+  const handleDeleteApplication = async (id: string) => {
+    const db = getFirestore(firebaseApp);
+    deleteDoc(doc(db, "examApplications", id))
+      .then(() => toast({ title: `Application Reset`, description: "Student can now apply again." }))
+      .catch(() => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'delete' })));
   };
 
   const filteredApps = useMemo(() => {
@@ -131,16 +139,23 @@ export default function AdminExamsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        {app.status === 'pending' && (
-                          <div className="flex justify-end gap-2">
-                            <Button size="sm" variant="outline" className="text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleUpdateStatus(app.id, 'approved')}>
-                              <CheckCircle2 className="w-4 h-4 mr-1" /> Approve
-                            </Button>
-                            <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleUpdateStatus(app.id, 'rejected')}>
-                              <XCircle className="w-4 h-4 mr-1" /> Reject
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex justify-end gap-2">
+                          {app.status === 'pending' && (
+                            <>
+                              <Button size="sm" variant="outline" className="text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleUpdateStatus(app.id, 'approved')}>
+                                <CheckCircle2 className="w-4 h-4 mr-1" /> Approve
+                              </Button>
+                              <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleUpdateStatus(app.id, 'rejected')}>
+                                <XCircle className="w-4 h-4 mr-1" /> Reject
+                              </Button>
+                            </>
+                          )}
+                          {(app.status === 'rejected' || app.status === 'approved') && (
+                             <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-primary" onClick={() => handleDeleteApplication(app.id)}>
+                                <RefreshCcw className="w-4 h-4 mr-1" /> Allow Re-apply
+                             </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -199,7 +214,7 @@ export default function AdminExamsPage() {
           <div className="flex-grow overflow-hidden">
             <ScrollArea className="h-full p-6">
               <div className="space-y-4">
-                {selectedResult?.details?.map((item: any, i: number) => (
+                {(selectedResult as any)?.details?.map((item: any, i: number) => (
                   <div key={i} className="flex items-center justify-between p-4 bg-muted/50 rounded-2xl border">
                     <div className="flex items-center gap-4">
                       <span className="text-[10px] font-black text-muted-foreground w-6">#{i+1}</span>

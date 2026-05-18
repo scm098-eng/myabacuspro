@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -7,9 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GraduationCap, FileText, CheckCircle2, Clock, Lock, ShieldAlert, PlayCircle, Trophy, AlertTriangle, Brain, Calculator, Zap, Target } from 'lucide-react';
+import { GraduationCap, FileText, CheckCircle2, Clock, Lock, ShieldAlert, PlayCircle, Trophy, AlertTriangle, Brain, Calculator, Zap, Target, RefreshCcw, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, query, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult, ExamGroup } from '@/types';
 import { format, differenceInYears } from 'date-fns';
@@ -29,6 +30,7 @@ export default function ExamDashboardPage() {
   const [application, setApplication] = useState<ExamApplication | null>(null);
   const [results, setExamResults] = useState<ExamResult[]>([]);
   const [isApplying, setIsApplying] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,6 +51,8 @@ export default function ExamDashboardPage() {
       (snap) => {
         if (!snap.empty) {
           setApplication({ id: snap.docs[0].id, ...snap.docs[0].data() } as ExamApplication);
+        } else {
+          setApplication(null);
         }
         setLoading(false);
       },
@@ -99,20 +103,33 @@ export default function ExamDashboardPage() {
 
     try {
       const db = getFirestore(firebaseApp);
-      addDoc(collection(db, "examApplications"), payload)
-        .catch(async (serverError) => {
-          const permissionError = new FirestorePermissionError({
-            path: 'examApplications',
-            operation: 'create',
-            requestResourceData: payload,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-        });
+      await addDoc(collection(db, "examApplications"), payload);
       toast({ title: "Application Submitted", description: "Admin will review your form soon." });
     } catch (e: any) {
-      toast({ title: "Submission Failed", description: e.message, variant: "destructive" });
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: 'examApplications',
+        operation: 'create',
+        requestResourceData: payload,
+      }));
     } finally {
       setIsApplying(false);
+    }
+  };
+
+  const handleReapply = async () => {
+    if (!application || !user) return;
+    setIsDeleting(true);
+    try {
+      const db = getFirestore(firebaseApp);
+      await deleteDoc(doc(db, "examApplications", application.id));
+      toast({ title: "Ready to re-apply", description: "Choose your group and submit again." });
+    } catch (e) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: `examApplications/${application.id}`,
+        operation: 'delete',
+      }));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -121,6 +138,7 @@ export default function ExamDashboardPage() {
   }
 
   const isApproved = application?.status === 'approved';
+  const isRejected = application?.status === 'rejected';
 
   const groupDetails = [
     { 
@@ -135,7 +153,7 @@ export default function ExamDashboardPage() {
       id: 'B', 
       title: 'Group B: Formula Champion', 
       desc: 'Comprehensive test of all primary abacus formulas.', 
-      focus: ['Small Sister & Big Brother Formulas', 'Combination Formulas Mastery', 'Single & Double Digit Arithmetic'],
+      focus: ['All Formulas (S.S, B.B, Combination)', 'Single & Double Digit Arithmetic'],
       tools: 'Abacus Tool Allowed',
       icon: <Calculator className="w-8 h-8 text-green-500" />
     },
@@ -237,6 +255,27 @@ export default function ExamDashboardPage() {
                   <div className="mt-8 pt-8 border-t border-orange-100">
                      <p className="text-xs font-black uppercase text-orange-400 tracking-[0.2em]">What happens next?</p>
                      <p className="text-sm text-orange-800 mt-2">Once approved, 20 practice papers and the final arena will unlock on this page.</p>
+                  </div>
+                </CardHeader>
+              </Card>
+            )}
+
+            {isRejected && (
+              <Card className="bg-red-50 border-red-200 rounded-[2.5rem] shadow-lg border-2">
+                <CardHeader className="text-center p-10">
+                  <div className="mx-auto bg-red-100 p-6 rounded-full w-fit mb-6">
+                    <XCircle className="w-12 h-12 text-red-600" />
+                  </div>
+                  <CardTitle className="text-3xl font-black text-red-900 uppercase tracking-tight">Application Rejected</CardTitle>
+                  <CardDescription className="text-red-700 font-bold text-lg mt-4 max-w-md mx-auto">
+                    Your application for **Group {application.group}** was not approved. This could be due to incorrect details or inconsistent practice data.
+                  </CardDescription>
+                  <div className="mt-8 pt-8 border-t border-red-100 flex flex-col items-center gap-4">
+                     <p className="text-sm text-red-800">Please review the rules and try again with a different group or updated profile.</p>
+                     <Button onClick={handleReapply} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 h-14 px-10 font-black uppercase tracking-widest rounded-2xl shadow-lg">
+                        {isDeleting ? <RefreshCcw className="animate-spin mr-2" /> : <RefreshCcw className="mr-2" />}
+                        Re-apply for Exam
+                     </Button>
                   </div>
                 </CardHeader>
               </Card>
