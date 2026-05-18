@@ -27,28 +27,50 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // 2. Blog path canonical check for missing /blog/ prefix in manual interlinks
-  // This logic is intended for legacy SEO links that don't have the /blog/ prefix.
-  // We MUST exclude core app routes to prevent 404s like /exams/arena/paper-10.
-  const knownRootPaths = [
-    'about', 'tests', 'blog', 'pricing', 'faq', 'contact', 'tool-preview', 
-    'game', 'login', 'signup', 'profile', 'dashboard', 'progress', 'results', 
-    'terms', 'privacy', 'cancellation-refund', 'subscription-success', 'suspended', 
-    'admin', 'exams', 'api', '_next', 'favicon.ico'
-  ];
+  // 2. Define Core Application Routes
+  const knownRootPaths = new Set([
+    'about', 
+    'tests', 
+    'blog', 
+    'pricing', 
+    'faq', 
+    'contact', 
+    'tool-preview', 
+    'game', 
+    'login', 
+    'signup', 
+    'profile', 
+    'dashboard', 
+    'progress', 
+    'results', 
+    'terms', 
+    'privacy', 
+    'cancellation-refund', 
+    'subscription-success', 
+    'suspended', 
+    'admin', 
+    'exams', 
+    'api', 
+    '_next', 
+    'favicon.ico'
+  ]);
   
   const segments = pathname.split('/').filter(Boolean);
   const firstPathSegment = segments[0];
 
-  // If it's a known app route or already starts with /blog, do nothing.
-  if (!firstPathSegment || knownRootPaths.includes(firstPathSegment)) {
-     return NextResponse.next();
+  // SAFETY: If the path is empty, is a known app route, or already has the /blog/ prefix, do nothing.
+  if (!firstPathSegment || knownRootPaths.has(firstPathSegment) || pathname.startsWith('/blog/')) {
+    return NextResponse.next();
   }
 
-  // Only redirect unknown long paths (likely old blog slugs) to the /blog/ prefix
-  if (pathname.length > 20 && !pathname.startsWith('/blog/')) {
-     url.pathname = `/blog${pathname}`;
-     return NextResponse.redirect(url, 301);
+  // 3. Robust Legacy Blog Redirect Logic
+  // We only redirect if:
+  // a) It is a single-level path (e.g. /how-to-calculate-fast)
+  // b) It is NOT one of our known core app segments
+  // This prevents multi-level app routes (like /exams/arena/paper-12) from ever being touched.
+  if (segments.length === 1 && !knownRootPaths.has(firstPathSegment)) {
+    url.pathname = `/blog/${firstPathSegment}`;
+    return NextResponse.redirect(url, 301);
   }
 
   return NextResponse.next();
@@ -56,6 +78,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // Skip all internal paths (_next) and static files (images, favicon, etc)
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
