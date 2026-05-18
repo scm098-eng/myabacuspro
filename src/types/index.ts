@@ -115,6 +115,8 @@ export interface ExamResult {
   accuracy: number;
   isFinal: boolean;
   submittedAt: any;
+  timeLeft?: number;
+  answeredCount?: number;
 }
 
 export type GameLevel =

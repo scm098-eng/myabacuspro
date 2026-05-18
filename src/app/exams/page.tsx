@@ -8,9 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GraduationCap, FileText, CheckCircle2, Clock, Lock, ShieldAlert, PlayCircle, Trophy, AlertTriangle, Brain, Calculator, Zap, Target, RefreshCcw, XCircle } from 'lucide-react';
+import { GraduationCap, FileText, CheckCircle2, Clock, Lock, ShieldAlert, PlayCircle, Trophy, AlertTriangle, Brain, Calculator, Zap, Target, RefreshCcw, XCircle, FileEdit } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, query, where, onSnapshot, doc, deleteDoc, orderBy } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult, ExamGroup } from '@/types';
 import { format, differenceInYears } from 'date-fns';
@@ -66,7 +66,7 @@ export default function ExamDashboardPage() {
     );
 
     // Listen for results
-    const resultsQuery = query(collection(db, "examResults"), where("userId", "==", user.uid));
+    const resultsQuery = query(collection(db, "examResults"), where("userId", "==", user.uid), orderBy("submittedAt", "desc"));
     const unsubscribeResults = onSnapshot(resultsQuery, 
       (snap) => {
         setExamResults(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamResult)));
@@ -174,6 +174,13 @@ export default function ExamDashboardPage() {
       icon: <Trophy className="w-8 h-8 text-purple-500" />
     }
   ];
+
+  const formatTimeRemaining = (seconds: number | undefined) => {
+    if (seconds === undefined) return 'N/A';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
@@ -381,18 +388,39 @@ export default function ExamDashboardPage() {
                 <CardHeader><CardTitle className="text-xl font-black uppercase tracking-tight">My Performance</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   {results.length > 0 ? results.map(r => (
-                    <div key={r.id} className="flex justify-between items-center p-4 bg-muted/50 rounded-2xl border border-muted">
-                      <div>
-                        <p className="text-xs font-black uppercase tracking-tight">{r.paperId === 'final' ? 'FINAL EXAM' : `Practice ${r.paperId.split('-')[1]}`}</p>
-                        <p className="text-[10px] text-muted-foreground font-bold">{format(r.submittedAt?.toDate ? r.submittedAt.toDate() : new Date(), 'MMM d, h:mm a')}</p>
+                    <div key={r.id} className="flex flex-col gap-3 p-4 bg-muted/50 rounded-2xl border border-muted transition-all hover:bg-muted/80">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                             <FileEdit className="w-3 h-3 text-indigo-500" />
+                             <p className="text-xs font-black uppercase tracking-tight">{r.paperId === 'final' ? 'FINAL EXAM' : `Practice ${r.paperId.split('-')[1]}`}</p>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground font-bold">{format(r.submittedAt?.toDate ? r.submittedAt.toDate() : new Date(), 'MMM d, h:mm a')}</p>
+                        </div>
+                        <div className="text-right">
+                          {r.isFinal ? (
+                            <Badge className="bg-slate-900 text-[10px] font-black py-1 px-3">SUBMITTED</Badge>
+                          ) : (
+                            <div className="flex flex-col items-end">
+                                <p className="text-2xl font-black text-primary leading-none">{r.score}/{r.totalQuestions}</p>
+                                <p className="text-[8px] font-black uppercase text-muted-foreground mt-1 tracking-widest">Accuracy: {r.accuracy.toFixed(1)}%</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-right">
-                        {r.isFinal ? (
-                           <Badge className="bg-slate-900 text-[10px] font-black">SUBMITTED</Badge>
-                        ) : (
-                          <p className="text-lg font-black text-primary">{r.score}/{r.totalQuestions}</p>
-                        )}
-                      </div>
+                      
+                      {!r.isFinal && (
+                        <div className="flex flex-wrap gap-2 pt-2 border-t border-muted-foreground/10">
+                            <div className="flex items-center gap-1.5 bg-background/50 px-2 py-1 rounded-lg border text-[9px] font-black text-slate-600 uppercase">
+                                <Target className="w-2.5 h-2.5 text-green-500" />
+                                {r.answeredCount || 0}/{r.totalQuestions} Attended
+                            </div>
+                            <div className="flex items-center gap-1.5 bg-background/50 px-2 py-1 rounded-lg border text-[9px] font-black text-slate-600 uppercase">
+                                <Clock className="w-2.5 h-2.5 text-orange-500" />
+                                Time Left: {formatTimeRemaining(r.timeLeft)}
+                            </div>
+                        </div>
+                      )}
                     </div>
                   )) : (
                     <div className="text-center py-10">

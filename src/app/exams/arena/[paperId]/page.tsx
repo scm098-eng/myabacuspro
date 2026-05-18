@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -96,6 +97,7 @@ export default function ExamArenaPage() {
 
     const score = answers.reduce((acc, ans, i) => (ans === questions[i].answer ? acc + 1 : acc), 0);
     const accuracy = (score / questions.length) * 100;
+    const answeredCount = answers.filter(a => a !== null).length;
 
     const payload = {
       userId: user.uid,
@@ -105,6 +107,8 @@ export default function ExamArenaPage() {
       totalQuestions: questions.length,
       accuracy,
       isFinal,
+      timeLeft, // save remaining time
+      answeredCount, // save attended questions count
       submittedAt: serverTimestamp(),
       details: questions.map((q, i) => ({
         text: q.text || `Identify Beads (Answer: ${q.answer})`,
@@ -129,7 +133,7 @@ export default function ExamArenaPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [isFinished, isSubmitting, user, application, questions, isFinal, paperId, router, toast, answers]);
+  }, [isFinished, isSubmitting, user, application, questions, isFinal, paperId, router, toast, answers, timeLeft]);
 
   useEffect(() => {
     if (loading || isFinished || timeLeft <= 0) return;
