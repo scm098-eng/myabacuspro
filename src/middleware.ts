@@ -5,7 +5,7 @@ import type { NextRequest } from 'next/server';
  * SEO & Canonical Redirection Middleware
  * 
  * Ensures all traffic is consolidated onto myabacuspro.com.
- * Performs redirects for default subdomains and legacy versions.
+ * Performs redirects for default subdomains and handles legacy blog routing.
  */
 export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
@@ -28,7 +28,7 @@ export function middleware(request: NextRequest) {
   }
 
   // 2. Define Core Application Routes
-  // These are the root paths that should NEVER be redirected to the blog.
+  // These paths should NEVER live under the /blog/ prefix.
   const knownRootPaths = new Set([
     'about', 
     'tests', 
@@ -60,30 +60,41 @@ export function middleware(request: NextRequest) {
   const segments = pathname.split('/').filter(Boolean);
   const firstPathSegment = segments[0]?.toLowerCase();
 
-  // SAFETY CHECKS:
-  // - If the path is empty (homepage)
-  // - If it's already a blog path
-  // - If it's a known core application route
-  // - If it's an internal Next.js path or API
+  // Safety Check: Next.js internals, API, and assets
   if (
     !firstPathSegment || 
-    pathname.startsWith('/blog/') || 
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||
-    knownRootPaths.has(firstPathSegment)
+    pathname === '/favicon.ico'
   ) {
     return NextResponse.next();
   }
 
-  // 3. Robust Legacy Blog Redirect Logic
-  // We only redirect if it is a single-level path (a "slug") that isn't in our whitelist.
-  // This ensures that multi-level paths (like /exams/arena/paper-10) remain untouched.
-  if (segments.length === 1 && !knownRootPaths.has(firstPathSegment)) {
-    url.pathname = `/blog/${firstPathSegment}`;
-    // Using 307 (Temporary Redirect) for now to prevent browser caching while we verify the fix.
-    return NextResponse.redirect(url, 307);
+  // 3. Fix "Incorrect Blog Prefix" Error
+  // If the URL is /blog/practice-features (as seen in user screenshot), 
+  // we must redirect it BACK to /practice-features where the page exists.
+  if (pathname.startsWith('/blog/') && segments.length === 2) {
+    const slug = segments[1].toLowerCase();
+    if (knownRootPaths.has(slug)) {
+      url.pathname = `/${slug}`;
+      return NextResponse.redirect(url, 307);
+    }
   }
 
+  // 4. Legacy Blog Slug Logic
+  // For single-level paths (e.g. /my-post), if it's NOT a core app route, 
+  // we assume it's an old blog link and prefix it.
+  if (segments.length === 1) {
+    if (knownRootPaths.has(firstPathSegment)) {
+      return NextResponse.next();
+    } else {
+      url.pathname = `/blog/${firstPathSegment}`;
+      // Using 307 to avoid caching issues during fixes
+      return NextResponse.redirect(url, 307);
+    }
+  }
+
+  // Multi-level paths like /exams/arena/paper-10 are untouched by the redirect engine
   return NextResponse.next();
 }
 
