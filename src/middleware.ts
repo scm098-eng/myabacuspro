@@ -5,7 +5,7 @@ import type { NextRequest } from 'next/server';
  * SEO & Canonical Redirection Middleware
  * 
  * Ensures all traffic is consolidated onto myabacuspro.com.
- * Performs redirects for default subdomains and handles legacy blog routing.
+ * Performs redirects for default subdomains and handles legacy blog routing safely.
  */
 export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
@@ -23,12 +23,11 @@ export function middleware(request: NextRequest) {
     url.protocol = 'https';
     url.host = 'myabacuspro.com';
     url.port = ''; 
-
     return NextResponse.redirect(url, 301);
   }
 
   // 2. Define Core Application Routes
-  // These paths should NEVER live under the /blog/ prefix.
+  // These paths should NEVER be intercepted or prefixed with /blog/.
   const knownRootPaths = new Set([
     'about', 
     'tests', 
@@ -71,8 +70,7 @@ export function middleware(request: NextRequest) {
   }
 
   // 3. Fix "Incorrect Blog Prefix" Error
-  // If the URL is /blog/practice-features (as seen in user screenshot), 
-  // we must redirect it BACK to /practice-features where the page exists.
+  // If the URL already has /blog/ but points to a core page, redirect BACK to the root.
   if (pathname.startsWith('/blog/') && segments.length === 2) {
     const slug = segments[1].toLowerCase();
     if (knownRootPaths.has(slug)) {
@@ -82,19 +80,15 @@ export function middleware(request: NextRequest) {
   }
 
   // 4. Legacy Blog Slug Logic
-  // For single-level paths (e.g. /my-post), if it's NOT a core app route, 
-  // we assume it's an old blog link and prefix it.
+  // ONLY redirect root-level slugs that are NOT known app routes.
+  // This ensures multi-level paths like /exams/arena/paper-10 are NEVER touched.
   if (segments.length === 1) {
-    if (knownRootPaths.has(firstPathSegment)) {
-      return NextResponse.next();
-    } else {
+    if (!knownRootPaths.has(firstPathSegment)) {
       url.pathname = `/blog/${firstPathSegment}`;
-      // Using 307 to avoid caching issues during fixes
       return NextResponse.redirect(url, 307);
     }
   }
 
-  // Multi-level paths like /exams/arena/paper-10 are untouched by the redirect engine
   return NextResponse.next();
 }
 
