@@ -51,6 +51,7 @@ export function middleware(request: NextRequest) {
     'admin', 
     'exams', 
     'api', 
+    'practice-features',
     '_next', 
     'favicon.ico'
   ]);
