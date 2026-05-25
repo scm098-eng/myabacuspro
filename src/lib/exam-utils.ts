@@ -3,9 +3,11 @@ import type { Question, ExamGroup } from '@/types';
 import { generateTest, deDuplicateQuestions } from './questions';
 
 /**
- * Official Exam Date - Preponed to today (May 18, 2026) at 12:30 PM for testing.
+ * Official Exam Date - Set to May 25, 2026.
+ * Question paper opens at 12:30 PM and closes at 4:00 PM (16:00).
  */
-export const EXAM_DATE = new Date('2026-05-18T12:30:00');
+export const EXAM_DATE = new Date('2026-05-25T12:30:00');
+export const EXAM_END_TIME = new Date('2026-05-25T16:00:00');
 
 export function getExamTimeLimit(age: number): number {
   if (age >= 6 && age <= 8) return 9 * 60;
@@ -82,5 +84,5 @@ export function generateExamQuestions(group: ExamGroup): Question[] {
 
 export function isFinalExamAvailable(): boolean {
   const now = new Date();
-  return now >= EXAM_DATE;
+  return now >= EXAM_DATE && now <= EXAM_END_TIME;
 }
