@@ -47,7 +47,7 @@ export default function ExamArenaPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Background refs for stable interval tracking
+  // Background refs for stable interval tracking - fixes clock stopping on rapid clicks
   const answersRef = useRef<(number | null)[]>([]);
   const timeLeftRef = useRef<number>(0);
   const isFinishedRef = useRef(false);
@@ -164,7 +164,7 @@ export default function ExamArenaPage() {
       });
   }, [user, application, questions, isFinal, paperId, router, toast]);
 
-  // Continuous Stable Timer Effect
+  // Continuous Stable Timer Effect - Decoupled from user interaction clicks
   useEffect(() => {
     if (loading || isFinished) return;
     
@@ -187,8 +187,8 @@ export default function ExamArenaPage() {
             setTimeout(() => playSound('timerWarning'), 400);
           } else if (nextTime <= 10 && nextTime > 0) {
             playSound('timerUrgent');
-          } else if (nextTime > 60 && nextTime % 60 === 0) {
-            playSound('timerTick');
+          } else if (nextTime <= 5) {
+             playSound('timerTick');
           }
 
           return nextTime;
@@ -197,9 +197,9 @@ export default function ExamArenaPage() {
     }
 
     return () => {
-      // Intentionally not clearing to prevent interaction pauses
+      // Intentionally not clearing here to ensure clock persists through clicks
     };
-  }, [loading, isFinished, finishExam, playSound]);
+  }, [loading, isFinished, finishTest, playSound]);
 
   const handleSelectOption = (val: number) => {
     if (isFinished) return;

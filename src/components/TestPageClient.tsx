@@ -50,7 +50,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   const [isFinished, setIsFinished] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
-  // Stability Refs
+  // Stability Refs to prevent timer freezing during clicks
   const answersRef = useRef(userAnswers);
   const timeLeftRef = useRef(timeLeft);
   const isFinishedRef = useRef(false);
@@ -183,7 +183,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     playSound('points');
   };
 
-  // Continuous Stable Timer Effect
+  // Continuous Stable Timer Effect - Decoupled from user interaction clicks
   useEffect(() => {
     if (!hasStarted || questions.length === 0 || !startTime || isFinished || settings.timeLimit === 0) return;
     
@@ -216,7 +216,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     }
 
     return () => {
-      // Intentionally not clearing here to prevent interaction resets
+      // Intentionally not clearing here to ensure clock persists through clicks
     };
   }, [hasStarted, questions.length, startTime, isFinished, settings.timeLimit, finishTest, playSound]);
 
