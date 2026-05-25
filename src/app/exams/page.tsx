@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -112,36 +111,38 @@ export default function ExamDashboardPage() {
       timeLimit: getExamTimeLimit(age)
     };
 
-    try {
-      const db = getFirestore(firebaseApp);
-      await addDoc(collection(db, "examApplications"), payload);
-      toast({ title: "Application Submitted", description: "Admin will review your form soon." });
-    } catch (e: any) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: 'examApplications',
-        operation: 'create',
-        requestResourceData: payload,
-      }));
-    } finally {
-      setIsApplying(false);
-    }
+    const db = getFirestore(firebaseApp);
+    addDoc(collection(db, "examApplications"), payload)
+      .then(() => {
+        toast({ title: "Application Submitted", description: "Admin will review your form soon." });
+        setIsApplying(false);
+      })
+      .catch(async (serverError) => {
+        setIsApplying(false);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'examApplications',
+          operation: 'create',
+          requestResourceData: payload,
+        }));
+      });
   };
 
   const handleReapply = async () => {
     if (!application || !user) return;
     setIsDeleting(true);
-    try {
-      const db = getFirestore(firebaseApp);
-      await deleteDoc(doc(db, "examApplications", application.id));
-      toast({ title: "Ready to re-apply", description: "Choose your group and submit again." });
-    } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: `examApplications/${application.id}`,
-        operation: 'delete',
-      }));
-    } finally {
-      setIsDeleting(false);
-    }
+    const db = getFirestore(firebaseApp);
+    deleteDoc(doc(db, "examApplications", application.id))
+      .then(() => {
+        toast({ title: "Ready to re-apply", description: "Choose your group and submit again." });
+        setIsDeleting(false);
+      })
+      .catch(async (serverError) => {
+        setIsDeleting(false);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: `examApplications/${application.id}`,
+          operation: 'delete',
+        }));
+      });
   };
 
   if (loading || authLoading) {
@@ -242,7 +243,7 @@ export default function ExamDashboardPage() {
                   <CardTitle className="text-3xl font-black text-red-900 uppercase tracking-tight">Application Rejected</CardTitle>
                   <div className="mt-8 pt-8 border-t border-red-100 flex flex-col items-center gap-4">
                      <Button onClick={handleReapply} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 h-14 px-10 font-black uppercase tracking-widest rounded-2xl shadow-lg">
-                        {isDeleting ? <RefreshCcw className="animate-spin mr-2" /> : <RefreshCcw className="mr-2" />} Re-apply
+                        {isDeleting ? <Loader2 className="animate-spin mr-2" /> : <RefreshCcw className="mr-2" />} Re-apply
                      </Button>
                   </div>
                 </CardHeader>

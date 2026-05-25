@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -133,24 +132,35 @@ export default function ExamArenaPage() {
       }))
     };
 
-    try {
-      const db = getFirestore(firebaseApp);
-      await addDoc(collection(db, "examResults"), payload);
-      
-      if (isFinal) {
-        // RESET PROCESS: After Final Exam, delete the application so practice papers are disabled 
-        // and student must apply again for next cycle.
-        await deleteDoc(doc(db, "examApplications", application.id));
-        toast({ title: "Official Exam Submitted", description: "Cycle Complete! Your results are stored for admin verification." });
-      } else {
-        toast({ title: "Practice Paper Complete", description: `Result: ${score}/${questions.length}` });
-      }
-      router.push('/exams');
-    } catch (e: any) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examResults', operation: 'create' }));
-    } finally {
-      setIsSubmitting(false);
-    }
+    const db = getFirestore(firebaseApp);
+    
+    addDoc(collection(db, "examResults"), payload)
+      .then(async () => {
+        if (isFinal) {
+          // RESET PROCESS: After Final Exam, delete the application so practice papers are disabled 
+          // and student must apply again for next cycle.
+          deleteDoc(doc(db, "examApplications", application.id))
+            .then(() => {
+              toast({ title: "Official Exam Submitted", description: "Cycle Complete! Your results are stored for admin verification." });
+              router.push('/exams');
+            })
+            .catch(async (delErr) => {
+              errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${application.id}`, operation: 'delete' }));
+              router.push('/exams');
+            });
+        } else {
+          toast({ title: "Practice Paper Complete", description: `Result: ${score}/${questions.length}` });
+          router.push('/exams');
+        }
+      })
+      .catch(async (serverError) => {
+        setIsSubmitting(false);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: 'examResults', 
+          operation: 'create',
+          requestResourceData: payload
+        }));
+      });
   }, [isFinished, isSubmitting, user, application, questions, isFinal, paperId, router, toast]);
 
   // Stable Timer Effect

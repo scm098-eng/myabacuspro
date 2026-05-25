@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -90,21 +89,21 @@ export default function AdminExamsPage() {
     const db = getFirestore(firebaseApp);
     updateDoc(doc(db, "examApplications", id), { status })
       .then(() => toast({ title: `Application ${status}` }))
-      .catch(() => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'update' })));
+      .catch(async (serverError) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'update', requestResourceData: { status } })));
   };
 
   const handleDeclareResult = async (id: string) => {
     const db = getFirestore(firebaseApp);
     updateDoc(doc(db, "examResults", id), { resultDeclared: true })
       .then(() => toast({ title: "Result Declared", description: "Student can now view their score." }))
-      .catch(() => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examResults/${id}`, operation: 'update' })));
+      .catch(async (serverError) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examResults/${id}`, operation: 'update', requestResourceData: { resultDeclared: true } })));
   };
 
   const handleDeleteApplication = async (id: string) => {
     const db = getFirestore(firebaseApp);
     deleteDoc(doc(db, "examApplications", id))
       .then(() => toast({ title: `Application Reset`, description: "Student can now apply again." }))
-      .catch(() => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'delete' })));
+      .catch(async (serverError) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'delete' })));
   };
 
   const handleSaveSchedule = async () => {
@@ -114,19 +113,26 @@ export default function AdminExamsPage() {
     }
     setIsSavingSchedule(true);
     const db = getFirestore(firebaseApp);
-    try {
-      await setDoc(doc(db, "stats", "examSchedule"), {
-        date: examDate,
-        startTime,
-        endTime,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-      toast({ title: "Schedule Updated", description: `Official exam set for ${examDate}.` });
-    } catch (e) {
-      toast({ title: "Save Failed", variant: "destructive" });
-    } finally {
-      setIsSavingSchedule(false);
-    }
+    const payload = {
+      date: examDate,
+      startTime,
+      endTime,
+      updatedAt: new Date().toISOString()
+    };
+
+    setDoc(doc(db, "stats", "examSchedule"), payload, { merge: true })
+      .then(() => {
+        toast({ title: "Schedule Updated", description: `Official exam set for ${examDate}.` });
+        setIsSavingSchedule(false);
+      })
+      .catch(async (serverError) => {
+        setIsSavingSchedule(false);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: "stats/examSchedule", 
+          operation: 'update',
+          requestResourceData: payload
+        }));
+      });
   };
 
   const filteredApps = useMemo(() => {
