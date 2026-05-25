@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Timer, ShieldAlert, ChevronLeft, CheckCircle2 } from 'lucide-react';
+import { Loader2, Timer, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { generateExamQuestions } from '@/lib/exam-utils';
 import type { ExamApplication, Question } from '@/types';
 import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
@@ -112,7 +112,7 @@ export default function ExamArenaPage() {
       totalQuestions: questions.length,
       accuracy,
       isFinal,
-      timeLeft, 
+      timeLeft: 0, 
       answeredCount,
       submittedAt: serverTimestamp(),
       details: questions.map((q, i) => ({
@@ -138,41 +138,48 @@ export default function ExamArenaPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [isFinished, isSubmitting, user, application, questions, isFinal, paperId, router, toast, answers, timeLeft]);
+  }, [isFinished, isSubmitting, user, application, questions, isFinal, paperId, router, toast, answers]);
 
   useEffect(() => {
     if (loading || isFinished) return;
     
-    // Explicit timeout handler to avoid closure issues with timeLeft=1
     if (timeLeft <= 0) {
       finishExam();
       return;
     }
 
     const interval = setInterval(() => {
-      setTimeLeft(prev => Math.max(0, prev - 1));
+      setTimeLeft(prev => {
+        const nextTime = Math.max(0, prev - 1);
+        
+        // --- TIMER SOUND LOGIC ---
+        if (nextTime === 60) {
+          playSound('timerWarning');
+          setTimeout(() => playSound('timerWarning'), 200);
+          setTimeout(() => playSound('timerWarning'), 400);
+        } else if (nextTime <= 10 && nextTime > 0) {
+          playSound('timerUrgent');
+        } else if (nextTime > 60 && nextTime % 60 === 0) {
+          playSound('timerTick');
+        }
+
+        return nextTime;
+      });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [loading, isFinished, timeLeft, finishExam]);
+  }, [loading, isFinished, timeLeft, finishExam, playSound]);
 
   const handleSelectOption = (val: number) => {
     const newAnswers = [...answers];
     newAnswers[currentIdx] = val;
     setAnswers(newAnswers);
-    playSound('correct');
     
     setTimeout(() => {
       if (currentIdx < questions.length - 1) {
         setCurrentIdx(prev => prev + 1);
       }
     }, 300);
-  };
-
-  const handlePrev = () => {
-    if (currentIdx > 0) {
-      setCurrentIdx(prev => prev - 1);
-    }
   };
 
   const jumpTo = (i: number) => {
@@ -220,7 +227,7 @@ export default function ExamArenaPage() {
         
         <CardContent className="p-8 text-center flex-grow flex flex-col justify-center">
           <div className="space-y-8">
-            <div className="py-12 bg-muted/30 rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center min-h-[300px] justify-center">
+            <div className="py-6 bg-muted/30 rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center min-h-[220px] justify-center">
                 {currentQ.questionType === 'identify' ? (
                   <div className="w-full max-w-md">
                     <p className="text-xs font-black uppercase text-muted-foreground tracking-widest mb-6">Identify Abacus Value</p>
@@ -252,10 +259,6 @@ export default function ExamArenaPage() {
         </CardContent>
 
         <CardFooter className="p-8 pt-0 flex flex-wrap gap-4 shrink-0">
-          <Button variant="outline" onClick={handlePrev} disabled={currentIdx === 0} className="h-16 px-6 sm:px-8 rounded-2xl border-2">
-            <ChevronLeft className="w-6 h-6" />
-          </Button>
-          
           <div className="flex-1" />
 
           <AlertDialog>
