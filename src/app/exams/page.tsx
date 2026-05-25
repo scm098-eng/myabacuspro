@@ -169,10 +169,10 @@ export default function ExamDashboardPage() {
   }
 
   const groupDetails = [
-    { id: 'A', title: 'Group A: Direct Mastery', desc: 'Foundation level using direct bead movements.', focus: ['1 & 2 Digit Basic Add & Sub', 'Visual Beads Identification'], tools: 'Abacus Tool Allowed', icon: <Brain className="w-8 h-8 text-blue-500" /> },
-    { id: 'B', title: 'Group B: Formula Champion', desc: 'Comprehensive test of all primary formulas.', focus: ['All Formulas (S.S, B.B, Combination)', '1 & 2 Digit Arithmetic'], tools: 'Abacus Tool Allowed', icon: <Calculator className="w-8 h-8 text-green-500" /> },
-    { id: 'C', title: 'Group C: Anzan Expert', desc: 'Advanced mental arithmetic without aids.', focus: ['1, 2 & 3 Digit Mental Math', 'Pure Visual Anzan Mastery'], tools: 'MENTAL ONLY (No Tool)', icon: <Zap className="w-8 h-8 text-orange-500" /> },
-    { id: 'D', title: 'Group D: Elite Grandmaster', desc: 'The ultimate assessment of speed.', focus: ['Advanced Mental Add & Sub', 'Mental Multiplication', 'Mental Division'], tools: 'MENTAL ONLY (No Tool)', icon: <Trophy className="w-8 h-8 text-purple-500" /> }
+    { id: 'A' as ExamGroup, title: 'Group A: Direct Mastery', desc: 'Foundation level using direct bead movements.', focus: ['1 & 2 Digit Basic Add & Sub', 'Visual Beads Identification'], tools: 'Abacus Tool Allowed', icon: <Brain className="w-8 h-8 text-blue-500" /> },
+    { id: 'B' as ExamGroup, title: 'Group B: Formula Champion', desc: 'Comprehensive test of all primary formulas.', focus: ['All Formulas (S.S, B.B, Combination)', '1 & 2 Digit Arithmetic'], tools: 'Abacus Tool Allowed', icon: <Calculator className="w-8 h-8 text-green-500" /> },
+    { id: 'C' as ExamGroup, title: 'Group C: Anzan Expert', desc: 'Advanced mental arithmetic without aids.', focus: ['1, 2 & 3 Digit Mental Math', 'Pure Visual Anzan Mastery'], tools: 'MENTAL ONLY (No Tool)', icon: <Zap className="w-8 h-8 text-orange-500" /> },
+    { id: 'D' as ExamGroup, title: 'Group D: Elite Grandmaster', desc: 'The ultimate assessment of speed.', focus: ['Advanced Mental Add & Sub', 'Mental Multiplication', 'Mental Division'], tools: 'MENTAL ONLY (No Tool)', icon: <Trophy className="w-8 h-8 text-purple-500" /> }
   ];
 
   return (
@@ -221,7 +221,7 @@ export default function ExamDashboardPage() {
                         ))}
                     </ul>
                   </div>
-                  <Button onClick={() => handleApply(g.id as ExamGroup)} disabled={isApplying} className="w-full font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl transition-transform hover:scale-[1.02]">
+                  <Button onClick={() => handleApply(g.id)} disabled={isApplying} className="w-full font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl transition-transform hover:scale-[1.02]">
                     Apply for Group {g.id}
                   </Button>
                 </CardContent>

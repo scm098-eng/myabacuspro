@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Timer, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { generateExamQuestions } from '@/lib/exam-utils';
 import type { ExamApplication, Question } from '@/types';
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit, doc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
@@ -47,7 +47,7 @@ export default function ExamArenaPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Background refs for stable interval tracking - fixes clock stopping on rapid clicks
+  // Background refs for stable interval tracking
   const answersRef = useRef<(number | null)[]>([]);
   const timeLeftRef = useRef<number>(0);
   const isFinishedRef = useRef(false);
@@ -132,7 +132,7 @@ export default function ExamArenaPage() {
       totalQuestions: questions.length,
       accuracy,
       isFinal,
-      resultDeclared: isFinal ? false : true, 
+      resultDeclared: !isFinal, 
       timeLeft: currentTimeLeft, 
       answeredCount,
       submittedAt: serverTimestamp(),
@@ -148,7 +148,7 @@ export default function ExamArenaPage() {
     addDoc(collection(db, "examResults"), payload)
       .then(() => {
         if (isFinal) {
-          toast({ title: "Official Exam Submitted", description: "Submission successful! Your results are stored for admin verification." });
+          toast({ title: "Official Exam Submitted", description: "Submission successful! Results will be visible after Admin Audit." });
         } else {
           toast({ title: "Practice Paper Complete", description: `Result: ${score}/${questions.length}` });
         }
@@ -164,7 +164,6 @@ export default function ExamArenaPage() {
       });
   }, [user, application, questions, isFinal, paperId, router, toast]);
 
-  // Continuous Stable Timer Effect - Decoupled from user interaction clicks
   useEffect(() => {
     if (loading || isFinished) return;
     
@@ -183,8 +182,6 @@ export default function ExamArenaPage() {
           
           if (nextTime === 60) {
             playSound('timerWarning');
-            setTimeout(() => playSound('timerWarning'), 200);
-            setTimeout(() => playSound('timerWarning'), 400);
           } else if (nextTime <= 10 && nextTime > 0) {
             playSound('timerUrgent');
           } else if (nextTime <= 5) {
@@ -197,9 +194,12 @@ export default function ExamArenaPage() {
     }
 
     return () => {
-      // Intentionally not clearing here to ensure clock persists through clicks
+      if (isFinishedRef.current && intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
-  }, [loading, isFinished, finishTest, playSound]);
+  }, [loading, isFinished, finishExam, playSound]);
 
   const handleSelectOption = (val: number) => {
     if (isFinished) return;

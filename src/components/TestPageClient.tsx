@@ -7,7 +7,7 @@ import type { Question, Difficulty, TestType, TestSettings } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Timer, AlertTriangle, Loader2, PlayCircle, CheckCircle2, BookOpen, Send } from 'lucide-react';
+import { Timer, AlertTriangle, Loader2, PlayCircle, BookOpen, Send, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -19,10 +19,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/useAuth';
-import { doc, collection, addDoc, serverTimestamp, getFirestore } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getFirestore } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import { calculatePoints } from '@/lib/scoring';
 import { errorEmitter } from '@/lib/error-emitter';
@@ -60,7 +60,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
 
   const isInputMode = useMemo(() => testId.includes('-input'), [testId]);
 
-  // Keep background data refs in sync with UI state
   useEffect(() => {
     answersRef.current = userAnswers;
   }, [userAnswers]);
@@ -183,7 +182,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     playSound('points');
   };
 
-  // Continuous Stable Timer Effect - Decoupled from user interaction clicks
   useEffect(() => {
     if (!hasStarted || questions.length === 0 || !startTime || isFinished || settings.timeLimit === 0) return;
     
@@ -202,8 +200,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
           
           if (nextTime === 60) {
             playSound('timerWarning');
-            setTimeout(() => playSound('timerWarning'), 200);
-            setTimeout(() => playSound('timerWarning'), 400);
           } else if (nextTime <= 10 && nextTime > 0) {
             playSound('timerUrgent');
           } else if (nextTime > 60 && nextTime % 60 === 0) {
@@ -216,7 +212,10 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     }
 
     return () => {
-      // Intentionally not clearing here to ensure clock persists through clicks
+      if (isFinishedRef.current && intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
   }, [hasStarted, questions.length, startTime, isFinished, settings.timeLimit, finishTest, playSound]);
 
