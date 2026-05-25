@@ -141,17 +141,18 @@ export default function ExamArenaPage() {
   }, [isFinished, isSubmitting, user, application, questions, isFinal, paperId, router, toast, answers, timeLeft]);
 
   useEffect(() => {
-    if (loading || isFinished || timeLeft <= 0) return;
+    if (loading || isFinished) return;
+    
+    // Explicit timeout handler to avoid closure issues with timeLeft=1
+    if (timeLeft <= 0) {
+      finishExam();
+      return;
+    }
+
     const interval = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          finishExam();
-          return 0;
-        }
-        return prev - 1;
-      });
+      setTimeLeft(prev => Math.max(0, prev - 1));
     }, 1000);
+
     return () => clearInterval(interval);
   }, [loading, isFinished, timeLeft, finishExam]);
 
