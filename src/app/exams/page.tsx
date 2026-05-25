@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -354,7 +353,7 @@ export default function ExamDashboardPage() {
                         disabled={!isFinalExamAvailable() || results.some(r => r.isFinal)}
                         onClick={() => router.push('/exams/arena/final')}
                       >
-                        {results.some(r => r.isFinal) ? 'ALREADY ATTEMPTED' : (isFinalExamAvailable() ? 'START FINAL EXAM' : 'OPENS JULY 4TH')}
+                        {results.some(r => r.isFinal) ? 'ALREADY ATTEMPTED' : (isFinalExamAvailable() ? 'START FINAL EXAM' : 'OPENS TODAY AT 12:30 PM')}
                       </Button>
                     </CardFooter>
                   </Card>
