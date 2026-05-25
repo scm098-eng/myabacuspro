@@ -45,6 +45,7 @@
         "totalQuestions": { "type": "number" },
         "accuracy": { "type": "number" },
         "isFinal": { "type": "boolean" },
+        "resultDeclared": { "type": "boolean", "description": "Whether the result is released to the student." },
         "submittedAt": { "type": "string", "format": "date-time" }
       }
     },

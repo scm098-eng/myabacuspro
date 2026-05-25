@@ -13,7 +13,7 @@ import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, d
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
 import { format } from 'date-fns';
-import { CheckCircle2, XCircle, Search, Trophy, Eye, FileText, ScrollText, RefreshCcw } from 'lucide-react';
+import { CheckCircle2, XCircle, Search, Trophy, Eye, FileText, ScrollText, RefreshCcw, Megaphone } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -73,6 +73,13 @@ export default function AdminExamsPage() {
     updateDoc(doc(db, "examApplications", id), { status })
       .then(() => toast({ title: `Application ${status}` }))
       .catch(() => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'update' })));
+  };
+
+  const handleDeclareResult = async (id: string) => {
+    const db = getFirestore(firebaseApp);
+    updateDoc(doc(db, "examResults", id), { resultDeclared: true })
+      .then(() => toast({ title: "Result Declared", description: "Student can now view their score." }))
+      .catch(() => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examResults/${id}`, operation: 'update' })));
   };
 
   const handleDeleteApplication = async (id: string) => {
@@ -169,7 +176,10 @@ export default function AdminExamsPage() {
                    <Card key={r.id} className="border-2 border-slate-100 shadow-sm overflow-hidden flex flex-col h-full">
                      <CardHeader className="bg-slate-900 text-white p-4 shrink-0">
                         <div className="flex justify-between items-center">
-                          <p className="text-[10px] font-black uppercase text-indigo-400">Official Final</p>
+                          <div className="flex items-center gap-2">
+                             <p className="text-[10px] font-black uppercase text-indigo-400">Official Final</p>
+                             {r.resultDeclared && <Badge className="bg-green-500 h-4 text-[8px]">DECLARED</Badge>}
+                          </div>
                           <Trophy className="w-4 h-4 text-yellow-400" />
                         </div>
                      </CardHeader>
@@ -187,9 +197,16 @@ export default function AdminExamsPage() {
                         <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden mb-6">
                            <div className="h-full bg-primary" style={{ width: `${r.accuracy}%` }} />
                         </div>
-                        <Button variant="outline" className="w-full font-bold uppercase text-xs tracking-widest h-10" onClick={() => setSelectedResult(r)}>
-                           <Eye className="w-4 h-4 mr-2" /> View Submission
-                        </Button>
+                        <div className="space-y-2">
+                            <Button variant="outline" className="w-full font-bold uppercase text-xs tracking-widest h-10" onClick={() => setSelectedResult(r)}>
+                               <Eye className="w-4 h-4 mr-2" /> View Audit
+                            </Button>
+                            {!r.resultDeclared && (
+                                <Button className="w-full bg-green-600 hover:bg-green-700 font-bold uppercase text-xs tracking-widest h-10" onClick={() => handleDeclareResult(r.id)}>
+                                   <Megaphone className="w-4 h-4 mr-2" /> Declare Result
+                                </Button>
+                            )}
+                        </div>
                      </CardContent>
                    </Card>
                  ))}

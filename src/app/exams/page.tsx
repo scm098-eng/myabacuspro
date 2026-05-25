@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -397,8 +398,8 @@ export default function ExamDashboardPage() {
                           <p className="text-[10px] text-muted-foreground font-bold">{format(r.submittedAt?.toDate ? r.submittedAt.toDate() : new Date(), 'MMM d, h:mm a')}</p>
                         </div>
                         <div className="text-right">
-                          {r.isFinal ? (
-                            <Badge className="bg-slate-900 text-[10px] font-black py-1 px-3">SUBMITTED</Badge>
+                          {r.isFinal && !r.resultDeclared ? (
+                            <Badge className="bg-orange-500 text-[10px] font-black py-1 px-3">AUDIT PENDING</Badge>
                           ) : (
                             <div className="flex flex-col items-end">
                                 <p className="text-2xl font-black text-primary leading-none">{r.score}/{r.totalQuestions}</p>

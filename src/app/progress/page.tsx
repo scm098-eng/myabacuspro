@@ -120,17 +120,19 @@ export default function ProgressReportPage() {
             };
         });
 
-        const examData = examHistory.map(result => {
-            const date = result.submittedAt?.toDate ? result.submittedAt.toDate() : new Date();
-            return {
-                timestamp: date.getTime(),
-                date: format(date, 'MMM d'),
-                Accuracy: parseFloat(result.accuracy.toFixed(1)),
-                Test: result.paperId === 'final' ? `Final Exam (Group ${result.group})` : `Practice Paper ${result.paperId.split('-')[1]} (Group ${result.group})`,
-                score: result.score,
-                totalQuestions: result.totalQuestions,
-            };
-        });
+        const examData = examHistory
+            .filter(r => !r.isFinal || r.resultDeclared) // ONLY include declared finals in the trend chart
+            .map(result => {
+                const date = result.submittedAt?.toDate ? result.submittedAt.toDate() : new Date();
+                return {
+                    timestamp: date.getTime(),
+                    date: format(date, 'MMM d'),
+                    Accuracy: parseFloat(result.accuracy.toFixed(1)),
+                    Test: result.paperId === 'final' ? `Final Exam (Group ${result.group})` : `Practice Paper ${result.paperId.split('-')[1]} (Group ${result.group})`,
+                    score: result.score,
+                    totalQuestions: result.totalQuestions,
+                };
+            });
 
         return [...practiceData, ...examData]
             .sort((a, b) => a.timestamp - b.timestamp) 
@@ -138,7 +140,7 @@ export default function ProgressReportPage() {
     }, [testHistory, examHistory]);
 
     const summaryStats = useMemo(() => {
-        const allActivities = [...testHistory, ...examHistory];
+        const allActivities = [...testHistory, ...examHistory.filter(r => !r.isFinal || r.resultDeclared)];
         if (allActivities.length === 0) {
             return {
                 totalActivities: 0,
@@ -388,9 +390,15 @@ export default function ProgressReportPage() {
                                                         {r.paperId === 'final' ? 'Official Final' : `Practice Paper #${r.paperId.split('-')[1]}`}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="font-black text-indigo-700">{r.accuracy.toFixed(1)}%</TableCell>
+                                                <TableCell className="font-black text-indigo-700">
+                                                    {r.isFinal && !r.resultDeclared ? "---" : `${r.accuracy.toFixed(1)}%`}
+                                                </TableCell>
                                                 <TableCell className="pr-6 text-right font-black text-slate-900">
-                                                    {r.score} <span className="text-[10px] text-muted-foreground">/ {r.totalQuestions}</span>
+                                                    {r.isFinal && !r.resultDeclared ? (
+                                                        <span className="text-[10px] text-orange-600 italic">Awaiting Result</span>
+                                                    ) : (
+                                                        <>{r.score} <span className="text-[10px] text-muted-foreground">/ {r.totalQuestions}</span></>
+                                                    )}
                                                 </TableCell>
                                             </TableRow>
                                         ))
@@ -432,7 +440,7 @@ function ProgressReportSkeleton() {
                 <CardContent>
                     <Skeleton className="h-[300px] w-full rounded-xl" />
                 </CardContent>
-            </Card>
+            </div>
         </div>
     );
 }

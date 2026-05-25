@@ -122,6 +122,7 @@ export default function ExamArenaPage() {
       totalQuestions: questions.length,
       accuracy,
       isFinal,
+      resultDeclared: isFinal ? false : true, // Practice is always declared, Final needs admin approval
       timeLeft: forcedTimeLeft ?? timeLeftRef.current, 
       answeredCount,
       submittedAt: serverTimestamp(),
