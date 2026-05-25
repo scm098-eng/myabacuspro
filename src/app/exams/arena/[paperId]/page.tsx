@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Timer, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { generateExamQuestions } from '@/lib/exam-utils';
 import type { ExamApplication, Question } from '@/types';
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit, doc, deleteDoc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
@@ -138,7 +138,10 @@ export default function ExamArenaPage() {
       await addDoc(collection(db, "examResults"), payload);
       
       if (isFinal) {
-        toast({ title: "Official Exam Submitted", description: "Your results are stored for admin verification." });
+        // RESET PROCESS: After Final Exam, delete the application so practice papers are disabled 
+        // and student must apply again for next cycle.
+        await deleteDoc(doc(db, "examApplications", application.id));
+        toast({ title: "Official Exam Submitted", description: "Cycle Complete! Your results are stored for admin verification." });
       } else {
         toast({ title: "Practice Paper Complete", description: `Result: ${score}/${questions.length}` });
       }
@@ -289,8 +292,8 @@ export default function ExamArenaPage() {
                 <AlertDialogTitle className="text-2xl font-black uppercase tracking-tight">Finish and Submit?</AlertDialogTitle>
                 <AlertDialogDescription className="text-lg font-medium">
                   {answers.filter(a => a === null).length > 0 
-                    ? `Warning: You still have ${answers.filter(a => a === null).length} unanswered questions. Are you sure you want to end the exam now?`
-                    : "Great job! You have answered all questions. Would you like to submit your exam now?"}
+                    ? `Warning: You still have ${answers.filter(a => a === null).length} unanswered questions. End now?`
+                    : "Great job! Would you like to submit your exam now?"}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -303,12 +306,6 @@ export default function ExamArenaPage() {
           </AlertDialog>
         </CardFooter>
       </Card>
-      
-      <div className="mt-6 flex justify-center gap-4">
-        <div className="flex items-center gap-2 px-6 py-2 bg-white rounded-full shadow-sm border text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-           <ShieldAlert className="w-3 h-3 text-orange-500" /> Integrity Control Active
-        </div>
-      </div>
     </div>
   );
 }

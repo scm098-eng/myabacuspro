@@ -2,11 +2,11 @@ import type { Question, ExamGroup } from '@/types';
 import { generateTest, deDuplicateQuestions } from './questions';
 
 /**
- * Official Exam Date - Set to May 25, 2026.
- * Question paper opens at 12:30 PM and closes at 4:00 PM (16:00).
+ * Default fallback dates.
+ * These are overridden by the dynamic values fetched from Firestore in the components.
  */
-export const EXAM_DATE = new Date('2026-05-25T12:30:00');
-export const EXAM_END_TIME = new Date('2026-05-25T16:00:00');
+export const DEFAULT_EXAM_DATE = new Date('2026-05-25T12:30:00');
+export const DEFAULT_EXAM_END_TIME = new Date('2026-05-25T16:00:00');
 
 export function getExamTimeLimit(age: number): number {
   if (age >= 6 && age <= 8) return 9 * 60;
@@ -35,11 +35,11 @@ export function generateExamQuestions(group: ExamGroup): Question[] {
     case 'A':
       // Group A: Mix of 1, 2, and 3 digit Beads + 4-5 step Direct moves
       initialPool = [
-        ...generateTest('beads-identify', 'level-2'), // 1-Digit Beads
-        ...generateTest('beads-identify', 'level-4'), // 2-Digit Beads
-        ...generateTest('beads-identify', 'level-6'), // Triple Digit Beads
-        ...generateTest('basic-add-sub-l1', 'easy'),  // 1-Digit Add/Sub (4-5 steps)
-        ...generateTest('basic-add-sub-l2', 'easy')   // 2-Digit Add/Sub (4-5 steps)
+        ...generateTest('beads-identify', 'level-2'), 
+        ...generateTest('beads-identify', 'level-4'), 
+        ...generateTest('beads-identify', 'level-6'), 
+        ...generateTest('basic-add-sub-l1', 'easy'),  
+        ...generateTest('basic-add-sub-l2', 'easy')   
       ];
       break;
     case 'B':
@@ -69,19 +69,20 @@ export function generateExamQuestions(group: ExamGroup): Question[] {
       break;
   }
   
-  // 2. Expand to 150 questions by duplicating and shuffling the pool
+  // 2. Expand to 150 questions
   let expandedPool = [...initialPool];
   while (expandedPool.length < 150) {
-    // Append a shuffled clone of the original pool to maintain diversity
     expandedPool = expandedPool.concat(shuffleArray([...initialPool]));
   }
 
   // 3. Final global shuffle and consecutive answer de-duplication
-  // This ensures the "jumbling style" and prevents back-to-back identical answers
   return deDuplicateQuestions(expandedPool.slice(0, 150)); 
 }
 
-export function isFinalExamAvailable(): boolean {
+/**
+ * Checks if the final exam is currently open based on passed parameters.
+ */
+export function isFinalExamAvailable(startDate: Date, endDate: Date): boolean {
   const now = new Date();
-  return now >= EXAM_DATE && now <= EXAM_END_TIME;
+  return now >= startDate && now <= endDate;
 }

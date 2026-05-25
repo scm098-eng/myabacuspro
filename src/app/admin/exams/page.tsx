@@ -5,15 +5,15 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, setDoc, getDoc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
-import { format } from 'date-fns';
-import { CheckCircle2, XCircle, Search, Trophy, Eye, FileText, ScrollText, RefreshCcw, Megaphone } from 'lucide-react';
+import { format, parseISO, isValid } from 'date-fns';
+import { CheckCircle2, XCircle, Search, Trophy, Eye, FileText, ScrollText, RefreshCcw, Megaphone, Calendar, Clock, Save, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +22,7 @@ import { FirestorePermissionError } from '@/lib/errors';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
 
 export default function AdminExamsPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
@@ -34,6 +35,12 @@ export default function AdminExamsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedResult, setSelectedResult] = useState<any>(null);
+  
+  // Schedule States
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+  const [examDate, setExamDate] = useState('');
+  const [startTime, setStartTime] = useState('12:30');
+  const [endTime, setEndTime] = useState('16:00');
 
   useEffect(() => {
     if (!authLoading && (!profile || profile.role !== 'admin')) {
@@ -43,6 +50,17 @@ export default function AdminExamsPage() {
 
   useEffect(() => {
     const db = getFirestore(firebaseApp);
+    
+    // Fetch Schedule
+    getDoc(doc(db, "stats", "examSchedule")).then(snap => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setExamDate(data.date || '');
+        setStartTime(data.startTime || '12:30');
+        setEndTime(data.endTime || '16:00');
+      }
+    });
+
     const unsubApps = onSnapshot(query(collection(db, "examApplications"), orderBy("appliedAt", "desc")), 
       (snap) => {
         setApplications(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamApplication)));
@@ -89,6 +107,28 @@ export default function AdminExamsPage() {
       .catch(() => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'delete' })));
   };
 
+  const handleSaveSchedule = async () => {
+    if (!examDate) {
+      toast({ title: "Select a Date", variant: "destructive" });
+      return;
+    }
+    setIsSavingSchedule(true);
+    const db = getFirestore(firebaseApp);
+    try {
+      await setDoc(doc(db, "stats", "examSchedule"), {
+        date: examDate,
+        startTime,
+        endTime,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      toast({ title: "Schedule Updated", description: `Official exam set for ${examDate}.` });
+    } catch (e) {
+      toast({ title: "Save Failed", variant: "destructive" });
+    } finally {
+      setIsSavingSchedule(false);
+    }
+  };
+
   const filteredApps = useMemo(() => {
     return applications.filter(a => a.studentName.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [applications, searchTerm]);
@@ -106,7 +146,7 @@ export default function AdminExamsPage() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div>
               <CardTitle className="text-3xl font-black uppercase tracking-tight">Exam Administration</CardTitle>
-              <CardDescription>Review applications and audit official final results.</CardDescription>
+              <CardDescription>Manage schedule, review applications, and audit results.</CardDescription>
             </div>
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -119,6 +159,7 @@ export default function AdminExamsPage() {
             <TabsList className="mb-8">
               <TabsTrigger value="applications" className="font-bold">Applications ({applications.filter(a => a.status === 'pending').length})</TabsTrigger>
               <TabsTrigger value="final-results" className="font-bold">Official Results ({finalResults.length})</TabsTrigger>
+              <TabsTrigger value="schedule" className="font-bold">Exam Schedule</TabsTrigger>
             </TabsList>
 
             <TabsContent value="applications">
@@ -212,6 +253,35 @@ export default function AdminExamsPage() {
                  ))}
                  {finalResults.length === 0 && <p className="col-span-full text-center py-20 text-muted-foreground italic">No official final exams submitted yet.</p>}
               </div>
+            </TabsContent>
+
+            <TabsContent value="schedule">
+              <Card className="border-2 border-primary/20 bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Calendar className="w-6 h-6 text-primary" /> Official Schedule Manager</CardTitle>
+                  <CardDescription>Define the date and time window when the Final Exam paper becomes accessible to students.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <div className="space-y-2">
+                    <Label className="font-bold">Exam Date</Label>
+                    <Input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} className="bg-white border-2" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold">Start Time (24h)</Label>
+                    <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="bg-white border-2" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold">End Time (24h)</Label>
+                    <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="bg-white border-2" />
+                  </div>
+                </CardContent>
+                <CardFooter className="bg-white/50 border-t p-6">
+                  <Button onClick={handleSaveSchedule} disabled={isSavingSchedule} className="w-full sm:w-auto h-12 px-10 font-black uppercase tracking-widest shadow-lg">
+                    {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 w-4 h-4" />}
+                    Publish Exam Schedule
+                  </Button>
+                </CardFooter>
+              </Card>
             </TabsContent>
           </Tabs>
         </CardContent>
