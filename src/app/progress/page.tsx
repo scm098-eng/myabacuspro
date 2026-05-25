@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -440,7 +439,7 @@ function ProgressReportSkeleton() {
                 <CardContent>
                     <Skeleton className="h-[300px] w-full rounded-xl" />
                 </CardContent>
-            </div>
+            </Card>
         </div>
     );
 }
