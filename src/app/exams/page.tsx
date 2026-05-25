@@ -47,18 +47,25 @@ export default function ExamDashboardPage() {
     if (!user) return;
     const db = getFirestore(firebaseApp);
     
-    // Fetch Schedule
+    // Fetch Schedule with Error Handling
     const fetchSchedule = async () => {
-      const snap = await getDoc(doc(db, "stats", "examSchedule"));
-      if (snap.exists()) {
-        const data = snap.data();
-        if (data.date) {
-           setSchedule({
-             date: data.date,
-             start: new Date(`${data.date}T${data.startTime}:00`),
-             end: new Date(`${data.date}T${data.endTime}:00`)
-           });
+      try {
+        const snap = await getDoc(doc(db, "stats", "examSchedule"));
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.date) {
+             setSchedule({
+               date: data.date,
+               start: new Date(`${data.date}T${data.startTime}:00`),
+               end: new Date(`${data.date}T${data.endTime}:00`)
+             });
+          }
         }
+      } catch (error) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: 'stats/examSchedule', 
+          operation: 'get' 
+        }));
       }
     };
     fetchSchedule();

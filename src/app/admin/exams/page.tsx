@@ -50,15 +50,22 @@ export default function AdminExamsPage() {
   useEffect(() => {
     const db = getFirestore(firebaseApp);
     
-    // Fetch Schedule
-    getDoc(doc(db, "stats", "examSchedule")).then(snap => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setExamDate(data.date || '');
-        setStartTime(data.startTime || '12:30');
-        setEndTime(data.endTime || '16:00');
-      }
-    });
+    // Fetch Schedule with Contextual Error Handling
+    getDoc(doc(db, "stats", "examSchedule"))
+      .then(snap => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setExamDate(data.date || '');
+          setStartTime(data.startTime || '12:30');
+          setEndTime(data.endTime || '16:00');
+        }
+      })
+      .catch(async (error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: 'stats/examSchedule', 
+          operation: 'get' 
+        }));
+      });
 
     const unsubApps = onSnapshot(query(collection(db, "examApplications"), orderBy("appliedAt", "desc")), 
       (snap) => {
