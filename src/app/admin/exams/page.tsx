@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -8,11 +9,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, setDoc, getDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, setDoc, getDoc, getDocs, writeBatch } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
-import { format, parseISO, isValid } from 'date-fns';
-import { CheckCircle2, XCircle, Search, Trophy, Eye, FileText, ScrollText, RefreshCcw, Megaphone, Calendar, Clock, Save, Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { CheckCircle2, XCircle, Search, Trophy, Eye, ScrollText, RefreshCcw, Megaphone, Calendar, Save, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -120,24 +121,38 @@ export default function AdminExamsPage() {
     }
     setIsSavingSchedule(true);
     const db = getFirestore(firebaseApp);
-    const payload = {
-      date: examDate,
-      startTime,
-      endTime,
-      updatedAt: new Date().toISOString()
+
+    // FLOW: Cleanup existing applications then set new schedule
+    const runPublish = async () => {
+      // 1. Fetch all active applications
+      const appsSnap = await getDocs(collection(db, "examApplications"));
+      
+      // 2. Perform batch deletion
+      const batch = writeBatch(db);
+      appsSnap.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+
+      // 3. Save the new schedule
+      const payload = {
+        date: examDate,
+        startTime,
+        endTime,
+        updatedAt: new Date().toISOString()
+      };
+      await setDoc(doc(db, "stats", "examSchedule"), payload, { merge: true });
+      return payload;
     };
 
-    setDoc(doc(db, "stats", "examSchedule"), payload, { merge: true })
+    runPublish()
       .then(() => {
-        toast({ title: "Schedule Updated", description: `Official exam set for ${examDate}.` });
+        toast({ title: "Schedule Published", description: `All existing student applications have been reset for the new date.` });
         setIsSavingSchedule(false);
       })
       .catch(async (serverError) => {
         setIsSavingSchedule(false);
         errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-          path: "stats/examSchedule", 
+          path: "stats/examSchedule or examApplications", 
           operation: 'update',
-          requestResourceData: payload
         }));
       });
   };
@@ -244,8 +259,14 @@ export default function AdminExamsPage() {
                               <Badge variant="outline" className="mt-1">Group {r.group}</Badge>
                            </div>
                            <div className="text-right">
-                              <p className="text-3xl font-black text-primary">{r.score}/{r.totalQuestions}</p>
-                              <p className="text-[10px] font-bold uppercase text-muted-foreground">Accuracy: {r.accuracy.toFixed(1)}%</p>
+                              {r.resultDeclared ? (
+                                <>
+                                  <p className="text-3xl font-black text-primary">{r.score}/{r.totalQuestions}</p>
+                                  <p className="text-[10px] font-bold uppercase text-muted-foreground">Accuracy: {r.accuracy.toFixed(1)}%</p>
+                                </>
+                              ) : (
+                                <Badge className="bg-orange-500 font-black">PENDING</Badge>
+                              )}
                            </div>
                         </div>
                         <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden mb-6">
@@ -272,7 +293,7 @@ export default function AdminExamsPage() {
               <Card className="border-2 border-primary/20 bg-primary/5">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2"><Calendar className="w-6 h-6 text-primary" /> Official Schedule Manager</CardTitle>
-                  <CardDescription>Define the date and time window when the Final Exam paper becomes accessible to students.</CardDescription>
+                  <CardDescription>Define the date and time window. **Warning:** Publishing a new schedule will clear all current student applications.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-8">
                   <div className="space-y-2">
@@ -291,7 +312,7 @@ export default function AdminExamsPage() {
                 <CardFooter className="bg-white/50 border-t p-6">
                   <Button onClick={handleSaveSchedule} disabled={isSavingSchedule} className="w-full sm:w-auto h-12 px-10 font-black uppercase tracking-widest shadow-lg">
                     {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 w-4 h-4" />}
-                    Publish Exam Schedule
+                    Publish & Reset Applications
                   </Button>
                 </CardFooter>
               </Card>

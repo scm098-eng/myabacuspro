@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -7,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GraduationCap, FileText, CheckCircle2, Clock, Lock, ShieldAlert, PlayCircle, Trophy, AlertTriangle, Brain, Calculator, Zap, Target, RefreshCcw, XCircle, FileEdit } from 'lucide-react';
+import { Clock, Lock, ShieldAlert, Trophy, AlertTriangle, Brain, Calculator, Zap, Target, RefreshCcw, XCircle, FileEdit } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getFirestore, collection, addDoc, serverTimestamp, query, where, onSnapshot, doc, deleteDoc, orderBy, getDoc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
@@ -152,14 +153,21 @@ export default function ExamDashboardPage() {
       });
   };
 
+  const isApproved = application?.status === 'approved';
+  const isRejected = application?.status === 'rejected';
+
+  // Ensure "Cycle Complete" only triggers if final was submitted AFTER current application
+  const hasFinishedFinal = useMemo(() => {
+    if (!application || results.length === 0) return false;
+    const appliedTime = application.appliedAt?.seconds || 0;
+    return results.some(r => r.isFinal && (r.submittedAt?.seconds || 0) > appliedTime);
+  }, [application, results]);
+
+  const examOpen = schedule ? isFinalExamAvailable(schedule.start, schedule.end) : false;
+
   if (loading || authLoading) {
     return <div className="p-8 max-w-6xl mx-auto"><Skeleton className="h-[600px] w-full" /></div>;
   }
-
-  const isApproved = application?.status === 'approved';
-  const isRejected = application?.status === 'rejected';
-  const hasFinishedFinal = results.some(r => r.isFinal);
-  const examOpen = schedule ? isFinalExamAvailable(schedule.start, schedule.end) : false;
 
   const groupDetails = [
     { id: 'A', title: 'Group A: Direct Mastery', desc: 'Foundation level using direct bead movements.', focus: ['1 & 2 Digit Basic Add & Sub', 'Visual Beads Identification'], tools: 'Abacus Tool Allowed', icon: <Brain className="w-8 h-8 text-blue-500" /> },
