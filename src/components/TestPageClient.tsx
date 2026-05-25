@@ -51,15 +51,30 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   const [isFinished, setIsFinished] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
+  // Stability Refs
+  const answersRef = useRef(userAnswers);
+  const timeLeftRef = useRef(timeLeft);
+  const isFinishedRef = useRef(false);
   const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isInputMode = useMemo(() => testId.includes('-input'), [testId]);
 
+  // Keep refs in sync with state for access in stable callbacks
+  useEffect(() => {
+    answersRef.current = userAnswers;
+  }, [userAnswers]);
+
+  useEffect(() => {
+    timeLeftRef.current = timeLeft;
+  }, [timeLeft]);
+
   useEffect(() => {
     const generatedQuestions = generateTest(testId, difficulty);
     setQuestions(generatedQuestions);
-    setUserAnswers(new Array(generatedQuestions.length).fill(null));
+    const initialAnswers = new Array(generatedQuestions.length).fill(null);
+    setUserAnswers(initialAnswers);
+    answersRef.current = initialAnswers;
     questionButtonRefs.current = new Array(generatedQuestions.length);
 
     // Check if user has opted to skip rules
@@ -94,22 +109,26 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   };
 
   const finishTest = useCallback(async () => {
-    if (isFinished) return;
+    if (isFinishedRef.current) return;
+    isFinishedRef.current = true;
     setIsFinished(true);
 
-    const score = userAnswers.reduce((acc: number, answer, index) => {
+    const currentAnswers = answersRef.current;
+    const currentTimeLeft = timeLeftRef.current;
+
+    const score = currentAnswers.reduce((acc: number, answer, index) => {
         if (answer !== null && questions.length > 0 && answer === questions[index].answer) {
             return acc + 1;
         }
         return acc;
     }, 0);
 
-    const answeredCount = userAnswers.filter(a => a !== null).length;
+    const answeredCount = currentAnswers.filter(a => a !== null).length;
     let earnedPointsTotal = 0;
 
     if (user) {
       const accuracy = questions.length > 0 ? (score / questions.length) * 100 : 0;
-      const timeSpent = settings.timeLimit > 0 ? settings.timeLimit - timeLeft : 0;
+      const timeSpent = settings.timeLimit > 0 ? settings.timeLimit - currentTimeLeft : 0;
       const db = getFirestore(firebaseApp);
       
       const difficultyLevel = difficulty === 'easy' ? 1 : (difficulty === 'medium' ? 2 : 3);
@@ -133,7 +152,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         totalQuestions: questions.length,
         accuracy,
         timeSpent,
-        timeLeft,
+        timeLeft: currentTimeLeft,
         earnedPoints: earnedPointsTotal,
         createdAt: serverTimestamp(),
       };
@@ -154,25 +173,28 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     if (typeof window !== 'undefined' && window.sessionStorage) {
       const resultsToStore = {
         questions: questions,
-        userAnswers: userAnswers,
+        userAnswers: currentAnswers,
       };
       sessionStorage.setItem('testResults', JSON.stringify(resultsToStore));
     }
 
-    router.replace(`/results?score=${score}&total=${questions.length}&time=${timeLeft}&points=${earnedPointsTotal}`);
-  }, [userAnswers, questions, router, timeLeft, user, testId, difficulty, settings.timeLimit, isFinished, recordDailyPractice, addPoints]);
+    router.replace(`/results?score=${score}&total=${questions.length}&time=${currentTimeLeft}&points=${earnedPointsTotal}`);
+  }, [questions, router, user, testId, difficulty, settings.timeLimit, recordDailyPractice, addPoints]);
 
+  // Stable Timer Effect
   useEffect(() => {
     if (!hasStarted || questions.length === 0 || !startTime || isFinished || settings.timeLimit === 0) return;
     
-    if (timeLeft <= 0) {
-      finishTest();
-      return;
-    }
-
-    const timer = setInterval(() => {
+    const interval = setInterval(() => {
       setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          finishTest();
+          return 0;
+        }
+
         const nextTime = prev - 1;
+        timeLeftRef.current = nextTime;
         
         if (nextTime === 60) {
           playSound('timerWarning');
@@ -188,8 +210,8 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [timeLeft, finishTest, questions.length, startTime, isFinished, playSound, settings.timeLimit, hasStarted]);
+    return () => clearInterval(interval);
+  }, [hasStarted, questions.length, startTime, isFinished, settings.timeLimit, finishTest, playSound]);
 
    useEffect(() => {
     if (!isFinished && questions.length > 0 && userAnswers.length === questions.length && !userAnswers.includes(null)) {

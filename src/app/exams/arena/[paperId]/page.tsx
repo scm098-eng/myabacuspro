@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -47,13 +48,19 @@ export default function ExamArenaPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Use refs to keep timer logic independent of re-renders
+  // Use refs to keep timer logic fully decoupled from state re-renders
   const answersRef = useRef<(number | null)[]>([]);
   const timeLeftRef = useRef<number>(0);
   const isFinishedRef = useRef(false);
+  const isSubmittingRef = useRef(false);
   const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   
   const isFinal = paperId === 'final';
+
+  // Sync refs with state
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
 
   useEffect(() => {
     if (!user) return;
@@ -95,14 +102,16 @@ export default function ExamArenaPage() {
   }, [currentIdx]);
 
   const finishExam = useCallback(async (forcedTimeLeft?: number) => {
-    // Check local ref and state to prevent multiple submissions
-    if (isFinished || isFinishedRef.current || isSubmitting || !user || !application || questions.length === 0) return;
+    if (isFinishedRef.current || isSubmittingRef.current || !user || !application || questions.length === 0) return;
     
     isFinishedRef.current = true;
+    isSubmittingRef.current = true;
     setIsFinished(true);
     setIsSubmitting(true);
 
     const currentAnswers = answersRef.current;
+    const currentTimeLeft = forcedTimeLeft ?? timeLeftRef.current;
+
     const score = currentAnswers.reduce((acc: number, ans, i) => {
       if (ans !== null && questions[i] && ans === questions[i].answer) {
         return acc + 1;
@@ -122,7 +131,7 @@ export default function ExamArenaPage() {
       accuracy,
       isFinal,
       resultDeclared: isFinal ? false : true, 
-      timeLeft: forcedTimeLeft ?? timeLeftRef.current, 
+      timeLeft: currentTimeLeft, 
       answeredCount,
       submittedAt: serverTimestamp(),
       details: questions.map((q, i) => ({
@@ -145,21 +154,28 @@ export default function ExamArenaPage() {
       })
       .catch(async (serverError) => {
         setIsSubmitting(false);
+        isSubmittingRef.current = false;
         errorEmitter.emit('permission-error', new FirestorePermissionError({ 
           path: 'examResults', 
           operation: 'create',
           requestResourceData: payload
         }));
       });
-  }, [isFinished, isSubmitting, user, application, questions, isFinal, paperId, router, toast]);
+  }, [user, application, questions, isFinal, paperId, router, toast]);
 
-  // Stable Timer Effect
+  // Stable Timer Effect: No state dependencies that change on click
   useEffect(() => {
     if (loading || isFinished) return;
     
     const interval = setInterval(() => {
       setTimeLeft(prev => {
-        const nextTime = Math.max(0, prev - 1);
+        if (prev <= 1) {
+          clearInterval(interval);
+          finishExam(0);
+          return 0;
+        }
+
+        const nextTime = prev - 1;
         timeLeftRef.current = nextTime;
         
         if (nextTime === 60) {
@@ -170,11 +186,6 @@ export default function ExamArenaPage() {
           playSound('timerUrgent');
         } else if (nextTime > 60 && nextTime % 60 === 0) {
           playSound('timerTick');
-        }
-
-        if (nextTime <= 0) {
-          clearInterval(interval);
-          finishExam(0);
         }
 
         return nextTime;
@@ -190,7 +201,6 @@ export default function ExamArenaPage() {
     const newAnswers = [...answers];
     newAnswers[currentIdx] = val;
     setAnswers(newAnswers);
-    answersRef.current = newAnswers;
     
     // Auto-advance after small delay
     setTimeout(() => {
