@@ -2,7 +2,10 @@
 import type { Question, ExamGroup } from '@/types';
 import { generateTest, deDuplicateQuestions } from './questions';
 
-export const EXAM_DATE = new Date('2026-07-04T00:00:00');
+/**
+ * Official Exam Date - Preponed to today (May 18, 2026) at 12:30 PM for testing.
+ */
+export const EXAM_DATE = new Date('2026-05-18T12:30:00');
 
 export function getExamTimeLimit(age: number): number {
   if (age >= 6 && age <= 8) return 9 * 60;

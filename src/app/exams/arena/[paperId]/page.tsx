@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -70,11 +71,7 @@ export default function ExamArenaPage() {
         setTimeLeft(app.timeLimit);
         setLoading(false);
       } catch (error) {
-        const permissionError = new FirestorePermissionError({
-          path: 'examApplications',
-          operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examApplications', operation: 'list' }));
       }
     };
     fetchApplication();
@@ -90,7 +87,7 @@ export default function ExamArenaPage() {
     }
   }, [currentIdx]);
 
-  const finishExam = useCallback(async () => {
+  const finishExam = useCallback(async (forcedTimeLeft?: number) => {
     if (isFinished || isSubmitting || !user || !application || questions.length === 0) return;
     setIsSubmitting(true);
 
@@ -112,7 +109,7 @@ export default function ExamArenaPage() {
       totalQuestions: questions.length,
       accuracy,
       isFinal,
-      timeLeft: 0, 
+      timeLeft: forcedTimeLeft ?? timeLeft, 
       answeredCount,
       submittedAt: serverTimestamp(),
       details: questions.map((q, i) => ({
@@ -138,13 +135,13 @@ export default function ExamArenaPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [isFinished, isSubmitting, user, application, questions, isFinal, paperId, router, toast, answers]);
+  }, [isFinished, isSubmitting, user, application, questions, isFinal, paperId, router, toast, answers, timeLeft]);
 
   useEffect(() => {
     if (loading || isFinished) return;
     
     if (timeLeft <= 0) {
-      finishExam();
+      finishExam(0);
       return;
     }
 
@@ -175,6 +172,7 @@ export default function ExamArenaPage() {
     newAnswers[currentIdx] = val;
     setAnswers(newAnswers);
     
+    // Auto-advance after small delay (No sound played as requested)
     setTimeout(() => {
       if (currentIdx < questions.length - 1) {
         setCurrentIdx(prev => prev + 1);
@@ -183,6 +181,7 @@ export default function ExamArenaPage() {
   };
 
   const jumpTo = (i: number) => {
+    // Only allow jumping forward or reviewing current/prev (Back navigation enabled via jump-bar)
     setCurrentIdx(i);
   };
 
@@ -195,7 +194,7 @@ export default function ExamArenaPage() {
 
   return (
     <div className="max-w-4xl mx-auto py-4">
-      <Card className="rounded-[2.5rem] shadow-2xl border-none overflow-hidden flex flex-col min-h-[600px]">
+      <Card className="rounded-[2.5rem] shadow-2xl border-none overflow-hidden flex flex-col min-h-[500px]">
         <CardHeader className="bg-slate-900 text-white p-6 border-b border-white/10 shrink-0">
           <div className="flex justify-between items-center">
              <div>
@@ -226,15 +225,15 @@ export default function ExamArenaPage() {
         </CardHeader>
         
         <CardContent className="p-8 text-center flex-grow flex flex-col justify-center">
-          <div className="space-y-8">
-            <div className="py-6 bg-muted/30 rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center min-h-[220px] justify-center">
+          <div className="space-y-6">
+            <div className="py-4 bg-muted/30 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center min-h-[140px] justify-center">
                 {currentQ.questionType === 'identify' ? (
                   <div className="w-full max-w-md">
-                    <p className="text-xs font-black uppercase text-muted-foreground tracking-widest mb-6">Identify Abacus Value</p>
+                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-4">Identify Abacus Value</p>
                     <BeadDisplay value={currentQ.answer} rodCount={currentQ.answer > 999 ? 4 : 3} />
                   </div>
                 ) : (
-                  <p className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-slate-800 leading-tight px-4">
+                  <p className="text-xl sm:text-3xl md:text-5xl font-black tracking-tight text-slate-800 leading-tight px-4">
                     {currentQ.text} = ?
                   </p>
                 )}
@@ -246,7 +245,7 @@ export default function ExamArenaPage() {
                   key={i}
                   variant={selectedAnswer === opt ? 'default' : 'outline'}
                   className={cn(
-                    "h-16 text-2xl font-black rounded-2xl border-2 transition-all",
+                    "h-14 sm:h-16 text-xl sm:text-2xl font-black rounded-2xl border-2 transition-all",
                     selectedAnswer === opt ? "bg-primary text-white scale-105 shadow-lg" : "hover:border-primary/50"
                   )}
                   onClick={() => handleSelectOption(opt)}
@@ -279,7 +278,7 @@ export default function ExamArenaPage() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel className="rounded-xl h-12 font-bold">Review Answers</AlertDialogCancel>
-                <AlertDialogAction onClick={finishExam} className="rounded-xl h-12 bg-green-600 hover:bg-green-700 font-black uppercase tracking-widest">
+                <AlertDialogAction onClick={() => finishExam()} className="rounded-xl h-12 bg-green-600 hover:bg-green-700 font-black uppercase tracking-widest">
                   Submit Now
                 </AlertDialogAction>
               </AlertDialogFooter>
