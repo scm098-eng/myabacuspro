@@ -48,9 +48,9 @@ service cloud.firestore {
     match /examResults/{resultId} {
       // Allow students to see their own attempts list and metadata.
       // Content visibility is managed in the UI (Final scores only visible to Admin).
-      allow list: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
-      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
+      allow list, read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
       allow create: if request.auth != null && isNotSuspended() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin();
     }
     
     // --- BLOG RULES ---
@@ -74,8 +74,14 @@ service cloud.firestore {
       allow write: if isOwner(userId) && isNotSuspended();
     }
 
+    // --- SYSTEM STATS & LEADERBOARD ---
     match /stats/leaderboard {
       allow read: if true;
+    }
+
+    match /stats/examSchedule {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
     }
 
     match /stats/{statId} {
