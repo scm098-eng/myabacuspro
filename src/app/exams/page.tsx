@@ -158,6 +158,7 @@ export default function ExamDashboardPage() {
 
   const isApproved = application?.status === 'approved';
   const isRejected = application?.status === 'rejected';
+  const hasFinishedFinal = results.some(r => r.isFinal);
   const examOpen = schedule ? isFinalExamAvailable(schedule.start, schedule.end) : false;
 
   const groupDetails = [
@@ -166,13 +167,6 @@ export default function ExamDashboardPage() {
     { id: 'C', title: 'Group C: Anzan Expert', desc: 'Advanced mental arithmetic without aids.', focus: ['1, 2 & 3 Digit Mental Math', 'Pure Visual Anzan Mastery'], tools: 'MENTAL ONLY (No Tool)', icon: <Zap className="w-8 h-8 text-orange-500" /> },
     { id: 'D', title: 'Group D: Elite Grandmaster', desc: 'The ultimate assessment of speed.', focus: ['Advanced Mental Add & Sub', 'Mental Multiplication', 'Mental Division'], tools: 'MENTAL ONLY (No Tool)', icon: <Trophy className="w-8 h-8 text-purple-500" /> }
   ];
-
-  const formatTimeRemaining = (seconds: number | undefined) => {
-    if (seconds === undefined) return 'N/A';
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
@@ -261,14 +255,39 @@ export default function ExamDashboardPage() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2"><Trophy className="text-yellow-500 w-7 h-7" /> Practice Papers (Group {application.group})</h2>
-                  <Badge className="bg-green-500 py-1.5 px-4 font-black">APPROVED</Badge>
+                  <Badge className={cn("py-1.5 px-4 font-black", hasFinishedFinal ? "bg-slate-400" : "bg-green-500")}>
+                    {hasFinishedFinal ? 'CYCLE COMPLETE' : 'APPROVED'}
+                  </Badge>
                 </div>
+                
+                {hasFinishedFinal && (
+                  <div className="bg-amber-50 border-2 border-amber-200 p-6 rounded-3xl flex items-start gap-4">
+                    <AlertTriangle className="text-amber-600 shrink-0 mt-1" />
+                    <div>
+                      <p className="text-amber-900 font-black uppercase tracking-tight text-sm">Practice Papers Locked</p>
+                      <p className="text-amber-700 text-xs font-bold leading-relaxed">
+                        You have successfully completed your Final Exam for this cycle. Practice papers are now disabled while your results are being audited by the administrator.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {Array.from({ length: 20 }).map((_, i) => {
                     const paperId = `paper-${i + 1}`;
                     const isDone = results.some(r => r.paperId === paperId && !r.isFinal);
                     return (
-                      <Button key={paperId} variant={isDone ? "secondary" : "outline"} className={cn("h-24 rounded-2xl flex flex-col gap-2 font-black transition-all hover:scale-105", isDone ? "border-green-500 bg-green-50 text-green-700" : "border-slate-200")} onClick={() => router.push(`/exams/arena/${paperId}`)}>
+                      <Button 
+                        key={paperId} 
+                        variant={isDone ? "secondary" : "outline"} 
+                        disabled={hasFinishedFinal}
+                        className={cn(
+                          "h-24 rounded-2xl flex flex-col gap-2 font-black transition-all", 
+                          !hasFinishedFinal && "hover:scale-105",
+                          isDone ? "border-green-500 bg-green-50 text-green-700" : "border-slate-200"
+                        )} 
+                        onClick={() => router.push(`/exams/arena/${paperId}`)}
+                      >
                         <span className="text-[10px] uppercase opacity-60">Practice</span>
                         <span className="text-2xl">#{i + 1}</span>
                         {isDone && <CheckCircle2 className="w-4 h-4" />}
@@ -279,11 +298,12 @@ export default function ExamDashboardPage() {
 
                 <div className="pt-8">
                   <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2 mb-6"><ShieldAlert className="text-red-500 w-7 h-7" /> Final Official Exam</h2>
-                  <Card className={cn("rounded-[2.5rem] border-4 overflow-hidden shadow-2xl transition-all", examOpen ? "border-orange-500" : "border-slate-200 grayscale opacity-60")}>
+                  <Card className={cn("rounded-[2.5rem] border-4 overflow-hidden shadow-2xl transition-all", examOpen && !hasFinishedFinal ? "border-orange-500" : "border-slate-200 grayscale opacity-60")}>
                     <CardHeader className="bg-slate-900 text-white p-8">
                       <div className="flex justify-between items-center">
                         <div><CardTitle className="text-3xl font-black uppercase italic tracking-tighter">Grand Final 2026</CardTitle><CardDescription className="text-slate-400 font-bold">Group {application.group} Certification</CardDescription></div>
-                        {!examOpen && <Lock className="w-8 h-8 text-slate-500" />}
+                        {!examOpen && !hasFinishedFinal && <Lock className="w-8 h-8 text-slate-500" />}
+                        {hasFinishedFinal && <CheckCircle2 className="w-10 h-10 text-green-400" />}
                       </div>
                     </CardHeader>
                     <CardContent className="p-8 space-y-6">
@@ -293,8 +313,8 @@ export default function ExamDashboardPage() {
                       </div>
                     </CardContent>
                     <CardFooter className="p-8 pt-0">
-                      <Button size="lg" className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl" disabled={!examOpen || results.some(r => r.isFinal)} onClick={() => router.push('/exams/arena/final')}>
-                        {results.some(r => r.isFinal) ? 'ATTEMPTED' : (examOpen ? 'START FINAL EXAM' : `OPENS TODAY AT ${schedule?.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`)}
+                      <Button size="lg" className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl" disabled={!examOpen || hasFinishedFinal} onClick={() => router.push('/exams/arena/final')}>
+                        {hasFinishedFinal ? 'ATTEMPTED' : (examOpen ? 'START FINAL EXAM' : `OPENS TODAY AT ${schedule?.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`)}
                       </Button>
                     </CardFooter>
                   </Card>

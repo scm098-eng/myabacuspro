@@ -121,7 +121,7 @@ export default function ExamArenaPage() {
       totalQuestions: questions.length,
       accuracy,
       isFinal,
-      resultDeclared: isFinal ? false : true, // Practice is always declared, Final needs admin approval
+      resultDeclared: isFinal ? false : true, 
       timeLeft: forcedTimeLeft ?? timeLeftRef.current, 
       answeredCount,
       submittedAt: serverTimestamp(),
@@ -137,21 +137,11 @@ export default function ExamArenaPage() {
     addDoc(collection(db, "examResults"), payload)
       .then(async () => {
         if (isFinal) {
-          // RESET PROCESS: After Final Exam, delete the application so practice papers are disabled 
-          // and student must apply again for next cycle.
-          deleteDoc(doc(db, "examApplications", application.id))
-            .then(() => {
-              toast({ title: "Official Exam Submitted", description: "Cycle Complete! Your results are stored for admin verification." });
-              router.push('/exams');
-            })
-            .catch(async (delErr) => {
-              errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${application.id}`, operation: 'delete' }));
-              router.push('/exams');
-            });
+          toast({ title: "Official Exam Submitted", description: "Submission successful! Your results are stored for admin verification." });
         } else {
           toast({ title: "Practice Paper Complete", description: `Result: ${score}/${questions.length}` });
-          router.push('/exams');
         }
+        router.push('/exams');
       })
       .catch(async (serverError) => {
         setIsSubmitting(false);
@@ -172,7 +162,6 @@ export default function ExamArenaPage() {
         const nextTime = Math.max(0, prev - 1);
         timeLeftRef.current = nextTime;
         
-        // --- TIMER SOUND LOGIC ---
         if (nextTime === 60) {
           playSound('timerWarning');
           setTimeout(() => playSound('timerWarning'), 200);
