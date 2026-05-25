@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -114,7 +113,11 @@ export default function AdminExamsPage() {
       .catch(async (serverError) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'delete' })));
   };
 
-  const handleSaveSchedule = async () => {
+  /**
+   * Updates the schedule ONLY. 
+   * Used for prepone/postpone without resetting applications.
+   */
+  const handleUpdateOnly = async () => {
     if (!examDate) {
       toast({ title: "Select a Date", variant: "destructive" });
       return;
@@ -122,7 +125,42 @@ export default function AdminExamsPage() {
     setIsSavingSchedule(true);
     const db = getFirestore(firebaseApp);
 
-    // FLOW: Cleanup existing applications then set new schedule
+    const payload = {
+      date: examDate,
+      startTime,
+      endTime,
+      updatedAt: new Date().toISOString()
+    };
+
+    setDoc(doc(db, "stats", "examSchedule"), payload, { merge: true })
+      .then(() => {
+        toast({ title: "Schedule Updated", description: "Exam window has been adjusted. No applications were reset." });
+        setIsSavingSchedule(false);
+      })
+      .catch(async (serverError) => {
+        setIsSavingSchedule(false);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: "stats/examSchedule", 
+          operation: 'update',
+          requestResourceData: payload
+        }));
+      });
+  };
+
+  /**
+   * Resets the entire cycle and publishes a new schedule.
+   */
+  const handleSaveAndReset = async () => {
+    if (!examDate) {
+      toast({ title: "Select a Date", variant: "destructive" });
+      return;
+    }
+    
+    if (!confirm("WARNING: This will DELETE all current student applications. Continue?")) return;
+    
+    setIsSavingSchedule(true);
+    const db = getFirestore(firebaseApp);
+
     const runPublish = async () => {
       // 1. Fetch all active applications
       const appsSnap = await getDocs(collection(db, "examApplications"));
@@ -145,7 +183,7 @@ export default function AdminExamsPage() {
 
     runPublish()
       .then(() => {
-        toast({ title: "Schedule Published", description: `All existing student applications have been reset for the new date.` });
+        toast({ title: "Cycle Reset & Published", description: `All applications cleared. New date set for ${examDate}.` });
         setIsSavingSchedule(false);
       })
       .catch(async (serverError) => {
@@ -293,7 +331,7 @@ export default function AdminExamsPage() {
               <Card className="border-2 border-primary/20 bg-primary/5">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2"><Calendar className="w-6 h-6 text-primary" /> Official Schedule Manager</CardTitle>
-                  <CardDescription>Define the date and time window. **Warning:** Publishing a new schedule will clear all current student applications.</CardDescription>
+                  <CardDescription>Adjust the date and time window. Use "Update Only" to postpone/prepone without resetting student status.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-8">
                   <div className="space-y-2">
@@ -309,10 +347,24 @@ export default function AdminExamsPage() {
                     <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="bg-white border-2" />
                   </div>
                 </CardContent>
-                <CardFooter className="bg-white/50 border-t p-6">
-                  <Button onClick={handleSaveSchedule} disabled={isSavingSchedule} className="w-full sm:w-auto h-12 px-10 font-black uppercase tracking-widest shadow-lg">
-                    {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 w-4 h-4" />}
-                    Publish & Reset Applications
+                <CardFooter className="bg-white/50 border-t p-6 flex flex-wrap gap-4">
+                  <Button 
+                    onClick={handleUpdateOnly} 
+                    disabled={isSavingSchedule} 
+                    variant="outline" 
+                    className="h-12 px-6 font-bold uppercase tracking-widest border-2 bg-white"
+                  >
+                    {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <Calendar className="mr-2 w-4 h-4" />}
+                    Update Schedule Only
+                  </Button>
+                  
+                  <Button 
+                    onClick={handleSaveAndReset} 
+                    disabled={isSavingSchedule} 
+                    className="h-12 px-6 font-black uppercase tracking-widest shadow-lg bg-red-600 hover:bg-red-700"
+                  >
+                    {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <RefreshCcw className="mr-2 w-4 h-4" />}
+                    Reset & Publish New Cycle
                   </Button>
                 </CardFooter>
               </Card>
