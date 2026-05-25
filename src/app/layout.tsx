@@ -26,6 +26,10 @@ export const metadata: Metadata = {
   authors: [{ name: 'My Abacus Pro Team' }],
   creator: 'My Abacus Pro',
   publisher: 'My Abacus Pro',
+  icons: {
+    icon: 'https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/logo_icon.png?alt=media',
+    apple: 'https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/logo_icon.png?alt=media',
+  },
   alternates: {
     canonical: '/', 
   },

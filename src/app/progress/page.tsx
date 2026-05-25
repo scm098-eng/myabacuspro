@@ -20,6 +20,7 @@ import { FirestorePermissionError } from '@/lib/errors';
 import { errorEmitter } from '@/lib/error-emitter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
+import { Suspense } from 'react';
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -33,12 +34,38 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       </div>
     );
   }
-
   return null;
 };
 
+function ProgressReportSkeleton() {
+    return (
+        <div className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-64" />
+                    <Skeleton className="h-4 w-80" />
+                </CardHeader>
+            </Card>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+                <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+                <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+                <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+            </div>
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-72" />
+                    <Skeleton className="h-4 w-96" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-[300px] w-full rounded-xl" />
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
 
-export default function ProgressReportPage() {
+function ProgressContent() {
     usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/progress_bg.jpg?alt=media');
     const { user, isLoading: isAuthLoading } = useAuth();
     const router = useRouter();
@@ -120,7 +147,7 @@ export default function ProgressReportPage() {
         });
 
         const examData = examHistory
-            .filter(r => !r.isFinal || r.resultDeclared) // ONLY include declared finals in the trend chart
+            .filter(r => !r.isFinal || r.resultDeclared) // ONLY include declared finals
             .map(result => {
                 const date = result.submittedAt?.toDate ? result.submittedAt.toDate() : new Date();
                 return {
@@ -152,7 +179,6 @@ export default function ProgressReportPage() {
         const averageAccuracy = totalAccuracy / allActivities.length;
         const bestAccuracy = Math.max(...allActivities.map(r => r.accuracy));
         
-        // Sum practice time from testHistory (Exams don't use timeSpent the same way)
         const totalSeconds = testHistory.reduce((acc, r) => acc + (r.timeSpent || 0), 0);
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
@@ -234,25 +260,27 @@ export default function ProgressReportPage() {
                 </CardHeader>
                 <CardContent>
                     {chartData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={300}>
-                            <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                                <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
-                                <YAxis unit="%" domain={[0, 100]} stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
-                                <Tooltip content={<CustomTooltip />} />
-                                <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                                <ReferenceLine y={90} stroke="hsl(var(--primary))" strokeOpacity={0.2} strokeDasharray="3 3" />
-                                <Line 
-                                    name="Accuracy Trend"
-                                    type="monotone" 
-                                    dataKey="Accuracy" 
-                                    stroke="hsl(var(--primary))" 
-                                    strokeWidth={3}
-                                    dot={{ r: 4, fill: "hsl(var(--primary))", strokeWidth: 2, stroke: "#fff" }}
-                                    activeDot={{ r: 6 }}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
+                                    <YAxis unit="%" domain={[0, 100]} stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                    <ReferenceLine y={90} stroke="hsl(var(--primary))" strokeOpacity={0.2} strokeDasharray="3 3" />
+                                    <Line 
+                                        name="Accuracy Trend"
+                                        type="monotone" 
+                                        dataKey="Accuracy" 
+                                        stroke="hsl(var(--primary))" 
+                                        strokeWidth={3}
+                                        dot={{ r: 4, fill: "hsl(var(--primary))", strokeWidth: 2, stroke: "#fff" }}
+                                        activeDot={{ r: 6 }}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
                     ) : (
                         <div className="h-[300px] flex items-center justify-center text-muted-foreground italic font-medium">
                             Complete an activity to reveal your training trend.
@@ -347,7 +375,7 @@ export default function ProgressReportPage() {
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">Your candy road is waiting! Start a game to see results here.</TableCell>
+                                            <TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">Your candy road is waiting!</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
@@ -416,30 +444,10 @@ export default function ProgressReportPage() {
     );
 }
 
-function ProgressReportSkeleton() {
+export default function ProgressReportPage() {
     return (
-        <div className="space-y-8">
-            <Card>
-                <CardHeader>
-                    <Skeleton className="h-8 w-64" />
-                    <Skeleton className="h-4 w-80" />
-                </CardHeader>
-            </Card>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-                <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-                <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-                <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-            </div>
-            <Card>
-                <CardHeader>
-                    <Skeleton className="h-6 w-72" />
-                    <Skeleton className="h-4 w-96" />
-                </CardHeader>
-                <CardContent>
-                    <Skeleton className="h-[300px] w-full rounded-xl" />
-                </CardContent>
-            </Card>
-        </div>
-    );
+        <Suspense fallback={<ProgressReportSkeleton />}>
+            <ProgressContent />
+        </Suspense>
+    )
 }
