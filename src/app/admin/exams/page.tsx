@@ -201,7 +201,7 @@ export default function AdminExamsPage() {
       </Card>
 
       <Dialog open={!!selectedResult} onOpenChange={() => setSelectedResult(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0 rounded-[2rem] overflow-hidden border-none shadow-2xl">
+        <DialogContent className="max-w-3xl h-[85vh] flex flex-col p-0 rounded-[2rem] overflow-hidden border-none shadow-2xl">
           <DialogHeader className="p-6 bg-slate-900 text-white shrink-0">
             <DialogTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
                <ScrollText className="text-indigo-400" />
@@ -211,9 +211,9 @@ export default function AdminExamsPage() {
                Detailed breakdown of student answers vs. official keys.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-grow overflow-hidden">
-            <ScrollArea className="h-full p-6">
-              <div className="space-y-4">
+          <div className="flex-1 min-h-0 relative">
+            <ScrollArea className="h-full w-full">
+              <div className="p-6 space-y-4">
                 {(selectedResult as any)?.details?.map((item: any, i: number) => (
                   <div key={i} className="flex items-center justify-between p-4 bg-muted/50 rounded-2xl border">
                     <div className="flex items-center gap-4">
@@ -237,7 +237,7 @@ export default function AdminExamsPage() {
               </div>
             </ScrollArea>
           </div>
-          <div className="p-6 border-t bg-slate-50 flex justify-end">
+          <div className="p-6 border-t bg-slate-50 flex justify-end shrink-0">
              <Button onClick={() => setSelectedResult(null)} className="font-black uppercase tracking-widest h-12 px-8">Close Audit</Button>
           </div>
         </DialogContent>

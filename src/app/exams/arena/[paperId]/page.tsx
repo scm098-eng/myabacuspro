@@ -48,7 +48,12 @@ export default function ExamArenaPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Use refs to keep timer logic independent of re-renders
+  const answersRef = useRef<(number | null)[]>([]);
+  const timeLeftRef = useRef<number>(0);
+  const isFinishedRef = useRef(false);
   const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  
   const isFinal = paperId === 'final';
 
   useEffect(() => {
@@ -67,8 +72,11 @@ export default function ExamArenaPage() {
         setApplication(app);
         const generated = generateExamQuestions(app.group);
         setQuestions(generated);
-        setAnswers(new Array(generated.length).fill(null));
+        const initialAnswers = new Array(generated.length).fill(null);
+        setAnswers(initialAnswers);
+        answersRef.current = initialAnswers;
         setTimeLeft(app.timeLimit);
+        timeLeftRef.current = app.timeLimit;
         setLoading(false);
       } catch (error) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examApplications', operation: 'list' }));
@@ -88,10 +96,15 @@ export default function ExamArenaPage() {
   }, [currentIdx]);
 
   const finishExam = useCallback(async (forcedTimeLeft?: number) => {
-    if (isFinished || isSubmitting || !user || !application || questions.length === 0) return;
+    // Check local ref and state to prevent multiple submissions
+    if (isFinished || isFinishedRef.current || isSubmitting || !user || !application || questions.length === 0) return;
+    
+    isFinishedRef.current = true;
+    setIsFinished(true);
     setIsSubmitting(true);
 
-    const score = answers.reduce((acc: number, ans, i) => {
+    const currentAnswers = answersRef.current;
+    const score = currentAnswers.reduce((acc: number, ans, i) => {
       if (ans !== null && questions[i] && ans === questions[i].answer) {
         return acc + 1;
       }
@@ -99,7 +112,7 @@ export default function ExamArenaPage() {
     }, 0);
 
     const accuracy = (score / questions.length) * 100;
-    const answeredCount = answers.filter(a => a !== null).length;
+    const answeredCount = currentAnswers.filter(a => a !== null).length;
 
     const payload = {
       userId: user.uid,
@@ -109,13 +122,13 @@ export default function ExamArenaPage() {
       totalQuestions: questions.length,
       accuracy,
       isFinal,
-      timeLeft: forcedTimeLeft ?? timeLeft, 
+      timeLeft: forcedTimeLeft ?? timeLeftRef.current, 
       answeredCount,
       submittedAt: serverTimestamp(),
       details: questions.map((q, i) => ({
         text: q.text || `Identify Beads (Answer: ${q.answer})`,
         correct: q.answer,
-        student: answers[i]
+        student: currentAnswers[i]
       }))
     };
 
@@ -123,7 +136,6 @@ export default function ExamArenaPage() {
       const db = getFirestore(firebaseApp);
       await addDoc(collection(db, "examResults"), payload);
       
-      setIsFinished(true);
       if (isFinal) {
         toast({ title: "Official Exam Submitted", description: "Your results are stored for admin verification." });
       } else {
@@ -135,19 +147,16 @@ export default function ExamArenaPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [isFinished, isSubmitting, user, application, questions, isFinal, paperId, router, toast, answers, timeLeft]);
+  }, [isFinished, isSubmitting, user, application, questions, isFinal, paperId, router, toast]);
 
+  // Stable Timer Effect
   useEffect(() => {
     if (loading || isFinished) return;
     
-    if (timeLeft <= 0) {
-      finishExam(0);
-      return;
-    }
-
     const interval = setInterval(() => {
       setTimeLeft(prev => {
         const nextTime = Math.max(0, prev - 1);
+        timeLeftRef.current = nextTime;
         
         // --- TIMER SOUND LOGIC ---
         if (nextTime === 60) {
@@ -160,19 +169,27 @@ export default function ExamArenaPage() {
           playSound('timerTick');
         }
 
+        if (nextTime <= 0) {
+          clearInterval(interval);
+          finishExam(0);
+        }
+
         return nextTime;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [loading, isFinished, timeLeft, finishExam, playSound]);
+  }, [loading, isFinished, finishExam, playSound]);
 
   const handleSelectOption = (val: number) => {
+    if (isFinished) return;
+    
     const newAnswers = [...answers];
     newAnswers[currentIdx] = val;
     setAnswers(newAnswers);
+    answersRef.current = newAnswers;
     
-    // Auto-advance after small delay (No sound played as requested)
+    // Auto-advance after small delay
     setTimeout(() => {
       if (currentIdx < questions.length - 1) {
         setCurrentIdx(prev => prev + 1);
@@ -181,7 +198,6 @@ export default function ExamArenaPage() {
   };
 
   const jumpTo = (i: number) => {
-    // Only allow jumping forward or reviewing current/prev (Back navigation enabled via jump-bar)
     setCurrentIdx(i);
   };
 
