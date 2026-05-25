@@ -29,5 +29,6 @@ export function getFirebaseAdmin(): App {
  * Exporting this explicitly fixes sitemap build failures in production.
  */
 export function getFirestoreDb(): Firestore {
-  return getFirestore(getFirebaseAdmin());
+  const adminApp = getFirebaseAdmin();
+  return getFirestore(adminApp);
 }

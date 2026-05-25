@@ -72,7 +72,6 @@ const sanitizeForFirestore = (data: any) => {
 };
 
 const triggerAutoEmail = (type: string, userEmail: string, userName: string, metadata?: any) => {
-  // Always ensure we use only the first name for student-centric automated system emails
   const studentFirstName = userName.split(' ')[0];
   fetch('/api/email/auto', {
     method: 'POST',
@@ -135,13 +134,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(true);
         const userDocRef = doc(firestore, 'users', authUser.uid);
         
-        // REAL-TIME profile listener ensures points update without refresh
         profileUnsub = onSnapshot(userDocRef, (snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.data() as ProfileData;
             const profileData = { ...data, uid: authUser.uid };
             
-            // Sync logic runs in background without blocking state updates
             const currentWeekKey = getUTCMondayKey();
             const currentMonthKey = getUTCMonthKey();
             const updatePayload: any = {};
@@ -179,7 +176,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
           setIsLoading(false);
         }, (error) => {
-          console.error("Profile sync error:", error);
           setIsLoading(false);
         });
       } else {
@@ -194,7 +190,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [auth, firestore]);
 
-  // Handle Suspensions and Incomplete Profiles
   useEffect(() => {
     if (!isLoading && profile) {
       if (profile.isSuspended && pathname !== '/suspended') {
@@ -492,14 +487,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await addPoints(userId, 25);
   }, [firestore, addPoints]);
 
-  const value = { 
+  const contextValue = useMemo(() => ({ 
     user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
     sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, markUserAsRead, getAllUsers, getApprovedTeachers, 
     getUserTestHistory, getUserTestHistoryByDateRange, getUserTestHistoryByPeriod, getUserProfile, approveTeacher, getCompletedGameLevels, 
     saveCompletedGameLevel, setLastLevelAttended, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining
-  };
+  }), [user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
+    sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, markUserAsRead, getAllUsers, getApprovedTeachers, 
+    getUserTestHistory, getUserTestHistoryByDateRange, getUserTestHistoryByPeriod, getUserProfile, approveTeacher, getCompletedGameLevels, 
+    saveCompletedGameLevel, setLastLevelAttended, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }
 
 export const useAuth = () => {

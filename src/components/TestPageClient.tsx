@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -55,12 +54,13 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   const answersRef = useRef(userAnswers);
   const timeLeftRef = useRef(timeLeft);
   const isFinishedRef = useRef(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isInputMode = useMemo(() => testId.includes('-input'), [testId]);
 
-  // Keep refs in sync with state for access in stable callbacks
+  // Keep background data refs in sync with UI state
   useEffect(() => {
     answersRef.current = userAnswers;
   }, [userAnswers]);
@@ -77,7 +77,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     answersRef.current = initialAnswers;
     questionButtonRefs.current = new Array(generatedQuestions.length);
 
-    // Check if user has opted to skip rules
     const skip = localStorage.getItem('skip_rules_timed_test') === 'true';
     if (skip) {
       setHasStarted(true);
@@ -93,25 +92,20 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
             inline: 'center'
         });
     }
-    // Auto-focus input if in input mode
     if (hasStarted && isInputMode && inputRef.current) {
       inputRef.current.focus();
     }
   }, [currentQuestionIndex, hasStarted, isInputMode]);
 
-  const handleStart = () => {
-    if (dontShowAgain) {
-      localStorage.setItem('skip_rules_timed_test', 'true');
-    }
-    setHasStarted(true);
-    setStartTime(Date.now());
-    playSound('points');
-  };
-
   const finishTest = useCallback(async () => {
     if (isFinishedRef.current) return;
     isFinishedRef.current = true;
     setIsFinished(true);
+
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
 
     const currentAnswers = answersRef.current;
     const currentTimeLeft = timeLeftRef.current;
@@ -158,12 +152,11 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       };
       
       addDoc(collection(db, 'testResults'), resultData).catch(async (serverError) => {
-          const permissionError = new FirestorePermissionError({
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
               path: '/testResults',
               operation: 'create',
               requestResourceData: resultData,
-          });
-          errorEmitter.emit('permission-error', permissionError);
+          }));
       });
 
       recordDailyPractice(user.uid);
@@ -181,43 +174,57 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     router.replace(`/results?score=${score}&total=${questions.length}&time=${currentTimeLeft}&points=${earnedPointsTotal}`);
   }, [questions, router, user, testId, difficulty, settings.timeLimit, recordDailyPractice, addPoints]);
 
-  // Stable Timer Effect
+  const handleStart = () => {
+    if (dontShowAgain) {
+      localStorage.setItem('skip_rules_timed_test', 'true');
+    }
+    setHasStarted(true);
+    setStartTime(Date.now());
+    playSound('points');
+  };
+
+  // Continuous Stable Timer Effect
   useEffect(() => {
     if (!hasStarted || questions.length === 0 || !startTime || isFinished || settings.timeLimit === 0) return;
     
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          finishTest();
-          return 0;
-        }
+    if (!intervalRef.current) {
+      intervalRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            intervalRef.current = null;
+            finishTest();
+            return 0;
+          }
 
-        const nextTime = prev - 1;
-        timeLeftRef.current = nextTime;
-        
-        if (nextTime === 60) {
-          playSound('timerWarning');
-          setTimeout(() => playSound('timerWarning'), 200);
-          setTimeout(() => playSound('timerWarning'), 400);
-        } else if (nextTime <= 10 && nextTime > 0) {
-          playSound('timerUrgent');
-        } else if (nextTime > 60 && nextTime % 60 === 0) {
-          playSound('timerTick');
-        }
+          const nextTime = prev - 1;
+          timeLeftRef.current = nextTime;
+          
+          if (nextTime === 60) {
+            playSound('timerWarning');
+            setTimeout(() => playSound('timerWarning'), 200);
+            setTimeout(() => playSound('timerWarning'), 400);
+          } else if (nextTime <= 10 && nextTime > 0) {
+            playSound('timerUrgent');
+          } else if (nextTime > 60 && nextTime % 60 === 0) {
+            playSound('timerTick');
+          }
 
-        return nextTime;
-      });
-    }, 1000);
+          return nextTime;
+        });
+      }, 1000);
+    }
 
-    return () => clearInterval(interval);
+    return () => {
+      // Intentionally not clearing here to prevent interaction resets
+    };
   }, [hasStarted, questions.length, startTime, isFinished, settings.timeLimit, finishTest, playSound]);
 
-   useEffect(() => {
+  useEffect(() => {
     if (!isFinished && questions.length > 0 && userAnswers.length === questions.length && !userAnswers.includes(null)) {
         finishTest();
     }
-   }, [userAnswers, finishTest, isFinished, questions.length]);
+  }, [userAnswers, finishTest, isFinished, questions.length]);
   
   const jumpToQuestion = (index: number) => {
     setCurrentQuestionIndex(index);
@@ -237,8 +244,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     setSelectedOption(finalAnswer);
     setUserAnswers(newAnswers);
 
-    const isCorrect = finalAnswer === currentQuestion.answer;
-    if (isCorrect) {
+    if (finalAnswer === currentQuestion.answer) {
       playSound('correct');
     } else {
       playSound('wrong');
@@ -262,7 +268,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
-  // Determine if this is a formula test and load its specific guide
   const formulaGuide = FORMULA_GUIDES[testId];
   const activeGuide = formulaGuide || PAGE_GUIDES.timed_test;
   
