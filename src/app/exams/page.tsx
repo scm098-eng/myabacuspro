@@ -162,7 +162,42 @@ export default function ExamDashboardPage() {
     return results.some(r => r.isFinal && (r.submittedAt?.seconds || 0) > appliedTime);
   }, [application, results]);
 
-  const examOpen = schedule ? isFinalExamAvailable(schedule.start, schedule.end) : false;
+  const examEnded = useMemo(() => {
+    if (!schedule || isNaN(schedule.end.getTime())) return false;
+    const now = new Date();
+    return now > schedule.end;
+  }, [schedule]);
+
+  const examOpen = useMemo(() => {
+    if (!schedule || isNaN(schedule.start.getTime()) || isNaN(schedule.end.getTime())) return false;
+    return isFinalExamAvailable(schedule.start, schedule.end);
+  }, [schedule]);
+
+  const startTimeStr = useMemo(() => {
+    if (!schedule || isNaN(schedule.start.getTime())) return '';
+    return schedule.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }, [schedule]);
+
+  const isToday = useMemo(() => {
+    if (!schedule) return false;
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    return todayStr === schedule.date;
+  }, [schedule]);
+
+  const openingMessage = useMemo(() => {
+    if (!schedule) return 'EXAM CLOSED';
+    if (!startTimeStr) return 'OPENS TODAY';
+    if (isToday) {
+      return `OPENS TODAY AT ${startTimeStr}`;
+    } else {
+      try {
+        const formattedDate = format(parseISO(schedule.date), 'MMMM do');
+        return `OPENS ON ${formattedDate} AT ${startTimeStr}`;
+      } catch {
+        return `OPENS AT ${startTimeStr}`;
+      }
+    }
+  }, [schedule, isToday, startTimeStr]);
 
   if (loading || authLoading) {
     return <div className="p-8 max-w-6xl mx-auto"><Skeleton className="h-[600px] w-full" /></div>;
@@ -262,12 +297,12 @@ export default function ExamDashboardPage() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2"><Trophy className="text-yellow-500 w-7 h-7" /> Practice Papers (Group {application.group})</h2>
-                  <Badge className={cn("py-1.5 px-4 font-black", hasFinishedFinal ? "bg-slate-400" : "bg-green-500")}>
-                    {hasFinishedFinal ? 'CYCLE COMPLETE' : 'APPROVED'}
+                  <Badge className={cn("py-1.5 px-4 font-black", (hasFinishedFinal || examEnded) ? "bg-slate-400" : "bg-green-500")}>
+                    {hasFinishedFinal ? 'CYCLE COMPLETE' : examEnded ? 'EXAM CLOSED' : 'APPROVED'}
                   </Badge>
                 </div>
                 
-                {hasFinishedFinal && (
+                {hasFinishedFinal ? (
                   <div className="bg-amber-50 border-2 border-amber-200 p-6 rounded-3xl flex items-start gap-4">
                     <AlertTriangle className="text-amber-600 shrink-0 mt-1" />
                     <div>
@@ -277,31 +312,54 @@ export default function ExamDashboardPage() {
                       </p>
                     </div>
                   </div>
-                )}
+                ) : examEnded ? (
+                  <div className="bg-amber-50 border-2 border-amber-200 p-6 rounded-3xl flex items-start gap-4">
+                    <AlertTriangle className="text-amber-600 shrink-0 mt-1" />
+                    <div>
+                      <p className="text-amber-900 font-black uppercase tracking-tight text-sm">Practice Papers Locked</p>
+                      <p className="text-amber-700 text-xs font-bold leading-relaxed">
+                        The official final exam period for this cycle has ended. Practice papers are now locked.
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {Array.from({ length: 20 }).map((_, i) => {
-                    const paperId = `paper-${i + 1}`;
-                    const isDone = results.some(r => r.paperId === paperId && !r.isFinal);
-                    return (
-                      <Button 
-                        key={paperId} 
-                        variant={isDone ? "secondary" : "outline"} 
-                        disabled={hasFinishedFinal}
-                        className={cn(
-                          "h-24 rounded-2xl flex flex-col gap-2 font-black transition-all", 
-                          !hasFinishedFinal && "hover:scale-105",
-                          isDone ? "border-green-500 bg-green-50 text-green-700" : "border-slate-200"
-                        )} 
-                        onClick={() => router.push(`/exams/arena/${paperId}`)}
-                      >
-                        <span className="text-[10px] uppercase opacity-60">Practice</span>
-                        <span className="text-2xl">#{i + 1}</span>
-                        {isDone && <CheckCircle2 className="w-4 h-4" />}
-                      </Button>
-                    );
-                  })}
-                </div>
+ {Array.from({ length: 20 }).map((_, i) => {
+  const paperId = `paper-${i + 1}`;
+  const isDone = results.some(r => r.paperId === paperId && !r.isFinal);
+  
+  // This automatically locks when final is submitted OR when time expires
+  const isLocked = hasFinishedFinal || examEnded;
+
+    return (
+      <Button 
+        key={paperId} 
+        variant={isDone ? "secondary" : "outline"} 
+        disabled={isLocked}
+        className={cn(
+          "h-24 rounded-2xl flex flex-col gap-2 font-black transition-all relative", 
+          !isLocked && "hover:scale-105",
+          // 2. Change styling dynamically when locked
+          isLocked && "opacity-50 bg-slate-100 cursor-not-allowed border-slate-200 text-slate-400",
+          (isDone && !isLocked) && "border-green-500 bg-green-50 text-green-700"
+        )} 
+        onClick={() => {
+          // 3. Prevent routing if the exam state is locked
+          if (isLocked) return; 
+          router.push(`/exams/arena/${paperId}`);
+        }}
+      >
+        <span className="text-[10px] uppercase opacity-60">Practice</span>
+        <span className="text-2xl">#{i + 1}</span>
+        
+        {/* 4. Display a Lock or Check icon depending on state */}
+        {isDone && !isLocked && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+        {isLocked && <Lock className="w-4 h-4 text-slate-400 mt-1" />}
+      </Button>
+    );
+  })}
+</div>
 
                 <div className="pt-8">
                   <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2 mb-6"><ShieldAlert className="text-red-500 w-7 h-7" /> Final Official Exam</h2>
@@ -320,8 +378,13 @@ export default function ExamDashboardPage() {
                       </div>
                     </CardContent>
                     <CardFooter className="p-8 pt-0">
-                      <Button size="lg" className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl" disabled={!examOpen || hasFinishedFinal} onClick={() => router.push('/exams/arena/final')}>
-                        {hasFinishedFinal ? 'ATTEMPTED' : (examOpen ? 'START FINAL EXAM' : `OPENS TODAY AT ${schedule?.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`)}
+                      <Button 
+                        size="lg" 
+                        className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl" 
+                        disabled={!examOpen || hasFinishedFinal} 
+                        onClick={() => router.push('/exams/arena/final')}
+                      >
+                        {hasFinishedFinal ? 'ATTEMPTED' : examOpen ? 'START FINAL EXAM' : examEnded ? 'EXAM CLOSED' : openingMessage}
                       </Button>
                     </CardFooter>
                   </Card>

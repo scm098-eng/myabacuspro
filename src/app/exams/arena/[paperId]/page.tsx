@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Timer, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { generateExamQuestions } from '@/lib/exam-utils';
 import type { ExamApplication, Question } from '@/types';
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
@@ -64,8 +64,23 @@ export default function ExamArenaPage() {
     if (!user) return;
     const db = getFirestore(firebaseApp);
     const fetchApplication = async () => {
-      const q = query(collection(db, "examApplications"), where("userId", "==", user.uid), where("status", "==", "approved"), limit(1));
       try {
+        // 1. Fetch Schedule first to see if exam is ended
+        const scheduleSnap = await getDoc(doc(db, "stats", "examSchedule"));
+        if (scheduleSnap.exists()) {
+          const data = scheduleSnap.data();
+          if (data.date && data.endTime) {
+            const endTime = new Date(`${data.date}T${data.endTime}:00`);
+            if (!isNaN(endTime.getTime()) && new Date() > endTime) {
+              toast({ title: "Exam Period Ended", description: "The official exam period for this cycle has ended. All papers are locked.", variant: "destructive" });
+              router.push('/exams');
+              return;
+            }
+          }
+        }
+
+        // 2. Fetch Application
+        const q = query(collection(db, "examApplications"), where("userId", "==", user.uid), where("status", "==", "approved"), limit(1));
         const snap = await getDocs(q);
         if (snap.empty) {
           toast({ title: "Not Eligible", description: "You need an approved exam application.", variant: "destructive" });
@@ -73,6 +88,22 @@ export default function ExamArenaPage() {
           return;
         }
         const app = { id: snap.docs[0].id, ...snap.docs[0].data() } as ExamApplication;
+
+        // 3. Fetch Results to see if they completed the final exam for this application cycle
+        const resultsQuery = query(collection(db, "examResults"), where("userId", "==", user.uid), where("isFinal", "==", true));
+        const resultsSnap = await getDocs(resultsQuery);
+        const appliedTime = app.appliedAt?.seconds || 0;
+        const hasFinishedFinal = resultsSnap.docs.some(d => {
+          const r = d.data();
+          return (r.submittedAt?.seconds || 0) > appliedTime;
+        });
+
+        if (hasFinishedFinal) {
+          toast({ title: "Cycle Complete", description: "You have already completed the final exam for this cycle.", variant: "destructive" });
+          router.push('/exams');
+          return;
+        }
+
         setApplication(app);
         const generated = generateExamQuestions(app.group);
         setQuestions(generated);

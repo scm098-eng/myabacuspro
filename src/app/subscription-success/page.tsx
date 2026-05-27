@@ -1,10 +1,10 @@
 'use client';
 
 import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function SubscriptionSuccessPage() {
+function SubscriptionSuccessContent() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
 
@@ -37,5 +37,17 @@ export default function SubscriptionSuccessPage() {
         We’re updating your Pro access. You can close this page safely.
       </p>
     </div>
+  );
+}
+
+export default function SubscriptionSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <p className="text-lg text-muted-foreground">Loading success page...</p>
+      </div>
+    }>
+      <SubscriptionSuccessContent />
+    </Suspense>
   );
 }
