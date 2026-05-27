@@ -186,9 +186,12 @@ export default function ExamDashboardPage() {
 
   const openingMessage = useMemo(() => {
     if (!schedule) return 'EXAM CLOSED';
-    if (!startTimeStr) return 'OPENS TODAY';
+    // 1. Safe Check: If string is missing or literally equals "undefined", fall back
+    if (!startTimeStr || startTimeStr === 'undefined') return 'OPENS TODAY';
+    
     if (isToday) {
-      return `OPENS TODAY AT ${startTimeStr}`;
+      // 2. Extra double-check to make sure we don't print "undefined" text
+      return startTimeStr ? `OPENS TODAY AT ${startTimeStr}` : 'OPENS TODAY';
     } else {
       try {
         const formattedDate = format(parseISO(schedule.date), 'MMMM do');
