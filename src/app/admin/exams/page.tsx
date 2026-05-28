@@ -199,9 +199,31 @@ export default function AdminExamsPage() {
     return applications.filter(a => a.studentName.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [applications, searchTerm]);
 
-  const finalResults = useMemo(() => {
-    return allResults.filter(r => r.isFinal);
-  }, [allResults]);
+  const groupedAndRankedResults = useMemo(() => {
+    const officialFinals = allResults.filter(r => r.isFinal);
+    const groupNames = Array.from(new Set(officialFinals.map(r => r.group))).sort();
+
+    const grouped: Record<string, (ExamResult & { rank: number; studentName: string })[]> = {};
+
+    groupNames.forEach(group => {
+      grouped[group] = officialFinals
+        .filter(r => r.group === group)
+        .sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          if (b.accuracy !== a.accuracy) return b.accuracy - a.accuracy;
+          return (a.timeSpent || 0) - (b.timeSpent || 0);
+        })
+        .map((result, index) => ({
+          ...result,
+          rank: index + 1,
+          studentName: applications.find(a => a.userId === result.userId)?.studentName || 'Student'
+        }))
+        .filter(r => r.studentName.toLowerCase().includes(searchTerm.toLowerCase()));
+    });
+
+    const activeGroups = groupNames.filter(g => grouped[g].length > 0);
+    return { groups: activeGroups, data: grouped };
+  }, [allResults, applications, searchTerm]);
 
   if (loading || authLoading) return <div className="p-8">Loading Exam Management...</div>;
 
@@ -224,7 +246,7 @@ export default function AdminExamsPage() {
           <Tabs defaultValue="applications">
             <TabsList className="mb-8">
               <TabsTrigger value="applications" className="font-bold">Applications ({applications.filter(a => a.status === 'pending').length})</TabsTrigger>
-              <TabsTrigger value="final-results" className="font-bold">Official Results ({finalResults.length})</TabsTrigger>
+              <TabsTrigger value="final-results" className="font-bold">Official Results ({allResults.filter(r => r.isFinal).length})</TabsTrigger>
               <TabsTrigger value="schedule" className="font-bold">Exam Schedule</TabsTrigger>
             </TabsList>
 
@@ -277,54 +299,82 @@ export default function AdminExamsPage() {
               </Table>
             </TabsContent>
 
-            <TabsContent value="final-results">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                 {finalResults.map(r => (
-                   <Card key={r.id} className="border-2 border-slate-100 shadow-sm overflow-hidden flex flex-col h-full">
-                     <CardHeader className="bg-slate-900 text-white p-4 shrink-0">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                             <p className="text-[10px] font-black uppercase text-indigo-400">Official Final</p>
-                             {r.resultDeclared && <Badge className="bg-green-500 h-4 text-[8px]">DECLARED</Badge>}
-                          </div>
-                          <Trophy className="w-4 h-4 text-yellow-400" />
+            <TabsContent value="final-results" className="space-y-12">
+              {groupedAndRankedResults.groups.map(group => (
+                <div key={group} className="space-y-6">
+                  <div className="flex items-center gap-4 border-b pb-4">
+                    <div className="bg-slate-900 text-white h-10 w-10 rounded-xl flex items-center justify-center font-black">
+                      {group}
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-black uppercase tracking-tight">Group {group} Standings</h2>
+                      <p className="text-muted-foreground text-xs font-bold uppercase">{groupedAndRankedResults.data[group].length} Candidates</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {groupedAndRankedResults.data[group].map(r => (
+                      <Card key={r.id} className={cn(
+                        "border-2 shadow-sm overflow-hidden flex flex-col h-full relative",
+                        r.rank === 1 ? "border-yellow-400 bg-yellow-50/20" : "border-slate-100"
+                      )}>
+                        {/* Rank Badge */}
+                        <div className={cn(
+                          "absolute top-2 right-2 h-8 w-8 rounded-full flex items-center justify-center font-black text-white shadow-sm z-10 text-xs",
+                          r.rank === 1 ? "bg-yellow-500" : r.rank === 2 ? "bg-slate-400" : r.rank === 3 ? "bg-orange-400" : "bg-slate-800"
+                        )}>
+                          #{r.rank}
                         </div>
-                     </CardHeader>
-                     <CardContent className="p-6 flex-grow">
-                        <div className="flex justify-between items-start mb-6">
-                           <div>
-                              <p className="text-lg font-black">{applications.find(a => a.userId === r.userId)?.studentName || 'Student'}</p>
-                              <Badge variant="outline" className="mt-1">Group {r.group}</Badge>
-                           </div>
-                           <div className="text-right">
-                              {r.resultDeclared ? (
-                                <>
-                                  <p className="text-3xl font-black text-primary">{r.score}/{r.totalQuestions}</p>
-                                  <p className="text-[10px] font-bold uppercase text-muted-foreground">Accuracy: {r.accuracy.toFixed(1)}%</p>
-                                </>
-                              ) : (
-                                <Badge className="bg-orange-500 font-black">PENDING</Badge>
-                              )}
-                           </div>
-                        </div>
-                        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden mb-6">
-                           <div className="h-full bg-primary" style={{ width: `${r.accuracy}%` }} />
-                        </div>
-                        <div className="space-y-2">
-                            <Button variant="outline" className="w-full font-bold uppercase text-xs tracking-widest h-10" onClick={() => setSelectedResult(r)}>
-                               <Eye className="w-4 h-4 mr-2" /> View Audit
-                            </Button>
-                            {!r.resultDeclared && (
-                                <Button className="w-full bg-green-600 hover:bg-green-700 font-bold uppercase text-xs tracking-widest h-10" onClick={() => handleDeclareResult(r.id)}>
-                                   <Megaphone className="w-4 h-4 mr-2" /> Declare Result
+
+                        <CardHeader className="bg-slate-900 text-white p-4 shrink-0">
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-2">
+                                <p className="text-[10px] font-black uppercase text-indigo-400">Official Final</p>
+                                {r.resultDeclared && <Badge className="bg-green-500 h-4 text-[8px]">DECLARED</Badge>}
+                              </div>
+                              {r.rank === 1 && <Trophy className="w-4 h-4 text-yellow-400" />}
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-6 flex-grow">
+                            <div className="flex justify-between items-start mb-6">
+                              <div>
+                                  <p className="text-lg font-black">{r.studentName}</p>
+                                  <Badge variant="outline" className="mt-1">Rank #{r.rank}</Badge>
+                              </div>
+                              <div className="text-right">
+                                  {r.resultDeclared ? (
+                                    <>
+                                      <p className="text-3xl font-black text-primary">{r.score}/{r.totalQuestions}</p>
+                                      <p className="text-[10px] font-bold uppercase text-muted-foreground">Accuracy: {r.accuracy.toFixed(1)}%</p>
+                                      <p className="text-[10px] font-bold uppercase text-muted-foreground">Time: {Math.floor((r.timeSpent || 0) / 60)}m {(r.timeSpent || 0) % 60}s</p>
+                                    </>
+                                  ) : (
+                                    <Badge className="bg-orange-500 font-black">PENDING</Badge>
+                                  )}
+                              </div>
+                            </div>
+                            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden mb-6">
+                              <div className="h-full bg-primary" style={{ width: `${r.accuracy}%` }} />
+                            </div>
+                            <div className="space-y-2">
+                                <Button variant="outline" className="w-full font-bold uppercase text-xs tracking-widest h-10" onClick={() => setSelectedResult(r)}>
+                                  <Eye className="w-4 h-4 mr-2" /> View Audit
                                 </Button>
-                            )}
-                        </div>
-                     </CardContent>
-                   </Card>
-                 ))}
-                 {finalResults.length === 0 && <p className="col-span-full text-center py-20 text-muted-foreground italic">No official final exams submitted yet.</p>}
-              </div>
+                                {!r.resultDeclared && (
+                                    <Button className="w-full bg-green-600 hover:bg-green-700 font-bold uppercase text-xs tracking-widest h-10" onClick={() => handleDeclareResult(r.id)}>
+                                      <Megaphone className="w-4 h-4 mr-2" /> Declare Result
+                                    </Button>
+                                )}
+                            </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {groupedAndRankedResults.groups.length === 0 && (
+                <p className="col-span-full text-center py-20 text-muted-foreground italic">No official final exams submitted yet.</p>
+              )}
             </TabsContent>
 
             <TabsContent value="schedule">

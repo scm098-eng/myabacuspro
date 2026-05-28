@@ -377,7 +377,7 @@ export default function ExamDashboardPage() {
                     <CardContent className="p-8 space-y-6">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="bg-muted p-4 rounded-2xl text-center"><p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Time Limit</p><p className="text-xl font-bold">{application.timeLimit / 60} Mins</p></div>
-                        <div className="bg-muted p-4 rounded-2xl text-center"><p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Questions</p><p className="text-xl font-bold">150 Qs</p></div>
+                        <div className="bg-muted p-4 rounded-2xl text-center"><p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Questions</p><p className="text-xl font-bold">150 Questions</p></div>
                       </div>
                     </CardContent>
                     <CardFooter className="p-8 pt-0">
