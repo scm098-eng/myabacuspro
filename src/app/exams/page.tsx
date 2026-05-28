@@ -333,7 +333,7 @@ export default function ExamDashboardPage() {
   const isDone = results.some(r => r.paperId === paperId && !r.isFinal);
   
   // This automatically locks when final is submitted OR when time expires
-  const isLocked = hasFinishedFinal || examEnded;
+  const isLocked = hasFinishedFinal || examEnded || !schedule;
 
     return (
       <Button 
