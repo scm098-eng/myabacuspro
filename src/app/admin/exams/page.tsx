@@ -211,7 +211,7 @@ export default function AdminExamsPage() {
         .sort((a, b) => {
           if (b.score !== a.score) return b.score - a.score;
           if (b.accuracy !== a.accuracy) return b.accuracy - a.accuracy;
-          return (a.timeSpent || 0) - (b.timeSpent || 0);
+          return ((a as any).timeSpent || 0) - ((b as any).timeSpent || 0);
         })
         .map((result, index) => ({
           ...result,
@@ -346,7 +346,7 @@ export default function AdminExamsPage() {
                                     <>
                                       <p className="text-3xl font-black text-primary">{r.score}/{r.totalQuestions}</p>
                                       <p className="text-[10px] font-bold uppercase text-muted-foreground">Accuracy: {r.accuracy.toFixed(1)}%</p>
-                                      <p className="text-[10px] font-bold uppercase text-muted-foreground">Time: {Math.floor((r.timeSpent || 0) / 60)}m {(r.timeSpent || 0) % 60}s</p>
+                                    <p className="text-[10px] font-bold uppercase text-muted-foreground">Time: {Math.floor(((r as any).timeSpent || 0) / 60)}m {((r as any).timeSpent || 0) % 60}s</p>
                                     </>
                                   ) : (
                                     <Badge className="bg-orange-500 font-black">PENDING</Badge>

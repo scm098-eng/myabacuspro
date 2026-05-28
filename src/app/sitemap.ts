@@ -41,10 +41,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 2. Fetch dynamic blog routes from Firestore
   let blogRoutes: MetadataRoute.Sitemap = [];
   try {
-    const db = getFirestoreDb();
-    const snapshot = await db.collection('blogs').get();
+    const snapshot = await getFirestoreDb().collection('blogs').get();
     
-    blogRoutes = snapshot.docs.map((doc) => {
+    blogRoutes = snapshot.docs.map((doc: any) => {
       const data = doc.data();
       const lastMod = data.updatedAt?.toDate ? data.updatedAt.toDate() : (data.createdAt?.toDate ? data.createdAt.toDate() : new Date());
       
