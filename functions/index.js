@@ -520,16 +520,17 @@ exports.applyToExam = onCall(async (request) => {
     const scheduleDoc = await db.collection('stats').doc('examSchedule').get();
     const schedule = scheduleDoc.data();
 
-    // Log state to Firebase Console > Functions > Logs
-    logger.info("Exam App Attempt:", { 
+    // CRITICAL LOG: Check this in Firebase Console > Functions > Logs if error persists
+    logger.info("EXAM_APPLICATION_DIAGNOSTIC", { 
         uid: request.auth.uid, 
         scheduleExists: scheduleDoc.exists, 
-        isActive: schedule?.isActive,
+        isActiveValue: schedule?.isActive,
+        hasDate: !!schedule?.date,
         deadline: schedule?.lastApplyDate 
     });
 
-    //Permissive check: Active if date exists AND isActive is NOT explicitly false
-    const isActuallyActive = !!(schedule && schedule.date && schedule.isActive !== false);
+    // Active if: Document exists AND has a date AND isActive is NOT explicitly false
+    const isActuallyActive = !!(scheduleDoc.exists && schedule?.date && schedule?.isActive !== false);
 
     if (!isActuallyActive) {
         throw new HttpsError('failed-precondition', "There is no active exam cycle to apply for.");
