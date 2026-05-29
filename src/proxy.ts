@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * SEO & Canonical Redirection Middleware
+ * SEO & Canonical Redirection Proxy
  * 
  * Ensures all traffic is consolidated onto myabacuspro.com.
  * Performs redirects for default subdomains and handles legacy blog routing safely.
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
   const host = request.headers.get('host');
   const pathname = url.pathname;
