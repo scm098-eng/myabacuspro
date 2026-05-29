@@ -430,18 +430,19 @@ exports.forceDeclareWinner = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (
 
 /**
  * Reset all exam applications and publish a new schedule cycle.
- * This ensures all Pro students can see the application form to apply for the new cycle.
+ * This deletes all previous applications AND results to start a fresh cycle.
  */
-exports.resetExamCycle = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (request) => {
+exports.resetExamCycle = onCall(async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
+    
     const adminDoc = await db.collection('users').doc(request.auth.uid).get();
     if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
 
-    const { date, startTime, endTime } = request.data;
+    const { date, startTime, endTime, lastApplyDate } = request.data;
     if (!date) throw new HttpsError('invalid-argument', "Missing exam date.");
 
     // 1. Delete all existing exam applications in chunks to handle large volumes
-    const appsSnap = await db.collection('examApplications').select().get();
+    const appsSnap = await db.collection('examApplications').get();
     let batch = db.batch();
     let count = 0;
 
@@ -455,13 +456,118 @@ exports.resetExamCycle = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (requ
     }
     if (count % 500 !== 0) await batch.commit();
 
-    // 2. Update the exam schedule
+    // 2. Delete all existing exam results
+    const resultsSnap = await db.collection('examResults').get();
+    batch = db.batch();
+    let resultCount = 0;
+
+    for (const doc of resultsSnap.docs) {
+        batch.delete(doc.ref);
+        resultCount++;
+        if (resultCount % 500 === 0) {
+            await batch.commit();
+            batch = db.batch();
+        }
+    }
+    if (resultCount % 500 !== 0) await batch.commit();
+
+    // 3. Update the exam schedule
     await db.collection('stats').doc('examSchedule').set({
         date,
         startTime: startTime || "12:30",
         endTime: endTime || "16:00",
+        lastApplyDate: lastApplyDate || null,
+        isActive: true,
+        resultsDeclared: false,
+        publishedBy: request.auth.uid,
         updatedAt: FieldValue.serverTimestamp()
     }, { merge: true });
 
-    return { status: "success", count };
+    return { status: "success", appsCleared: count, resultsCleared: resultCount };
+});
+
+/**
+ * Marks the current cycle results as official.
+ */
+exports.declareOfficialResults = onCall(async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
+    const adminDoc = await db.collection('users').doc(request.auth.uid).get();
+    if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
+
+    logger.info(`Admin ${request.auth.uid} is declaring official results.`);
+    await db.collection('stats').doc('examSchedule').update({
+        resultsDeclared: true,
+        isActive: false, // Close the exam window if it was still open
+        declaredAt: FieldValue.serverTimestamp()
+    });
+
+    return { status: "success", message: "Results are now official." };
+});
+
+/**
+ * Allows a student to apply for the current exam cycle.
+ * Enforces the lastApplyDate deadline and prevents duplicate applications.
+ */
+exports.applyToExam = onCall(async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
+    
+    const userDoc = await db.collection('users').doc(request.auth.uid).get();
+    const userData = userDoc.data();
+    if (userData?.role !== 'student') throw new HttpsError('permission-denied', "Only students can apply for exams.");
+
+    const { masteryGroup } = request.data;
+    if (!masteryGroup) throw new HttpsError('invalid-argument', "Mastery group is required.");
+
+    const scheduleDoc = await db.collection('stats').doc('examSchedule').get();
+    const schedule = scheduleDoc.data();
+
+    if (!schedule || !schedule.isActive) {
+        throw new HttpsError('failed-precondition', "There is no active exam cycle to apply for.");
+    }
+
+    // Enforce the application deadline (assuming YYYY-MM-DD format)
+    if (schedule.lastApplyDate) {
+        const today = new Date().toISOString().split('T')[0];
+        if (today > schedule.lastApplyDate) {
+            throw new HttpsError('deadline-exceeded', `The application deadline has passed (${schedule.lastApplyDate}).`);
+        }
+    }
+
+    const appRef = db.collection('examApplications').doc(request.auth.uid);
+    const appSnap = await appRef.get();
+    if (appSnap.exists) {
+        throw new HttpsError('already-exists', "You have already applied for this exam cycle.");
+    }
+
+    await appRef.set({
+        uid: request.auth.uid,
+        masteryGroup,
+        appliedAt: FieldValue.serverTimestamp(),
+        examDate: schedule.date,
+        studentName: `${userData.firstName || ''} ${userData.surname || ''}`.trim()
+    });
+
+    return { status: "success", message: "Application submitted successfully." };
+});
+
+/**
+ * Updates exam schedule details (Date, Time, Last Apply Date) 
+ * without resetting existing applications or results.
+ */
+exports.updateExamSchedule = onCall(async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
+    const adminDoc = await db.collection('users').doc(request.auth.uid).get();
+    if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
+
+    const { date, startTime, endTime, lastApplyDate } = request.data;
+    const updateData = { updatedAt: FieldValue.serverTimestamp() };
+
+    if (date) updateData.date = date;
+    if (startTime) updateData.startTime = startTime;
+    if (endTime) updateData.endTime = endTime;
+    if (lastApplyDate !== undefined) updateData.lastApplyDate = lastApplyDate;
+
+    await db.collection('stats').doc('examSchedule').update(updateData);
+
+    return { status: "success", message: "Exam schedule updated successfully." };
 });

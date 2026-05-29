@@ -8,7 +8,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, setDoc, getDoc, getDocs, writeBatch } from 'firebase/firestore';
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
 import { format } from 'date-fns';
@@ -40,6 +41,7 @@ export default function AdminExamsPage() {
   const [examDate, setExamDate] = useState('');
   const [startTime, setStartTime] = useState('12:30');
   const [endTime, setEndTime] = useState('16:00');
+  const [lastApplyDate, setLastApplyDate] = useState('');
 
   useEffect(() => {
     if (!authLoading && (!profile || profile.role !== 'admin')) {
@@ -58,6 +60,7 @@ export default function AdminExamsPage() {
           setExamDate(data.date || '');
           setStartTime(data.startTime || '12:30');
           setEndTime(data.endTime || '16:00');
+          setLastApplyDate(data.lastApplyDate || '');
         }
       })
       .catch(async (error) => {
@@ -113,37 +116,36 @@ export default function AdminExamsPage() {
       .catch(async (serverError) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'delete' })));
   };
 
+  const handleDeclareAllResults = async () => {
+    const declareFn = httpsCallable(getFunctions(firebaseApp), 'declareOfficialResults');
+    try {
+      await declareFn();
+      toast({ title: "Results Declared", description: "All students can now view their official results." });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+  };
+
   /**
-   * Updates the schedule ONLY. 
+   * Updates the schedule ONLY.
    * Used for prepone/postpone without resetting applications.
    */
-  const handleUpdateOnly = async () => {
+  const handleUpdateSchedule = async () => {
     if (!examDate) {
       toast({ title: "Select a Date", variant: "destructive" });
       return;
     }
     setIsSavingSchedule(true);
-    const db = getFirestore(firebaseApp);
+    const updateFn = httpsCallable(getFunctions(firebaseApp), 'updateExamSchedule');
 
-    const payload = {
-      date: examDate,
-      startTime,
-      endTime,
-      updatedAt: new Date().toISOString()
-    };
-
-    setDoc(doc(db, "stats", "examSchedule"), payload, { merge: true })
+    updateFn({ date: examDate, startTime, endTime, lastApplyDate })
       .then(() => {
         toast({ title: "Schedule Updated", description: "Exam window has been adjusted. No applications were reset." });
         setIsSavingSchedule(false);
       })
-      .catch(async (serverError) => {
+      .catch((e) => {
         setIsSavingSchedule(false);
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-          path: "stats/examSchedule", 
-          operation: 'update',
-          requestResourceData: payload
-        }));
+        toast({ title: "Update Failed", description: e.message, variant: "destructive" });
       });
   };
 
@@ -151,47 +153,24 @@ export default function AdminExamsPage() {
    * Resets the entire cycle and publishes a new schedule.
    */
   const handleSaveAndReset = async () => {
-    if (!examDate) {
-      toast({ title: "Select a Date", variant: "destructive" });
+    if (!examDate || !lastApplyDate) {
+      toast({ title: "Configuration Missing", description: "Please set both Exam Date and Application Deadline.", variant: "destructive" });
       return;
     }
     
-    if (!confirm("WARNING: This will DELETE all current student applications. Continue?")) return;
+    if (!confirm("WARNING: This will DELETE all current student applications and results. Continue?")) return;
     
     setIsSavingSchedule(true);
-    const db = getFirestore(firebaseApp);
+    const resetFn = httpsCallable(getFunctions(firebaseApp), 'resetExamCycle');
 
-    const runPublish = async () => {
-      // 1. Fetch all active applications
-      const appsSnap = await getDocs(collection(db, "examApplications"));
-      
-      // 2. Perform batch deletion
-      const batch = writeBatch(db);
-      appsSnap.forEach(d => batch.delete(d.ref));
-      await batch.commit();
-
-      // 3. Save the new schedule
-      const payload = {
-        date: examDate,
-        startTime,
-        endTime,
-        updatedAt: new Date().toISOString()
-      };
-      await setDoc(doc(db, "stats", "examSchedule"), payload, { merge: true });
-      return payload;
-    };
-
-    runPublish()
-      .then(() => {
-        toast({ title: "Cycle Reset & Published", description: `All applications cleared. New date set for ${examDate}.` });
+    resetFn({ date: examDate, startTime, endTime, lastApplyDate })
+      .then((result: any) => {
+        toast({ title: "Cycle Reset & Published", description: `Cleared ${result.data.appsCleared} apps and ${result.data.resultsCleared} results.` });
         setIsSavingSchedule(false);
       })
-      .catch(async (serverError) => {
+      .catch((e) => {
         setIsSavingSchedule(false);
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-          path: "stats/examSchedule or examApplications", 
-          operation: 'update',
-        }));
+        toast({ title: "Reset Failed", description: e.message, variant: "destructive" });
       });
   };
 
@@ -383,7 +362,7 @@ export default function AdminExamsPage() {
                   <CardTitle className="flex items-center gap-2"><Calendar className="w-6 h-6 text-primary" /> Official Schedule Manager</CardTitle>
                   <CardDescription>Adjust the date and time window. Use "Update Only" to postpone/prepone without resetting student status.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                   <div className="space-y-2">
                     <Label className="font-bold">Exam Date</Label>
                     <Input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} className="bg-white border-2" />
@@ -396,10 +375,14 @@ export default function AdminExamsPage() {
                     <Label className="font-bold">End Time (24h)</Label>
                     <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="bg-white border-2" />
                   </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold text-red-600">Application Deadline</Label>
+                    <Input type="date" value={lastApplyDate} onChange={e => setLastApplyDate(e.target.value)} className="bg-white border-2 border-red-100" />
+                  </div>
                 </CardContent>
                 <CardFooter className="bg-white/50 border-t p-6 flex flex-wrap gap-4">
                   <Button 
-                    onClick={handleUpdateOnly} 
+                    onClick={handleUpdateSchedule} 
                     disabled={isSavingSchedule} 
                     variant="outline" 
                     className="h-12 px-6 font-bold uppercase tracking-widest border-2 bg-white"

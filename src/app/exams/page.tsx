@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, Lock, ShieldAlert, Trophy, AlertTriangle, Brain, Calculator, Zap, Target, RefreshCcw, XCircle, FileEdit, CheckCircle2, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, onSnapshot, doc, deleteDoc, orderBy, getDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, where, onSnapshot, doc, deleteDoc, orderBy, getDoc } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult, ExamGroup } from '@/types';
 import { format, differenceInYears, parseISO } from 'date-fns';
@@ -33,7 +34,7 @@ export default function ExamDashboardPage() {
   const [loading, setLoading] = useState(true);
   
   // Dynamic Schedule
-  const [schedule, setSchedule] = useState<{ date: string, start: Date, end: Date } | null>(null);
+  const [schedule, setSchedule] = useState<{ date: string, start: Date, end: Date, lastApplyDate?: string } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -57,7 +58,8 @@ export default function ExamDashboardPage() {
              setSchedule({
                date: data.date,
                start: new Date(`${data.date}T${data.startTime}:00`),
-               end: new Date(`${data.date}T${data.endTime}:00`)
+               end: new Date(`${data.date}T${data.endTime}:00`),
+               lastApplyDate: data.lastApplyDate
              });
           }
         }
@@ -107,30 +109,15 @@ export default function ExamDashboardPage() {
     if (!user || !profile) return;
     setIsApplying(true);
     
-    const age = differenceInYears(new Date(), new Date(profile.dob));
-    const payload = {
-      userId: user.uid,
-      studentName: `${profile.firstName} ${profile.surname}`,
-      group,
-      status: 'pending',
-      appliedAt: serverTimestamp(),
-      age: age,
-      timeLimit: getExamTimeLimit(age)
-    };
-
-    const db = getFirestore(firebaseApp);
-    addDoc(collection(db, "examApplications"), payload)
+    const applyFn = httpsCallable(getFunctions(firebaseApp), 'applyToExam');
+    applyFn({ masteryGroup: group })
       .then(() => {
         toast({ title: "Application Submitted", description: "Admin will review your form soon." });
         setIsApplying(false);
       })
-      .catch(async (serverError) => {
+      .catch((e) => {
         setIsApplying(false);
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: 'examApplications',
-          operation: 'create',
-          requestResourceData: payload,
-        }));
+        toast({ title: "Application Failed", description: e.message, variant: "destructive" });
       });
   };
 
@@ -202,6 +189,12 @@ export default function ExamDashboardPage() {
     }
   }, [schedule, isToday, startTimeStr]);
 
+  const isRegistrationClosed = useMemo(() => {
+    if (!schedule?.lastApplyDate) return false;
+    const today = new Date().toISOString().split('T')[0];
+    return today > schedule.lastApplyDate;
+  }, [schedule]);
+
   if (loading || authLoading) {
     return <div className="p-8 max-w-6xl mx-auto"><Skeleton className="h-[600px] w-full" /></div>;
   }
@@ -236,6 +229,16 @@ export default function ExamDashboardPage() {
              <h2 className="text-3xl font-black uppercase tracking-tight text-foreground">Identify Your <span className="text-primary">Mastery Group</span></h2>
              <p className="text-muted-foreground font-medium mt-2">Select the level that matches your current training progress. Review carefully before applying.</p>
           </div>
+
+          {schedule?.lastApplyDate && (
+            <div className={cn(
+              "max-w-md mx-auto p-4 rounded-2xl text-center font-bold text-sm shadow-sm border-2",
+              isRegistrationClosed ? "bg-red-50 border-red-100 text-red-700" : "bg-blue-50 border-blue-100 text-blue-700"
+            )}>
+              {isRegistrationClosed ? "⚠️ Registration for this exam is now closed." : `⏳ Last date to apply: ${format(parseISO(schedule.lastApplyDate), 'PPP')}`}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {groupDetails.map((g) => (
               <Card key={g.id} className="relative group overflow-hidden border-2 hover:border-primary transition-all rounded-[2rem] shadow-lg bg-white/50 backdrop-blur-sm">
@@ -259,8 +262,12 @@ export default function ExamDashboardPage() {
                         ))}
                     </ul>
                   </div>
-                  <Button onClick={() => handleApply(g.id)} disabled={isApplying} className="w-full font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl transition-transform hover:scale-[1.02]">
-                    Apply for Group {g.id}
+                  <Button 
+                    onClick={() => handleApply(g.id)} 
+                    disabled={isApplying || isRegistrationClosed} 
+                    className="w-full font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl transition-transform hover:scale-[1.02]"
+                  >
+                    {isRegistrationClosed ? 'Registration Closed' : `Apply for Group ${g.id}`}
                   </Button>
                 </CardContent>
               </Card>
