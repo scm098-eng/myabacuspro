@@ -10,7 +10,6 @@ const logger = require("firebase-functions/logger");
 const nodemailer = require('nodemailer');
 
 const admin = require('firebase-admin');
-const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 if (admin.apps.length === 0) {
     admin.initializeApp();
@@ -18,7 +17,7 @@ if (admin.apps.length === 0) {
 
 // Set global defaults for all functions in this file
 setGlobalOptions({ maxInstances: 10, timeoutSeconds: 540, memory: '1GiB', region: 'us-central1' });
-const db = getFirestore();
+const db = admin.firestore();
 
 const GMAIL_USER = 'myabacuspro@gmail.com';
 
@@ -175,7 +174,7 @@ async function performWeeklyReset() {
                     name: fullName,
                     photo: winner.profilePhoto || '',
                     points: winner.weeklyPoints || 0,
-                    declaredAt: FieldValue.serverTimestamp(),
+                    declaredAt: admin.firestore.FieldValue.serverTimestamp(),
                     weekKey: lastWeekKey
                 }
             }, { merge: true });
@@ -219,7 +218,7 @@ async function performWeeklyReset() {
         batch.update(userDoc.ref, {
             weeklyPoints: 0,
             lastWeeklyReset: currentWeekKey,
-            updatedAt: FieldValue.serverTimestamp()
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
         count++;
 
@@ -257,7 +256,7 @@ async function performMonthlyReset() {
                     name: fullName,
                     photo: winner.profilePhoto || '',
                     points: winner.monthlyPoints || 0,
-                    declaredAt: FieldValue.serverTimestamp(),
+                    declaredAt: admin.firestore.FieldValue.serverTimestamp(),
                     monthKey: lastMonthKey
                 }
             }, { merge: true });
@@ -301,7 +300,7 @@ async function performMonthlyReset() {
         batch.update(userDoc.ref, {
             monthlyPoints: 0,
             lastMonthlyReset: currentMonthKey,
-            updatedAt: FieldValue.serverTimestamp()
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
         count++;
 
@@ -351,10 +350,10 @@ exports.dailyBirthdayWish = onSchedule({ schedule: "0 9 * * *", secrets: ["GMAIL
             }
             
             await doc.ref.update({
-                totalPoints: FieldValue.increment(100),
-                weeklyPoints: FieldValue.increment(100),
-                monthlyPoints: FieldValue.increment(100),
-                updatedAt: FieldValue.serverTimestamp()
+                totalPoints: admin.firestore.FieldValue.increment(100),
+                weeklyPoints: admin.firestore.FieldValue.increment(100),
+                monthlyPoints: admin.firestore.FieldValue.increment(100),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
             count++;
         }
@@ -407,7 +406,7 @@ exports.forceDeclareWinner = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (
             name: fullName,
             photo: winner.profilePhoto || '',
             points: points,
-            declaredAt: FieldValue.serverTimestamp(),
+            declaredAt: admin.firestore.FieldValue.serverTimestamp(),
             [periodField]: periodKey
         }
     }, { merge: true });
@@ -438,11 +437,11 @@ exports.resetExamCycle = onCall(async (request) => {
     const adminDoc = await db.collection('users').doc(request.auth.uid).get();
     if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
 
-    const { date, startTime, endTime, lastApplyDate } = request.data;
+    const { date, startTime, endTime, lastApplyDate } = request.data || {};
     if (!date) throw new HttpsError('invalid-argument', "Missing exam date.");
 
     // 1. Delete all existing exam applications in chunks to handle large volumes
-    const appsSnap = await db.collection('examApplications').get();
+    const appsSnap = await db.collection('examApplications').select().get();
     let batch = db.batch();
     let count = 0;
 
@@ -457,7 +456,7 @@ exports.resetExamCycle = onCall(async (request) => {
     if (count % 500 !== 0) await batch.commit();
 
     // 2. Delete all existing exam results
-    const resultsSnap = await db.collection('examResults').get();
+    const resultsSnap = await db.collection('examResults').select().get();
     batch = db.batch();
     let resultCount = 0;
 
@@ -480,7 +479,7 @@ exports.resetExamCycle = onCall(async (request) => {
         isActive: true,
         resultsDeclared: false,
         publishedBy: request.auth.uid,
-        updatedAt: FieldValue.serverTimestamp()
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
     return { status: "success", appsCleared: count, resultsCleared: resultCount };
@@ -498,7 +497,7 @@ exports.declareOfficialResults = onCall(async (request) => {
     await db.collection('stats').doc('examSchedule').update({
         resultsDeclared: true,
         isActive: false, // Close the exam window if it was still open
-        declaredAt: FieldValue.serverTimestamp()
+        declaredAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
     return { status: "success", message: "Results are now official." };
@@ -521,7 +520,14 @@ exports.applyToExam = onCall(async (request) => {
     const scheduleDoc = await db.collection('stats').doc('examSchedule').get();
     const schedule = scheduleDoc.data();
 
-    if (!schedule || !schedule.isActive) {
+    // Log the current schedule state to help debug in Firebase console
+    logger.info("Exam Schedule Application Check:", { exists: scheduleDoc.exists, data: schedule });
+
+    // An exam cycle is active if the document exists, has a date, 
+    // and isActive is explicitly true (set by updateExamSchedule or resetExamCycle).
+    const isActuallyActive = !!(schedule && schedule.date && schedule.isActive === true);
+
+    if (!isActuallyActive) {
         throw new HttpsError('failed-precondition', "There is no active exam cycle to apply for.");
     }
 
@@ -540,9 +546,10 @@ exports.applyToExam = onCall(async (request) => {
     }
 
     await appRef.set({
-        uid: request.auth.uid,
-        masteryGroup,
-        appliedAt: FieldValue.serverTimestamp(),
+        userId: request.auth.uid,
+        group: masteryGroup,
+        status: "pending",
+        appliedAt: admin.firestore.FieldValue.serverTimestamp(),
         examDate: schedule.date,
         studentName: `${userData.firstName || ''} ${userData.surname || ''}`.trim()
     });
@@ -559,15 +566,20 @@ exports.updateExamSchedule = onCall(async (request) => {
     const adminDoc = await db.collection('users').doc(request.auth.uid).get();
     if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
 
-    const { date, startTime, endTime, lastApplyDate } = request.data;
-    const updateData = { updatedAt: FieldValue.serverTimestamp() };
+    const { date, startTime, endTime, lastApplyDate } = request.data || {};
+    
+    const updateData = { 
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        isActive: true // Force reactivation of the cycle on update
+    };
 
     if (date) updateData.date = date;
     if (startTime) updateData.startTime = startTime;
     if (endTime) updateData.endTime = endTime;
-    if (lastApplyDate !== undefined) updateData.lastApplyDate = lastApplyDate;
+    if (lastApplyDate !== undefined) updateData.lastApplyDate = lastApplyDate || null;
 
-    await db.collection('stats').doc('examSchedule').update(updateData);
+    // Use set with merge to ensure the document exists and fields are updated
+    await db.collection('stats').doc('examSchedule').set(updateData, { merge: true });
 
     return { status: "success", message: "Exam schedule updated successfully." };
 });

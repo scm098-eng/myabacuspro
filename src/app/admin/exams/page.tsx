@@ -34,6 +34,7 @@ export default function AdminExamsPage() {
   const [allResults, setAllResults] = useState<ExamResult[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Added isLoading state
   const [selectedResult, setSelectedResult] = useState<any>(null);
   
   // Schedule States
