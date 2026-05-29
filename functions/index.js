@@ -427,3 +427,41 @@ exports.forceDeclareWinner = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (
 
     return { status: "success", message: `Declared ${fullName} as ${type} champion.` };
 });
+
+/**
+ * Reset all exam applications and publish a new schedule cycle.
+ * This ensures all Pro students can see the application form to apply for the new cycle.
+ */
+exports.resetExamCycle = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
+    const adminDoc = await db.collection('users').doc(request.auth.uid).get();
+    if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
+
+    const { date, startTime, endTime } = request.data;
+    if (!date) throw new HttpsError('invalid-argument', "Missing exam date.");
+
+    // 1. Delete all existing exam applications in chunks to handle large volumes
+    const appsSnap = await db.collection('examApplications').select().get();
+    let batch = db.batch();
+    let count = 0;
+
+    for (const doc of appsSnap.docs) {
+        batch.delete(doc.ref);
+        count++;
+        if (count % 500 === 0) {
+            await batch.commit();
+            batch = db.batch();
+        }
+    }
+    if (count % 500 !== 0) await batch.commit();
+
+    // 2. Update the exam schedule
+    await db.collection('stats').doc('examSchedule').set({
+        date,
+        startTime: startTime || "12:30",
+        endTime: endTime || "16:00",
+        updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    return { status: "success", count };
+});
