@@ -520,19 +520,23 @@ exports.applyToExam = onCall(async (request) => {
     const scheduleDoc = await db.collection('stats').doc('examSchedule').get();
     const schedule = scheduleDoc.data();
 
-    // Log the current schedule state to help debug in Firebase console
-    logger.info("Exam Schedule Application Check:", { exists: scheduleDoc.exists, data: schedule });
+    // Log state to Firebase Console > Functions > Logs
+    logger.info("Exam App Attempt:", { 
+        uid: request.auth.uid, 
+        scheduleExists: scheduleDoc.exists, 
+        isActive: schedule?.isActive,
+        deadline: schedule?.lastApplyDate 
+    });
 
-    // An exam cycle is active if the document exists, has a date, 
-    // and isActive is explicitly true (set by updateExamSchedule or resetExamCycle).
-    const isActuallyActive = !!(schedule && schedule.date && schedule.isActive === true);
+    // Flexible check: isActive can be boolean true or string "true"
+    const isActuallyActive = !!(schedule && schedule.date && (schedule.isActive === true || schedule.isActive === "true"));
 
     if (!isActuallyActive) {
         throw new HttpsError('failed-precondition', "There is no active exam cycle to apply for.");
     }
 
-    // Enforce the application deadline (assuming YYYY-MM-DD format)
-    if (schedule.lastApplyDate) {
+    // Enforce the application deadline (only if it is a valid date string)
+    if (schedule.lastApplyDate && schedule.lastApplyDate.length === 10) {
         const today = new Date().toISOString().split('T')[0];
         if (today > schedule.lastApplyDate) {
             throw new HttpsError('deadline-exceeded', `The application deadline has passed (${schedule.lastApplyDate}).`);
@@ -570,13 +574,13 @@ exports.updateExamSchedule = onCall(async (request) => {
     
     const updateData = { 
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        isActive: true // Force reactivation of the cycle on update
+        isActive: true 
     };
 
     if (date) updateData.date = date;
     if (startTime) updateData.startTime = startTime;
     if (endTime) updateData.endTime = endTime;
-    if (lastApplyDate !== undefined) updateData.lastApplyDate = lastApplyDate || null;
+    if (lastApplyDate !== undefined) updateData.lastApplyDate = lastApplyDate || "";
 
     // Use set with merge to ensure the document exists and fields are updated
     await db.collection('stats').doc('examSchedule').set(updateData, { merge: true });

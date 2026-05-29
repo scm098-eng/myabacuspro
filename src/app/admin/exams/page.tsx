@@ -139,7 +139,7 @@ export default function AdminExamsPage() {
     setIsSavingSchedule(true);
     const updateFn = httpsCallable(getFunctions(firebaseApp), 'updateExamSchedule');
 
-    updateFn({ date: examDate, startTime, endTime, lastApplyDate })
+    updateFn({ date: examDate, startTime, endTime, lastApplyDate: lastApplyDate || "" })
       .then(() => {
         toast({ title: "Schedule Updated", description: "Exam window has been adjusted. No applications were reset." });
         setIsSavingSchedule(false);
@@ -154,7 +154,7 @@ export default function AdminExamsPage() {
    * Resets the entire cycle and publishes a new schedule.
    */
   const handleSaveAndReset = async () => {
-    if (!examDate || !lastApplyDate) {
+    if (!examDate) {
       toast({ title: "Configuration Missing", description: "Please set both Exam Date and Application Deadline.", variant: "destructive" });
       return;
     }
@@ -164,7 +164,7 @@ export default function AdminExamsPage() {
     setIsSavingSchedule(true);
     const resetFn = httpsCallable(getFunctions(firebaseApp), 'resetExamCycle');
 
-    resetFn({ date: examDate, startTime, endTime, lastApplyDate })
+    resetFn({ date: examDate, startTime, endTime, lastApplyDate: lastApplyDate || "" })
       .then((result: any) => {
         toast({ title: "Cycle Reset & Published", description: `Cleared ${result.data.appsCleared} apps and ${result.data.resultsCleared} results.` });
         setIsSavingSchedule(false);
