@@ -528,8 +528,8 @@ exports.applyToExam = onCall(async (request) => {
         deadline: schedule?.lastApplyDate 
     });
 
-    // Flexible check: isActive can be boolean true or string "true"
-    const isActuallyActive = !!(schedule && schedule.date && (schedule.isActive === true || schedule.isActive === "true"));
+    //Permissive check: Active if date exists AND isActive is NOT explicitly false
+    const isActuallyActive = !!(schedule && schedule.date && schedule.isActive !== false);
 
     if (!isActuallyActive) {
         throw new HttpsError('failed-precondition', "There is no active exam cycle to apply for.");
