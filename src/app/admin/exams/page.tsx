@@ -251,7 +251,7 @@ export default function AdminExamsPage() {
                       <TableCell className="text-xs text-muted-foreground">{app.appliedAt?.toDate ? format(app.appliedAt.toDate(), 'PPP') : 'Recently'}</TableCell>
                       <TableCell>
                         <Badge variant={app.status === 'approved' ? 'default' : (app.status === 'pending' ? 'outline' : 'destructive')}>
-                          {app.status.toUpperCase()}
+                          {app.status?.toUpperCase() || 'PENDING'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">

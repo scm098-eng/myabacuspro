@@ -51,8 +51,8 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
   // Stability Refs to prevent timer freezing during clicks
-  const answersRef = useRef(userAnswers);
-  const timeLeftRef = useRef(timeLeft);
+  const answersRef = useRef<(number | null)[]>([]);
+  const timeLeftRef = useRef<number>(settings.timeLimit);
   const isFinishedRef = useRef(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
