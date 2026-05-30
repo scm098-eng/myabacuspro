@@ -48,10 +48,11 @@ service cloud.firestore {
 
     match /examResults/{resultId} {
       // Allow students to see their own attempts list and metadata.
-      // Content visibility is managed in the UI (Final scores only visible to Admin).
       allow list, read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
       allow create: if request.auth != null && isNotSuspended() && request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin();
+      // Allow Admin to clear results for a new schedule cycle
+      allow delete: if isAdmin();
     }
     
     // --- BLOG RULES ---

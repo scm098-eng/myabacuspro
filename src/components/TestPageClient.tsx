@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -46,7 +47,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [isAnswered, setIsAnswered] = useState(false);
-  const [startTime, setStartTime] = useState<number | null>(null);
   const [isFinished, setIsFinished] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
@@ -79,7 +79,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     const skip = localStorage.getItem('skip_rules_timed_test') === 'true';
     if (skip) {
       setHasStarted(true);
-      setStartTime(Date.now());
     }
   }, [testId, difficulty]);
   
@@ -178,7 +177,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       localStorage.setItem('skip_rules_timed_test', 'true');
     }
     setHasStarted(true);
-    setStartTime(Date.now());
     playSound('points');
   };
 
@@ -441,7 +439,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={finishTest} className="rounded-xl">Yes, end test</AlertDialogAction>
+              <AlertDialogAction onClick={() => finishTest()} className="rounded-xl">Yes, end test</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
