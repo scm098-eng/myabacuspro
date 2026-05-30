@@ -54,16 +54,26 @@ export default function ExamDashboardPage() {
         const snap = await getDoc(doc(db, "stats", "examSchedule"));
         if (snap.exists()) {
           const data = snap.data();
-          if (data.date) {
-             setSchedule({
-               date: data.date,
-               start: new Date(`${data.date}T${data.startTime}:00`),
-               end: new Date(`${data.date}T${data.endTime}:00`),
-               lastApplyDate: data.lastApplyDate
-             });
-          }
+          
+          // 1. Safely convert the date field whether it is a Timestamp or a String
+          const baseDate = data.date?.toDate ? data.date.toDate() : new Date(data.date);
+          
+          // 2. Format the date as YYYY-MM-DD for the string concatenation
+          const dateString = format(baseDate, 'yyyy-MM-dd');
+
+          setSchedule({
+            date: dateString,
+            // 3. Combine with the time strings safely
+            start: new Date(`${dateString}T${data.startTime}:00`),
+            end: new Date(`${dateString}T${data.endTime}:00`),
+            // 4. Also handle the application deadline as a Timestamp
+            lastApplyDate: data.lastApplyDate?.toDate 
+              ? format(data.lastApplyDate.toDate(), 'yyyy-MM-dd') 
+              : data.lastApplyDate
+          });
         }
       } catch (error) {
+        console.error("Schedule Load Error:", error);
         errorEmitter.emit('permission-error', new FirestorePermissionError({ 
           path: 'stats/examSchedule', 
           operation: 'get' 
