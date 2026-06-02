@@ -3,10 +3,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
-import { Trophy, Star, Crown, Megaphone, Calendar, Bell, ScrollText } from 'lucide-react';
-import { errorEmitter } from '@/lib/error-emitter';
-import { FirestorePermissionError } from '@/lib/errors';
-import { isSameDay, parseISO, isAfter, isBefore, subHours } from 'date-fns';
+import { Trophy, Star, Crown, Megaphone, Calendar, ScrollText } from 'lucide-react';
+import { isSameDay, parseISO, isAfter, isBefore } from 'date-fns';
 
 export default function WinnerMarquee() {
   const [data, setData] = useState<{ winners: any, schedule: any }>({ winners: null, schedule: null });
@@ -46,8 +44,8 @@ export default function WinnerMarquee() {
       if (isAfter(now, declaredAt) && isBefore(now, new Date(declaredAt.getTime() + 24 * 60 * 60 * 1000))) {
         msgs.push({
           text: "OFFICIAL RESULTS DECLARED! CHECK YOUR PERFORMANCE TAB NOW!",
-          icon: <ScrollText className="w-5 h-5 text-green-400" />,
-          colorClass: "text-green-300"
+          icon: <ScrollText className="w-5 h-5 text-white" />,
+          colorClass: "text-white"
         });
       }
     }
@@ -58,8 +56,8 @@ export default function WinnerMarquee() {
       if (isSameDay(now, examDate)) {
         msgs.push({
           text: `EXAM DAY IS HERE! ARENA IS OPEN FROM ${schedule.startTime} TO ${schedule.endTime}!`,
-          icon: <Megaphone className="w-5 h-5 text-yellow-400 animate-pulse" />,
-          colorClass: "text-yellow-200"
+          icon: <Megaphone className="w-5 h-5 text-yellow-300 animate-pulse" />,
+          colorClass: "text-white"
         });
       }
     }
@@ -67,12 +65,11 @@ export default function WinnerMarquee() {
     // 3. Registration Reminder (Declare Date -> Deadline)
     if (schedule?.date && schedule?.applicationDeadline) {
       const deadline = parseISO(schedule.applicationDeadline);
-      const examDate = parseISO(schedule.date);
       if (isBefore(now, deadline) || isSameDay(now, deadline)) {
         msgs.push({
           text: `REGISTRATION OPEN: Official Exam on ${schedule.date}. Apply before deadline: ${schedule.applicationDeadline}!`,
-          icon: <Calendar className="w-5 h-5 text-blue-400" />,
-          colorClass: "text-blue-100"
+          icon: <Calendar className="w-5 h-5 text-blue-200" />,
+          colorClass: "text-blue-50"
         });
       }
     }
@@ -87,23 +84,25 @@ export default function WinnerMarquee() {
           if (isAfter(now, declaredAt) && isBefore(now, new Date(declaredAt.getTime() + 24 * 60 * 60 * 1000))) {
             msgs.push({
               text: `${type === 'lastWeeklyWinner' ? 'WEEKLY CHAMPION' : 'MONTHLY MASTER'}: ${winner.name} (${winner.points.toLocaleString()} PTS)!`,
-              icon: type === 'lastWeeklyWinner' ? <Trophy className="w-5 h-5 fill-white" /> : <Crown className="w-5 h-5 fill-yellow-100" />,
+              icon: type === 'lastWeeklyWinner' ? <Trophy className="w-5 h-5 fill-white" /> : <Crown className="w-5 h-5 fill-yellow-200" />,
+              colorClass: "text-white"
             });
           }
         }
       });
     }
 
-    if (msgs.length > 0) setIsVisible(true);
-    else setIsVisible(false);
-
     return msgs;
   }, [data]);
+
+  useEffect(() => {
+    setIsVisible(messages.length > 0);
+  }, [messages]);
 
   if (!isVisible || messages.length === 0) return null;
 
   return (
-    <div className="bg-slate-900 text-white h-10 flex items-center overflow-hidden shadow-md relative z-[100] border-b border-white/20">
+    <div className="bg-indigo-600 text-white h-10 flex items-center overflow-hidden shadow-md relative z-[100] border-b border-white/10">
       <div className="flex whitespace-nowrap animate-marquee items-center gap-12">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="flex items-center gap-12">
@@ -124,7 +123,7 @@ export default function WinnerMarquee() {
           100% { transform: translateX(-50%); }
         }
         .animate-marquee {
-          animation: marquee 40s linear infinite;
+          animation: marquee 45s linear infinite;
         }
       `}</style>
     </div>
