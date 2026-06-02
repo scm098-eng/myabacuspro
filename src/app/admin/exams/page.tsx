@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -98,9 +97,6 @@ export default function AdminExamsPage() {
       });
   };
 
-  /**
-   * Updates only the schedule document without clearing existing data.
-   */
   const handleUpdateOnly = async () => {
     if (!examDate) {
       toast({ title: "Configuration Missing", description: "Exam date is required.", variant: "destructive" });
@@ -308,12 +304,12 @@ export default function AdminExamsPage() {
                     <Input type="date" value={lastApplyDate} onChange={e => setLastApplyDate(e.target.value)} className="h-12 border-2 border-red-100" />
                   </div>
                 </CardContent>
-                <CardFooter className="bg-muted/10 p-8 flex flex-col sm:flex-row justify-end gap-4 mt-8">
-                  <Button onClick={handleUpdateOnly} disabled={isUpdatingOnly || isSavingSchedule} variant="outline" className="h-14 px-10 font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted">
+                <CardFooter className="bg-muted/10 p-8 flex flex-col sm:flex-row justify-end gap-4 mt-8 flex-wrap">
+                  <Button onClick={handleUpdateOnly} disabled={isUpdatingOnly || isSavingSchedule} variant="outline" className="h-14 px-6 sm:px-8 font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted w-full sm:w-auto">
                     {isUpdatingOnly ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 w-5 h-5" />}
                     Update Schedule Only
                   </Button>
-                  <Button onClick={handleSaveAndReset} disabled={isSavingSchedule || isUpdatingOnly} className="h-14 px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700">
+                  <Button onClick={handleSaveAndReset} disabled={isSavingSchedule || isUpdatingOnly} className="h-14 px-6 sm:px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 w-full sm:w-auto">
                     {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <RefreshCcw className="mr-2 w-5 h-5" />}
                     Reset & Publish New Cycle
                   </Button>

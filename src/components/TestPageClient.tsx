@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -112,10 +111,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     router.replace(`/results?score=${score}&total=${questions.length}&time=${finalTimeLeft}&points=${earnedPoints}`);
   }, [questions, router, user, testId, difficulty, settings.timeLimit, recordDailyPractice, addPoints]);
 
-  /**
-   * CONTINUOUS TIMER LOGIC
-   * The timer now runs independently of user state.
-   */
   useEffect(() => {
     if (!hasStarted || isFinished || settings.timeLimit <= 0) return;
     

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -52,7 +51,6 @@ export default function ExamArenaPage() {
   const timeLeftRef = useRef<number>(0);
   const isFinishedRef = useRef(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
     answersRef.current = answers;
@@ -154,9 +152,6 @@ export default function ExamArenaPage() {
       });
   }, [user, application, questions, paperId, router, toast]);
 
-  /**
-   * STABLE ARENA TIMER
-   */
   useEffect(() => {
     if (loading || isFinished || timeLeftRef.current <= 0) return;
     
