@@ -79,9 +79,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased h-full">
         <ClientProviders>
-          <WinnerMarquee />
           <div className="flex flex-col min-h-screen">
             <Header />
+            <WinnerMarquee />
             <main id="main-content" className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
               <div className="bg-card/95 backdrop-blur-lg p-4 sm:p-6 lg:p-8 rounded-2xl shadow-lg border">
                 {children}
