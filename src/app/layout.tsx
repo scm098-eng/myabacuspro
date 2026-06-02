@@ -15,6 +15,8 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const LOGO_URL = 'https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/logo_icon.png?alt=media';
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://myabacuspro.com'),
   title: {
@@ -27,8 +29,15 @@ export const metadata: Metadata = {
   creator: 'My Abacus Pro',
   publisher: 'My Abacus Pro',
   icons: {
-    icon: 'https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/logo_icon.png?alt=media',
-    apple: 'https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/logo_icon.png?alt=media',
+    icon: [
+      { url: LOGO_URL, sizes: '32x32', type: 'image/png' },
+      { url: LOGO_URL, sizes: '48x48', type: 'image/png' },
+      { url: LOGO_URL, sizes: '192x192', type: 'image/png' },
+    ],
+    shortcut: LOGO_URL,
+    apple: [
+      { url: LOGO_URL, sizes: '180x180', type: 'image/png' },
+    ],
   },
   alternates: {
     canonical: '/', 
@@ -54,11 +63,13 @@ export const metadata: Metadata = {
     siteName: 'My Abacus Pro',
     locale: 'en_US',
     type: 'website',
+    images: [{ url: LOGO_URL, width: 512, height: 512 }]
   },
   twitter: {
     card: 'summary_large_image',
     title: 'My Abacus Pro | Master Mental Math & Soroban Online',
     description: 'Timed math challenges and Soroban abacus mastery training.',
+    images: [LOGO_URL]
   },
 };
 
