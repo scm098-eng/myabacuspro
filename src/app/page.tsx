@@ -35,7 +35,7 @@ const features = [
 
 export default function Home() {
   usePageBackground('');
-  const { isLoading, user } = useAuth();
+  const { user } = useAuth();
   const [latestBlogs, setLatestBlogs] = useState<BlogPost[]>([]);
   const [blogsLoading, setBlogsLoading] = useState(true);
 
@@ -59,17 +59,6 @@ export default function Home() {
     }
     fetchBlogs();
   }, []);
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="text-muted-foreground font-bold animate-pulse">
-          Loading My Abacus Pro...
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-24">
