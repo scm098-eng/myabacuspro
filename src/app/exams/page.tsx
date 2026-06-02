@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -13,7 +14,7 @@ import { getFirestore, collection, query, where, onSnapshot, doc, deleteDoc, ord
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult, ExamGroup } from '@/types';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isSameDay } from 'date-fns';
 import { isFinalExamAvailable } from '@/lib/exam-utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -52,17 +53,15 @@ export default function ExamDashboardPage() {
         const snap = await getDoc(doc(db, "stats", "examSchedule"));
         if (snap.exists()) {
           const data = snap.data();
-          const baseDate = data.date?.toDate ? data.date.toDate() : new Date(data.date);
-          const dateString = format(baseDate, 'yyyy-MM-dd');
-
-          setSchedule({
-            date: dateString,
-            start: new Date(`${dateString}T${data.startTime}:00`),
-            end: new Date(`${dateString}T${data.endTime}:00`),
-            lastApplyDate: data.lastApplyDate?.toDate 
-              ? format(data.lastApplyDate.toDate(), 'yyyy-MM-dd') 
-              : data.lastApplyDate
-          });
+          if (data.date) {
+             const dateString = data.date;
+             setSchedule({
+               date: dateString,
+               start: new Date(`${dateString}T${data.startTime || '12:30'}:00`),
+               end: new Date(`${dateString}T${data.endTime || '16:00'}:00`),
+               lastApplyDate: data.lastApplyDate
+             });
+          }
         }
       } catch (error) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ 
@@ -164,8 +163,7 @@ export default function ExamDashboardPage() {
 
   const isTodayDate = useMemo(() => {
     if (!schedule) return false;
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
-    return todayStr === schedule.date;
+    return isSameDay(new Date(), parseISO(schedule.date));
   }, [schedule]);
 
   const openingMessage = useMemo(() => {
@@ -191,7 +189,7 @@ export default function ExamDashboardPage() {
   }, [schedule]);
 
   if (loading || authLoading) {
-    return <div className="p-8 max-w-6xl mx-auto"><Skeleton className="h-[600px] w-full" /></div>;
+    return <div className="p-8 max-w-6xl mx-auto"><Skeleton className="h-[600px] w-full rounded-3xl" /></div>;
   }
 
   const groupDetails = [

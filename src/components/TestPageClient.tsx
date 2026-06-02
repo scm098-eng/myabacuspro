@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -111,16 +112,28 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     router.replace(`/results?score=${score}&total=${questions.length}&time=${finalTimeLeft}&points=${earnedPoints}`);
   }, [questions, router, user, testId, difficulty, settings.timeLimit, recordDailyPractice, addPoints]);
 
+  /**
+   * CONTINUOUS TIMER LOGIC
+   * The timer now runs independently of user state.
+   */
   useEffect(() => {
-    if (!hasStarted || isFinished || settings.timeLimit === 0) return;
+    if (!hasStarted || isFinished || settings.timeLimit <= 0) return;
     
     intervalRef.current = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev <= 1) { finishTest(); return 0; }
-        timeLeftRef.current = prev - 1;
-        if (prev === 61) playSound('timerWarning');
-        else if (prev <= 11) playSound('timerUrgent');
-        return prev - 1;
+        const next = prev - 1;
+        timeLeftRef.current = next;
+
+        if (next <= 0) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          finishTest();
+          return 0;
+        }
+
+        if (next === 60) playSound('timerWarning');
+        else if (next <= 10) playSound('timerUrgent');
+
+        return next;
       });
     }, 1000);
 
@@ -200,7 +213,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       <div className="mt-6 flex justify-end">
         <AlertDialog>
           <AlertDialogTrigger asChild><Button variant="destructive" size="sm">End Test</Button></AlertDialogTrigger>
-          <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>End Session?</AlertDialogTitle></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => finishTest()}>Yes, end test</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+          <AlertDialogContent className="rounded-2xl"><AlertDialogHeader><AlertDialogTitle>End Session?</AlertDialogTitle></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => finishTest()}>Yes, end test</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
         </AlertDialog>
       </div>
     </div>
