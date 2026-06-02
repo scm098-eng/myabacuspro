@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Timer, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Loader2, Timer, CheckCircle2 } from 'lucide-react';
 import { generateExamQuestions } from '@/lib/exam-utils';
 import type { ExamApplication, Question } from '@/types';
 import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
@@ -18,17 +18,6 @@ import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import BeadDisplay from '@/components/BeadDisplay';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 export default function ExamArenaPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/test_wrapper_bg.jpg?alt=media');
@@ -50,7 +39,6 @@ export default function ExamArenaPage() {
   const answersRef = useRef<(number | null)[]>([]);
   const timeLeftRef = useRef<number>(0);
   const isFinishedRef = useRef(false);
-  const questionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     answersRef.current = answers;
@@ -67,7 +55,7 @@ export default function ExamArenaPage() {
           if (data.date && data.endTime) {
             const endTime = new Date(`${data.date}T${data.endTime}:00`);
             if (!isNaN(endTime.getTime()) && new Date() > endTime) {
-              toast({ title: "Exam Period Ended", description: "The official exam period for this cycle has ended. All papers are locked.", variant: "destructive" });
+              toast({ title: "Exam Period Ended", description: "The official exam period has ended.", variant: "destructive" });
               router.push('/exams');
               return;
             }
@@ -77,25 +65,11 @@ export default function ExamArenaPage() {
         const q = query(collection(db, "examApplications"), where("userId", "==", user.uid), where("status", "==", "approved"), limit(1));
         const snap = await getDocs(q);
         if (snap.empty) {
-          toast({ title: "Not Eligible", description: "You need an approved exam application.", variant: "destructive" });
+          toast({ title: "Not Eligible", description: "Approved application required.", variant: "destructive" });
           router.push('/exams');
           return;
         }
         const app = { id: snap.docs[0].id, ...snap.docs[0].data() } as ExamApplication;
-
-        const resultsQuery = query(collection(db, "examResults"), where("userId", "==", user.uid), where("isFinal", "==", true));
-        const resultsSnap = await getDocs(resultsQuery);
-        const appliedTime = app.appliedAt?.seconds || 0;
-        const hasFinishedFinal = resultsSnap.docs.some(d => {
-          const r = d.data();
-          return (r.submittedAt?.seconds || 0) > appliedTime;
-        });
-
-        if (hasFinishedFinal) {
-          toast({ title: "Cycle Complete", description: "You have already completed the final exam for this cycle.", variant: "destructive" });
-          router.push('/exams');
-          return;
-        }
 
         setApplication(app);
         const generated = generateExamQuestions(app.group);
@@ -121,7 +95,13 @@ export default function ExamArenaPage() {
     setIsSubmitting(true);
 
     const currentAnswers = answersRef.current;
-    const finalScore = currentAnswers.reduce((acc, ans, i) => (ans !== null && ans === questions[i].answer ? acc + 1 : acc), 0);
+    const finalScore = currentAnswers.reduce((acc: number, ans, i) => {
+        if (questions[i] && ans !== null && ans === questions[i].answer) {
+            return acc + 1;
+        }
+        return acc;
+    }, 0);
+
     const accuracy = (finalScore / questions.length) * 100;
 
     const payload = {
@@ -213,7 +193,7 @@ export default function ExamArenaPage() {
           <div className="space-y-6">
             <div className="py-4 bg-muted/30 rounded-[2rem] border-2 border-dashed flex flex-col items-center min-h-[140px] justify-center">
                 {questions[currentIdx].questionType === 'identify' ? (
-                  <div className="w-full max-w-md"><BeadDisplay value={questions[currentIdx].answer} rodCount={dynamicRodCount} /></div>
+                  <div className="w-full max-w-md"><BeadDisplay value={questions[currentIdx].answer} rodCount={7} /></div>
                 ) : (
                   <p className="text-xl sm:text-5xl font-black">{questions[currentIdx].text} = ?</p>
                 )}
@@ -226,7 +206,7 @@ export default function ExamArenaPage() {
           </div>
         </CardContent>
         <CardFooter className="p-8 flex justify-end">
-          <Button disabled={isSubmitting} className="h-16 px-10 text-xl font-black bg-green-600 hover:bg-green-700" onClick={() => finishExam()}>
+          <Button disabled={isSubmitting} className="h-16 px-10 text-xl font-black bg-green-600 hover:bg-green-700 rounded-2xl" onClick={() => finishExam()}>
             {isSubmitting ? <Loader2 className="animate-spin" /> : <CheckCircle2 className="mr-2" />} End Exam
           </Button>
         </CardFooter>

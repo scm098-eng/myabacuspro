@@ -33,6 +33,7 @@ export const metadata: Metadata = {
       { url: LOGO_URL, sizes: '32x32', type: 'image/png' },
       { url: LOGO_URL, sizes: '48x48', type: 'image/png' },
       { url: LOGO_URL, sizes: '192x192', type: 'image/png' },
+      { url: LOGO_URL, sizes: '512x512', type: 'image/png' },
     ],
     shortcut: LOGO_URL,
     apple: [
@@ -78,10 +79,27 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // JSON-LD for Google Search visibility
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "My Abacus Pro",
+    "url": "https://myabacuspro.com",
+    "logo": LOGO_URL,
+    "sameAs": [
+      "https://facebook.com/myabacuspro",
+      "https://instagram.com/myabacuspro"
+    ]
+  };
+
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
       <head>
         <link rel="canonical" href="https://myabacuspro.com" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4545290153947218"
