@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 
 export default function ExamDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
-  const { user, profile, isLoading: authLoading } = useAuth();
+  const { user, profile, isLoading: authLoading } = useAuth';
   const router = useRouter();
   const { toast } = useToast();
 
