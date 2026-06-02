@@ -50,7 +50,7 @@ export default function ExamArenaPage() {
   const answersRef = useRef<(number | null)[]>([]);
   const timeLeftRef = useRef<number>(0);
   const isFinishedRef = useRef(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const questionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     answersRef.current = answers;
@@ -120,11 +120,6 @@ export default function ExamArenaPage() {
     setIsFinished(true);
     setIsSubmitting(true);
 
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-
     const currentAnswers = answersRef.current;
     const finalScore = currentAnswers.reduce((acc, ans, i) => (ans !== null && ans === questions[i].answer ? acc + 1 : acc), 0);
     const accuracy = (finalScore / questions.length) * 100;
@@ -152,17 +147,20 @@ export default function ExamArenaPage() {
       });
   }, [user, application, questions, paperId, router, toast]);
 
+  const finishExamRef = useRef(finishExam);
+  useEffect(() => { finishExamRef.current = finishExam; }, [finishExam]);
+
   useEffect(() => {
     if (loading || isFinished || timeLeftRef.current <= 0) return;
     
-    intervalRef.current = setInterval(() => {
+    const interval = setInterval(() => {
       setTimeLeft(prev => {
         const next = prev - 1;
         timeLeftRef.current = next;
 
         if (next <= 0) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          finishExam();
+          clearInterval(interval);
+          finishExamRef.current();
           return 0;
         }
 
@@ -173,8 +171,8 @@ export default function ExamArenaPage() {
       });
     }, 1000);
 
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [loading, isFinished, finishExam, playSound]);
+    return () => clearInterval(interval);
+  }, [loading, isFinished, playSound]);
 
   const handleSelectOption = (val: number) => {
     if (isFinished) return;
@@ -215,7 +213,7 @@ export default function ExamArenaPage() {
           <div className="space-y-6">
             <div className="py-4 bg-muted/30 rounded-[2rem] border-2 border-dashed flex flex-col items-center min-h-[140px] justify-center">
                 {questions[currentIdx].questionType === 'identify' ? (
-                  <div className="w-full max-w-md"><BeadDisplay value={questions[currentIdx].answer} rodCount={questions[currentIdx].answer > 999 ? 4 : 3} /></div>
+                  <div className="w-full max-w-md"><BeadDisplay value={questions[currentIdx].answer} rodCount={dynamicRodCount} /></div>
                 ) : (
                   <p className="text-xl sm:text-5xl font-black">{questions[currentIdx].text} = ?</p>
                 )}

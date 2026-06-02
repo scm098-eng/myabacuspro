@@ -81,7 +81,7 @@ export default function AdminExamsPage() {
     return () => { unsubApps(); unsubResults(); };
   }, []);
 
-  const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected') => {
+  const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected' | 'pending') => {
     const db = getFirestore(firebaseApp);
     updateDoc(doc(db, "examApplications", id), { status })
       .then(() => toast({ title: `Application ${status}` }))
@@ -173,14 +173,14 @@ export default function AdminExamsPage() {
   if (loading || authLoading) return <div className="p-8">Loading...</div>;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-12">
+    <div className="max-w-7xl mx-auto space-y-8 pb-12 px-4 sm:px-6">
       <Card className="rounded-[2rem] border-none shadow-xl">
         <CardHeader>
-          <div className="flex justify-between items-center gap-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div>
-              <CardTitle className="text-3xl font-black uppercase tracking-tight">Exam Administration</CardTitle>
+              <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tight">Exam Administration</CardTitle>
             </div>
-            <div className="relative w-80">
+            <div className="relative w-full lg:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input placeholder="Search student..." className="pl-10" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
@@ -188,45 +188,52 @@ export default function AdminExamsPage() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="applications">
-            <TabsList className="mb-8">
-              <TabsTrigger value="applications" className="font-bold">Applications ({applications.length})</TabsTrigger>
-              <TabsTrigger value="final-results" className="font-bold">Results</TabsTrigger>
-              <TabsTrigger value="schedule" className="font-bold">Schedule Manager</TabsTrigger>
+            <TabsList className="mb-8 w-full justify-start overflow-x-auto h-auto p-1 bg-muted/50 rounded-xl">
+              <TabsTrigger value="applications" className="font-bold py-2">Applications ({applications.length})</TabsTrigger>
+              <TabsTrigger value="final-results" className="font-bold py-2">Results</TabsTrigger>
+              <TabsTrigger value="schedule" className="font-bold py-2">Schedule Manager</TabsTrigger>
             </TabsList>
 
             <TabsContent value="applications">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Group Applied</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredApps.map(app => (
-                    <TableRow key={app.id}>
-                      <TableCell className="font-bold">{app.studentName}</TableCell>
-                      <TableCell><Badge variant="secondary" className="px-4 text-xs font-bold">Group {app.group}</Badge></TableCell>
-                      <TableCell>
-                        <Badge variant={app.status?.toLowerCase() === 'approved' ? 'default' : (app.status?.toLowerCase() === 'pending' ? 'outline' : 'destructive')}>
-                          {app.status?.toUpperCase() || 'PENDING'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          {app.status?.toLowerCase() === 'pending' ? (
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700 font-bold" onClick={() => handleUpdateStatus(app.id, 'approved')}>Approve</Button>
-                          ) : (
-                            <Button size="sm" variant="outline" className="font-bold" onClick={() => handleUpdateStatus(app.id, 'pending')}>Re-apply</Button>
-                          )}
-                        </div>
-                      </TableCell>
+              <div className="rounded-xl border overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow>
+                      <TableHead>Student</TableHead>
+                      <TableHead>Group Applied</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredApps.map(app => (
+                      <TableRow key={app.id} className="hover:bg-muted/10">
+                        <TableCell className="font-bold">{app.studentName}</TableCell>
+                        <TableCell><Badge variant="secondary" className="px-4 text-[10px] font-black tracking-widest">GROUP {app.group}</Badge></TableCell>
+                        <TableCell>
+                          <Badge variant={app.status?.toLowerCase() === 'approved' ? 'default' : (app.status?.toLowerCase() === 'pending' ? 'outline' : 'destructive')} className="font-bold text-[10px]">
+                            {app.status?.toUpperCase() || 'PENDING'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            {app.status?.toLowerCase() === 'pending' ? (
+                              <Button size="sm" className="bg-green-600 hover:bg-green-700 font-bold h-8" onClick={() => handleUpdateStatus(app.id, 'approved')}>Approve</Button>
+                            ) : (
+                              <Button size="sm" variant="outline" className="font-bold h-8" onClick={() => handleUpdateStatus(app.id, 'pending')}>Re-apply</Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredApps.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-10 text-muted-foreground font-medium italic">No applications found.</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </TabsContent>
 
             <TabsContent value="final-results" className="space-y-12">
@@ -268,7 +275,7 @@ export default function AdminExamsPage() {
                   <CardTitle>Schedule Manager</CardTitle>
                   <CardDescription>Configure the active testing window and application deadline.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pt-8 px-8">
+                <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pt-8 px-6 sm:px-8">
                   <div className="space-y-2">
                     <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Exam Date</Label>
                     <Input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} className="h-12 border-2" />
@@ -304,12 +311,21 @@ export default function AdminExamsPage() {
                     <Input type="date" value={lastApplyDate} onChange={e => setLastApplyDate(e.target.value)} className="h-12 border-2 border-red-100" />
                   </div>
                 </CardContent>
-                <CardFooter className="bg-muted/10 p-8 flex flex-col sm:flex-row justify-end gap-4 mt-8 flex-wrap">
-                  <Button onClick={handleUpdateOnly} disabled={isUpdatingOnly || isSavingSchedule} variant="outline" className="h-14 px-6 sm:px-8 font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted w-full sm:w-auto">
+                <CardFooter className="bg-muted/10 p-6 sm:p-8 flex flex-col sm:flex-row justify-end gap-4 mt-8 flex-wrap">
+                  <Button 
+                    onClick={handleUpdateOnly} 
+                    disabled={isUpdatingOnly || isSavingSchedule} 
+                    variant="outline" 
+                    className="h-14 px-6 sm:px-8 font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted w-full sm:w-auto"
+                  >
                     {isUpdatingOnly ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 w-5 h-5" />}
                     Update Schedule Only
                   </Button>
-                  <Button onClick={handleSaveAndReset} disabled={isSavingSchedule || isUpdatingOnly} className="h-14 px-6 sm:px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 w-full sm:w-auto">
+                  <Button 
+                    onClick={handleSaveAndReset} 
+                    disabled={isSavingSchedule || isUpdatingOnly} 
+                    className="h-14 px-6 sm:px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 w-full sm:w-auto"
+                  >
                     {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <RefreshCcw className="mr-2 w-5 h-5" />}
                     Reset & Publish New Cycle
                   </Button>

@@ -49,7 +49,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   const answersRef = useRef<(number | null)[]>([]);
   const timeLeftRef = useRef<number>(settings.timeLimit);
   const isFinishedRef = useRef(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -81,8 +80,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     isFinishedRef.current = true;
     setIsFinished(true);
 
-    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
-
     const finalAnswers = forcedAnswers || answersRef.current;
     const finalTimeLeft = timeLeftRef.current;
 
@@ -111,17 +108,20 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     router.replace(`/results?score=${score}&total=${questions.length}&time=${finalTimeLeft}&points=${earnedPoints}`);
   }, [questions, router, user, testId, difficulty, settings.timeLimit, recordDailyPractice, addPoints]);
 
+  const finishTestRef = useRef(finishTest);
+  useEffect(() => { finishTestRef.current = finishTest; }, [finishTest]);
+
   useEffect(() => {
     if (!hasStarted || isFinished || settings.timeLimit <= 0) return;
     
-    intervalRef.current = setInterval(() => {
+    const interval = setInterval(() => {
       setTimeLeft(prev => {
         const next = prev - 1;
         timeLeftRef.current = next;
 
         if (next <= 0) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          finishTest();
+          clearInterval(interval);
+          finishTestRef.current();
           return 0;
         }
 
@@ -132,8 +132,8 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       });
     }, 1000);
 
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [hasStarted, isFinished, settings.timeLimit, finishTest, playSound]);
+    return () => clearInterval(interval);
+  }, [hasStarted, isFinished, settings.timeLimit, playSound]);
 
   const handleAnswer = (answer: number | null) => {
     if (isAnswered) return;
