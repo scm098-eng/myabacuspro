@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -8,7 +7,7 @@ import type { Question, Difficulty, TestType, TestSettings } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Timer, AlertTriangle, Loader2, PlayCircle, BookOpen, Send, Check } from 'lucide-react';
+import { Timer, AlertTriangle, Loader2, PlayCircle, Send, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -26,8 +25,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { collection, addDoc, serverTimestamp, getFirestore } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import { calculatePoints } from '@/lib/scoring';
-import { errorEmitter } from '@/lib/error-emitter';
-import { FirestorePermissionError } from '@/lib/errors';
 import { useSound } from '@/hooks/useSound';
 import { PAGE_GUIDES, FORMULA_GUIDES } from '@/lib/constants';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -41,16 +38,14 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   
   const [hasStarted, setHasStarted] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentIdx, setCurrentIdx] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>([]);
   const [timeLeft, setTimeLeft] = useState(settings.timeLimit);
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [isAnswered, setIsAnswered] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
-  // Stability Refs to prevent timer freezing during clicks
   const answersRef = useRef<(number | null)[]>([]);
   const timeLeftRef = useRef<number>(settings.timeLimit);
   const isFinishedRef = useRef(false);
@@ -65,260 +60,111 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   }, [userAnswers]);
 
   useEffect(() => {
-    timeLeftRef.current = timeLeft;
-  }, [timeLeft]);
+    const generated = generateTest(testId, difficulty);
+    setQuestions(generated);
+    const initial = new Array(generated.length).fill(null);
+    setUserAnswers(initial);
+    answersRef.current = initial;
 
-  useEffect(() => {
-    const generatedQuestions = generateTest(testId, difficulty);
-    setQuestions(generatedQuestions);
-    const initialAnswers = new Array(generatedQuestions.length).fill(null);
-    setUserAnswers(initialAnswers);
-    answersRef.current = initialAnswers;
-    questionButtonRefs.current = new Array(generatedQuestions.length);
-
-    const skip = localStorage.getItem('skip_rules_timed_test') === 'true';
-    if (skip) {
-      setHasStarted(true);
-    }
+    if (localStorage.getItem('skip_rules_timed_test') === 'true') setHasStarted(true);
   }, [testId, difficulty]);
   
   useEffect(() => {
-    if (questionButtonRefs.current[currentQuestionIndex]) {
-        questionButtonRefs.current[currentQuestionIndex]?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest',
-            inline: 'center'
-        });
+    if (questionButtonRefs.current[currentIdx]) {
+        questionButtonRefs.current[currentIdx]?.scrollIntoView({ behavior: 'smooth', inline: 'center' });
     }
-    if (hasStarted && isInputMode && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [currentQuestionIndex, hasStarted, isInputMode]);
+    if (hasStarted && isInputMode && inputRef.current) inputRef.current.focus();
+  }, [currentIdx, hasStarted, isInputMode]);
 
-  const finishTest = useCallback(async () => {
+  const finishTest = useCallback(async (forcedAnswers?: (number | null)[]) => {
     if (isFinishedRef.current) return;
     isFinishedRef.current = true;
     setIsFinished(true);
 
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
 
-    const currentAnswers = answersRef.current;
-    const currentTimeLeft = timeLeftRef.current;
+    const finalAnswers = forcedAnswers || answersRef.current;
+    const finalTimeLeft = timeLeftRef.current;
 
-    const score = currentAnswers.reduce((acc: number, answer, index) => {
-        if (answer !== null && questions.length > 0 && answer === questions[index].answer) {
-            return acc + 1;
-        }
-        return acc;
-    }, 0);
-
-    const answeredCount = currentAnswers.filter(a => a !== null).length;
-    let earnedPointsTotal = 0;
+    const score = finalAnswers.reduce((acc: number, ans, i) => (ans !== null && ans === questions[i].answer ? acc + 1 : acc), 0);
+    const answered = finalAnswers.filter(a => a !== null).length;
+    let earnedPoints = 0;
 
     if (user) {
-      const accuracy = questions.length > 0 ? (score / questions.length) * 100 : 0;
-      const timeSpent = settings.timeLimit > 0 ? settings.timeLimit - currentTimeLeft : 0;
-      const db = getFirestore(firebaseApp);
-      
-      const difficultyLevel = difficulty === 'easy' ? 1 : (difficulty === 'medium' ? 2 : 3);
-      const pointsCalculation = calculatePoints({
-        correct: score,
-        total: questions.length,
-        answered: answeredCount,
-        timeInSeconds: timeSpent,
-        targetTime: settings.timeLimit,
-        level: difficultyLevel,
-        isGame: false
+      const timeSpent = settings.timeLimit - finalTimeLeft;
+      const ptsRes = calculatePoints({
+        correct: score, total: questions.length, answered, 
+        timeInSeconds: timeSpent, targetTime: settings.timeLimit,
+        level: difficulty === 'easy' ? 1 : (difficulty === 'medium' ? 2 : 3), isGame: false
       });
-      
-      earnedPointsTotal = pointsCalculation.earnedPoints;
+      earnedPoints = ptsRes.earnedPoints;
 
-      const resultData = {
-        userId: user.uid,
-        testId,
-        difficulty,
-        score,
-        totalQuestions: questions.length,
-        accuracy,
-        timeSpent,
-        timeLeft: currentTimeLeft,
-        earnedPoints: earnedPointsTotal,
-        createdAt: serverTimestamp(),
-      };
-      
-      addDoc(collection(db, 'testResults'), resultData).catch(async (serverError) => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-              path: '/testResults',
-              operation: 'create',
-              requestResourceData: resultData,
-          }));
+      addDoc(collection(getFirestore(firebaseApp), 'testResults'), {
+        userId: user.uid, testId, difficulty, score, totalQuestions: questions.length,
+        accuracy: (score/questions.length)*100, timeSpent, earnedPoints, createdAt: serverTimestamp()
       });
-
       recordDailyPractice(user.uid);
-      addPoints(user.uid, earnedPointsTotal);
+      addPoints(user.uid, earnedPoints);
     }
     
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-      const resultsToStore = {
-        questions: questions,
-        userAnswers: currentAnswers,
-      };
-      sessionStorage.setItem('testResults', JSON.stringify(resultsToStore));
-    }
-
-    router.replace(`/results?score=${score}&total=${questions.length}&time=${currentTimeLeft}&points=${earnedPointsTotal}`);
+    sessionStorage.setItem('testResults', JSON.stringify({ questions, userAnswers: finalAnswers }));
+    router.replace(`/results?score=${score}&total=${questions.length}&time=${finalTimeLeft}&points=${earnedPoints}`);
   }, [questions, router, user, testId, difficulty, settings.timeLimit, recordDailyPractice, addPoints]);
 
-  const handleStart = () => {
-    if (dontShowAgain) {
-      localStorage.setItem('skip_rules_timed_test', 'true');
-    }
-    setHasStarted(true);
-    playSound('points');
-  };
-
   useEffect(() => {
-    if (!hasStarted || questions.length === 0 || !startTime || isFinished || settings.timeLimit === 0) return;
+    if (!hasStarted || isFinished || settings.timeLimit === 0) return;
     
-    if (!intervalRef.current) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            if (intervalRef.current) clearInterval(intervalRef.current);
-            intervalRef.current = null;
-            finishTest();
-            return 0;
-          }
+    intervalRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) { finishTest(); return 0; }
+        timeLeftRef.current = prev - 1;
+        if (prev === 61) playSound('timerWarning');
+        else if (prev <= 11) playSound('timerUrgent');
+        return prev - 1;
+      });
+    }, 1000);
 
-          const nextTime = prev - 1;
-          timeLeftRef.current = nextTime;
-          
-          if (nextTime === 60) {
-            playSound('timerWarning');
-          } else if (nextTime <= 10 && nextTime > 0) {
-            playSound('timerUrgent');
-          } else if (nextTime > 60 && nextTime % 60 === 0) {
-            playSound('timerTick');
-          }
-
-          return nextTime;
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (isFinishedRef.current && intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [hasStarted, questions.length, startTime, isFinished, settings.timeLimit, finishTest, playSound]);
-
-  useEffect(() => {
-    if (!isFinished && questions.length > 0 && userAnswers.length === questions.length && !userAnswers.includes(null)) {
-        finishTest();
-    }
-  }, [userAnswers, finishTest, isFinished, questions.length]);
-  
-  const jumpToQuestion = (index: number) => {
-    setCurrentQuestionIndex(index);
-    setSelectedOption(null);
-    setInputValue('');
-    setIsAnswered(false);
-  }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [hasStarted, isFinished, settings.timeLimit, finishTest, playSound]);
 
   const handleAnswer = (answer: number | null) => {
     if (isAnswered) return;
-    
-    const finalAnswer = answer === null ? null : Number(answer);
     const newAnswers = [...userAnswers];
-    newAnswers[currentQuestionIndex] = finalAnswer;
-    
+    newAnswers[currentIdx] = answer;
     setIsAnswered(true);
-    setSelectedOption(finalAnswer);
     setUserAnswers(newAnswers);
-
-    if (finalAnswer === currentQuestion.answer) {
-      playSound('correct');
-    } else {
-      playSound('wrong');
-    }
+    playSound(answer === questions[currentIdx].answer ? 'correct' : 'wrong');
 
     setTimeout(() => {
-      if (currentQuestionIndex < questions.length - 1) {
-        jumpToQuestion(currentQuestionIndex + 1);
+      if (currentIdx < questions.length - 1) {
+        setCurrentIdx(prev => prev + 1);
+        setInputValue('');
+        setIsAnswered(false);
+      } else {
+        finishTest(newAnswers);
       }
     }, 700);
   };
 
-  const handleInputSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue || isAnswered) return;
-    handleAnswer(parseInt(inputValue, 10));
-  };
-  
-  const currentQuestion = useMemo(() => questions[currentQuestionIndex], [questions, currentQuestionIndex]);
-  const progress = (currentQuestionIndex / questions.length) * 100;
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
-
-  const formulaGuide = FORMULA_GUIDES[testId];
-  const activeGuide = formulaGuide || PAGE_GUIDES.timed_test;
-  
-  if (questions.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-lg">Generating your test...</p>
-      </div>
-    );
-  }
-
   if (!hasStarted) {
+    const guide = FORMULA_GUIDES[testId] || PAGE_GUIDES.timed_test;
     return (
-      <div className="flex flex-col max-w-xl mx-auto h-full px-4">
-        <Card className="shadow-2xl border-none rounded-[2rem] overflow-hidden bg-card animate-in zoom-in-95 duration-500 max-h-[90vh] flex flex-col">
-          <CardHeader className={cn("text-white text-center py-6 shrink-0", formulaGuide ? "bg-orange-600" : "bg-primary")}>
-            <div className="mx-auto bg-white/20 p-3 rounded-full w-fit mb-2">
-              {formulaGuide ? <BookOpen className="w-6 h-6" /> : <PlayCircle className="w-6 h-6" />}
-            </div>
-            <CardTitle className="text-xl sm:text-3xl font-black uppercase tracking-tighter font-headline">
-              {activeGuide.title}
-            </CardTitle>
-            <CardDescription className="text-white/80 font-bold text-xs sm:text-lg">
-              {formulaGuide ? "Formula Mastery Guide" : "Follow these to score high!"}
-            </CardDescription>
+      <div className="max-w-xl mx-auto px-4">
+        <Card className="shadow-2xl rounded-[2rem] overflow-hidden">
+          <CardHeader className={cn("text-white text-center py-6", FORMULA_GUIDES[testId] ? "bg-orange-600" : "bg-primary")}>
+            <CardTitle className="text-2xl font-black uppercase">{guide.title}</CardTitle>
           </CardHeader>
-          <CardContent className="p-4 sm:p-8 overflow-y-auto flex-1 scrollbar-none">
-            <div className="space-y-3 sm:space-y-4">
-              {activeGuide.steps.map((step, i) => (
-                <div key={i} className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-muted/50 border border-muted-foreground/5 animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${i * 100}ms` }}>
-                  <div className={cn("flex h-6 w-6 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full text-white text-[10px] sm:text-xs font-black shadow-md", formulaGuide ? "bg-orange-600" : "bg-primary")}>
-                    {i + 1}
-                  </div>
-                  <p className="text-xs sm:text-base font-medium text-slate-700 leading-tight pt-1">{step}</p>
-                </div>
-              ))}
-            </div>
+          <CardContent className="p-8 space-y-4">
+            {guide.steps.map((s, i) => (
+              <div key={i} className="flex gap-4 p-4 rounded-2xl bg-muted/50 border">
+                <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-black">{i+1}</div>
+                <p className="font-medium text-slate-700">{s}</p>
+              </div>
+            ))}
           </CardContent>
-          <CardFooter className="p-4 sm:p-8 pt-0 flex flex-col gap-3 sm:gap-4 bg-white/50 border-t shrink-0">
-            <div className="flex items-center space-x-2 py-1 sm:py-2">
-              <Checkbox 
-                id="dont-show" 
-                checked={dontShowAgain} 
-                onCheckedChange={(val) => setDontShowAgain(!!val)} 
-              />
-              <Label htmlFor="dont-show" className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase cursor-pointer">Do not show rules again</Label>
-            </div>
-            <Button 
-              onClick={handleStart} 
-              className={cn("w-full h-12 sm:h-16 text-lg sm:text-2xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.02]", formulaGuide ? "bg-orange-600 hover:bg-orange-700" : "")}
-            >
-              <PlayCircle className="mr-2 sm:mr-3 h-5 w-5 sm:h-8 sm:w-8" /> Start Practice
-            </Button>
+          <CardFooter className="p-8 flex flex-col gap-4 border-t">
+            <div className="flex items-center gap-2"><Checkbox id="skip" checked={dontShowAgain} onCheckedChange={v => { setDontShowAgain(!!v); if(!!v) localStorage.setItem('skip_rules_timed_test', 'true'); }} /><Label htmlFor="skip">Don't show rules again</Label></div>
+            <Button onClick={() => { setHasStarted(true); playSound('points'); }} className="w-full h-16 text-xl font-black">START PRACTICE</Button>
           </CardFooter>
         </Card>
       </div>
@@ -326,122 +172,35 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   }
 
   return (
-    <div className="flex flex-col max-w-3xl mx-auto h-full px-2 sm:px-4">
-      <Card className="shadow-2xl relative overflow-hidden flex flex-col flex-grow">
-        <CardHeader className="p-4 sm:p-6">
+    <div className="max-w-3xl mx-auto px-4 flex flex-col min-h-[600px]">
+      <Card className="shadow-2xl flex-1 flex flex-col">
+        <CardHeader>
           <div className="flex justify-between items-center mb-4">
-            <div className="space-y-1 min-w-0 flex-1">
-              <CardTitle className="text-base sm:text-2xl font-headline truncate pr-2">{settings.title}</CardTitle>
-            </div>
-            {settings.timeLimit > 0 && (
-              <div className={cn("flex items-center gap-1 sm:gap-2 font-semibold text-sm sm:text-lg p-1.5 sm:p-2 rounded-md transition-colors shrink-0", timeLeft < 60 ? 'text-destructive-foreground bg-destructive animate-pulse' : 'text-foreground')}>
-                <Timer className="h-4 w-4 sm:h-6 sm:w-6" />
-                <span>{minutes}:{seconds.toString().padStart(2, '0')}</span>
-              </div>
-            )}
+            <CardTitle>{settings.title}</CardTitle>
+            {settings.timeLimit > 0 && <div className={cn("flex items-center gap-2 font-black p-2 rounded-lg", timeLeft < 60 && "bg-destructive text-white animate-pulse")}><Timer className="w-6 h-6" /> {Math.floor(timeLeft/60)}:{(timeLeft%60).toString().padStart(2,'0')}</div>}
           </div>
-          <CardDescription className="text-xs sm:text-sm">Question {currentQuestionIndex + 1} of {questions.length}</CardDescription>
-          <Progress value={progress} className="w-full mt-2 h-1.5 sm:h-2" />
+          <Progress value={(currentIdx/questions.length)*100} className="h-2" />
         </CardHeader>
-        <CardContent className="flex flex-col flex-grow p-4 sm:p-6">
-          <ScrollArea className="w-full whitespace-nowrap rounded-md border my-2 sm:my-4">
-            <div className="flex w-max space-x-2 p-2">
-                {questions.map((_, index) => (
-                    <Button
-                        key={index}
-                        ref={(el) => { questionButtonRefs.current[index] = el; }}
-                        onClick={() => jumpToQuestion(index)}
-                        variant={currentQuestionIndex === index ? 'default' : 'outline'}
-                        className={cn("w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm", userAnswers[index] !== null && "bg-green-200 border-green-400 text-green-800 hover:bg-green-300")}
-                    >
-                        {index + 1}
-                    </Button>
-                ))}
+        <CardContent className="flex-1 flex flex-col justify-center text-center p-8">
+            <p className="text-4xl sm:text-6xl font-black tracking-tight">{questions[currentIdx].text} = ?</p>
+            <div className="mt-12">
+              {isInputMode ? (
+                <form onSubmit={e => { e.preventDefault(); handleAnswer(parseInt(inputValue)); }} className="flex flex-col items-center gap-6">
+                  <Input ref={inputRef} type="number" value={inputValue} onChange={e => setInputValue(e.target.value)} disabled={isAnswered} className="h-20 text-5xl text-center font-black rounded-2xl border-4" />
+                  <Button type="submit" disabled={isAnswered || !inputValue} className="h-16 w-64 text-xl font-black">SUBMIT</Button>
+                </form>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  {questions[currentIdx].options.map(opt => <Button key={opt} onClick={() => handleAnswer(opt)} disabled={isAnswered} className="h-20 text-3xl font-black" variant="outline">{opt}</Button>)}
+                </div>
+              )}
             </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        
-          <div className="text-center my-auto transition-opacity duration-300 py-4" key={currentQuestionIndex}>
-            <p className="text-xl sm:text-3xl md:text-4xl font-black tracking-tight text-foreground whitespace-pre-wrap leading-tight">
-              {currentQuestion.text}
-            </p>
-            <p className="text-xl sm:text-3xl md:text-4xl font-black tracking-tight text-foreground whitespace-pre-wrap mt-2 sm:mt-4">
-              = ?
-            </p>
-          </div>
-
-          <div className="mt-auto pt-4 sm:pt-6">
-            {isInputMode ? (
-              <form onSubmit={handleInputSubmit} className="flex flex-col items-center gap-4 sm:gap-6 w-full animate-in fade-in slide-in-from-bottom-4">
-                <Input
-                  ref={inputRef}
-                  type="number"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  disabled={isAnswered}
-                  placeholder="Enter result..."
-                  className={cn(
-                    "h-12 sm:h-20 text-lg sm:text-5xl text-center font-black rounded-2xl border-4 focus:ring-primary shadow-inner placeholder:text-base sm:placeholder:text-2xl",
-                    isAnswered && inputValue === currentQuestion.answer.toString() && "bg-green-50 text-green-700 border-green-500",
-                    isAnswered && inputValue !== currentQuestion.answer.toString() && "bg-red-50 text-red-700 border-red-500"
-                  )}
-                  autoFocus
-                />
-                <Button 
-                  type="submit" 
-                  disabled={isAnswered || !inputValue} 
-                  className="h-12 sm:h-16 w-full sm:w-64 text-lg sm:text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl hover:scale-[1.02] transition-transform"
-                >
-                  <Send className="mr-2 h-5 w-5 sm:h-6 sm:w-6" /> Submit
-                </Button>
-              </form>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                {currentQuestion.options.map((option, index) => {
-                  const isCorrect = option === currentQuestion.answer;
-                  const isSelected = selectedOption === option;
-                  
-                  return (
-                    <Button
-                      key={index}
-                      onClick={() => handleAnswer(option)}
-                      disabled={isAnswered}
-                      className={cn(
-                        "h-12 sm:h-20 text-xl sm:text-3xl font-bold transition-all duration-300 transform hover:scale-105",
-                        isAnswered && isSelected && !isCorrect && "bg-destructive hover:bg-destructive/90",
-                        isAnswered && isCorrect && "bg-green-50 hover:bg-green-50 text-green-700 border-green-500 border-2",
-                      )}
-                      variant="outline"
-                    >
-                      {option}
-                    </Button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
         </CardContent>
       </Card>
-      <div className="mt-4 sm:mt-6 flex justify-end">
+      <div className="mt-6 flex justify-end">
         <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="destructive" size="sm" className="font-bold">
-                <AlertTriangle className="mr-2 h-4 w-4" />
-                End Test
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent className="rounded-2xl">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure you want to end the test?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Your progress will be saved and you will be taken to the results page.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => finishTest()} className="rounded-xl">Yes, end test</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
+          <AlertDialogTrigger asChild><Button variant="destructive" size="sm">End Test</Button></AlertDialogTrigger>
+          <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>End Session?</AlertDialogTitle></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => finishTest()}>Yes, end test</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
         </AlertDialog>
       </div>
     </div>

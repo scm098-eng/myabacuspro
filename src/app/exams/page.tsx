@@ -13,8 +13,8 @@ import { getFirestore, collection, query, where, onSnapshot, doc, deleteDoc, ord
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult, ExamGroup } from '@/types';
-import { format, differenceInYears, parseISO } from 'date-fns';
-import { getExamTimeLimit, isFinalExamAvailable } from '@/lib/exam-utils';
+import { format, parseISO } from 'date-fns';
+import { isFinalExamAvailable } from '@/lib/exam-utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 
 export default function ExamDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
-  const { user, profile, isLoading: authLoading } = useAuth';
+  const { user, profile, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -33,7 +33,6 @@ export default function ExamDashboardPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   
-  // Dynamic Schedule
   const [schedule, setSchedule] = useState<{ date: string, start: Date, end: Date, lastApplyDate?: string } | null>(null);
 
   useEffect(() => {
@@ -48,32 +47,24 @@ export default function ExamDashboardPage() {
     if (!user) return;
     const db = getFirestore(firebaseApp);
     
-    // Fetch Schedule with Error Handling
     const fetchSchedule = async () => {
       try {
         const snap = await getDoc(doc(db, "stats", "examSchedule"));
         if (snap.exists()) {
           const data = snap.data();
-          
-          // 1. Safely convert the date field whether it is a Timestamp or a String
           const baseDate = data.date?.toDate ? data.date.toDate() : new Date(data.date);
-          
-          // 2. Format the date as YYYY-MM-DD for the string concatenation
           const dateString = format(baseDate, 'yyyy-MM-dd');
 
           setSchedule({
             date: dateString,
-            // 3. Combine with the time strings safely
             start: new Date(`${dateString}T${data.startTime}:00`),
             end: new Date(`${dateString}T${data.endTime}:00`),
-            // 4. Also handle the application deadline as a Timestamp
             lastApplyDate: data.lastApplyDate?.toDate 
               ? format(data.lastApplyDate.toDate(), 'yyyy-MM-dd') 
               : data.lastApplyDate
           });
         }
       } catch (error) {
-        console.error("Schedule Load Error:", error);
         errorEmitter.emit('permission-error', new FirestorePermissionError({ 
           path: 'stats/examSchedule', 
           operation: 'get' 
@@ -82,7 +73,6 @@ export default function ExamDashboardPage() {
     };
     fetchSchedule();
     
-    // Listen for application
     const appQuery = query(collection(db, "examApplications"), where("userId", "==", user.uid));
     const unsubscribeApp = onSnapshot(appQuery, 
       (snap) => {
@@ -98,7 +88,6 @@ export default function ExamDashboardPage() {
       }
     );
 
-    // Listen for results
     const resultsQuery = query(collection(db, "examResults"), where("userId", "==", user.uid), orderBy("submittedAt", "desc"));
     const unsubscribeResults = onSnapshot(resultsQuery, 
       (snap) => {
@@ -152,7 +141,6 @@ export default function ExamDashboardPage() {
   const isApproved = application?.status === 'approved';
   const isRejected = application?.status === 'rejected';
 
-  // Ensure "Cycle Complete" only triggers if final was submitted AFTER current application
   const hasFinishedFinal = useMemo(() => {
     if (!application || results.length === 0) return false;
     const appliedTime = application.appliedAt?.seconds || 0;
@@ -161,8 +149,7 @@ export default function ExamDashboardPage() {
 
   const examEnded = useMemo(() => {
     if (!schedule || isNaN(schedule.end.getTime())) return false;
-    const now = new Date();
-    return now > schedule.end;
+    return new Date() > schedule.end;
   }, [schedule]);
 
   const examOpen = useMemo(() => {
@@ -175,7 +162,7 @@ export default function ExamDashboardPage() {
     return schedule.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }, [schedule]);
 
-  const isToday = useMemo(() => {
+  const isTodayDate = useMemo(() => {
     if (!schedule) return false;
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     return todayStr === schedule.date;
@@ -183,12 +170,10 @@ export default function ExamDashboardPage() {
 
   const openingMessage = useMemo(() => {
     if (!schedule) return 'EXAM CLOSED';
-    // 1. Safe Check: If string is missing or literally equals "undefined", fall back
-    if (!startTimeStr || startTimeStr === 'undefined') return 'OPENS TODAY';
+    if (!startTimeStr) return 'OPENS TODAY';
     
-    if (isToday) {
-      // 2. Extra double-check to make sure we don't print "undefined" text
-      return startTimeStr ? `OPENS TODAY AT ${startTimeStr}` : 'OPENS TODAY';
+    if (isTodayDate) {
+      return `OPENS TODAY AT ${startTimeStr}`;
     } else {
       try {
         const formattedDate = format(parseISO(schedule.date), 'MMMM do');
@@ -197,7 +182,7 @@ export default function ExamDashboardPage() {
         return `OPENS AT ${startTimeStr}`;
       }
     }
-  }, [schedule, isToday, startTimeStr]);
+  }, [schedule, isTodayDate, startTimeStr]);
 
   const isRegistrationClosed = useMemo(() => {
     if (!schedule?.lastApplyDate) return false;
@@ -237,7 +222,7 @@ export default function ExamDashboardPage() {
         <div className="space-y-8">
           <div className="text-center">
              <h2 className="text-3xl font-black uppercase tracking-tight text-foreground">Identify Your <span className="text-primary">Mastery Group</span></h2>
-             <p className="text-muted-foreground font-medium mt-2">Select the level that matches your current training progress. Review carefully before applying.</p>
+             <p className="text-muted-foreground font-medium mt-2">Select the level that matches your current training progress.</p>
           </div>
 
           {schedule?.lastApplyDate && (
@@ -245,7 +230,7 @@ export default function ExamDashboardPage() {
               "max-w-md mx-auto p-4 rounded-2xl text-center font-bold text-sm shadow-sm border-2",
               isRegistrationClosed ? "bg-red-50 border-red-100 text-red-700" : "bg-blue-50 border-blue-100 text-blue-700"
             )}>
-              {isRegistrationClosed ? "⚠️ Registration for this exam is now closed." : `⏳ Last date to apply: ${format(parseISO(schedule.lastApplyDate), 'PPP')}`}
+              {isRegistrationClosed ? "⚠️ Registration closed." : `⏳ Last date to apply: ${format(parseISO(schedule.lastApplyDate), 'PPP')}`}
             </div>
           )}
 
@@ -263,7 +248,7 @@ export default function ExamDashboardPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-3">
-                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Exam Focus Areas:</p>
+                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Focus Areas:</p>
                     <ul className="grid gap-2">
                         {g.focus.map((f, i) => (
                             <li key={i} className="flex items-center gap-2 text-sm font-bold text-slate-700">
@@ -322,64 +307,45 @@ export default function ExamDashboardPage() {
                   </Badge>
                 </div>
                 
-                {hasFinishedFinal ? (
+                {(hasFinishedFinal || examEnded) && (
                   <div className="bg-amber-50 border-2 border-amber-200 p-6 rounded-3xl flex items-start gap-4">
                     <AlertTriangle className="text-amber-600 shrink-0 mt-1" />
                     <div>
                       <p className="text-amber-900 font-black uppercase tracking-tight text-sm">Practice Papers Locked</p>
                       <p className="text-amber-700 text-xs font-bold leading-relaxed">
-                        You have successfully completed your Final Exam for this cycle. Practice papers are now disabled while your results are being audited by the administrator.
+                        Practice papers are disabled for this cycle.
                       </p>
                     </div>
                   </div>
-                ) : examEnded ? (
-                  <div className="bg-amber-50 border-2 border-amber-200 p-6 rounded-3xl flex items-start gap-4">
-                    <AlertTriangle className="text-amber-600 shrink-0 mt-1" />
-                    <div>
-                      <p className="text-amber-900 font-black uppercase tracking-tight text-sm">Practice Papers Locked</p>
-                      <p className="text-amber-700 text-xs font-bold leading-relaxed">
-                        The official final exam period for this cycle has ended. Practice papers are now locked.
-                      </p>
-                    </div>
-                  </div>
-                ) : null}
+                )}
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
- {Array.from({ length: 20 }).map((_, i) => {
-  const paperId = `paper-${i + 1}`;
-  const isDone = results.some(r => r.paperId === paperId && !r.isFinal);
-  
-  // This automatically locks when final is submitted OR when time expires
-  const isLocked = hasFinishedFinal || examEnded || !schedule;
+                  {Array.from({ length: 20 }).map((_, i) => {
+                    const paperId = `paper-${i + 1}`;
+                    const isDone = results.some(r => r.paperId === paperId && !r.isFinal);
+                    const isLocked = hasFinishedFinal || examEnded || !schedule;
 
-    return (
-      <Button 
-        key={paperId} 
-        variant={isDone ? "secondary" : "outline"} 
-        disabled={isLocked}
-        className={cn(
-          "h-24 rounded-2xl flex flex-col gap-2 font-black transition-all relative", 
-          !isLocked && "hover:scale-105",
-          // 2. Change styling dynamically when locked
-          isLocked && "opacity-50 bg-slate-100 cursor-not-allowed border-slate-200 text-slate-400",
-          (isDone && !isLocked) && "border-green-500 bg-green-50 text-green-700"
-        )} 
-        onClick={() => {
-          // 3. Prevent routing if the exam state is locked
-          if (isLocked) return; 
-          router.push(`/exams/arena/${paperId}`);
-        }}
-      >
-        <span className="text-[10px] uppercase opacity-60">Practice</span>
-        <span className="text-2xl">#{i + 1}</span>
-        
-        {/* 4. Display a Lock or Check icon depending on state */}
-        {isDone && !isLocked && <CheckCircle2 className="w-4 h-4 text-green-600" />}
-        {isLocked && <Lock className="w-4 h-4 text-slate-400 mt-1" />}
-      </Button>
-    );
-  })}
-</div>
+                    return (
+                      <Button 
+                        key={paperId} 
+                        variant={isDone ? "secondary" : "outline"} 
+                        disabled={isLocked}
+                        className={cn(
+                          "h-24 rounded-2xl flex flex-col gap-2 font-black transition-all relative", 
+                          !isLocked && "hover:scale-105",
+                          isLocked && "opacity-50 bg-slate-100 cursor-not-allowed border-slate-200 text-slate-400",
+                          (isDone && !isLocked) && "border-green-500 bg-green-50 text-green-700"
+                        )} 
+                        onClick={() => !isLocked && router.push(`/exams/arena/${paperId}`)}
+                      >
+                        <span className="text-[10px] uppercase opacity-60">Practice</span>
+                        <span className="text-2xl">#{i + 1}</span>
+                        {isDone && !isLocked && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                        {isLocked && <Lock className="w-4 h-4 text-slate-400 mt-1" />}
+                      </Button>
+                    );
+                  })}
+                </div>
 
                 <div className="pt-8">
                   <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2 mb-6"><ShieldAlert className="text-red-500 w-7 h-7" /> Final Official Exam</h2>

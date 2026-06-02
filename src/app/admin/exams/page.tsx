@@ -8,12 +8,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, writeBatch, getDocs } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
-import { format } from 'date-fns';
-import { CheckCircle2, XCircle, Search, Trophy, Eye, ScrollText, RefreshCcw, Megaphone, Calendar, Save, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, Search, Trophy, Eye, ScrollText, RefreshCcw, Megaphone, Calendar, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function AdminExamsPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
@@ -34,14 +34,14 @@ export default function AdminExamsPage() {
   const [allResults, setAllResults] = useState<ExamResult[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const [isLoading, setIsLoading] = useState(false); // Added isLoading state
   const [selectedResult, setSelectedResult] = useState<any>(null);
   
-  // Schedule States
   const [isSavingSchedule, setIsSavingSchedule] = useState(false);
   const [examDate, setExamDate] = useState('');
-  const [startTime, setStartTime] = useState('12:30');
-  const [endTime, setEndTime] = useState('16:00');
+  const [startH, setStartH] = useState('12');
+  const [startM, setStartM] = useState('30');
+  const [endH, setEndH] = useState('16');
+  const [endM, setEndM] = useState('00');
   const [lastApplyDate, setLastApplyDate] = useState('');
 
   useEffect(() => {
@@ -53,170 +53,111 @@ export default function AdminExamsPage() {
   useEffect(() => {
     const db = getFirestore(firebaseApp);
     
-    // Fetch Schedule with Contextual Error Handling
-    getDoc(doc(db, "stats", "examSchedule"))
-      .then(snap => {
-        if (snap.exists()) {
-          const data = snap.data();
-          setExamDate(data.date || '');
-          setStartTime(data.startTime || '12:30');
-          setEndTime(data.endTime || '16:00');
-          setLastApplyDate(data.lastApplyDate || '');
-        }
-      })
-      .catch(async (error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-          path: 'stats/examSchedule', 
-          operation: 'get' 
-        }));
-      });
+    getDoc(doc(db, "stats", "examSchedule")).then(snap => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setExamDate(data.date || '');
+        const [sh, sm] = (data.startTime || '12:30').split(':');
+        const [eh, em] = (data.endTime || '16:00').split(':');
+        setStartH(sh); setStartM(sm);
+        setEndH(eh); setEndM(em);
+        setLastApplyDate(data.lastApplyDate || '');
+      }
+    });
 
     const unsubApps = onSnapshot(query(collection(db, "examApplications"), orderBy("appliedAt", "desc")), 
       (snap) => {
         setApplications(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamApplication)));
         setLoading(false);
       },
-      async (serverError) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examApplications', operation: 'list' }));
-      }
+      async (err) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examApplications', operation: 'list' }))
     );
 
     const unsubResults = onSnapshot(query(collection(db, "examResults"), orderBy("submittedAt", "desc")), 
-      (snap) => {
-        setAllResults(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamResult)));
-      },
-      async (serverError) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examResults', operation: 'list' }));
-      }
+      (snap) => setAllResults(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamResult))),
+      async (err) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examResults', operation: 'list' }))
     );
 
-    return () => {
-      unsubApps();
-      unsubResults();
-    };
+    return () => { unsubApps(); unsubResults(); };
   }, []);
 
   const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected') => {
     const db = getFirestore(firebaseApp);
     updateDoc(doc(db, "examApplications", id), { status })
       .then(() => toast({ title: `Application ${status}` }))
-      .catch(async (serverError) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'update', requestResourceData: { status } })));
+      .catch(async (e) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'update' })));
   };
 
   const handleDeclareResult = async (id: string) => {
     const db = getFirestore(firebaseApp);
     updateDoc(doc(db, "examResults", id), { resultDeclared: true })
-      .then(() => toast({ title: "Result Declared", description: "Student can now view their score." }))
-      .catch(async (serverError) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examResults/${id}`, operation: 'update', requestResourceData: { resultDeclared: true } })));
-  };
-
-  const handleDeleteApplication = async (id: string) => {
-    const db = getFirestore(firebaseApp);
-    deleteDoc(doc(db, "examApplications", id))
-      .then(() => toast({ title: `Application Reset`, description: "Student can now apply again." }))
-      .catch(async (serverError) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'delete' })));
-  };
-
-  const handleDeclareAllResults = async () => {
-    const declareFn = httpsCallable(getFunctions(firebaseApp), 'declareOfficialResults');
-    try {
-      await declareFn();
-      toast({ title: "Results Declared", description: "All students can now view their official results." });
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    }
-  };
-
-  /**
-   * Updates the schedule ONLY.
-   * Used for prepone/postpone without resetting applications.
-   */
-  const handleUpdateSchedule = async () => {
-    if (!examDate) {
-      toast({ title: "Select a Date", variant: "destructive" });
-      return;
-    }
-    setIsSavingSchedule(true);
-    const updateFn = httpsCallable(getFunctions(firebaseApp), 'updateExamSchedule');
-
-    updateFn({ date: examDate, startTime, endTime, lastApplyDate: lastApplyDate || "" })
       .then(() => {
-        toast({ title: "Schedule Updated", description: "Exam window has been adjusted. No applications were reset." });
-        setIsSavingSchedule(false);
-      })
-      .catch((e) => {
-        setIsSavingSchedule(false);
-        toast({ title: "Update Failed", description: e.message, variant: "destructive" });
+        updateDoc(doc(db, "stats", "examSchedule"), { lastResultDeclaredAt: serverTimestamp() });
+        toast({ title: "Result Declared" });
       });
   };
 
-  /**
-   * Resets the entire cycle and publishes a new schedule.
-   */
   const handleSaveAndReset = async () => {
-    if (!examDate) {
-      toast({ title: "Configuration Missing", description: "Please set both Exam Date and Application Deadline.", variant: "destructive" });
+    if (!examDate || !lastApplyDate) {
+      toast({ title: "Configuration Missing", variant: "destructive" });
       return;
     }
-    
-    if (!confirm("WARNING: This will DELETE all current student applications and results. Continue?")) return;
+    if (!confirm("This will DELETE all current applications and results. Continue?")) return;
     
     setIsSavingSchedule(true);
-    const resetFn = httpsCallable(getFunctions(firebaseApp), 'resetExamCycle');
+    const db = getFirestore(firebaseApp);
+    
+    try {
+      const apps = await getDocs(collection(db, "examApplications"));
+      const ress = await getDocs(collection(db, "examResults"));
+      
+      const batch = writeBatch(db);
+      apps.forEach(d => batch.delete(d.ref));
+      ress.forEach(d => batch.delete(d.ref));
+      
+      batch.set(doc(db, "stats", "examSchedule"), {
+        date: examDate,
+        startTime: `${startH}:${startM}`,
+        endTime: `${endH}:${endM}`,
+        lastApplyDate,
+        isActive: true,
+        resultsDeclared: false,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
 
-    resetFn({ date: examDate, startTime, endTime, lastApplyDate: lastApplyDate || "" })
-      .then((result: any) => {
-        toast({ title: "Cycle Reset & Published", description: `Cleared ${result.data.appsCleared} apps and ${result.data.resultsCleared} results.` });
-        setIsSavingSchedule(false);
-      })
-      .catch((e) => {
-        setIsSavingSchedule(false);
-        toast({ title: "Reset Failed", description: e.message, variant: "destructive" });
-      });
+      await batch.commit();
+      toast({ title: "Cycle Reset & Published" });
+    } catch (e: any) {
+      toast({ title: "Reset Failed", description: e.message, variant: "destructive" });
+    } finally { setIsSavingSchedule(false); }
   };
 
   const filteredApps = useMemo(() => {
     return applications.filter(a => a.studentName.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [applications, searchTerm]);
 
-  const groupedAndRankedResults = useMemo(() => {
-    const officialFinals = allResults.filter(r => r.isFinal);
-    const groupNames = Array.from(new Set(officialFinals.map(r => r.group))).sort();
-
-    const grouped: Record<string, (ExamResult & { rank: number; studentName: string })[]> = {};
-
-    groupNames.forEach(group => {
-      grouped[group] = officialFinals
-        .filter(r => r.group === group)
-        .sort((a, b) => {
-          if (b.score !== a.score) return b.score - a.score;
-          if (b.accuracy !== a.accuracy) return b.accuracy - a.accuracy;
-          return ((a as any).timeSpent || 0) - ((b as any).timeSpent || 0);
-        })
-        .map((result, index) => ({
-          ...result,
-          rank: index + 1,
-          studentName: applications.find(a => a.userId === result.userId)?.studentName || 'Student'
-        }))
-        .filter(r => r.studentName.toLowerCase().includes(searchTerm.toLowerCase()));
+  const groupedResults = useMemo(() => {
+    const official = allResults.filter(r => r.isFinal);
+    const grouped: Record<string, any[]> = {};
+    official.forEach(r => {
+      const g = r.group;
+      if (!grouped[g]) grouped[g] = [];
+      grouped[g].push({ ...r, studentName: applications.find(a => a.userId === r.userId)?.studentName || 'Student' });
     });
+    return grouped;
+  }, [allResults, applications]);
 
-    const activeGroups = groupNames.filter(g => grouped[g].length > 0);
-    return { groups: activeGroups, data: grouped };
-  }, [allResults, applications, searchTerm]);
-
-  if (loading || authLoading) return <div className="p-8">Loading Exam Management...</div>;
+  if (loading || authLoading) return <div className="p-8">Loading...</div>;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
       <Card className="rounded-[2rem] border-none shadow-xl">
         <CardHeader>
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex justify-between items-center gap-6">
             <div>
               <CardTitle className="text-3xl font-black uppercase tracking-tight">Exam Administration</CardTitle>
-              <CardDescription>Manage schedule, review applications, and audit results.</CardDescription>
             </div>
-            <div className="relative w-full md:w-80">
+            <div className="relative w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input placeholder="Search student..." className="pl-10" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
@@ -225,9 +166,9 @@ export default function AdminExamsPage() {
         <CardContent>
           <Tabs defaultValue="applications">
             <TabsList className="mb-8">
-              <TabsTrigger value="applications" className="font-bold">Applications ({applications.filter(a => a.status === 'pending').length})</TabsTrigger>
-              <TabsTrigger value="final-results" className="font-bold">Official Results ({allResults.filter(r => r.isFinal).length})</TabsTrigger>
-              <TabsTrigger value="schedule" className="font-bold">Exam Schedule</TabsTrigger>
+              <TabsTrigger value="applications" className="font-bold">Applications ({applications.length})</TabsTrigger>
+              <TabsTrigger value="final-results" className="font-bold">Results</TabsTrigger>
+              <TabsTrigger value="schedule" className="font-bold">Schedule Manager</TabsTrigger>
             </TabsList>
 
             <TabsContent value="applications">
@@ -235,9 +176,7 @@ export default function AdminExamsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Student</TableHead>
-                    <TableHead>Group</TableHead>
-                    <TableHead>Age</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Group Applied</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -246,9 +185,7 @@ export default function AdminExamsPage() {
                   {filteredApps.map(app => (
                     <TableRow key={app.id}>
                       <TableCell className="font-bold">{app.studentName}</TableCell>
-                      <TableCell><Badge variant="secondary">Group {app.group}</Badge></TableCell>
-                      <TableCell>{app.age} Yrs</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{app.appliedAt?.toDate ? format(app.appliedAt.toDate(), 'PPP') : 'Recently'}</TableCell>
+                      <TableCell><Badge variant="secondary" className="px-4">Group {app.group}</Badge></TableCell>
                       <TableCell>
                         <Badge variant={app.status === 'approved' ? 'default' : (app.status === 'pending' ? 'outline' : 'destructive')}>
                           {app.status?.toUpperCase() || 'PENDING'}
@@ -256,20 +193,10 @@ export default function AdminExamsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          {app.status === 'pending' && (
-                            <>
-                              <Button size="sm" variant="outline" className="text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleUpdateStatus(app.id, 'approved')}>
-                                <CheckCircle2 className="w-4 h-4 mr-1" /> Approve
-                              </Button>
-                              <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleUpdateStatus(app.id, 'rejected')}>
-                                <XCircle className="w-4 h-4 mr-1" /> Reject
-                              </Button>
-                            </>
-                          )}
-                          {(app.status === 'rejected' || app.status === 'approved') && (
-                             <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-primary" onClick={() => handleDeleteApplication(app.id)}>
-                                <RefreshCcw className="w-4 h-4 mr-1" /> Allow Re-apply
-                             </Button>
+                          {app.status === 'pending' ? (
+                            <Button size="sm" className="bg-green-600" onClick={() => handleUpdateStatus(app.id, 'approved')}>Approve</Button>
+                          ) : (
+                            <Button size="sm" variant="outline" onClick={() => handleUpdateStatus(app.id, 'pending')}>Re-apply</Button>
                           )}
                         </div>
                       </TableCell>
@@ -280,123 +207,76 @@ export default function AdminExamsPage() {
             </TabsContent>
 
             <TabsContent value="final-results" className="space-y-12">
-              {groupedAndRankedResults.groups.map(group => (
+              {Object.keys(groupedResults).map(group => (
                 <div key={group} className="space-y-6">
-                  <div className="flex items-center gap-4 border-b pb-4">
-                    <div className="bg-slate-900 text-white h-10 w-10 rounded-xl flex items-center justify-center font-black">
-                      {group}
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-black uppercase tracking-tight">Group {group} Standings</h2>
-                      <p className="text-muted-foreground text-xs font-bold uppercase">{groupedAndRankedResults.data[group].length} Candidates</p>
-                    </div>
-                  </div>
-
+                  <h2 className="text-xl font-black uppercase border-b pb-2">Group {group} Results</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {groupedAndRankedResults.data[group].map(r => (
-                      <Card key={r.id} className={cn(
-                        "border-2 shadow-sm overflow-hidden flex flex-col h-full relative",
-                        r.rank === 1 ? "border-yellow-400 bg-yellow-50/20" : "border-slate-100"
-                      )}>
-                        {/* Rank Badge */}
-                        <div className={cn(
-                          "absolute top-2 right-2 h-8 w-8 rounded-full flex items-center justify-center font-black text-white shadow-sm z-10 text-xs",
-                          r.rank === 1 ? "bg-yellow-500" : r.rank === 2 ? "bg-slate-400" : r.rank === 3 ? "bg-orange-400" : "bg-slate-800"
-                        )}>
-                          #{r.rank}
-                        </div>
-
-                        <CardHeader className="bg-slate-900 text-white p-4 shrink-0">
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-2">
-                                <p className="text-[10px] font-black uppercase text-indigo-400">Official Final</p>
-                                {r.resultDeclared && <Badge className="bg-green-500 h-4 text-[8px]">DECLARED</Badge>}
-                              </div>
-                              {r.rank === 1 && <Trophy className="w-4 h-4 text-yellow-400" />}
+                    {groupedResults[group].map(r => (
+                      <Card key={r.id} className="border-2">
+                        <CardHeader className="bg-slate-900 text-white p-4">
+                            <div className="flex justify-between items-center text-xs font-black uppercase">
+                              <span>Official Final</span>
+                              {r.resultDeclared && <Badge className="bg-green-500">DECLARED</Badge>}
                             </div>
                         </CardHeader>
-                        <CardContent className="p-6 flex-grow">
-                            <div className="flex justify-between items-start mb-6">
-                              <div>
-                                  <p className="text-lg font-black">{r.studentName}</p>
-                                  <Badge variant="outline" className="mt-1">Rank #{r.rank}</Badge>
-                              </div>
-                              <div className="text-right">
-                                  {r.resultDeclared ? (
-                                    <>
-                                      <p className="text-3xl font-black text-primary">{r.score}/{r.totalQuestions}</p>
-                                      <p className="text-[10px] font-bold uppercase text-muted-foreground">Accuracy: {r.accuracy.toFixed(1)}%</p>
-                                    <p className="text-[10px] font-bold uppercase text-muted-foreground">Time: {Math.floor(((r as any).timeSpent || 0) / 60)}m {((r as any).timeSpent || 0) % 60}s</p>
-                                    </>
-                                  ) : (
-                                    <Badge className="bg-orange-500 font-black">PENDING</Badge>
-                                  )}
-                              </div>
-                            </div>
-                            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden mb-6">
-                              <div className="h-full bg-primary" style={{ width: `${r.accuracy}%` }} />
-                            </div>
-                            <div className="space-y-2">
-                                <Button variant="outline" className="w-full font-bold uppercase text-xs tracking-widest h-10" onClick={() => setSelectedResult(r)}>
-                                  <Eye className="w-4 h-4 mr-2" /> View Audit
-                                </Button>
-                                {!r.resultDeclared && (
-                                    <Button className="w-full bg-green-600 hover:bg-green-700 font-bold uppercase text-xs tracking-widest h-10" onClick={() => handleDeclareResult(r.id)}>
-                                      <Megaphone className="w-4 h-4 mr-2" /> Declare Result
-                                    </Button>
-                                )}
-                            </div>
+                        <CardContent className="p-6">
+                            <p className="text-lg font-black">{r.studentName}</p>
+                            <p className="text-3xl font-black text-primary mt-2">{r.score}/{r.totalQuestions}</p>
+                            <Button variant="outline" className="w-full mt-4" onClick={() => setSelectedResult(r)}><Eye className="w-4 h-4 mr-2" /> View Audit</Button>
+                            {!r.resultDeclared && (
+                                <Button className="w-full mt-2 bg-green-600" onClick={() => handleDeclareResult(r.id)}>Declare Result</Button>
+                            )}
                         </CardContent>
                       </Card>
                     ))}
                   </div>
                 </div>
               ))}
-              {groupedAndRankedResults.groups.length === 0 && (
-                <p className="col-span-full text-center py-20 text-muted-foreground italic">No official final exams submitted yet.</p>
-              )}
             </TabsContent>
 
             <TabsContent value="schedule">
-              <Card className="border-2 border-primary/20 bg-primary/5">
+              <Card className="border-2 border-primary/20">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Calendar className="w-6 h-6 text-primary" /> Official Schedule Manager</CardTitle>
-                  <CardDescription>Adjust the date and time window. Use "Update Only" to postpone/prepone without resetting student status.</CardDescription>
+                  <CardTitle>Schedule Manager</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                   <div className="space-y-2">
-                    <Label className="font-bold">Exam Date</Label>
-                    <Input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} className="bg-white border-2" />
+                    <Label>Exam Date</Label>
+                    <Input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} />
                   </div>
                   <div className="space-y-2">
-                    <Label className="font-bold">Start Time (24h)</Label>
-                    <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="bg-white border-2" />
+                    <Label>Start Time (24h)</Label>
+                    <div className="flex gap-1">
+                      <Select value={startH} onValueChange={setStartH}>
+                        <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
+                        <SelectContent className="max-h-60"><ScrollArea className="h-60">{Array.from({length: 24}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
+                      </Select>
+                      <Select value={startM} onValueChange={setStartM}>
+                        <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
+                        <SelectContent className="max-h-60"><ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="font-bold">End Time (24h)</Label>
-                    <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="bg-white border-2" />
+                    <Label>End Time (24h)</Label>
+                    <div className="flex gap-1">
+                      <Select value={endH} onValueChange={setEndH}>
+                        <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
+                        <SelectContent className="max-h-60"><ScrollArea className="h-60">{Array.from({length: 24}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
+                      </Select>
+                      <Select value={endM} onValueChange={setEndM}>
+                        <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
+                        <SelectContent className="max-h-60"><ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="font-bold text-red-600">Application Deadline</Label>
-                    <Input type="date" value={lastApplyDate} onChange={e => setLastApplyDate(e.target.value)} className="bg-white border-2 border-red-100" />
+                    <Label className="text-red-600">Apply Deadline</Label>
+                    <Input type="date" value={lastApplyDate} onChange={e => setLastApplyDate(e.target.value)} />
                   </div>
                 </CardContent>
-                <CardFooter className="bg-white/50 border-t p-6 flex flex-wrap gap-4">
-                  <Button 
-                    onClick={handleUpdateSchedule} 
-                    disabled={isSavingSchedule} 
-                    variant="outline" 
-                    className="h-12 px-6 font-bold uppercase tracking-widest border-2 bg-white"
-                  >
-                    {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <Calendar className="mr-2 w-4 h-4" />}
-                    Update Schedule Only
-                  </Button>
-                  
-                  <Button 
-                    onClick={handleSaveAndReset} 
-                    disabled={isSavingSchedule} 
-                    className="h-12 px-6 font-black uppercase tracking-widest shadow-lg bg-red-600 hover:bg-red-700"
-                  >
+                <CardFooter className="bg-muted/30 p-6 flex justify-end">
+                  <Button onClick={handleSaveAndReset} disabled={isSavingSchedule} className="bg-red-600">
                     {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <RefreshCcw className="mr-2 w-4 h-4" />}
                     Reset & Publish New Cycle
                   </Button>
@@ -408,45 +288,23 @@ export default function AdminExamsPage() {
       </Card>
 
       <Dialog open={!!selectedResult} onOpenChange={() => setSelectedResult(null)}>
-        <DialogContent className="max-w-3xl h-[85vh] flex flex-col p-0 rounded-[2rem] overflow-hidden border-none shadow-2xl">
+        <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0">
           <DialogHeader className="p-6 bg-slate-900 text-white shrink-0">
-            <DialogTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
-               <ScrollText className="text-indigo-400" />
-               Exam Audit: {selectedResult?.group}
-            </DialogTitle>
-            <DialogDescription className="text-slate-400 font-bold">
-               Detailed breakdown of student answers vs. official keys.
-            </DialogDescription>
+            <DialogTitle>Exam Audit: Group {selectedResult?.group}</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 min-h-0 relative">
-            <ScrollArea className="h-full w-full">
-              <div className="p-6 space-y-4">
-                {(selectedResult as any)?.details?.map((item: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between p-4 bg-muted/50 rounded-2xl border">
-                    <div className="flex items-center gap-4">
-                      <span className="text-[10px] font-black text-muted-foreground w-6">#{i+1}</span>
-                      <p className="font-bold text-slate-800">{item.text}</p>
-                    </div>
-                    <div className="flex gap-8 text-right">
-                      <div>
-                        <p className="text-[8px] font-black uppercase text-muted-foreground">Key</p>
-                        <p className="text-sm font-black text-primary">{item.correct}</p>
-                      </div>
-                      <div>
-                        <p className="text-[8px] font-black uppercase text-muted-foreground">Student</p>
-                        <p className={cn("text-sm font-black", item.student === item.correct ? "text-green-600" : "text-red-500")}>
-                          {item.student ?? 'N/A'}
-                        </p>
-                      </div>
-                    </div>
+          <ScrollArea className="flex-1 p-6">
+            <div className="space-y-4">
+              {selectedResult?.details?.map((item: any, i: number) => (
+                <div key={i} className="flex justify-between p-4 bg-muted rounded-xl border">
+                  <span className="font-bold">Question {i+1}</span>
+                  <div className="flex gap-8">
+                    <div><p className="text-[10px] uppercase">Key</p><p className="font-black">{item.correct}</p></div>
+                    <div><p className="text-[10px] uppercase">User</p><p className={cn("font-black", item.student === item.correct ? "text-green-600" : "text-red-500")}>{item.student ?? 'N/A'}</p></div>
                   </div>
-                )) || <div className="p-20 text-center italic text-muted-foreground">No detailed data captured for this result.</div>}
-              </div>
-            </ScrollArea>
-          </div>
-          <div className="p-6 border-t bg-slate-50 flex justify-end shrink-0">
-             <Button onClick={() => setSelectedResult(null)} className="font-black uppercase tracking-widest h-12 px-8">Close Audit</Button>
-          </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
