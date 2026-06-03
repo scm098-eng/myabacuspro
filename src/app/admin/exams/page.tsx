@@ -59,8 +59,8 @@ export default function AdminExamsPage() {
         setExamDate(data.date || '');
         const [sh, sm] = (data.startTime || '12:30').split(':');
         const [eh, em] = (data.endTime || '16:00').split(':');
-        setStartH(sh); setStartM(sm);
-        setEndH(eh); setEndM(em);
+        setStartH(sh || '12'); setStartM(sm || '30');
+        setEndH(eh || '16'); setEndM(em || '00');
         setLastApplyDate(data.lastApplyDate || '');
       }
     });
@@ -326,7 +326,7 @@ export default function AdminExamsPage() {
                     disabled={isSavingSchedule || isUpdatingOnly} 
                     className="h-14 px-6 sm:px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 w-full sm:w-auto"
                   >
-                    {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <RefreshCcw className="mr-2 w-5 h-5" />}
+                    {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <RefreshCcw className="mr-2" />}
                     Reset & Publish New Cycle
                   </Button>
                 </CardFooter>

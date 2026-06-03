@@ -127,7 +127,7 @@ const winnerAnnouncementHTML = (userName, type, points) => `
     <div style="background: white; padding: 30px; border-radius: 20px; border: 2px solid #fde68a; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
       <p style="font-size: 16px; color: #4b5563; margin-bottom: 5px;">Congratulations</p>
       <h2 style="font-size: 32px; color: #1f2937; margin: 0 0 15px;">${userName}</h2>
-      <div style="display: inline-block; background: #fbbf24; color: #92400e; padding: 10px 25px; rounded-pill; font-weight: 900; font-size: 20px; border-radius: 50px;">
+      <div style="display: inline-block; background: #fbbf24; color: #92400e; padding: 10px 25px; border-radius: 50px; font-weight: 900; font-size: 20px;">
         ${points.toLocaleString()} Mastery Points
       </div>
     </div>
@@ -446,29 +446,23 @@ exports.forceDeclareWinner = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (
 
 /**
  * Reset all exam applications and publish a new schedule cycle.
- * This deletes all previous applications AND results to start a fresh cycle.
  */
 exports.resetExamCycle = onCall(async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
-    
     const adminDoc = await db.collection('users').doc(request.auth.uid).get();
     if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
 
     const { date, startTime, endTime, lastApplyDate } = request.data || {};
     if (!date) throw new HttpsError('invalid-argument', "Missing exam date.");
 
-    // 1. Delete all existing exam applications in chunks to handle large volumes
+    // 1. Delete all existing exam applications
     const appsSnap = await db.collection('examApplications').select().get();
     let batch = db.batch();
     let count = 0;
-
     for (const doc of appsSnap.docs) {
         batch.delete(doc.ref);
         count++;
-        if (count % 500 === 0) {
-            await batch.commit();
-            batch = db.batch();
-        }
+        if (count % 500 === 0) { await batch.commit(); batch = db.batch(); }
     }
     if (count % 500 !== 0) await batch.commit();
 
@@ -476,14 +470,10 @@ exports.resetExamCycle = onCall(async (request) => {
     const resultsSnap = await db.collection('examResults').select().get();
     batch = db.batch();
     let resultCount = 0;
-
     for (const doc of resultsSnap.docs) {
         batch.delete(doc.ref);
         resultCount++;
-        if (resultCount % 500 === 0) {
-            await batch.commit();
-            batch = db.batch();
-        }
+        if (resultCount % 500 === 0) { await batch.commit(); batch = db.batch(); }
     }
     if (resultCount % 500 !== 0) await batch.commit();
 
@@ -495,7 +485,6 @@ exports.resetExamCycle = onCall(async (request) => {
         lastApplyDate: lastApplyDate || null,
         isActive: true,
         resultsDeclared: false,
-        publishedBy: request.auth.uid,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
@@ -510,11 +499,10 @@ exports.declareOfficialResults = onCall(async (request) => {
     const adminDoc = await db.collection('users').doc(request.auth.uid).get();
     if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
 
-    logger.info(`Admin ${request.auth.uid} is declaring official results.`);
     await db.collection('stats').doc('examSchedule').update({
         resultsDeclared: true,
-        isActive: false, // Close the exam window if it was still open
-        declaredAt: admin.firestore.FieldValue.serverTimestamp()
+        isActive: false, 
+        lastResultDeclaredAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
     return { status: "success", message: "Results are now official." };
@@ -522,14 +510,12 @@ exports.declareOfficialResults = onCall(async (request) => {
 
 /**
  * Allows a student to apply for the current exam cycle.
- * Enforces the lastApplyDate deadline and prevents duplicate applications.
  */
 exports.applyToExam = onCall(async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
-    
     const userDoc = await db.collection('users').doc(request.auth.uid).get();
     const userData = userDoc.data();
-    if (userData?.role !== 'student') throw new HttpsError('permission-denied', "Only students can apply for exams.");
+    if (userData?.role !== 'student') throw new HttpsError('permission-denied', "Only students can apply.");
 
     const { masteryGroup } = request.data;
     if (!masteryGroup) throw new HttpsError('invalid-argument', "Mastery group is required.");
@@ -537,24 +523,11 @@ exports.applyToExam = onCall(async (request) => {
     const scheduleDoc = await db.collection('stats').doc('examSchedule').get();
     const schedule = scheduleDoc.data();
 
-    // CRITICAL LOG: Check this in Firebase Console > Functions > Logs if error persists
-    logger.info("EXAM_APPLICATION_DIAGNOSTIC", { 
-        uid: request.auth.uid, 
-        scheduleExists: scheduleDoc.exists, 
-        isActiveValue: schedule?.isActive,
-        hasDate: !!schedule?.date,
-        deadline: schedule?.lastApplyDate 
-    });
-
-    // Active if: Document exists AND has a date AND isActive is NOT explicitly false
-    const isActuallyActive = !!(scheduleDoc.exists && schedule?.date && schedule?.isActive !== false);
-
-    if (!isActuallyActive) {
-        throw new HttpsError('failed-precondition', "There is no active exam cycle to apply for.");
+    if (!scheduleDoc.exists || !schedule?.date || schedule?.isActive === false) {
+        throw new HttpsError('failed-precondition', "There is no active exam cycle.");
     }
 
-    // Enforce the application deadline (only if it is a valid date string)
-    if (schedule.lastApplyDate && schedule.lastApplyDate.length === 10) {
+    if (schedule.lastApplyDate) {
         const today = new Date().toISOString().split('T')[0];
         if (today > schedule.lastApplyDate) {
             throw new HttpsError('deadline-exceeded', `The application deadline has passed (${schedule.lastApplyDate}).`);
@@ -562,9 +535,8 @@ exports.applyToExam = onCall(async (request) => {
     }
 
     const appRef = db.collection('examApplications').doc(request.auth.uid);
-    const appSnap = await appRef.get();
-    if (appSnap.exists) {
-        throw new HttpsError('already-exists', "You have already applied for this exam cycle.");
+    if ((await appRef.get()).exists) {
+        throw new HttpsError('already-exists', "You have already applied.");
     }
 
     await appRef.set({
@@ -576,32 +548,19 @@ exports.applyToExam = onCall(async (request) => {
         studentName: `${userData.firstName || ''} ${userData.surname || ''}`.trim()
     });
 
-    return { status: "success", message: "Application submitted successfully." };
+    return { status: "success", message: "Applied successfully." };
 });
 
-/**
- * Updates exam schedule details (Date, Time, Last Apply Date) 
- * without resetting existing applications or results.
- */
 exports.updateExamSchedule = onCall(async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
     const adminDoc = await db.collection('users').doc(request.auth.uid).get();
-    if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
+    if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
 
-    const { date, startTime, endTime, lastApplyDate } = request.data || {};
-    
-    const updateData = { 
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        isActive: true 
-    };
+    const { date, startTime, endTime, lastApplyDate } = request.data;
+    await db.collection('stats').doc('examSchedule').set({ 
+        date, startTime, endTime, lastApplyDate, 
+        updatedAt: admin.firestore.FieldValue.serverTimestamp() 
+    }, { merge: true });
 
-    if (date) updateData.date = date;
-    if (startTime) updateData.startTime = startTime;
-    if (endTime) updateData.endTime = endTime;
-    if (lastApplyDate !== undefined) updateData.lastApplyDate = lastApplyDate || "";
-
-    // Use set with merge to ensure the document exists and fields are updated
-    await db.collection('stats').doc('examSchedule').set(updateData, { merge: true });
-
-    return { status: "success", message: "Exam schedule updated successfully." };
+    return { status: "success" };
 });

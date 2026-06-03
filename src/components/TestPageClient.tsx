@@ -43,6 +43,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   const [timeLeft, setTimeLeft] = useState(settings.timeLimit);
   const [inputValue, setInputValue] = useState('');
   const [isAnswered, setIsAnswered] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isFinished, setIsFinished] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
@@ -140,6 +141,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     const newAnswers = [...userAnswers];
     newAnswers[currentIdx] = answer;
     setIsAnswered(true);
+    setSelectedOption(answer);
     setUserAnswers(newAnswers);
     playSound(answer === questions[currentIdx].answer ? 'correct' : 'wrong');
 
@@ -148,6 +150,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         setCurrentIdx(prev => prev + 1);
         setInputValue('');
         setIsAnswered(false);
+        setSelectedOption(null);
       } else {
         finishTest(newAnswers);
       }
@@ -194,12 +197,38 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
             <div className="mt-12">
               {isInputMode ? (
                 <form onSubmit={e => { e.preventDefault(); handleAnswer(parseInt(inputValue)); }} className="flex flex-col items-center gap-6">
-                  <Input ref={inputRef} type="number" value={inputValue} onChange={e => setInputValue(e.target.value)} disabled={isAnswered} className="h-20 text-5xl text-center font-black rounded-2xl border-4" />
+                  <Input 
+                    ref={inputRef} 
+                    type="number" 
+                    value={inputValue} 
+                    onChange={e => setInputValue(e.target.value)} 
+                    disabled={isAnswered} 
+                    className={cn(
+                      "h-20 text-5xl text-center font-black rounded-2xl border-4 transition-all duration-300",
+                      isAnswered && parseInt(inputValue) === questions[currentIdx].answer && "border-green-500 bg-green-50 text-green-700",
+                      isAnswered && parseInt(inputValue) !== questions[currentIdx].answer && "border-red-500 bg-red-50 text-red-700"
+                    )} 
+                  />
                   <Button type="submit" disabled={isAnswered || !inputValue} className="h-16 w-64 text-xl font-black">SUBMIT</Button>
                 </form>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
-                  {questions[currentIdx].options.map(opt => <Button key={opt} onClick={() => handleAnswer(opt)} disabled={isAnswered} className="h-20 text-3xl font-black" variant="outline">{opt}</Button>)}
+                  {questions[currentIdx].options.map(opt => (
+                    <Button 
+                      key={opt} 
+                      onClick={() => handleAnswer(opt)} 
+                      disabled={isAnswered} 
+                      className={cn(
+                        "h-20 text-3xl font-black transition-all duration-200",
+                        isAnswered && opt === questions[currentIdx].answer && "bg-green-600 hover:bg-green-600 border-green-700 text-white scale-105 shadow-lg shadow-green-200",
+                        isAnswered && opt === selectedOption && opt !== questions[currentIdx].answer && "bg-red-600 hover:bg-red-600 border-red-700 text-white",
+                        isAnswered && opt !== selectedOption && opt !== questions[currentIdx].answer && "opacity-50 grayscale scale-95"
+                      )} 
+                      variant="outline"
+                    >
+                      {opt}
+                    </Button>
+                  ))}
                 </div>
               )}
             </div>
