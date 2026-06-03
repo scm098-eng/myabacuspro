@@ -9,6 +9,7 @@ import { firebaseApp } from '@/lib/firebase';
 import { format } from 'date-fns';
 import type { BlogPost } from '@/types';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const features = [
   {
@@ -32,7 +33,7 @@ async function getLatestBlogs(): Promise<BlogPost[]> {
   try {
     const db = getFirestore(firebaseApp);
     const blogRef = collection(db, 'blogs');
-    const q = query(blogRef, orderBy('createdAt', 'desc'), limit(6));
+    const q = query(blogRef, orderBy('createdAt', 'desc'), limit(3));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({
       id: doc.id,
@@ -43,56 +44,74 @@ async function getLatestBlogs(): Promise<BlogPost[]> {
   }
 }
 
-function BlogGrid({ blogs }: { blogs: BlogPost[] }) {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {blogs.map((post) => (
-        <Card key={post.id} className="flex flex-col h-full overflow-hidden hover:shadow-2xl transition-all duration-300 group border-primary/5 bg-card rounded-3xl">
-          {post.image && (
-            <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
-              <Image
-                src={post.image}
-                alt={post.title}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-110"
-              />
-              <div className="absolute top-3 left-3">
-                <Badge className="bg-primary/90 backdrop-blur-sm uppercase font-black text-[9px] tracking-widest border-none">
-                  {post.category}
-                </Badge>
-              </div>
-            </div>
-          )}
-          <CardHeader className="flex-grow space-y-2">
-            <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase tracking-tight">
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" /> 
-                {post.createdAt?.toDate ? format(post.createdAt.toDate(), 'MMM d, yyyy') : 'Recently'}
-              </span>
-            </div>
-            <CardTitle className="text-xl font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2">
-              {post.title}
-            </CardTitle>
-            <p className="text-muted-foreground text-sm line-clamp-3 leading-relaxed font-medium">
-              {post.excerpt}
-            </p>
-          </CardHeader>
-          <CardFooter className="pt-0 pb-8 px-6">
-            <Button asChild variant="link" className="p-0 h-auto font-black uppercase tracking-widest text-[10px] text-primary">
-              <Link href={`/blog/${post.slug || post.id}`} className="flex items-center">
-                Read Story <ArrowRight className="ml-1 w-3 h-3" />
-              </Link>
-            </Button>
-          </CardFooter>
-        </Card>
-      ))}
-    </div>
-  );
+function BlogGridSkeleton() {
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[...Array(3)].map((_, i) => (
+                <Card key={i} className="rounded-3xl overflow-hidden border-none shadow-sm">
+                    <Skeleton className="aspect-[16/10] w-full" />
+                    <CardHeader className="space-y-4">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                    </CardHeader>
+                </Card>
+            ))}
+        </div>
+    );
 }
 
-export default async function Home() {
-  const blogs = await getLatestBlogs();
+async function BlogSection() {
+    const blogs = await getLatestBlogs();
+    if (blogs.length === 0) return null;
 
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {blogs.map((post) => (
+                <Card key={post.id} className="flex flex-col h-full overflow-hidden hover:shadow-2xl transition-all duration-300 group border-primary/5 bg-card rounded-3xl">
+                    {post.image && (
+                        <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
+                            <Image
+                                src={post.image}
+                                alt={post.title}
+                                fill
+                                className="object-cover transition-transform duration-500 group-hover:scale-110"
+                            />
+                            <div className="absolute top-3 left-3">
+                                <Badge className="bg-primary/90 backdrop-blur-sm uppercase font-black text-[9px] tracking-widest border-none">
+                                    {post.category}
+                                </Badge>
+                            </div>
+                        </div>
+                    )}
+                    <CardHeader className="flex-grow space-y-2">
+                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase tracking-tight">
+                            <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" /> 
+                                {post.createdAt?.toDate ? format(post.createdAt.toDate(), 'MMM d, yyyy') : 'Recently'}
+                            </span>
+                        </div>
+                        <CardTitle className="text-xl font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                            {post.title}
+                        </CardTitle>
+                        <p className="text-muted-foreground text-sm line-clamp-3 leading-relaxed font-medium">
+                            {post.excerpt}
+                        </p>
+                    </CardHeader>
+                    <CardFooter className="pt-0 pb-8 px-6">
+                        <Button asChild variant="link" className="p-0 h-auto font-black uppercase tracking-widest text-[10px] text-primary">
+                            <Link href={`/blog/${post.slug || post.id}`} className="flex items-center">
+                                Read Story <ArrowRight className="ml-1 w-3 h-3" />
+                            </Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+            ))}
+        </div>
+    );
+}
+
+export default function Home() {
   return (
     <div className="space-y-24">
       <section aria-labelledby="hero-heading">
@@ -100,7 +119,7 @@ export default async function Home() {
           <h1 id="hero-heading" className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-foreground font-headline uppercase">
             Master Mental Math with <span className="text-primary">My Abacus Pro</span>
           </h1>
-          <p className="max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground font-medium">
+          <p className="max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground font-medium leading-relaxed">
             Sharpen your mind and boost your calculation speed. The ultimate digital training ground for ancient math techniques.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -175,7 +194,9 @@ export default async function Home() {
             </Button>
           </div>
 
-          <BlogGrid blogs={blogs} />
+          <Suspense fallback={<BlogGridSkeleton />}>
+            <BlogSection />
+          </Suspense>
         </div>
       </section>
     </div>

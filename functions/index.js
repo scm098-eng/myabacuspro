@@ -6,6 +6,7 @@
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const logger = require("firebase-functions/logger");
 const nodemailer = require('nodemailer');
 
@@ -324,7 +325,8 @@ exports.resetMonthlyPoints = onSchedule({ schedule: "0 0 1 * *", secrets: ["GMAI
 
 exports.dailyBirthdayWish = onSchedule({ schedule: "0 9 * * *", secrets: ["GMAIL_APP_PASSWORD"] }, async (event) => {
     const today = new Date();
-    const monthDayStr = `${String(today.getUTCMonth() + 1).padStart(2, '0')}-${String(today.getUTCDate()).padStart(2, '0')}`;
+    const targetMonth = today.getUTCMonth() + 1;
+    const targetDay = today.getUTCDate();
 
     const studentsSnap = await db.collection('users').where('role', '==', 'student').get();
     const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
@@ -334,7 +336,22 @@ exports.dailyBirthdayWish = onSchedule({ schedule: "0 9 * * *", secrets: ["GMAIL
         const data = doc.data();
         if (!data.dob) continue;
         
-        if (data.dob.includes(monthDayStr)) {
+        // Robust birthday check by parsing components to avoid substring matching bugs
+        const dobParts = data.dob.split(/[-/]/);
+        if (dobParts.length !== 3) continue;
+
+        let dobMonth, dobDay;
+        if (dobParts[0].length === 4) {
+            // YYYY-MM-DD
+            dobMonth = parseInt(dobParts[1]);
+            dobDay = parseInt(dobParts[2]);
+        } else {
+            // DD-MM-YYYY
+            dobMonth = parseInt(dobParts[1]);
+            dobDay = parseInt(dobParts[0]);
+        }
+        
+        if (dobMonth === targetMonth && dobDay === targetDay) {
             if (data.email) {
                 try {
                     await transporter.sendMail({
