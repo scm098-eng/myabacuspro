@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -164,6 +165,14 @@ export default function ExamArenaPage() {
     }, 300);
   };
 
+  const getQuestionFontSize = (text: string) => {
+    const len = text.length;
+    if (len > 30) return "text-lg sm:text-2xl";
+    if (len > 22) return "text-xl sm:text-3xl";
+    if (len > 14) return "text-3xl sm:text-5xl";
+    return "text-4xl sm:text-7xl";
+  };
+
   if (loading) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /><p className="mt-4 font-bold uppercase">Entering Arena...</p></div>;
 
   return (
@@ -189,13 +198,17 @@ export default function ExamArenaPage() {
             </div>
           </ScrollArea>
         </CardHeader>
-        <CardContent className="p-8 text-center flex-grow flex flex-col justify-center">
+        <CardContent className="p-8 text-center flex-grow flex flex-col justify-center overflow-hidden">
           <div className="space-y-6">
             <div className="py-4 bg-muted/30 rounded-[2rem] border-2 border-dashed flex flex-col items-center min-h-[140px] justify-center">
                 {questions[currentIdx].questionType === 'identify' ? (
                   <div className="w-full max-w-md"><BeadDisplay value={questions[currentIdx].answer} rodCount={7} /></div>
                 ) : (
-                  <p className="text-xl sm:text-5xl font-black">{questions[currentIdx].text} = ?</p>
+                  <div className="w-full overflow-hidden">
+                    <p className={cn("font-black tracking-tight whitespace-nowrap", getQuestionFontSize(questions[currentIdx].text || ""))}>
+                      {questions[currentIdx].text} = ?
+                    </p>
+                  </div>
                 )}
             </div>
             <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">

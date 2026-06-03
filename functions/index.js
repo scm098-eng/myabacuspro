@@ -1,3 +1,4 @@
+
 /**
  * Firebase Cloud Functions v2 (Node.js) Code
  * filename: functions/index.js

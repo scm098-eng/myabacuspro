@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -7,7 +8,7 @@ import type { Question, Difficulty, TestType, TestSettings } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Timer, AlertTriangle, Loader2, PlayCircle, Send, Check } from 'lucide-react';
+import { Timer, AlertTriangle, Loader2, PlayCircle, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -157,6 +158,14 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     }, 700);
   };
 
+  const getQuestionFontSize = (text: string) => {
+    const len = text.length;
+    if (len > 30) return "text-lg sm:text-2xl";
+    if (len > 22) return "text-xl sm:text-3xl";
+    if (len > 14) return "text-3xl sm:text-5xl";
+    return "text-4xl sm:text-7xl";
+  };
+
   if (!hasStarted) {
     const guide = FORMULA_GUIDES[testId] || PAGE_GUIDES.timed_test;
     return (
@@ -192,8 +201,12 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
           </div>
           <Progress value={(currentIdx/questions.length)*100} className="h-2" />
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col justify-center text-center p-8">
-            <p className="text-4xl sm:text-6xl font-black tracking-tight">{questions[currentIdx].text} = ?</p>
+        <CardContent className="flex-1 flex flex-col justify-center text-center p-8 overflow-hidden">
+            <div className="w-full overflow-hidden">
+              <p className={cn("font-black tracking-tight whitespace-nowrap", getQuestionFontSize(questions[currentIdx].text))}>
+                {questions[currentIdx].text} = ?
+              </p>
+            </div>
             <div className="mt-12">
               {isInputMode ? (
                 <form onSubmit={e => { e.preventDefault(); handleAnswer(parseInt(inputValue)); }} className="flex flex-col items-center gap-6">
