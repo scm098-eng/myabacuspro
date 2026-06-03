@@ -1,3 +1,4 @@
+
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
@@ -6,6 +7,7 @@ import { Header } from '@/components/shared/Header';
 import { Footer } from '@/components/shared/Footer';
 import { ClientProviders } from './client-providers';
 import WinnerMarquee from '@/components/WinnerMarquee';
+import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -94,19 +96,21 @@ export default function RootLayout({
 
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
-      <head>
-        <link rel="canonical" href="https://myabacuspro.com" />
+      <body className="font-body antialiased h-full">
+        {/* Google AdSense - Loading with strategy="afterInteractive" to prevent hydration mismatch */}
+        <Script 
+          async 
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4545290153947218"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+        
+        {/* JSON-LD - Rendering inside body to avoid conflicts in the head with external script modifications */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <script 
-          async 
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4545290153947218"
-          crossOrigin="anonymous"
-        ></script>
-      </head>
-      <body className="font-body antialiased h-full">
+
         <ClientProviders>
           <div className="flex flex-col min-h-screen">
             <Header />
