@@ -102,8 +102,8 @@ export default function FAQPage() {
                                                     <TableHeader className="bg-muted/50">
                                                         <TableRow>
                                                             <TableHead className="w-[100px] sm:w-[180px] px-2 sm:px-4">Rank</TableHead>
-                                                            <TableHead className="text-center px-1 sm:px-4">Points</TableHead>
                                                             <TableHead className="text-center px-1 sm:px-4">Days</TableHead>
+                                                            <TableHead className="text-center px-1 sm:px-4">Points</TableHead>
                                                             <TableHead className="text-center px-1 sm:px-4 text-primary">Bonus</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
@@ -116,8 +116,8 @@ export default function FAQPage() {
                                                                         <span className="text-[10px] sm:text-sm leading-tight">{rank.name}</span>
                                                                     </div>
                                                                 </TableCell>
-                                                                <TableCell className="text-center text-[11px] sm:text-sm py-2 px-1 sm:px-4 font-medium">{rank.pointsReq.toLocaleString()}+</TableCell>
                                                                 <TableCell className="text-center text-[11px] sm:text-sm py-2 px-1 sm:px-4 font-medium">{rank.daysReq}+</TableCell>
+                                                                <TableCell className="text-center text-[11px] sm:text-sm py-2 px-1 sm:px-4 font-medium">{rank.pointsReq.toLocaleString()}+</TableCell>
                                                                 <TableCell className="text-center text-[11px] sm:text-sm py-2 px-1 sm:px-4 font-black text-primary">
                                                                   {rank.bonusPoints > 0 ? `+${rank.bonusPoints}` : '---'}
                                                                 </TableCell>

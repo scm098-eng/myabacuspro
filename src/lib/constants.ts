@@ -106,7 +106,7 @@ export const RANK_CRITERIA = [
   { name: "Grandmaster", icon: "🏆", color: "#E5E4E2", daysReq: 330, pointsReq: 85000, bonusPoints: 3500, description: "Elite status reserved for the most dedicated math warriors." },
   { name: "Math Titan", icon: "🏛️", color: "#94a3b8", daysReq: 300, pointsReq: 70000, bonusPoints: 2500, description: "Unshakable precision and monumental focus." },
   { name: "Supreme Ninja", icon: "⚔️", color: "#475569", daysReq: 210, pointsReq: 55000, bonusPoints: 1800, description: "A legendary force in the world of mental arithmetic." },
-  { name: "Math Ninja", icon: "🥷", color: "#C0C0C0", daysReq: 180, pointsReq: 40000, bonusPoints: 1200, description: "Lightning fast visualization and silent precision." },
+  { name: "Math Ninja", icon: "🥋", color: "#C0C0C0", daysReq: 180, pointsReq: 40000, bonusPoints: 1200, description: "Lightning fast visualization and silent precision." },
   { name: "Senior Calculator", icon: "🎓", color: "#3b82f6", daysReq: 150, pointsReq: 25000, bonusPoints: 800, description: "A seasoned expert with immense speed and deep abacus wisdom." },
   { name: "Senior Apprentice", icon: "🧮", color: "#6366f1", daysReq: 120, pointsReq: 15000, bonusPoints: 500, description: "Advanced skills and deep understanding of abacus logic." },
   { name: "Apprentice", icon: "🛠️", color: "#A52A2A", daysReq: 90, pointsReq: 10000, bonusPoints: 350, description: "Solid foundation in all core abacus techniques." },
