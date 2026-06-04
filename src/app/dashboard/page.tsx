@@ -323,7 +323,9 @@ export default function StudentDashboardPage() {
               const weekOffset = w - 1;
               const globalWeekNum = (cycleCount * 4) + w;
               const startDayOfThisWeek = startDayOfCurrentCycle + (weekOffset * 7);
-              const hasBonus = w === 2 || w === 4;
+              
+              // Bonus configuration
+              const bonusCirclesCount = w === 2 ? 1 : (w === 4 ? 2 : 0);
               const bonusLabel = w === 2 ? "+1 DAY" : "+2 DAYS";
 
               return (
@@ -331,7 +333,7 @@ export default function StudentDashboardPage() {
                   <CardHeader className="bg-muted/30 border-b p-4 flex flex-row items-center justify-between">
                     <span className="font-black text-sm uppercase">Week {globalWeekNum}</span>
                     <div className="flex items-center gap-2">
-                        {hasBonus && (
+                        {bonusCirclesCount > 0 && (
                             <Badge className="bg-orange-500 text-[8px] font-black tracking-widest px-2 py-0.5 border-none">
                                 <Sparkles className="w-2 h-2 mr-1" /> {bonusLabel}
                             </Badge>
@@ -349,9 +351,9 @@ export default function StudentDashboardPage() {
                         </div>
                       ))}
                       
-                      {/* Special Bonus Day Indicator */}
-                      {hasBonus && (
-                        <div className="flex flex-col items-center gap-1 shrink-0 -mt-1">
+                      {/* Dynamic Bonus Day Circles */}
+                      {Array.from({ length: bonusCirclesCount }).map((_, i) => (
+                        <div key={`bonus-${i}`} className="flex flex-col items-center gap-1 shrink-0 -mt-1">
                           <div className={cn(
                             "w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square shadow-sm transition-all duration-500",
                             currentDays >= (startDayOfThisWeek + 7) 
@@ -362,18 +364,13 @@ export default function StudentDashboardPage() {
                           </div>
                           <span className="text-[6px] sm:text-[7px] font-black uppercase text-orange-600 tracking-tighter">Bonus Day</span>
                         </div>
-                      )}
+                      ))}
 
                       <div className={cn(
                         "w-9 h-9 sm:w-11 sm:h-11 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all duration-500 relative", 
                         currentDays >= (startDayOfThisWeek + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale"
                       )}>
                         <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
-                        {hasBonus && (
-                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-orange-100 text-orange-600 text-[6px] sm:text-[8px] font-black px-1 rounded-full border border-orange-200">
-                                BONUS {bonusLabel}
-                            </div>
-                        )}
                       </div>
                     </div>
                   </CardContent>
