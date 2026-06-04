@@ -3,11 +3,15 @@ export type TestType =
   | 'addition-subtraction'
   | 'multiplication'
   | 'division'
+  | 'square'
+  | 'cube'
   | 'square-root'
   | 'cube-root'
   | 'addition-subtraction-input'
   | 'multiplication-input'
   | 'division-input'
+  | 'square-input'
+  | 'cube-input'
   | 'square-root-input'
   | 'cube-root-input'
   | 'beads-identify'
@@ -191,7 +195,7 @@ export interface TestSettings {
   numQuestions: number;
   timeLimit: number; 
   title: string;
-  icon: 'brain-circuit' | 'x' | 'divide' | 'puzzle' | 'eye' | 'keyboard' | 'square-root';
+  icon: 'brain-circuit' | 'x' | 'divide' | 'puzzle' | 'eye' | 'keyboard' | 'square-root' | 'sparkles' | 'box';
 }
 
 export type SubscriptionStatus = 'free' | 'pro' | 'active';

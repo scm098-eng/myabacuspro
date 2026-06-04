@@ -67,6 +67,26 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
     medium: { numQuestions: 100, timeLimit: 600, title: 'Master: Division (Medium)', icon: 'keyboard' },
     hard: { numQuestions: 150, timeLimit: 900, title: 'Master: Division (Hard)', icon: 'keyboard' },
   },
+  'square': {
+    easy: { numQuestions: 30, timeLimit: 300, title: 'Square (Easy)', icon: 'sparkles' },
+    medium: { numQuestions: 50, timeLimit: 480, title: 'Square (Medium)', icon: 'sparkles' },
+    hard: { numQuestions: 75, timeLimit: 600, title: 'Square (Hard)', icon: 'sparkles' },
+  },
+  'square-input': {
+    easy: { numQuestions: 30, timeLimit: 300, title: 'Master: Square (Easy)', icon: 'keyboard' },
+    medium: { numQuestions: 50, timeLimit: 480, title: 'Master: Square (Medium)', icon: 'keyboard' },
+    hard: { numQuestions: 75, timeLimit: 600, title: 'Master: Square (Hard)', icon: 'keyboard' },
+  },
+  'cube': {
+    easy: { numQuestions: 20, timeLimit: 300, title: 'Cube (Easy)', icon: 'box' },
+    medium: { numQuestions: 40, timeLimit: 480, title: 'Cube (Medium)', icon: 'box' },
+    hard: { numQuestions: 60, timeLimit: 600, title: 'Cube (Hard)', icon: 'box' },
+  },
+  'cube-input': {
+    easy: { numQuestions: 20, timeLimit: 300, title: 'Master: Cube (Easy)', icon: 'keyboard' },
+    medium: { numQuestions: 40, timeLimit: 480, title: 'Master: Cube (Medium)', icon: 'keyboard' },
+    hard: { numQuestions: 60, timeLimit: 600, title: 'Master: Cube (Hard)', icon: 'keyboard' },
+  },
   'square-root': {
     easy: { numQuestions: 30, timeLimit: 300, title: 'Square Root (Easy)', icon: 'brain-circuit' },
     medium: { numQuestions: 50, timeLimit: 480, title: 'Square Root (Medium)', icon: 'brain-circuit' },
@@ -537,6 +557,24 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
           answer = getRandomInt(answer_min, answer_max);
           const dividend = divisor * answer;
           questionText = `${dividend} ÷ ${divisor}`;
+          break;
+        }
+        case 'square': {
+          let num: number;
+          if (difficulty === 'easy') num = getRandomInt(1, 12);
+          else if (difficulty === 'medium') num = getRandomInt(13, 30);
+          else num = getRandomInt(31, 99);
+          answer = num * num;
+          questionText = `${num}²`;
+          break;
+        }
+        case 'cube': {
+          let num: number;
+          if (difficulty === 'easy') num = getRandomInt(1, 5);
+          else if (difficulty === 'medium') num = getRandomInt(6, 15);
+          else num = getRandomInt(16, 30);
+          answer = num * num * num;
+          questionText = `${num}³`;
           break;
         }
         case 'square-root': {

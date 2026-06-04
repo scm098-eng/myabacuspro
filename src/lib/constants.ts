@@ -6,6 +6,10 @@ export const TEST_NAME_MAP: Record<string, string> = {
     'multiplication-input': 'Multiplication (Master)',
     'division': 'Division',
     'division-input': 'Division (Master)',
+    'square': 'Square',
+    'square-input': 'Square (Master)',
+    'cube': 'Cube',
+    'cube-input': 'Cube (Master)',
     'square-root': 'Square Root',
     'square-root-input': 'Square Root (Master)',
     'cube-root': 'Cube Root',
@@ -190,9 +194,9 @@ export const APP_VERSION = "2.3.0";
 
 export const UPDATE_NOTES = [
   {
-    title: "Advanced Roots Practice",
-    description: "New Square Root and Cube Root modules added to General Practice for higher-level mastery.",
-    icon: "📐"
+    title: "Advanced Powers & Roots",
+    description: "New Square, Cube, Square Root, and Cube Root modules added to General Practice.",
+    icon: "🚀"
   },
   {
     title: "Dynamic One-Line Display",

@@ -3,7 +3,7 @@
 
 import { TestCard } from '@/components/TestCard';
 import type { TestType } from '@/types';
-import { X, Divide, Keyboard, BrainCircuit, Search, Box } from 'lucide-react';
+import { X, Divide, Keyboard, BrainCircuit, Search, Box, Sparkles } from 'lucide-react';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
@@ -50,6 +50,20 @@ const foundationTests: { id: TestType; title: string; description: string; icon:
     iconBg: 'bg-blue-100',
   },
   {
+    id: 'square',
+    title: 'Square',
+    description: 'Practice squaring numbers from single to double digits.',
+    icon: Sparkles,
+    iconBg: 'bg-pink-100',
+  },
+  {
+    id: 'cube',
+    title: 'Cube',
+    description: 'Master calculating cubes for numbers up to 30.',
+    icon: Box,
+    iconBg: 'bg-orange-100',
+  },
+  {
     id: 'square-root',
     title: 'Square Root',
     description: 'Learn to calculate perfect square roots visually.',
@@ -61,7 +75,7 @@ const foundationTests: { id: TestType; title: string; description: string; icon:
     title: 'Cube Root',
     description: 'Advanced mastery of perfect cube root calculations.',
     icon: Box,
-    iconBg: 'bg-orange-100',
+    iconBg: 'bg-indigo-100',
   },
 ];
 
@@ -84,6 +98,20 @@ const masterModeTests: { id: TestType; title: string; description: string; icon:
     id: 'division-input',
     title: 'Master Division',
     description: 'Elite Level: Total accuracy required. Type the quotient to score.',
+    icon: Keyboard,
+    iconBg: 'bg-slate-100',
+  },
+  {
+    id: 'square-input',
+    title: 'Master Square',
+    description: 'Elite Level: Direct input square training for advanced speed.',
+    icon: Keyboard,
+    iconBg: 'bg-slate-100',
+  },
+  {
+    id: 'cube-input',
+    title: 'Master Cube',
+    description: 'Elite Level: Fast-paced cube calculation with manual entry.',
     icon: Keyboard,
     iconBg: 'bg-slate-100',
   },
