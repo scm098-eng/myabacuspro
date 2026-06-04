@@ -44,6 +44,7 @@ interface AuthContextType {
   getUserTestHistoryByDateRange: (userId: string, start: Date, end: Date) => Promise<TestResult[]>;
   getUserTestHistoryByPeriod: (userId: string, type: 'weekly' | 'monthly') => Promise<TestResult[]>;
   getUserTestHistoryBySession: (userId: string) => Promise<TestResult[]>;
+  getUserTestHistoryByPaper: (userId: string, paperId: string) => Promise<TestResult[]>;
   getUserProfile: (userId: string) => Promise<ProfileData | null>;
   approveTeacher: (teacherId: string, callback?: () => void) => Promise<void>;
   getCompletedGameLevels: () => Promise<number[]>;
@@ -396,6 +397,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
   }, [firestore]);
 
+  const getUserTestHistoryByPaper = useCallback(async (userId: string, paperId: string): Promise<TestResult[]> => {
+    const testCol = collection(firestore, 'testResults');
+    const q = query(testCol, where("userId", "==", userId), where("testId", "==", paperId), orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q); 
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
+  }, [firestore]);
+
   const getUserTestHistoryByPeriod = useCallback(async (userId: string, type: 'weekly' | 'monthly'): Promise<TestResult[]> => {
     const testCol = collection(firestore, 'testResults');
     const now = new Date();
@@ -465,7 +473,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const updateData: any = { updatedAt: serverTimestamp() };
     
     if (nextRank.name !== data.lastAwardedRank) {
-      // Award Rank-Up Bonus Points (ONLY TO GLOBAL)
       const bonus = nextRank.bonusPoints || 0;
       updateData.lastAwardedRank = nextRank.name;
       updateData.totalPoints = increment(earnedPoints + bonus);
@@ -479,7 +486,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateData.totalPoints = increment(earnedPoints);
     }
     
-    // Regular active points added to Weekly/Monthly
     const currentWeekKey = getUTCMondayKey();
     const currentMonthKey = getUTCMonthKey();
     if (data.lastWeeklyReset !== currentWeekKey) { updateData.weeklyPoints = earnedPoints; updateData.lastWeeklyReset = currentWeekKey; } else { updateData.weeklyPoints = increment(earnedPoints); }
@@ -504,7 +510,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const dayInCycle = (currentDays % 28) + 1; 
     let bonusDays = 0;
     if (dayInCycle === 14) bonusDays = 1; 
-    if (dayInCycle === 28) bonusDays = 2; 
+    if (dayInCycle === 28) bonusDays = 1; 
 
     await updateDoc(userRef, { lastPracticeDate: today, currentStreak: newStreak, totalDaysPracticed: increment(1 + bonusDays), updatedAt: serverTimestamp() });
     await addPoints(userId, 25);
@@ -513,11 +519,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const contextValue = useMemo(() => ({ 
     user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
     sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, markUserAsRead, getAllUsers, getApprovedTeachers, 
-    getUserTestHistory, getUserTestHistoryByDateRange, getUserTestHistoryByPeriod, getUserTestHistoryBySession, getUserProfile, approveTeacher, getCompletedGameLevels, 
+    getUserTestHistory, getUserTestHistoryByDateRange, getUserTestHistoryByPeriod, getUserTestHistoryBySession, getUserTestHistoryByPaper, getUserProfile, approveTeacher, getCompletedGameLevels, 
     saveCompletedGameLevel, setLastLevelAttended, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining
   }), [user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
     sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, markUserAsRead, getAllUsers, getApprovedTeachers, 
-    getUserTestHistory, getUserTestHistoryByDateRange, getUserTestHistoryByPeriod, getUserTestHistoryBySession, getUserProfile, approveTeacher, getCompletedGameLevels, 
+    getUserTestHistory, getUserTestHistoryByDateRange, getUserTestHistoryByPeriod, getUserTestHistoryBySession, getUserTestHistoryByPaper, getUserProfile, approveTeacher, getCompletedGameLevels, 
     saveCompletedGameLevel, setLastLevelAttended, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining]);
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

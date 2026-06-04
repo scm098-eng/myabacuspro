@@ -325,8 +325,8 @@ export default function StudentDashboardPage() {
               const startDayOfThisWeek = startDayOfCurrentCycle + (weekOffset * 7);
               
               // Bonus configuration
-              const bonusCirclesCount = w === 2 ? 1 : (w === 4 ? 2 : 0);
-              const bonusLabel = w === 2 ? "+1 DAY" : "+2 DAYS";
+              const bonusCirclesCount = (w === 2 || w === 4) ? 1 : 0;
+              const bonusLabel = "+1 DAY";
 
               return (
                 <Card key={w} className="overflow-hidden border-border rounded-2xl shadow-sm bg-card/30 relative">
