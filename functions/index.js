@@ -457,24 +457,18 @@ exports.resetExamCycle = onCall(async (request) => {
     // 1. Delete all existing exam applications
     const appsSnap = await db.collection('examApplications').select().get();
     let batch = db.batch();
-    let count = 0;
     for (const doc of appsSnap.docs) {
         batch.delete(doc.ref);
-        count++;
-        if (count % 500 === 0) { await batch.commit(); batch = db.batch(); }
     }
-    if (count % 500 !== 0) await batch.commit();
+    await batch.commit();
 
     // 2. Delete all existing exam results
     const resultsSnap = await db.collection('examResults').select().get();
     batch = db.batch();
-    let resultCount = 0;
     for (const doc of resultsSnap.docs) {
         batch.delete(doc.ref);
-        resultCount++;
-        if (resultCount % 500 === 0) { await batch.commit(); batch = db.batch(); }
     }
-    if (resultCount % 500 !== 0) await batch.commit();
+    await batch.commit();
 
     // 3. Update the exam schedule
     await db.collection('stats').doc('examSchedule').set({
@@ -487,7 +481,7 @@ exports.resetExamCycle = onCall(async (request) => {
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    return { status: "success", appsCleared: count, resultsCleared: resultCount };
+    return { status: "success" };
 });
 
 /**

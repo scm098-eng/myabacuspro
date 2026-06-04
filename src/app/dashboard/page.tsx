@@ -348,6 +348,22 @@ export default function StudentDashboardPage() {
                           {currentDays >= (startDayOfThisWeek + d) ? <Check className="w-5 h-5 stroke-[4px]" /> : <span className="text-[10px] sm:text-sm font-black">{d}</span>}
                         </div>
                       ))}
+                      
+                      {/* Special Bonus Day Indicator */}
+                      {hasBonus && (
+                        <div className="flex flex-col items-center gap-1 shrink-0 -mt-1">
+                          <div className={cn(
+                            "w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 flex items-center justify-center shrink-0 aspect-square shadow-sm transition-all duration-500",
+                            currentDays >= (startDayOfThisWeek + 7) 
+                              ? "bg-orange-500 border-orange-600 text-white shadow-[0_0_10px_rgba(249,115,22,0.4)]" 
+                              : "bg-orange-50 border-orange-200 text-orange-300"
+                          )}>
+                            <span className="text-sm sm:text-base font-black">B</span>
+                          </div>
+                          <span className="text-[6px] sm:text-[7px] font-black uppercase text-orange-600 tracking-tighter">Bonus Day</span>
+                        </div>
+                      )}
+
                       <div className={cn(
                         "w-9 h-9 sm:w-11 sm:h-11 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all duration-500 relative", 
                         currentDays >= (startDayOfThisWeek + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale"

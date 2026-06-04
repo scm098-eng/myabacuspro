@@ -35,13 +35,13 @@ const faqs = [
     category: 'Rewards',
     question: 'What are the special Milestone & Birthday bonuses?',
     answer:
-      'We love celebrating your growth! \n\n• **Rank-Up Bonus**: Every time you reach a new Title (like Math Ninja or Math Titan), you receive a progressive point bonus. These are added directly to your Global score. \n• **Birthday Gift**: Log in on your birthday to receive a special +100 point Mastery boost (added to Global score). \n• **Milestone Days**: Practice for 14 or 28 days straight to receive "Bonus Progress" days toward your training cycle.',
+      'We love celebrating your growth! These special rewards are prestigious additions to your Global career score: \n\n• **Rank-Up Bonus**: Reaching a new Title (like Math Ninja or Titan) awards a progressive point bonus (+50 to +5,000 pts). These are added directly to your Global score. \n• **Birthday Gift**: Log in on your birthday for an automatic +100 point Mastery boost (added to Global score only). \n• **Milestone Days**: Practice for 14 or 28 days straight to receive "Bonus Progress" days toward your training cycle.',
   },
   {
     category: 'Leaderboard',
     question: 'How do the Hall of Fame Leaderboards work?',
     answer:
-      'We maintain three distinct leaderboards to keep competition fresh: \n\n• Weekly: Tracks points earned from Sunday to Sunday. It resets every week, giving everyone a fresh chance to be #1. \n• Monthly: Tracks total performance within the calendar month. \n• Global: An all-time leaderboard showing your total career progress, including all rank-up and birthday bonuses. \n\nNote: Special Milestone and Birthday bonuses are added to the Global score only, while practice points are added to all three.',
+      'We maintain three distinct leaderboards to keep competition fresh: \n\n• Weekly: Tracks points from active practice (Sunday to Sunday). It resets every week, giving everyone a fresh chance to be #1. \n• Monthly: Tracks active performance within the calendar month. \n• Global: An all-time leaderboard showing total career progress, including all rank-up and birthday bonuses. \n\nNote: Rank-up and Birthday bonuses are added to Global score only, while practice points are added to all three.',
   },
   {
     question: 'Do I need a physical abacus to use this site?',
@@ -56,7 +56,7 @@ const faqs = [
   {
     category: 'Ranks',
     question: 'What are the Rank and Title criteria?',
-    answer: 'Titles are awarded based on a dual-requirement system of total points and practice consistency. Each title includes a Rank-Up point bonus.',
+    answer: 'Titles are awarded based on total points and practice consistency. Each title includes a Rank-Up point bonus.',
     isCustom: true
   },
   {
