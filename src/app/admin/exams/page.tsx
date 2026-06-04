@@ -291,8 +291,7 @@ export default function AdminExamsPage() {
                       <Select value={startM} onValueChange={setStartM}>
                         <SelectTrigger className="w-full h-full border-2"><SelectValue /></SelectTrigger>
                         <SelectContent className="max-h-60"><ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
-                      </Select>
-                    </div>
+                      </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">End Time (24h)</Label>
@@ -304,8 +303,7 @@ export default function AdminExamsPage() {
                       <Select value={endM} onValueChange={setEndM}>
                         <SelectTrigger className="w-full h-full border-2"><SelectValue /></SelectTrigger>
                         <SelectContent className="max-h-60"><ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
-                      </Select>
-                    </div>
+                      </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs font-black uppercase tracking-widest text-red-600">Apply Deadline</Label>

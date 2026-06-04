@@ -97,7 +97,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
       <body className="font-body antialiased h-full">
-        {/* Google AdSense - Loading with strategy="afterInteractive" to prevent hydration mismatch */}
+        {/* Google AdSense - strategy="afterInteractive" ensures script runs after hydration */}
         <Script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4545290153947218"
@@ -105,7 +105,7 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
         
-        {/* JSON-LD - Rendering inside body to avoid conflicts in the head with external script modifications */}
+        {/* JSON-LD - Rendering inside body ensures it doesn't conflict with head hydration pointers */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

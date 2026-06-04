@@ -96,6 +96,7 @@ export default function ExamArenaPage() {
     setIsSubmitting(true);
 
     const currentAnswers = answersRef.current;
+    // Explicitly type acc as number to resolve Build Error OMITTED
     const finalScore = currentAnswers.reduce((acc: number, ans, i) => {
         if (questions[i] && ans !== null && ans === questions[i].answer) {
             return acc + 1;
@@ -128,11 +129,9 @@ export default function ExamArenaPage() {
       });
   }, [user, application, questions, paperId, router, toast]);
 
-  const finishExamRef = useRef(finishExam);
-  useEffect(() => { finishExamRef.current = finishExam; }, [finishExam]);
-
+  // Persistent Timer Interval - independent of user clicks
   useEffect(() => {
-    if (loading || isFinished || timeLeftRef.current <= 0) return;
+    if (loading || isFinished) return;
     
     const interval = setInterval(() => {
       setTimeLeft(prev => {
@@ -141,7 +140,7 @@ export default function ExamArenaPage() {
 
         if (next <= 0) {
           clearInterval(interval);
-          finishExamRef.current();
+          finishExam();
           return 0;
         }
 
@@ -153,7 +152,7 @@ export default function ExamArenaPage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [loading, isFinished, playSound]);
+  }, [loading, isFinished, playSound, finishExam]);
 
   const handleSelectOption = (val: number) => {
     if (isFinished) return;

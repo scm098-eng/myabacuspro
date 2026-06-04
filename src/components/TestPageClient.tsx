@@ -113,6 +113,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   const finishTestRef = useRef(finishTest);
   useEffect(() => { finishTestRef.current = finishTest; }, [finishTest]);
 
+  // Persistent Timer Interval - independent of user clicks
   useEffect(() => {
     if (!hasStarted || isFinished || settings.timeLimit <= 0) return;
     
