@@ -128,7 +128,6 @@ export default function ExamArenaPage() {
       });
   }, [user, application, questions, paperId, router, toast]);
 
-  // Persistent Timer Interval - independent of user clicks
   useEffect(() => {
     if (loading || isFinished) return;
     
