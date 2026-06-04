@@ -1,4 +1,3 @@
-
 'use client';
 
 import { TestCard } from '@/components/TestCard';
@@ -24,6 +23,35 @@ const PlusMinus = (props: React.SVGProps<SVGSVGElement>) => (
   >
     <path d="M5 12h14" />
     <path d="M12 5v14" />
+  </svg>
+);
+
+const SquareIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <text x="2" y="19" fontSize="16" fontWeight="900" fill="currentColor" stroke="none">x</text>
+    <text x="13" y="11" fontSize="11" fontWeight="900" fill="currentColor" stroke="none">2</text>
+  </svg>
+);
+
+const CubeIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <text x="2" y="19" fontSize="16" fontWeight="900" fill="currentColor" stroke="none">x</text>
+    <text x="13" y="11" fontSize="11" fontWeight="900" fill="currentColor" stroke="none">3</text>
+  </svg>
+);
+
+const SquareRootIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M3 13 L7 13 L10 20 L18 4 L21 4" />
+    <text x="12" y="18" fontSize="10" fontWeight="900" fill="currentColor" stroke="none">x</text>
+  </svg>
+);
+
+const CubeRootIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M3 13 L7 13 L10 20 L18 4 L21 4" />
+    <text x="3.5" y="11" fontSize="7" fontWeight="900" fill="currentColor" stroke="none">3</text>
+    <text x="12" y="18" fontSize="10" fontWeight="900" fill="currentColor" stroke="none">x</text>
   </svg>
 );
 
@@ -53,28 +81,28 @@ const foundationTests: { id: TestType; title: string; description: string; icon:
     id: 'square',
     title: 'Square',
     description: 'Practice squaring numbers from single to double digits.',
-    icon: Sparkles,
+    icon: SquareIcon,
     iconBg: 'bg-pink-100',
   },
   {
     id: 'cube',
     title: 'Cube',
     description: 'Master calculating cubes for numbers up to 30.',
-    icon: Box,
+    icon: CubeIcon,
     iconBg: 'bg-orange-100',
   },
   {
     id: 'square-root',
     title: 'Square Root',
     description: 'Learn to calculate perfect square roots visually.',
-    icon: Search,
+    icon: SquareRootIcon,
     iconBg: 'bg-purple-100',
   },
   {
     id: 'cube-root',
     title: 'Cube Root',
     description: 'Advanced mastery of perfect cube root calculations.',
-    icon: Box,
+    icon: CubeRootIcon,
     iconBg: 'bg-indigo-100',
   },
 ];
@@ -105,28 +133,28 @@ const masterModeTests: { id: TestType; title: string; description: string; icon:
     id: 'square-input',
     title: 'Master Square',
     description: 'Elite Level: Direct input square training for advanced speed.',
-    icon: Keyboard,
+    icon: SquareIcon,
     iconBg: 'bg-slate-100',
   },
   {
     id: 'cube-input',
     title: 'Master Cube',
     description: 'Elite Level: Fast-paced cube calculation with manual entry.',
-    icon: Keyboard,
+    icon: CubeIcon,
     iconBg: 'bg-slate-100',
   },
   {
     id: 'square-root-input',
     title: 'Master Square Root',
     description: 'Input the exact square root for complex perfect squares.',
-    icon: Keyboard,
+    icon: SquareRootIcon,
     iconBg: 'bg-slate-100',
   },
   {
     id: 'cube-root-input',
     title: 'Master Cube Root',
     description: 'Calculate and type cube roots for multi-digit perfect cubes.',
-    icon: Keyboard,
+    icon: CubeRootIcon,
     iconBg: 'bg-slate-100',
   },
 ];
