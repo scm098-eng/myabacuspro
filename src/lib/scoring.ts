@@ -30,7 +30,7 @@ export const calculatePoints = ({ correct, total, answered, timeInSeconds, targe
 
   // 4. Level Completion Bonus (Bubble Game 90% Accuracy or higher)
   if (isGame && accuracy >= 90) {
-    points += 5; 
+    points += 20; 
   }
 
   return {
