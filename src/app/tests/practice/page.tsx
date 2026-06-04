@@ -1,4 +1,3 @@
-
 'use client';
 
 import { TestCard } from '@/components/TestCard';
@@ -43,16 +42,16 @@ const CubeIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 const SquareRootIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M2 14 L5 14 L8 21 L17 5 L22 5" />
-    <text x="11" y="18" fontSize="12" fontWeight="900" fill="currentColor" stroke="none">x</text>
+    <path d="M2 13 L5 13 L8 20 L13 6 L22 6" />
+    <text x="14" y="18" fontSize="12" fontWeight="900" fill="currentColor" stroke="none">x</text>
   </svg>
 );
 
 const CubeRootIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M2 14 L5 14 L8 21 L17 5 L22 5" />
+    <path d="M2 13 L5 13 L8 20 L13 6 L22 6" />
     <text x="3" y="11" fontSize="9" fontWeight="900" fill="currentColor" stroke="none">3</text>
-    <text x="11" y="18" fontSize="12" fontWeight="900" fill="currentColor" stroke="none">x</text>
+    <text x="14" y="18" fontSize="12" fontWeight="900" fill="currentColor" stroke="none">x</text>
   </svg>
 );
 
