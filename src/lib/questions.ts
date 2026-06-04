@@ -67,6 +67,26 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
     medium: { numQuestions: 100, timeLimit: 600, title: 'Master: Division (Medium)', icon: 'keyboard' },
     hard: { numQuestions: 150, timeLimit: 900, title: 'Master: Division (Hard)', icon: 'keyboard' },
   },
+  'square-root': {
+    easy: { numQuestions: 30, timeLimit: 300, title: 'Square Root (Easy)', icon: 'brain-circuit' },
+    medium: { numQuestions: 50, timeLimit: 480, title: 'Square Root (Medium)', icon: 'brain-circuit' },
+    hard: { numQuestions: 75, timeLimit: 600, title: 'Square Root (Hard)', icon: 'brain-circuit' },
+  },
+  'square-root-input': {
+    easy: { numQuestions: 30, timeLimit: 300, title: 'Master: Square Root (Easy)', icon: 'keyboard' },
+    medium: { numQuestions: 50, timeLimit: 480, title: 'Master: Square Root (Medium)', icon: 'keyboard' },
+    hard: { numQuestions: 75, timeLimit: 600, title: 'Master: Square Root (Hard)', icon: 'keyboard' },
+  },
+  'cube-root': {
+    easy: { numQuestions: 20, timeLimit: 300, title: 'Cube Root (Easy)', icon: 'brain-circuit' },
+    medium: { numQuestions: 40, timeLimit: 480, title: 'Cube Root (Medium)', icon: 'brain-circuit' },
+    hard: { numQuestions: 60, timeLimit: 600, title: 'Cube Root (Hard)', icon: 'brain-circuit' },
+  },
+  'cube-root-input': {
+    easy: { numQuestions: 20, timeLimit: 300, title: 'Master: Cube Root (Easy)', icon: 'keyboard' },
+    medium: { numQuestions: 40, timeLimit: 480, title: 'Master: Cube Root (Medium)', icon: 'keyboard' },
+    hard: { numQuestions: 60, timeLimit: 600, title: 'Master: Cube Root (Hard)', icon: 'keyboard' },
+  },
   'basic-addition-plus-4': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +4 = +5 - 1', icon: 'puzzle' } },
   'basic-addition-plus-40': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +40 = +50 - 10', icon: 'puzzle' } },
   'basic-addition-plus-3': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +3 = +5 - 2', icon: 'puzzle' } },
@@ -477,14 +497,13 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
     return deDuplicateQuestions(questions);
   }
 
-  const [min, max] = getNumberRange(difficulty);
-
   for (let i = 0; i < settings.numQuestions; i++) {
       let questionText: string;
       let answer: number;
 
       switch (coreTestId) {
         case 'addition-subtraction': {
+          const [min, max] = getNumberRange(difficulty);
           const numTerms = 4;
           let tempResult = getRandomInt(min, max);
           let numbers: (number | string)[] = [tempResult];
@@ -502,7 +521,8 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
           answer = tempResult;
           break;
         }
-        case 'multiplication':
+        case 'multiplication': {
+          const [min, max] = getNumberRange(difficulty);
           const m1_max = difficulty === 'easy' ? 9 : (difficulty === 'medium' ? 99 : 999);
           const m2_max = difficulty === 'hard' ? 99 : 9;
           const m1 = getRandomInt(min, m1_max);
@@ -510,13 +530,33 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
           answer = m1 * m2;
           questionText = `${m1} × ${m2}`;
           break;
-        case 'division':
+        }
+        case 'division': {
           const divisor = getRandomInt(2, 9);
           const [answer_min, answer_max] = getNumberRange(difficulty);
           answer = getRandomInt(answer_min, answer_max);
           const dividend = divisor * answer;
           questionText = `${dividend} ÷ ${divisor}`;
           break;
+        }
+        case 'square-root': {
+          let root: number;
+          if (difficulty === 'easy') root = getRandomInt(1, 12);
+          else if (difficulty === 'medium') root = getRandomInt(13, 30);
+          else root = getRandomInt(31, 99);
+          answer = root;
+          questionText = `√${root * root}`;
+          break;
+        }
+        case 'cube-root': {
+          let root: number;
+          if (difficulty === 'easy') root = getRandomInt(1, 5);
+          else if (difficulty === 'medium') root = getRandomInt(6, 15);
+          else root = getRandomInt(16, 30);
+          answer = root;
+          questionText = `³√${root * root * root}`;
+          break;
+        }
         default:
           questionText = "1 + 1";
           answer = 2;

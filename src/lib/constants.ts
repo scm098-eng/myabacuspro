@@ -1,3 +1,4 @@
+
 export const TEST_NAME_MAP: Record<string, string> = {
     'addition-subtraction': 'Add/Subtract',
     'addition-subtraction-input': 'Add/Subtract (Master)',
@@ -5,6 +6,10 @@ export const TEST_NAME_MAP: Record<string, string> = {
     'multiplication-input': 'Multiplication (Master)',
     'division': 'Division',
     'division-input': 'Division (Master)',
+    'square-root': 'Square Root',
+    'square-root-input': 'Square Root (Master)',
+    'cube-root': 'Cube Root',
+    'cube-root-input': 'Cube Root (Master)',
     'beads-identify': 'Beads Value',
     'beads-set': 'Beads Set',
     'basic-add-sub-l1': 'Basic Add/Sub Level 1',
@@ -181,22 +186,22 @@ export const FORMULA_GUIDES: Record<string, { title: string, steps: string[] }> 
   'combination-plus-9': { title: "Combination +9", steps: ["Formula: +9 = +10 - 5 + 4", "To add 9: Add 1 bead to the rod on the LEFT (+10).", "Then: Push UP the 5-bead (-5) and Add 4 earthly beads (+4)."] },
 };
 
-export const APP_VERSION = "2.2.0";
+export const APP_VERSION = "2.3.0";
 
 export const UPDATE_NOTES = [
   {
-    title: "New 30-Day Rank System",
-    description: "We've synchronized our rank advancements to happen exactly every 30 days of consistent practice.",
-    icon: "🏆"
+    title: "Advanced Roots Practice",
+    description: "New Square Root and Cube Root modules added to General Practice for higher-level mastery.",
+    icon: "📐"
   },
   {
-    title: "Consistency Bonus Days",
-    description: "Earn extra practice credits! Get +1 bonus day at Week 2 and +2 bonus days at Week 4 of every cycle.",
-    icon: "⚡"
+    title: "Dynamic One-Line Display",
+    description: "Calculations now automatically scale and stay on a single line for perfect visual clarity.",
+    icon: "📏"
   },
   {
-    title: "Infinite Milestone Road",
-    description: "Your training road now resets every 28 days, allowing you to track your progress endlessly across Weeks 1-4, 5-8, and beyond.",
-    icon: "🔄"
+    title: "Light Visual Feedback",
+    description: "Enjoy smoother practice with light green and red tints for instant answer validation.",
+    icon: "✨"
   }
 ];

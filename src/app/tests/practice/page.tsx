@@ -3,7 +3,7 @@
 
 import { TestCard } from '@/components/TestCard';
 import type { TestType } from '@/types';
-import { X, Divide, Keyboard, BrainCircuit } from 'lucide-react';
+import { X, Divide, Keyboard, BrainCircuit, Search, Box } from 'lucide-react';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
@@ -49,6 +49,20 @@ const foundationTests: { id: TestType; title: string; description: string; icon:
     icon: Divide,
     iconBg: 'bg-blue-100',
   },
+  {
+    id: 'square-root',
+    title: 'Square Root',
+    description: 'Learn to calculate perfect square roots visually.',
+    icon: Search,
+    iconBg: 'bg-purple-100',
+  },
+  {
+    id: 'cube-root',
+    title: 'Cube Root',
+    description: 'Advanced mastery of perfect cube root calculations.',
+    icon: Box,
+    iconBg: 'bg-orange-100',
+  },
 ];
 
 const masterModeTests: { id: TestType; title: string; description: string; icon: React.ElementType; iconBg: string }[] = [
@@ -70,6 +84,20 @@ const masterModeTests: { id: TestType; title: string; description: string; icon:
     id: 'division-input',
     title: 'Master Division',
     description: 'Elite Level: Total accuracy required. Type the quotient to score.',
+    icon: Keyboard,
+    iconBg: 'bg-slate-100',
+  },
+  {
+    id: 'square-root-input',
+    title: 'Master Square Root',
+    description: 'Input the exact square root for complex perfect squares.',
+    icon: Keyboard,
+    iconBg: 'bg-slate-100',
+  },
+  {
+    id: 'cube-root-input',
+    title: 'Master Cube Root',
+    description: 'Calculate and type cube roots for multi-digit perfect cubes.',
     icon: Keyboard,
     iconBg: 'bg-slate-100',
   },
