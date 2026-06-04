@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -95,6 +96,7 @@ export default function ExamArenaPage() {
     setIsSubmitting(true);
 
     const currentAnswers = answersRef.current;
+    // Fix build error: Explicitly type acc as number
     const finalScore = currentAnswers.reduce((acc: number, ans, i) => {
         if (questions[i] && ans !== null && ans === questions[i].answer) {
             return acc + 1;
@@ -198,7 +200,7 @@ export default function ExamArenaPage() {
           <div className="space-y-6">
             <div className="py-4 bg-muted/30 rounded-[2rem] border-2 border-dashed flex flex-col items-center min-h-[140px] justify-center">
                 {questions[currentIdx].questionType === 'identify' ? (
-                  <div className="w-full max-w-md"><BeadDisplay value={questions[currentIdx].answer} rodCount={7} /></div>
+                  <div className="w-full max-w-md"><BeadDisplay value={questions[currentIdx].answer} rodCount={dynamicRodCount} /></div>
                 ) : (
                   <div className="w-full overflow-hidden">
                     <p className={cn("font-black tracking-tight whitespace-nowrap", getQuestionFontSize(questions[currentIdx].text || ""))}>

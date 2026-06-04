@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -449,19 +450,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!userSnap.exists()) return;
     const data = userSnap.data() as ProfileData;
     
-    const nextPoints = (data.totalPoints || 0) + points;
+    let earnedPoints = points;
+    const nextPoints = (data.totalPoints || 0) + earnedPoints;
     const nextRank = getStudentTitle(data.totalDaysPracticed || 0, nextPoints);
-    const updateData: any = { totalPoints: increment(points), updatedAt: serverTimestamp() };
+    
+    const updateData: any = { updatedAt: serverTimestamp() };
+    
+    if (nextRank.name !== data.lastAwardedRank) {
+      // Award Rank-Up Bonus Points
+      const bonus = nextRank.bonusPoints || 0;
+      earnedPoints += bonus;
+      updateData.lastAwardedRank = nextRank.name;
+      triggerAutoEmail('achievement', data.email, data.firstName, { 
+        rankName: nextRank.name, 
+        rankIcon: nextRank.icon, 
+        totalPoints: (data.totalPoints || 0) + earnedPoints 
+      });
+    }
+
+    updateData.totalPoints = increment(earnedPoints);
     
     const currentWeekKey = getUTCMondayKey();
     const currentMonthKey = getUTCMonthKey();
-    if (data.lastWeeklyReset !== currentWeekKey) { updateData.weeklyPoints = points; updateData.lastWeeklyReset = currentWeekKey; } else { updateData.weeklyPoints = increment(points); }
-    if (data.lastMonthlyReset !== currentMonthKey) { updateData.monthlyPoints = points; updateData.lastMonthlyReset = currentMonthKey; } else { updateData.monthlyPoints = increment(points); }
+    if (data.lastWeeklyReset !== currentWeekKey) { updateData.weeklyPoints = earnedPoints; updateData.lastWeeklyReset = currentWeekKey; } else { updateData.weeklyPoints = increment(earnedPoints); }
+    if (data.lastMonthlyReset !== currentMonthKey) { updateData.monthlyPoints = earnedPoints; updateData.lastMonthlyReset = currentMonthKey; } else { updateData.monthlyPoints = increment(earnedPoints); }
     
-    if (nextRank.name !== data.lastAwardedRank) {
-      updateData.lastAwardedRank = nextRank.name;
-      triggerAutoEmail('achievement', data.email, data.firstName, { rankName: nextRank.name, rankIcon: nextRank.icon, totalPoints: nextPoints });
-    }
     await updateDoc(userRef, updateData);
   }, [firestore, getStudentTitle]);
 

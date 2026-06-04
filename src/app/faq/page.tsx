@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -8,7 +9,7 @@ import {
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePageBackground } from '@/hooks/usePageBackground';
-import { HelpCircle, Trophy, Target, Users, BookOpen } from 'lucide-react';
+import { HelpCircle, Trophy, Target, Users, BookOpen, Sparkles, Gift } from 'lucide-react';
 import { RANK_CRITERIA } from '@/lib/constants';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -26,9 +27,15 @@ const faqs = [
   },
   {
     category: 'Points',
-    question: 'How exactly are Practice Points calculated?',
+    question: 'How exactly are Mastery Points and Rewards calculated?',
     answer:
-      'Your Mastery Points are earned through effort, speed, and precision: \n\n• **Consistency**: +25 points for your first practice session each day (resets at midnight). \n• **Accuracy**: +1 point per correct answer in both Practice Tests and the Bubble Game. \n• **Completion**: +5 bonus points for finishing any Practice Test session. \n• **Speed Bonus**: In Practice Tests, earn +5 points (Green Light) or +2 points (Yellow Light) if you finish before the target time with high accuracy. \n• **Mastery Bonus**: Earn +20 extra points for clearing a Bubble Game level with 90% accuracy or higher.',
+      'Your Mastery Points are earned through effort, speed, and precision: \n\n• **Consistency**: +25 points for your first practice session each day. \n• **Accuracy**: +1 point per right answer in Tests and Game. \n• **Completion**: +5 points for finishing any practice session. \n• **Speed Bonus**: Earn +5 points (Green Light) or +2 points (Yellow Light) in timed tests. \n• **Game Mastery**: +20 points for clearing Bubble Game levels with 90% accuracy.',
+  },
+  {
+    category: 'Rewards',
+    question: 'What are the special Milestone & Birthday bonuses?',
+    answer:
+      'We love celebrating your growth! \n\n• **Rank-Up Bonus**: Every time you reach a new Title (like Math Ninja or Math Titan), you receive a progressive point bonus. Higher ranks offer larger rewards, up to +5,000 points for the Human Calculator rank! \n• **Birthday Gift**: Log in on your birthday to receive a special +100 point Mastery boost. \n• **Milestone Days**: Practice for 7, 14, 21, or 28 days straight to receive "Double Progress" bonus days toward your training cycle.',
   },
   {
     category: 'Leaderboard',
@@ -49,13 +56,13 @@ const faqs = [
   {
     category: 'Ranks',
     question: 'What are the Rank and Title criteria?',
-    answer: 'Titles are awarded based on a dual-requirement system of total points and practice consistency.',
+    answer: 'Titles are awarded based on a dual-requirement system of total points and practice consistency. Each title includes a Rank-Up point bonus.',
     isCustom: true
   },
   {
     question: 'What does the Pro Membership offer?',
     answer:
-      'Pro members get unlimited access to all 50+ game levels, all formula-specific practice tests, advanced progress analytics, and a completely ad-free experience. Pro status is also required to appear on the competitive leaderboards.',
+      'Pro members get unlimited access to all 1,000+ game levels, all formula-specific practice tests, official final exams for certification, advanced progress analytics, and a completely ad-free experience.',
   },
 ];
 
@@ -82,6 +89,7 @@ export default function FAQPage() {
                                         {faq.category === 'Points' && <Target className="w-5 h-5 text-primary" />}
                                         {faq.category === 'Eligibility' && <Users className="w-5 h-5 text-blue-500" />}
                                         {faq.category === 'Ranks' && <BookOpen className="w-5 h-5 text-green-500" />}
+                                        {faq.category === 'Rewards' && <Gift className="w-5 h-5 text-pink-500" />}
                                         <span className="leading-tight">{faq.question}</span>
                                     </div>
                                 </AccordionTrigger>
@@ -94,8 +102,8 @@ export default function FAQPage() {
                                                     <TableHeader className="bg-muted/50">
                                                         <TableRow>
                                                             <TableHead className="w-[100px] sm:w-[180px] px-2 sm:px-4">Rank</TableHead>
-                                                            <TableHead className="text-center px-1 sm:px-4">Days</TableHead>
                                                             <TableHead className="text-center px-1 sm:px-4">Points</TableHead>
+                                                            <TableHead className="text-center px-1 sm:px-4 text-primary">Bonus</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
@@ -107,8 +115,10 @@ export default function FAQPage() {
                                                                         <span className="text-[10px] sm:text-sm leading-tight">{rank.name}</span>
                                                                     </div>
                                                                 </TableCell>
-                                                                <TableCell className="text-center text-[11px] sm:text-sm py-2 px-1 sm:px-4 font-medium">{rank.daysReq}+</TableCell>
                                                                 <TableCell className="text-center text-[11px] sm:text-sm py-2 px-1 sm:px-4 font-medium">{rank.pointsReq.toLocaleString()}+</TableCell>
+                                                                <TableCell className="text-center text-[11px] sm:text-sm py-2 px-1 sm:px-4 font-black text-primary">
+                                                                  {rank.bonusPoints > 0 ? `+${rank.bonusPoints}` : '---'}
+                                                                </TableCell>
                                                             </TableRow>
                                                         ))}
                                                     </TableBody>

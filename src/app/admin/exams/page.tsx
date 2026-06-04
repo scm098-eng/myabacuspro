@@ -82,6 +82,7 @@ export default function AdminExamsPage() {
     return () => { unsubApps(); unsubResults(); };
   }, []);
 
+  // Update Status logic to support 'pending' properly
   const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected' | 'pending') => {
     const db = getFirestore(firebaseApp);
     updateDoc(doc(db, "examApplications", id), { status })
