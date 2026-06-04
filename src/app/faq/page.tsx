@@ -35,13 +35,13 @@ const faqs = [
     category: 'Rewards',
     question: 'What are the special Milestone & Birthday bonuses?',
     answer:
-      'We love celebrating your growth! \n\n• **Rank-Up Bonus**: Every time you reach a new Title (like Math Ninja or Math Titan), you receive a progressive point bonus. Higher ranks offer larger rewards, up to +5,000 points for the Human Calculator rank! \n• **Birthday Gift**: Log in on your birthday to receive a special +100 point Mastery boost. \n• **Milestone Days**: Practice for 7, 14, 21, or 28 days straight to receive "Double Progress" bonus days toward your training cycle.',
+      'We love celebrating your growth! \n\n• **Rank-Up Bonus**: Every time you reach a new Title (like Math Ninja or Math Titan), you receive a progressive point bonus. These are added directly to your Global score. \n• **Birthday Gift**: Log in on your birthday to receive a special +100 point Mastery boost (added to Global score). \n• **Milestone Days**: Practice for 14 or 28 days straight to receive "Bonus Progress" days toward your training cycle.',
   },
   {
     category: 'Leaderboard',
     question: 'How do the Hall of Fame Leaderboards work?',
     answer:
-      'We maintain three distinct leaderboards to keep competition fresh: \n\n• Weekly: Tracks points earned from Sunday to Sunday. It resets every week, giving everyone a fresh chance to be #1. \n• Monthly: Tracks total performance within the calendar month. \n• Global: An all-time leaderboard showing the total points earned since joining. \n\nEven if you aren\'t in the Top 10, your dashboard will always show your live global position to motivate you to move up.',
+      'We maintain three distinct leaderboards to keep competition fresh: \n\n• Weekly: Tracks points earned from Sunday to Sunday. It resets every week, giving everyone a fresh chance to be #1. \n• Monthly: Tracks total performance within the calendar month. \n• Global: An all-time leaderboard showing your total career progress, including all rank-up and birthday bonuses. \n\nNote: Special Milestone and Birthday bonuses are added to the Global score only, while practice points are added to all three.',
   },
   {
     question: 'Do I need a physical abacus to use this site?',
@@ -86,7 +86,7 @@ export default function FAQPage() {
                                 <AccordionTrigger className="text-base sm:text-lg font-semibold hover:no-underline py-6">
                                     <div className="flex items-center gap-3 text-left">
                                         {faq.category === 'Leaderboard' && <Trophy className="w-5 h-5 text-yellow-500" />}
-                                        {faq.category === 'Points' && <Target className="w-5 h-5 text-primary" />}
+                                        {faq.category === 'Points' && <Target className="text-primary w-5 h-5" />}
                                         {faq.category === 'Eligibility' && <Users className="w-5 h-5 text-blue-500" />}
                                         {faq.category === 'Ranks' && <BookOpen className="w-5 h-5 text-green-500" />}
                                         {faq.category === 'Rewards' && <Gift className="w-5 h-5 text-pink-500" />}

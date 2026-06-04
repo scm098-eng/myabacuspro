@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -348,10 +349,15 @@ export default function StudentDashboardPage() {
                         </div>
                       ))}
                       <div className={cn(
-                        "w-9 h-9 sm:w-11 sm:h-11 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all duration-500", 
+                        "w-9 h-9 sm:w-11 sm:h-11 rounded-xl border-2 flex items-center justify-center shrink-0 aspect-square transition-all duration-500 relative", 
                         currentDays >= (startDayOfThisWeek + 7) ? "bg-yellow-400 border-yellow-500 text-slate-900 scale-110 shadow-lg" : "bg-muted border-border opacity-50 grayscale"
                       )}>
                         <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
+                        {hasBonus && (
+                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-orange-100 text-orange-600 text-[6px] sm:text-[8px] font-black px-1 rounded-full border border-orange-200">
+                                BONUS {bonusLabel}
+                            </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>

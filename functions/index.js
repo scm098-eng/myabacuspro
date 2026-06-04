@@ -1,3 +1,4 @@
+
 /**
  * Firebase Cloud Functions v2 (Node.js) Code
  * filename: functions/index.js
@@ -336,7 +337,6 @@ exports.dailyBirthdayWish = onSchedule({ schedule: "0 9 * * *", secrets: ["GMAIL
         const data = doc.data();
         if (!data.dob) continue;
         
-        // Robust birthday check by parsing components to avoid substring matching bugs
         const dobParts = data.dob.split(/[-/]/);
         if (dobParts.length !== 3) continue;
 
@@ -366,10 +366,9 @@ exports.dailyBirthdayWish = onSchedule({ schedule: "0 9 * * *", secrets: ["GMAIL
                 }
             }
             
+            // Birthday bonus only added to GLOBAL points
             await doc.ref.update({
                 totalPoints: admin.firestore.FieldValue.increment(100),
-                weeklyPoints: admin.firestore.FieldValue.increment(100),
-                monthlyPoints: admin.firestore.FieldValue.increment(100),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
             count++;
