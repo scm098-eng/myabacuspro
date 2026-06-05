@@ -70,18 +70,18 @@ const PlaceValueGuide = () => (
 
 const DivisionIndicators = () => (
   <div className="grid grid-cols-15 gap-0.5 sm:gap-1 mt-4 px-2 sm:px-4">
-    <div className="col-span-6 flex flex-col items-center">
-      <div className="h-1 w-full bg-blue-500 rounded-full mb-1" />
+    <div className="col-span-5 flex flex-col items-center">
+      <div className="h-1.5 w-full bg-blue-500 rounded-full mb-1" />
       <span className="text-[9px] sm:text-[11px] font-black text-blue-600 uppercase tracking-tighter">Dividend</span>
     </div>
-    <div className="col-span-1" />
+    <div className="col-span-2" />
     <div className="col-span-5 flex flex-col items-center">
-      <div className="h-1 w-full bg-orange-500 rounded-full mb-1" />
+      <div className="h-1.5 w-full bg-orange-500 rounded-full mb-1" />
       <span className="text-[9px] sm:text-[11px] font-black text-orange-600 uppercase tracking-tighter">Quotient</span>
     </div>
-    <div className="col-span-1" />
-    <div className="col-span-2 flex flex-col items-center">
-      <div className="h-1 w-full bg-green-500 rounded-full mb-1" />
+    <div className="col-span-0" />
+    <div className="col-span-3 flex flex-col items-center">
+      <div className="h-1.5 w-full bg-green-500 rounded-full mb-1" />
       <span className="text-[9px] sm:text-[11px] font-black text-green-600 uppercase tracking-tighter">Divisor</span>
     </div>
   </div>
@@ -187,7 +187,7 @@ function ToolPreviewContent() {
     const qStr = quotient.toString();
     
     steps.push({
-      explanation: `Start by setting the dividend ${dividend} on the left side of the abacus and the divisor ${divisor} on the far right.`,
+      explanation: `Set the dividend ${dividend} starting from Rod 1 (left). Set the divisor ${divisor} on the right side.`,
       operation: `Initialize Lab`,
       dividend: dividend,
       quotient: 0,
@@ -209,7 +209,7 @@ function ToolPreviewContent() {
       
       steps.push({
         operation: `Build Quotient: ${currentQuotient}`,
-        explanation: `${divisor} goes into the current segment ${qDigit} times at the ${Math.pow(10, power)}s place. Subtract the product from the dividend and increment the quotient in the middle.`,
+        explanation: `${divisor} goes into the current segment ${qDigit} times. Subtract the result from the dividend and increment the quotient from the Unit Rod.`,
         dividend: currentDividend,
         quotient: currentQuotient,
         divisor: divisor
@@ -225,20 +225,32 @@ function ToolPreviewContent() {
     
     const step = divisionSteps15[divStepIndex];
     
-    // Dividend on Left (Indices 0-6)
-    const dStr = step.dividend.toString().padStart(7, '0');
-    for(let i=0; i<7; i++) abacus[i] = parseInt(dStr[i]);
+    // Dividend on Left 5 Rods (Indices 0-4)
+    const dStr = step.dividend.toString();
+    for(let i=0; i < dStr.length && i < 5; i++) {
+        abacus[i] = parseInt(dStr[i]);
+    }
 
-    // Quotient in Middle (Indices 7-11)
-    const qStr = step.quotient.toString().padStart(5, '0');
-    for(let i=0; i<5; i++) abacus[7 + i] = parseInt(qStr[i]);
+    // Quotient from Unit Place 5 Rods (Indices 7-11)
+    const qStr = step.quotient.toString();
+    for(let i=0; i < qStr.length && i < 5; i++) {
+        abacus[7 + i] = parseInt(qStr[i]);
+    }
 
-    // Divisor on Right (Indices 13-14)
-    const sStr = step.divisor.toString().padStart(2, '0');
-    for(let i=0; i<2; i++) abacus[13 + i] = parseInt(sStr[i]);
+    // Divisor on Last 3 Rods (Indices 12-14) from right to left
+    const sStr = step.divisor.toString().split('').reverse().join('');
+    for(let i=0; i < sStr.length && i < 3; i++) {
+        abacus[14 - i] = parseInt(sStr[i]);
+    }
 
     return abacus;
   }, [divStepIndex, divisionSteps15]);
+
+  const divisionLabels = [
+    'D1', 'D2', 'D3', 'D4', 'D5', '-', '-', 
+    'Q1', 'Q2', 'Q3', 'Q4', 'Q5', 
+    'S1', 'S2', 'S3'
+  ];
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -497,7 +509,7 @@ function ToolPreviewContent() {
               <Card className="rounded-3xl shadow-lg border-2">
                 <CardHeader>
                   <CardTitle className="text-xl font-bold">Division Input</CardTitle>
-                  <CardDescription className="font-medium text-muted-foreground text-sm">Visualize segment-based division reduction.</CardDescription>
+                  <CardDescription className="font-medium text-muted-foreground text-sm">Visualize Soroban segment mapping.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -557,8 +569,8 @@ function ToolPreviewContent() {
                 <CardHeader className="bg-slate-900 text-white p-8">
                   <div className="flex flex-row items-center justify-between">
                     <div>
-                      <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Division 15-Rod Professional View</CardTitle>
-                      <CardDescription className="font-bold text-slate-400">Professional layout for multi-digit calculations</CardDescription>
+                      <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Professional 15-Rod View</CardTitle>
+                      <CardDescription className="font-bold text-slate-400">Dividend (Left), Quotient (Middle), Divisor (Right)</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -566,7 +578,7 @@ function ToolPreviewContent() {
                   <BeadDisplay 
                     rodCount={15} 
                     manualDigits={currentDivState15}
-                    hideLabels={true}
+                    manualLabels={divisionLabels}
                   />
                   <DivisionIndicators />
                 </CardContent>
