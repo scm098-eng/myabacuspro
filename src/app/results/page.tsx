@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, XCircle, Clock, AlertTriangle, HelpCircle, ChevronLeft, ChevronRight, Lightbulb, Star } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertTriangle, HelpCircle, ChevronLeft, ChevronRight, Lightbulb, Star, Plus, Minus, RotateCcw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import type { Question } from '@/types';
@@ -62,6 +62,41 @@ const FloatingParticle = ({ index }: { index: number }) => {
   );
 };
 
+const ZoomControls = ({ zoom, setZoom }: { zoom: number, setZoom: React.Dispatch<React.SetStateAction<number>> }) => (
+  <div className="flex items-center gap-2 bg-white/10 p-1.5 rounded-xl border border-white/20 shadow-sm backdrop-blur-md">
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      className="h-8 w-8 rounded-lg text-white hover:bg-white/20" 
+      onClick={() => setZoom(prev => Math.max(0.5, prev - 0.1))}
+      title="Zoom Out"
+    >
+      <Minus className="w-4 h-4" />
+    </Button>
+    <span className="text-[10px] font-black uppercase tracking-widest min-w-[3rem] text-center text-white">
+      {Math.round(zoom * 100)}%
+    </span>
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      className="h-8 w-8 rounded-lg text-white hover:bg-white/20" 
+      onClick={() => setZoom(prev => Math.min(2, prev + 0.1))}
+      title="Zoom In"
+    >
+      <Plus className="w-4 h-4" />
+    </Button>
+    <div className="h-4 w-px bg-white/20 mx-1" />
+    <Button 
+      variant="ghost" 
+      size="sm" 
+      className="h-8 px-2 text-[10px] font-black uppercase text-white hover:bg-white/20" 
+      onClick={() => setZoom(1)}
+    >
+      <RotateCcw className="w-3 h-3 mr-1" /> Reset
+    </Button>
+  </div>
+);
+
 function ResultsComponent() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/results_bg.jpg?alt=media');
   const searchParams = useSearchParams();
@@ -72,6 +107,7 @@ function ResultsComponent() {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showSubmissionAnim, setShowSubmissionAnim] = useState(false);
+  const [zoom, setZoom] = useState(1);
   
   const [modalQuestion, setModalQuestion] = useState<Question | null>(null);
   const [calculationSteps, setCalculationSteps] = useState<Step[]>([]);
@@ -132,6 +168,7 @@ function ResultsComponent() {
         setCalculationSteps(steps);
     }
     setCurrentStepIndex(0);
+    setZoom(1); // Reset zoom when opening new solution
     setIsDialogOpen(true);
   };
 
@@ -304,16 +341,21 @@ function ResultsComponent() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
        <DialogContent className="max-w-2xl p-0 overflow-hidden border-none rounded-3xl shadow-2xl flex flex-col h-[90vh] sm:h-auto max-h-[90vh]">
           <DialogHeader className="p-6 bg-primary text-primary-foreground shrink-0">
-            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-center">
-                Abacus Logic
-            </DialogTitle>
-             <DialogDescription className="text-primary-foreground/80 font-bold text-center">
-              Target Value: <span className="text-white text-2xl font-mono ml-2">{modalQuestion?.text || modalQuestion?.answer}</span>
-            </DialogDescription>
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="text-center sm:text-left">
+                <DialogTitle className="text-2xl font-black uppercase tracking-tighter">
+                    Abacus Logic
+                </DialogTitle>
+                 <DialogDescription className="text-primary-foreground/80 font-bold">
+                  Target: <span className="text-white text-lg font-mono ml-1">{modalQuestion?.text || modalQuestion?.answer}</span>
+                </DialogDescription>
+              </div>
+              <ZoomControls zoom={zoom} setZoom={setZoom} />
+            </div>
           </DialogHeader>
           
-          <ScrollArea className="flex-1 overflow-y-auto">
-            <div className="p-6 sm:p-8 space-y-6 flex flex-col items-center pb-24">
+          <ScrollArea className="flex-1 overflow-auto">
+            <div className="p-6 sm:p-8 space-y-6 flex flex-col items-center pb-24 min-h-full">
               <div className="w-full bg-muted/50 rounded-2xl p-4 border border-muted-foreground/10 text-center animate-in fade-in slide-in-from-top-2">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Step {currentStepIndex + 1} of {calculationSteps.length}</p>
                   <p className="text-lg sm:text-xl font-black text-primary">{currentStep?.operation}</p>
@@ -322,7 +364,15 @@ function ResultsComponent() {
                   )}
               </div>
 
-              <div className="w-full py-6">
+              <div className="w-full py-10 flex justify-center">
+                <div 
+                  className="transition-transform duration-200"
+                  style={{ 
+                    transform: `scale(${zoom})`, 
+                    transformOrigin: 'top center',
+                    width: 'max-content'
+                  }}
+                >
                   <BeadDisplay 
                       value={isDivision ? undefined : abacusValue} 
                       manualDigits={isDivision ? currentStep?.fullState : undefined}
@@ -330,9 +380,11 @@ function ResultsComponent() {
                       manualLabels={isDivision ? divisionLabels : undefined}
                       activeRodIndex={activeRodIndex >= 0 ? dynamicRodCount - (7 - activeRodIndex) : -1}
                   />
+                </div>
               </div>
             </div>
             <ScrollBar orientation="vertical" />
+            <ScrollBar orientation="horizontal" />
           </ScrollArea>
 
           <div className="shrink-0 p-4 sm:p-6 bg-muted/30 border-t flex justify-between items-center bg-background/95 backdrop-blur-sm mt-auto">
