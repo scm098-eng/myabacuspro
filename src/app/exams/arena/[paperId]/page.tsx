@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
@@ -96,7 +95,6 @@ export default function ExamArenaPage() {
     setIsSubmitting(true);
 
     const currentAnswers = answersRef.current;
-    // Fix build error: Explicitly type acc as number
     const finalScore = currentAnswers.reduce((acc: number, ans, i) => {
         if (questions[i] && ans !== null && ans === questions[i].answer) {
             return acc + 1;
@@ -129,6 +127,9 @@ export default function ExamArenaPage() {
       });
   }, [user, application, questions, paperId, router, toast]);
 
+  const finishExamRef = useRef(finishExam);
+  useEffect(() => { finishExamRef.current = finishExam; }, [finishExam]);
+
   useEffect(() => {
     if (loading || isFinished) return;
     
@@ -139,7 +140,7 @@ export default function ExamArenaPage() {
 
         if (next <= 0) {
           clearInterval(interval);
-          finishExam();
+          finishExamRef.current();
           return 0;
         }
 
@@ -151,7 +152,7 @@ export default function ExamArenaPage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [loading, isFinished, playSound, finishExam]);
+  }, [loading, isFinished, playSound]);
 
   const handleSelectOption = (val: number) => {
     if (isFinished) return;
@@ -170,6 +171,17 @@ export default function ExamArenaPage() {
     if (len > 14) return "text-3xl sm:text-5xl";
     return "text-4xl sm:text-7xl";
   };
+
+  const dynamicRodCount = useMemo(() => {
+    const q = questions[currentIdx];
+    if (!q) return 7;
+    if (q.text?.includes('÷')) return 15;
+    const ans = q.answer;
+    if (ans < 100) return 3;
+    if (ans < 1000) return 4;
+    if (ans < 10000) return 5;
+    return 7;
+  }, [questions, currentIdx]);
 
   if (loading) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /><p className="mt-4 font-bold uppercase">Entering Arena...</p></div>;
 
@@ -199,18 +211,20 @@ export default function ExamArenaPage() {
         <CardContent className="p-8 text-center flex-grow flex flex-col justify-center overflow-hidden">
           <div className="space-y-6">
             <div className="py-4 bg-muted/30 rounded-[2rem] border-2 border-dashed flex flex-col items-center min-h-[140px] justify-center">
-                {questions[currentIdx].questionType === 'identify' ? (
-                  <div className="w-full max-w-md"><BeadDisplay value={questions[currentIdx].answer} rodCount={dynamicRodCount} /></div>
+                {questions[currentIdx]?.questionType === 'identify' ? (
+                  <div className="w-full max-w-md">
+                    <BeadDisplay value={questions[currentIdx].answer} rodCount={dynamicRodCount} />
+                  </div>
                 ) : (
                   <div className="w-full overflow-hidden">
-                    <p className={cn("font-black tracking-tight whitespace-nowrap", getQuestionFontSize(questions[currentIdx].text || ""))}>
-                      {questions[currentIdx].text} = ?
+                    <p className={cn("font-black tracking-tight whitespace-nowrap", getQuestionFontSize(questions[currentIdx]?.text || ""))}>
+                      {questions[currentIdx]?.text} = ?
                     </p>
                   </div>
                 )}
             </div>
             <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
-              {questions[currentIdx].options.map((opt, i) => (
+              {questions[currentIdx]?.options.map((opt, i) => (
                 <Button key={i} variant={answers[currentIdx] === opt ? 'default' : 'outline'} className="h-16 text-xl font-black rounded-2xl" onClick={() => handleSelectOption(opt)}>{opt}</Button>
               ))}
             </div>
