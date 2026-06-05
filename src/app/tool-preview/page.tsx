@@ -9,10 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronLeft, ChevronRight, RotateCcw, Calculator, Info, Lightbulb, Divide } from 'lucide-react';
-import { cn, parseCalculationSteps } from '@/lib/utils';
+import { ChevronLeft, ChevronRight, RotateCcw, Calculator, Info, Lightbulb } from 'lucide-react';
+import { parseCalculationSteps } from '@/lib/utils';
 import PageGuide from '@/components/shared/PageGuide';
-import type { Question } from '@/types';
 
 interface Step {
   operation: string;
@@ -26,6 +25,14 @@ interface MultiplicationStep {
   add: number;
   atRodFromRight: number;
   explanation: string;
+}
+
+interface DivisionStep15 {
+  explanation: string;
+  operation: string;
+  dividend: number;
+  quotient: number;
+  divisor: number;
 }
 
 const PlaceValueGuide = () => (
@@ -61,6 +68,25 @@ const PlaceValueGuide = () => (
   </Card>
 );
 
+const DivisionIndicators = () => (
+  <div className="grid grid-cols-15 gap-0.5 sm:gap-1 mt-4 px-2 sm:px-4">
+    <div className="col-span-6 flex flex-col items-center">
+      <div className="h-1 w-full bg-blue-500 rounded-full mb-1" />
+      <span className="text-[9px] sm:text-[11px] font-black text-blue-600 uppercase tracking-tighter">Dividend</span>
+    </div>
+    <div className="col-span-1" />
+    <div className="col-span-5 flex flex-col items-center">
+      <div className="h-1 w-full bg-orange-500 rounded-full mb-1" />
+      <span className="text-[9px] sm:text-[11px] font-black text-orange-600 uppercase tracking-tighter">Quotient</span>
+    </div>
+    <div className="col-span-1" />
+    <div className="col-span-2 flex flex-col items-center">
+      <div className="h-1 w-full bg-green-500 rounded-full mb-1" />
+      <span className="text-[9px] sm:text-[11px] font-black text-green-600 uppercase tracking-tighter">Divisor</span>
+    </div>
+  </div>
+);
+
 function ToolPreviewContent() {
   const searchParams = useSearchParams();
   const initialValue = searchParams.get('value');
@@ -77,7 +103,7 @@ function ToolPreviewContent() {
   const [multiplier, setMultiplier] = useState(45);
   const [multStepIndex, setMultStepIndex] = useState(-1);
 
-  // Division Lab States
+  // Division Lab States (15-Rod specialized)
   const [dividend, setDividend] = useState(225);
   const [divisor, setDivisor] = useState(15);
   const [divStepIndex, setDivStepIndex] = useState(-1);
@@ -153,20 +179,23 @@ function ToolPreviewContent() {
     return 7 - multiplicationSteps[multStepIndex].atRodFromRight;
   }, [multStepIndex, multiplicationSteps]);
 
-  // Division Steps
-  const divisionSteps = useMemo(() => {
+  // Division Steps (15 Rod Logic)
+  const divisionSteps15 = useMemo(() => {
     if (divisor <= 0) return [];
-    const steps: Step[] = [];
+    const steps: DivisionStep15[] = [];
     const quotient = Math.floor(dividend / divisor);
     const qStr = quotient.toString();
     
     steps.push({
-      operation: `Set ${dividend}`,
-      value: dividend,
-      explanation: `Start by setting the dividend ${dividend} on the abacus.`
+      explanation: `Start by setting the dividend ${dividend} on the left side of the abacus and the divisor ${divisor} on the far right.`,
+      operation: `Initialize Lab`,
+      dividend: dividend,
+      quotient: 0,
+      divisor: divisor
     });
 
-    let currentVal = dividend;
+    let currentDividend = dividend;
+    let currentQuotient = 0;
 
     for (let i = 0; i < qStr.length; i++) {
       const qDigit = parseInt(qStr[i]);
@@ -175,37 +204,41 @@ function ToolPreviewContent() {
       const power = qStr.length - 1 - i;
       const subtrahend = qDigit * divisor * Math.pow(10, power);
       
-      currentVal -= subtrahend;
+      currentDividend -= subtrahend;
+      currentQuotient += qDigit * Math.pow(10, power);
       
       steps.push({
-        operation: `Subtract ${subtrahend}`,
-        value: currentVal,
-        explanation: `${divisor} goes into the current segment ${qDigit} times at the ${Math.pow(10, power)}s place. Subtract the product (${qDigit} × ${divisor} = ${qDigit * divisor}) at rod position ${power + 1}.`
-      });
-    }
-
-    const remainder = dividend % divisor;
-    if (remainder > 0) {
-      steps.push({
-        operation: `Remainder: ${remainder}`,
-        value: currentVal,
-        explanation: `The calculation is complete. The remaining beads represent the remainder ${remainder}.`
-      });
-    } else {
-      steps.push({
-        operation: `Final Result: ${quotient}`,
-        value: currentVal,
-        explanation: `The calculation is complete. The dividend has been fully reduced, and the quotient is exactly ${quotient}.`
+        operation: `Build Quotient: ${currentQuotient}`,
+        explanation: `${divisor} goes into the current segment ${qDigit} times at the ${Math.pow(10, power)}s place. Subtract the product from the dividend and increment the quotient in the middle.`,
+        dividend: currentDividend,
+        quotient: currentQuotient,
+        divisor: divisor
       });
     }
 
     return steps;
   }, [dividend, divisor]);
 
-  const currentDivValue = useMemo(() => {
-    if (divStepIndex < 0) return 0;
-    return divisionSteps[divStepIndex]?.value || 0;
-  }, [divStepIndex, divisionSteps]);
+  const currentDivState15 = useMemo(() => {
+    const abacus = new Array(15).fill(0);
+    if (divStepIndex < 0) return abacus;
+    
+    const step = divisionSteps15[divStepIndex];
+    
+    // Dividend on Left (Indices 0-6)
+    const dStr = step.dividend.toString().padStart(7, '0');
+    for(let i=0; i<7; i++) abacus[i] = parseInt(dStr[i]);
+
+    // Quotient in Middle (Indices 7-11)
+    const qStr = step.quotient.toString().padStart(5, '0');
+    for(let i=0; i<5; i++) abacus[7 + i] = parseInt(qStr[i]);
+
+    // Divisor on Right (Indices 13-14)
+    const sStr = step.divisor.toString().padStart(2, '0');
+    for(let i=0; i<2; i++) abacus[13 + i] = parseInt(sStr[i]);
+
+    return abacus;
+  }, [divStepIndex, divisionSteps15]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -496,7 +529,7 @@ function ToolPreviewContent() {
                 </CardContent>
                 <CardFooter>
                   <Button onClick={() => setDivStepIndex(-1)} variant="outline" className="w-full h-12 rounded-xl font-bold border-2">
-                    <RotateCcw className="w-4 h-4 mr-2" /> Reset Training
+                    <RotateCcw className="w-4 h-4 mr-2" /> Reset Lab
                   </Button>
                 </CardFooter>
               </Card>
@@ -506,13 +539,13 @@ function ToolPreviewContent() {
                   <CardHeader className="pb-2">
                     <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-[10px]">
                       <Lightbulb className="w-4 h-4" />
-                      Step {divStepIndex + 1} of {divisionSteps.length}
+                      Step {divStepIndex + 1} of {divisionSteps15.length}
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <p className="text-2xl font-black text-slate-900 leading-tight">{divisionSteps[divStepIndex].operation}</p>
+                    <p className="text-2xl font-black text-slate-900 leading-tight">{divisionSteps15[divStepIndex].operation}</p>
                     <p className="text-sm text-slate-500 leading-relaxed font-medium italic">
-                      {divisionSteps[divStepIndex].explanation}
+                      {divisionSteps15[divStepIndex].explanation}
                     </p>
                   </CardContent>
                 </Card>
@@ -520,20 +553,22 @@ function ToolPreviewContent() {
             </div>
 
             <div className="lg:col-span-2 space-y-6">
-              <Card className="shadow-2xl rounded-[3rem] border-none overflow-hidden">
+              <Card className="shadow-2xl rounded-[3rem] border-none overflow-hidden bg-slate-50">
                 <CardHeader className="bg-slate-900 text-white p-8">
                   <div className="flex flex-row items-center justify-between">
                     <div>
-                      <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Division Reduction</CardTitle>
-                      <CardDescription className="font-bold text-slate-400">Watch beads transform into quotient</CardDescription>
-                    </div>
-                    <div className="px-6 py-3 bg-white/10 backdrop-blur-md text-white rounded-2xl font-mono text-3xl font-black shadow-inner border border-white/10">
-                      {currentDivValue.toLocaleString()}
+                      <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Division 15-Rod Professional View</CardTitle>
+                      <CardDescription className="font-bold text-slate-400">Professional layout for multi-digit calculations</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="py-16 px-10">
-                  <BeadDisplay value={currentDivValue} rodCount={7} />
+                <CardContent className="py-12 px-6">
+                  <BeadDisplay 
+                    rodCount={15} 
+                    manualDigits={currentDivState15}
+                    hideLabels={true}
+                  />
+                  <DivisionIndicators />
                 </CardContent>
                 <CardFooter className="bg-muted/30 border-t flex flex-col sm:flex-row items-center justify-between p-8 gap-6">
                   <Button 
@@ -545,8 +580,8 @@ function ToolPreviewContent() {
                     <ChevronLeft className="w-5 h-5 mr-2" /> Previous Step
                   </Button>
                   <Button 
-                    onClick={() => setDivStepIndex(p => Math.min(divisionSteps.length - 1, p + 1))}
-                    disabled={divStepIndex >= divisionSteps.length - 1}
+                    onClick={() => setDivStepIndex(p => Math.min(divisionSteps15.length - 1, p + 1))}
+                    disabled={divStepIndex >= divisionSteps15.length - 1}
                     className="h-14 px-10 w-full sm:w-auto rounded-2xl shadow-xl font-black uppercase tracking-widest text-base"
                   >
                     Next Calculation <ChevronRight className="w-5 h-5 ml-2" />

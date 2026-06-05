@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -32,12 +31,14 @@ const AbacusRod = ({
   onBeadClick,
   isActive,
   label,
+  hideLabel = false,
 }: {
   digit: number;
   isUnitRod: boolean;
   onBeadClick: (value: number) => void;
   isActive?: boolean;
-  label: string;
+  label?: string;
+  hideLabel?: boolean;
 }) => {
   const upperBeadActive = digit >= 5;
   const lowerBeadsValue = digit % 5;
@@ -83,37 +84,44 @@ const AbacusRod = ({
         </div>
       </div>
       {/* Place Value Indicator */}
-      <div className="bg-[#4a2c19] text-white text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-sm shadow-sm border border-white/10 uppercase">
-        {label}
-      </div>
+      {!hideLabel && label && (
+        <div className="bg-[#4a2c19] text-white text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-sm shadow-sm border border-white/10 uppercase">
+          {label}
+        </div>
+      )}
     </div>
   );
 };
 
-const ALL_LABELS = ['T.L', 'L', 'T.Th', 'Th', 'H', 'T', 'U'];
+const ALL_LABELS = ['Q.Cr', 'Cr', 'T.L', 'L', 'T.Th', 'Th', 'H', 'T', 'U', '1/10', '1/100', '1/1000', '1/10000', '1/100000', '1/1000000'];
 
 export default function BeadDisplay({ 
   value, 
   onChange, 
   rodCount = 7,
-  activeRodIndex = -1 
+  activeRodIndex = -1,
+  hideLabels = false,
+  manualDigits,
 }: { 
-  value: number, 
+  value?: number, 
   onChange?: (newValue: number) => void,
   rodCount?: number,
-  activeRodIndex?: number
+  activeRodIndex?: number,
+  hideLabels?: boolean,
+  manualDigits?: number[]
 }) {
   const getDigits = (num: number) => {
     return num.toString().padStart(rodCount, '0').split('').slice(-rodCount).map(Number);
   };
   
-  const digits = getDigits(value || 0);
+  const digits = manualDigits ? manualDigits : getDigits(value || 0);
 
-  // Map labels based on rodCount relative to the unit rod (which is always at the end)
-  const currentLabels = ALL_LABELS.slice(ALL_LABELS.length - rodCount);
+  // Map labels based on rodCount relative to the unit rod (which is index 8 in a 15-rod abacus)
+  // For 7 rods, it's the last one.
+  const currentLabels = ALL_LABELS.slice(Math.max(0, 9 - rodCount), Math.max(0, 9 - rodCount) + rodCount);
 
   const handleBeadClick = (rodIndex: number, beadValue: number) => {
-    if (!onChange) return;
+    if (!onChange || manualDigits) return;
     
     const power = (rodCount - 1) - rodIndex;
     const placeValue = Math.pow(10, power);
@@ -156,10 +164,11 @@ export default function BeadDisplay({
             <AbacusRod 
               key={index}
               digit={digit} 
-              isUnitRod={index === rodCount - 1}
+              isUnitRod={rodCount === 15 ? (index === 7) : (index === rodCount - 1)}
               onBeadClick={(beadValue) => handleBeadClick(index, beadValue)}
               isActive={activeRodIndex === index}
               label={currentLabels[index]}
+              hideLabel={hideLabels}
             />
           ))}
         </div>
