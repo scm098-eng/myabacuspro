@@ -11,7 +11,7 @@ import { usePageBackground } from '@/hooks/usePageBackground';
 import type { Question } from '@/types';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { cn, parseCalculationSteps } from '@/lib/utils';
+import { cn, parseCalculationSteps, type Step } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import BeadDisplay from '@/components/BeadDisplay';
 import { useSound } from '@/hooks/useSound';
@@ -20,13 +20,6 @@ import confetti from 'canvas-confetti';
 interface ResultsData {
   questions: Question[];
   userAnswers: (number | null)[];
-}
-
-interface Step {
-  operation: string;
-  value: number;
-  explanation?: string;
-  atRodFromRight?: number;
 }
 
 const FloatingParticle = ({ index }: { index: number }) => {
@@ -146,15 +139,23 @@ function ResultsComponent() {
   const abacusValue = currentStep?.value ?? 0;
   const activeRodIndex = currentStep?.atRodFromRight ? 7 - currentStep.atRodFromRight : -1;
 
-  // Determine dynamic rod count for the solution modal based on the answer
+  // Determine dynamic rod count for the solution modal
+  const isDivision = modalQuestion?.text?.includes('÷');
   const dynamicRodCount = useMemo(() => {
+    if (isDivision) return 15;
     if (!modalQuestion) return 7;
     const ans = modalQuestion.answer;
     if (ans < 100) return 3;
     if (ans < 1000) return 4;
     if (ans < 10000) return 5;
     return 7;
-  }, [modalQuestion]);
+  }, [modalQuestion, isDivision]);
+
+  const divisionLabels = [
+    'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 
+    'Q1', 'Q2', 'Q3', 'Q4', 'Q5', 
+    'S1', 'S2', 'S3'
+  ];
 
   const questionCards = useMemo(() => {
     if (!resultsData) return null;
@@ -323,8 +324,10 @@ function ResultsComponent() {
 
               <div className="w-full py-6">
                   <BeadDisplay 
-                      value={abacusValue} 
+                      value={isDivision ? undefined : abacusValue} 
+                      manualDigits={isDivision ? currentStep?.fullState : undefined}
                       rodCount={dynamicRodCount} 
+                      manualLabels={isDivision ? divisionLabels : undefined}
                       activeRodIndex={activeRodIndex >= 0 ? dynamicRodCount - (7 - activeRodIndex) : -1}
                   />
               </div>
