@@ -33,6 +33,7 @@ interface DivisionStep15 {
   dividend: number;
   quotient: number;
   divisor: number;
+  dividendLen: number;
 }
 
 const PlaceValueGuide = () => (
@@ -185,13 +186,15 @@ function ToolPreviewContent() {
     const steps: DivisionStep15[] = [];
     const quotient = Math.floor(dividend / divisor);
     const qStr = quotient.toString();
+    const dLen = dividend.toString().length;
     
     steps.push({
       explanation: `Set the dividend ${dividend} starting from Rod 1 (left). Set the divisor ${divisor} on the right side.`,
       operation: `Initialize Lab`,
       dividend: dividend,
       quotient: 0,
-      divisor: divisor
+      divisor: divisor,
+      dividendLen: dLen
     });
 
     let currentDividend = dividend;
@@ -212,7 +215,8 @@ function ToolPreviewContent() {
         explanation: `${divisor} goes into the current segment ${qDigit} times. Subtract the result from the dividend and increment the quotient from the Unit Rod.`,
         dividend: currentDividend,
         quotient: currentQuotient,
-        divisor: divisor
+        divisor: divisor,
+        dividendLen: dLen
       });
     }
 
@@ -226,7 +230,8 @@ function ToolPreviewContent() {
     const step = divisionSteps15[divStepIndex];
     
     // Dividend on Left 5 Rods (Indices 0-4)
-    const dStr = step.dividend.toString();
+    // Pad to initial length to prevent left-shifting digits as they are reduced
+    const dStr = step.dividend.toString().padStart(step.dividendLen, '0');
     for(let i=0; i < dStr.length && i < 5; i++) {
         abacus[i] = parseInt(dStr[i]);
     }
