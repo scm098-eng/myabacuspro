@@ -49,7 +49,7 @@ const testCategories = [
   {
     href: '/tests/practice',
     title: 'General Practice',
-    description: 'Master Addition, Subtraction, Multiplication, and Division with timed challenges.',
+    description: 'Master Addition, Subtraction, Multiplication, Division, Square, Square Root, Cube, and Cube Root with timed challenges.',
     icon: BrainCircuit,
     iconBg: 'bg-green-100'
   },
