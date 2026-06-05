@@ -77,22 +77,22 @@ const RodLegend = () => (
         15-Rod Lab Legend
       </CardTitle>
       <CardDescription>
-        Mapping of rods for professional division visualization.
+        Professional rod mapping for division visualization.
       </CardDescription>
     </CardHeader>
     <CardContent>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="flex flex-col gap-2 p-4 bg-background rounded-2xl border-2 border-blue-100 shadow-sm">
-           <span className="text-sm font-black text-blue-600 uppercase tracking-widest">Dividend (D1-D7)</span>
-           <p className="text-xs text-muted-foreground font-medium">Rods 1 to 7 on the far left store the number being divided.</p>
+        <div className="flex flex-col gap-2 p-4 bg-background rounded-2xl border-2 border-slate-100 shadow-sm">
+           <span className="text-sm font-black text-slate-700 uppercase tracking-widest">Dividend (D1-D7)</span>
+           <p className="text-xs text-muted-foreground font-medium">The leftmost area where the initial number and its remaining balance (Remainder) reside.</p>
         </div>
-        <div className="flex flex-col gap-2 p-4 bg-background rounded-2xl border-2 border-orange-100 shadow-sm">
-           <span className="text-sm font-black text-orange-600 uppercase tracking-widest">Quotient (Q1-Q5)</span>
-           <p className="text-xs text-muted-foreground font-medium">Rods 8 to 12 in the middle store the result of the division.</p>
+        <div className="flex flex-col gap-2 p-4 bg-background rounded-2xl border-2 border-slate-100 shadow-sm">
+           <span className="text-sm font-black text-slate-700 uppercase tracking-widest">Quotient (Q1-Q5)</span>
+           <p className="text-xs text-muted-foreground font-medium">The central segment where your result digits are calculated and stored.</p>
         </div>
-        <div className="flex flex-col gap-2 p-4 bg-background rounded-2xl border-2 border-green-100 shadow-sm">
-           <span className="text-sm font-black text-green-600 uppercase tracking-widest">Divisor (S1-S3)</span>
-           <p className="text-xs text-muted-foreground font-medium">Rods 13 to 15 on the far right store the number you are dividing by.</p>
+        <div className="flex flex-col gap-2 p-4 bg-background rounded-2xl border-2 border-slate-100 shadow-sm">
+           <span className="text-sm font-black text-slate-700 uppercase tracking-widest">Divisor (S1-S3)</span>
+           <p className="text-xs text-muted-foreground font-medium">The far-right segment where the number you are dividing by stays fixed.</p>
         </div>
       </div>
     </CardContent>
@@ -152,8 +152,8 @@ function ToolPreviewContent() {
   const [multStepIndex, setMultStepIndex] = useState(-1);
 
   // Division Lab States (15-Rod specialized)
-  const [dividend, setDividend] = useState(225);
-  const [divisor, setDivisor] = useState(15);
+  const [dividend, setDividend] = useState(2256);
+  const [divisor, setDivisor] = useState(5);
   const [divStepIndex, setDivStepIndex] = useState(-1);
 
   useEffect(() => {
@@ -231,8 +231,8 @@ function ToolPreviewContent() {
   const divisionSteps15 = useMemo(() => {
     if (divisor <= 0) return [];
     const steps: DivisionStep15[] = [];
-    const quotient = Math.floor(dividend / divisor);
-    const qStr = quotient.toString();
+    const quotientValue = Math.floor(dividend / divisor);
+    const qStr = quotientValue.toString();
     const dLen = dividend.toString().length;
     
     steps.push({
@@ -276,13 +276,13 @@ function ToolPreviewContent() {
     
     const step = divisionSteps15[divStepIndex];
     
-    // Dividend on Left 7 Rods (Indices 0-6)
+    // Dividend on Left 7 Rods (Fixed mapping D1-D7)
     const dStr = step.dividend.toString().padStart(step.dividendLen, '0');
     for(let i=0; i < dStr.length && i < 7; i++) {
         abacus[i] = parseInt(dStr[i]);
     }
 
-    // Quotient on Next 5 Rods (Indices 7-11)
+    // Quotient on Rods 8 to 12 (Indices 7-11)
     const qStr = step.quotient.toString();
     for(let i=0; i < qStr.length && i < 5; i++) {
         abacus[7 + i] = parseInt(qStr[i]);
@@ -630,8 +630,13 @@ function ToolPreviewContent() {
                   </div>
                   <div className="pt-4">
                     <div className="p-6 bg-primary/5 border-2 border-dashed border-primary/20 rounded-2xl text-center">
-                      <p className="text-xs font-black text-primary uppercase tracking-tighter">Target Quotient</p>
-                      <p className="text-4xl font-black text-slate-900 mt-1">{divisor > 0 ? Math.floor(dividend / divisor) : 'Error'}</p>
+                      <p className="text-xs font-black text-primary uppercase tracking-tighter">Target Result</p>
+                      <div className="flex flex-col items-center mt-2">
+                        <p className="text-3xl font-black text-slate-900">Q: {divisor > 0 ? Math.floor(dividend / divisor) : 'Err'}</p>
+                        {divisor > 0 && dividend % divisor > 0 && (
+                          <p className="text-lg font-bold text-orange-600 mt-1">R: {dividend % divisor}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
