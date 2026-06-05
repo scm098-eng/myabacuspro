@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronLeft, ChevronRight, RotateCcw, Calculator, Info, Lightbulb } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RotateCcw, Calculator, Info, Lightbulb, Plus, Minus } from 'lucide-react';
 import { parseCalculationSteps } from '@/lib/utils';
 import PageGuide from '@/components/shared/PageGuide';
 
@@ -69,22 +69,68 @@ const PlaceValueGuide = () => (
   </Card>
 );
 
-const DivisionIndicators = () => (
-  <div className="grid grid-cols-15 gap-0.5 sm:gap-1 mt-4 px-2 sm:px-4">
-    <div className="col-span-5 flex flex-col items-center">
-      <div className="h-1.5 w-full bg-blue-500 rounded-full mb-1" />
-      <span className="text-[9px] sm:text-[11px] font-black text-blue-600 uppercase tracking-tighter">Dividend</span>
-    </div>
-    <div className="col-span-2" />
-    <div className="col-span-5 flex flex-col items-center">
-      <div className="h-1.5 w-full bg-orange-500 rounded-full mb-1" />
-      <span className="text-[9px] sm:text-[11px] font-black text-orange-600 uppercase tracking-tighter">Quotient</span>
-    </div>
-    <div className="col-span-0" />
-    <div className="col-span-3 flex flex-col items-center">
-      <div className="h-1.5 w-full bg-green-500 rounded-full mb-1" />
-      <span className="text-[9px] sm:text-[11px] font-black text-green-600 uppercase tracking-tighter">Divisor</span>
-    </div>
+const RodLegend = () => (
+  <Card className="mt-8 border-primary/20 bg-muted/30">
+    <CardHeader className="pb-3">
+      <CardTitle className="text-lg font-bold flex items-center gap-2">
+        <Info className="w-5 h-5 text-primary" />
+        15-Rod Lab Legend
+      </CardTitle>
+      <CardDescription>
+        Mapping of rods for professional division visualization.
+      </CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="flex flex-col gap-2 p-4 bg-background rounded-2xl border-2 border-blue-100 shadow-sm">
+           <span className="text-sm font-black text-blue-600 uppercase tracking-widest">Dividend (D1-D7)</span>
+           <p className="text-xs text-muted-foreground font-medium">Rods 1 to 7 on the far left store the number being divided.</p>
+        </div>
+        <div className="flex flex-col gap-2 p-4 bg-background rounded-2xl border-2 border-orange-100 shadow-sm">
+           <span className="text-sm font-black text-orange-600 uppercase tracking-widest">Quotient (Q1-Q5)</span>
+           <p className="text-xs text-muted-foreground font-medium">Rods 8 to 12 in the middle store the result of the division.</p>
+        </div>
+        <div className="flex flex-col gap-2 p-4 bg-background rounded-2xl border-2 border-green-100 shadow-sm">
+           <span className="text-sm font-black text-green-600 uppercase tracking-widest">Divisor (S1-S3)</span>
+           <p className="text-xs text-muted-foreground font-medium">Rods 13 to 15 on the far right store the number you are dividing by.</p>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const ZoomControls = ({ zoom, setZoom }: { zoom: number, setZoom: React.Dispatch<React.SetStateAction<number>> }) => (
+  <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-xl border shadow-sm">
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      className="h-8 w-8 rounded-lg" 
+      onClick={() => setZoom(prev => Math.max(0.5, prev - 0.1))}
+      title="Zoom Out"
+    >
+      <Minus className="w-4 h-4" />
+    </Button>
+    <span className="text-[10px] font-black uppercase tracking-widest min-w-[3rem] text-center">
+      {Math.round(zoom * 100)}%
+    </span>
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      className="h-8 w-8 rounded-lg" 
+      onClick={() => setZoom(prev => Math.min(2, prev + 0.1))}
+      title="Zoom In"
+    >
+      <Plus className="w-4 h-4" />
+    </Button>
+    <div className="h-4 w-px bg-border mx-1" />
+    <Button 
+      variant="ghost" 
+      size="sm" 
+      className="h-8 px-2 text-[10px] font-black uppercase" 
+      onClick={() => setZoom(1)}
+    >
+      Reset
+    </Button>
   </div>
 );
 
@@ -92,7 +138,8 @@ function ToolPreviewContent() {
   const searchParams = useSearchParams();
   const initialValue = searchParams.get('value');
   
-  // Free Play States
+  // App States
+  const [zoom, setZoom] = useState(1);
   const [value, setValue] = useState(0);
 
   // Addition & Subtraction Lab States
@@ -212,7 +259,7 @@ function ToolPreviewContent() {
       
       steps.push({
         operation: `Build Quotient: ${currentQuotient}`,
-        explanation: `${divisor} goes into the current segment ${qDigit} times. Subtract the result from the dividend and increment the quotient from the Unit Rod.`,
+        explanation: `${divisor} goes into the current segment ${qDigit} times. Subtract the result from the dividend and increment the quotient.`,
         dividend: currentDividend,
         quotient: currentQuotient,
         divisor: divisor,
@@ -229,20 +276,19 @@ function ToolPreviewContent() {
     
     const step = divisionSteps15[divStepIndex];
     
-    // Dividend on Left 5 Rods (Indices 0-4)
-    // Pad to initial length to prevent left-shifting digits as they are reduced
+    // Dividend on Left 7 Rods (Indices 0-6)
     const dStr = step.dividend.toString().padStart(step.dividendLen, '0');
-    for(let i=0; i < dStr.length && i < 5; i++) {
+    for(let i=0; i < dStr.length && i < 7; i++) {
         abacus[i] = parseInt(dStr[i]);
     }
 
-    // Quotient from Unit Place 5 Rods (Indices 7-11)
+    // Quotient on Next 5 Rods (Indices 7-11)
     const qStr = step.quotient.toString();
     for(let i=0; i < qStr.length && i < 5; i++) {
         abacus[7 + i] = parseInt(qStr[i]);
     }
 
-    // Divisor on Last 3 Rods (Indices 12-14) from right to left
+    // Divisor on Last 3 Rods (Indices 12-14)
     const sStr = step.divisor.toString().split('').reverse().join('');
     for(let i=0; i < sStr.length && i < 3; i++) {
         abacus[14 - i] = parseInt(sStr[i]);
@@ -252,7 +298,7 @@ function ToolPreviewContent() {
   }, [divStepIndex, divisionSteps15]);
 
   const divisionLabels = [
-    'D1', 'D2', 'D3', 'D4', 'D5', '-', '-', 
+    'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 
     'Q1', 'Q2', 'Q3', 'Q4', 'Q5', 
     'S1', 'S2', 'S3'
   ];
@@ -281,10 +327,15 @@ function ToolPreviewContent() {
         <TabsContent value="freeplay" className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
           <Card className="shadow-xl border-primary/10 overflow-hidden rounded-[2.5rem]">
             <CardHeader className="bg-muted/30">
-              <CardTitle className="font-headline text-2xl">Abacus Playground</CardTitle>
-              <CardDescription className="text-base font-medium">Click the beads to change their position and visualize any number.</CardDescription>
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div>
+                  <CardTitle className="font-headline text-2xl">Abacus Playground</CardTitle>
+                  <CardDescription className="text-base font-medium">Click the beads to change their position and visualize any number.</CardDescription>
+                </div>
+                <ZoomControls zoom={zoom} setZoom={setZoom} />
+              </div>
             </CardHeader>
-            <CardContent className="pt-10 flex flex-col items-center gap-10">
+            <CardContent className="pt-10 flex flex-col items-center gap-10 overflow-hidden">
               <div className="w-full max-w-xs space-y-3">
                 <Label htmlFor="abacus-value" className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Current Value</Label>
                 <div className="relative">
@@ -309,8 +360,18 @@ function ToolPreviewContent() {
                 </div>
               </div>
               
-              <div className="w-full py-10">
+              <div className="w-full overflow-x-auto py-10 scrollbar-none" style={{ minHeight: `${260 * zoom + 120}px` }}>
+                <div 
+                  className="transition-transform duration-200"
+                  style={{ 
+                    transform: `scale(${zoom})`, 
+                    transformOrigin: 'top center',
+                    width: 'max-content',
+                    margin: '0 auto'
+                  }}
+                >
                   <BeadDisplay value={value} onChange={setValue} rodCount={7} />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -370,18 +431,33 @@ function ToolPreviewContent() {
             <div className="lg:col-span-2 space-y-6">
               <Card className="shadow-2xl rounded-[3rem] border-none overflow-hidden">
                 <CardHeader className="bg-slate-900 text-white p-8">
-                  <div className="flex flex-row items-center justify-between">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div>
                       <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Abacus Lab View</CardTitle>
                       <CardDescription className="font-bold text-slate-400">Step-by-Step Visualization</CardDescription>
                     </div>
-                    <div className="px-6 py-3 bg-white/10 backdrop-blur-md text-white rounded-2xl font-mono text-3xl font-black shadow-inner border border-white/10">
-                      {currentAddSubValue.toLocaleString()}
+                    <div className="flex items-center gap-6">
+                      <ZoomControls zoom={zoom} setZoom={setZoom} />
+                      <div className="px-6 py-3 bg-white/10 backdrop-blur-md text-white rounded-2xl font-mono text-3xl font-black shadow-inner border border-white/10">
+                        {currentAddSubValue.toLocaleString()}
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="py-16 px-10">
-                  <BeadDisplay value={currentAddSubValue} rodCount={7} />
+                <CardContent className="py-16 px-10 overflow-hidden">
+                  <div className="w-full overflow-x-auto scrollbar-none" style={{ minHeight: `${260 * zoom + 50}px` }}>
+                    <div 
+                      className="transition-transform duration-200"
+                      style={{ 
+                        transform: `scale(${zoom})`, 
+                        transformOrigin: 'top center',
+                        width: 'max-content',
+                        margin: '0 auto'
+                      }}
+                    >
+                      <BeadDisplay value={currentAddSubValue} rodCount={7} />
+                    </div>
+                  </div>
                 </CardContent>
                 <CardFooter className="bg-muted/30 border-t flex flex-col sm:flex-row items-center justify-between p-8 gap-6">
                   <Button 
@@ -469,22 +545,37 @@ function ToolPreviewContent() {
             <div className="lg:col-span-2 space-y-6">
               <Card className="shadow-2xl rounded-[3rem] border-none overflow-hidden">
                 <CardHeader className="bg-slate-900 text-white p-8">
-                  <div className="flex flex-row items-center justify-between">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div>
                       <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Building the Product</CardTitle>
                       <CardDescription className="font-bold text-slate-400">Visualization Lab</CardDescription>
                     </div>
-                    <div className="px-6 py-3 bg-white/10 border border-white/10 rounded-2xl font-mono text-3xl font-black shadow-inner">
-                      {currentMultValue.toLocaleString()}
+                    <div className="flex items-center gap-6">
+                      <ZoomControls zoom={zoom} setZoom={setZoom} />
+                      <div className="px-6 py-3 bg-white/10 border border-white/10 rounded-2xl font-mono text-3xl font-black shadow-inner">
+                        {currentMultValue.toLocaleString()}
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="py-16 px-10">
-                  <BeadDisplay 
-                    value={currentMultValue} 
-                    rodCount={7} 
-                    activeRodIndex={multActiveRodIndex}
-                  />
+                <CardContent className="py-16 px-10 overflow-hidden">
+                  <div className="w-full overflow-x-auto scrollbar-none" style={{ minHeight: `${260 * zoom + 50}px` }}>
+                    <div 
+                      className="transition-transform duration-200"
+                      style={{ 
+                        transform: `scale(${zoom})`, 
+                        transformOrigin: 'top center',
+                        width: 'max-content',
+                        margin: '0 auto'
+                      }}
+                    >
+                      <BeadDisplay 
+                        value={currentMultValue} 
+                        rodCount={7} 
+                        activeRodIndex={multActiveRodIndex}
+                      />
+                    </div>
+                  </div>
                 </CardContent>
                 <CardFooter className="bg-muted/30 border-t flex flex-col sm:flex-row items-center justify-between p-8 gap-6">
                   <Button 
@@ -545,7 +636,7 @@ function ToolPreviewContent() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button onClick={() => setDivStepIndex(-1)} variant="outline" className="w-full h-12 rounded-xl font-bold border-2">
+                  <Button onClick={() => setDivStepIndex(-1)} variant="outline" className="w-full h-12 rounded-xl border-2 font-bold">
                     <RotateCcw className="w-4 h-4 mr-2" /> Reset Lab
                   </Button>
                 </CardFooter>
@@ -572,20 +663,32 @@ function ToolPreviewContent() {
             <div className="lg:col-span-2 space-y-6">
               <Card className="shadow-2xl rounded-[3rem] border-none overflow-hidden bg-slate-50">
                 <CardHeader className="bg-slate-900 text-white p-8">
-                  <div className="flex flex-row items-center justify-between">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div>
                       <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Professional 15-Rod View</CardTitle>
-                      <CardDescription className="font-bold text-slate-400">Dividend (Left), Quotient (Middle), Divisor (Right)</CardDescription>
+                      <CardDescription className="font-bold text-slate-400">Division Segment Visualization</CardDescription>
                     </div>
+                    <ZoomControls zoom={zoom} setZoom={setZoom} />
                   </div>
                 </CardHeader>
-                <CardContent className="py-12 px-6">
-                  <BeadDisplay 
-                    rodCount={15} 
-                    manualDigits={currentDivState15}
-                    manualLabels={divisionLabels}
-                  />
-                  <DivisionIndicators />
+                <CardContent className="py-12 px-6 overflow-hidden">
+                  <div className="w-full overflow-x-auto scrollbar-none" style={{ minHeight: `${260 * zoom + 50}px` }}>
+                    <div 
+                      className="transition-transform duration-200"
+                      style={{ 
+                        transform: `scale(${zoom})`, 
+                        transformOrigin: 'top center',
+                        width: 'max-content',
+                        margin: '0 auto'
+                      }}
+                    >
+                      <BeadDisplay 
+                        rodCount={15} 
+                        manualDigits={currentDivState15}
+                        manualLabels={divisionLabels}
+                      />
+                    </div>
+                  </div>
                 </CardContent>
                 <CardFooter className="bg-muted/30 border-t flex flex-col sm:flex-row items-center justify-between p-8 gap-6">
                   <Button 
@@ -605,6 +708,7 @@ function ToolPreviewContent() {
                   </Button>
                 </CardFooter>
               </Card>
+              <RodLegend />
             </div>
           </div>
         </TabsContent>
