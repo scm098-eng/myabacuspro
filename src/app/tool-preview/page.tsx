@@ -10,31 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, ChevronRight, RotateCcw, Calculator, Info, Lightbulb, Plus, Minus } from 'lucide-react';
-import { parseCalculationSteps } from '@/lib/utils';
+import { parseCalculationSteps, generateDivisionSteps15, type Step } from '@/lib/utils';
 import PageGuide from '@/components/shared/PageGuide';
-
-interface Step {
-  operation: string;
-  value: number;
-  explanation?: string;
-  atRodFromRight?: number;
-}
-
-interface MultiplicationStep {
-  text: string;
-  add: number;
-  atRodFromRight: number;
-  explanation: string;
-}
-
-interface DivisionStep15 {
-  explanation: string;
-  operation: string;
-  dividend: number;
-  quotient: number;
-  divisor: number;
-  dividendLen: number;
-}
 
 const PlaceValueGuide = () => (
   <Card className="mt-8 border-primary/20 bg-muted/30">
@@ -177,9 +154,10 @@ function ToolPreviewContent() {
 
   // Multiplication Steps
   const multiplicationSteps = useMemo(() => {
-    const steps: MultiplicationStep[] = [];
+    const steps: Step[] = [];
     const m1Str = multiplicand.toString();
     const m2Str = multiplier.toString();
+    const rods = new Array(7).fill(0);
 
     for (let i = 0; i < m2Str.length; i++) {
       const m2Digit = parseInt(m2Str[i]);
@@ -192,11 +170,22 @@ function ToolPreviewContent() {
         const product = m1Digit * m2Digit;
         const targetRodFromRight = m1Power + m2Power + 1;
 
+        let rodIdx = 7 - targetRodFromRight;
+        rods[rodIdx] += product;
+        
+        for (let k = 6; k >= 0; k--) {
+          if (rods[k] >= 10) {
+            const carry = Math.floor(rods[k] / 10);
+            rods[k] %= 10;
+            if (k > 0) rods[k-1] += carry;
+          }
+        }
+
         steps.push({
-          text: `${m2Digit} × ${m1Digit} = ${product.toString().padStart(2, '0')}`,
-          add: product,
-          atRodFromRight: targetRodFromRight,
-          explanation: `Multiply the digit ${m2Digit} by ${m1Digit}. Place the result on the abacus starting from Rod ${targetRodFromRight}.`
+          operation: `${m2Digit} × ${m1Digit} = ${product.toString().padStart(2, '0')}`,
+          value: parseInt(rods.join(''), 10),
+          explanation: `Multiply ${m2Digit} by ${m1Digit}. Place ${product} starting from rod ${targetRodFromRight} (counting from the right).`,
+          atRodFromRight: targetRodFromRight
         });
       }
     }
@@ -204,97 +193,23 @@ function ToolPreviewContent() {
   }, [multiplicand, multiplier]);
 
   const currentMultValue = useMemo(() => {
-    let rods = new Array(7).fill(0);
-    for (let i = 0; i <= multStepIndex; i++) {
-      const step = multiplicationSteps[i];
-      let valToAdd = step.add;
-      let rodIdx = 7 - step.atRodFromRight;
-
-      rods[rodIdx] += valToAdd;
-      for (let k = 6; k >= 0; k--) {
-        if (rods[k] >= 10) {
-          const carry = Math.floor(rods[k] / 10);
-          rods[k] %= 10;
-          if (k > 0) rods[k-1] += carry;
-        }
-      }
-    }
-    return parseInt(rods.join(''), 10) || 0;
+    if (multStepIndex < 0) return 0;
+    return multiplicationSteps[multStepIndex]?.value || 0;
   }, [multStepIndex, multiplicationSteps]);
 
   const multActiveRodIndex = useMemo(() => {
     if (multStepIndex < 0) return -1;
-    return 7 - multiplicationSteps[multStepIndex].atRodFromRight;
+    return 7 - (multiplicationSteps[multStepIndex].atRodFromRight || 0);
   }, [multStepIndex, multiplicationSteps]);
 
   // Division Steps (15 Rod Logic)
   const divisionSteps15 = useMemo(() => {
-    if (divisor <= 0) return [];
-    const steps: DivisionStep15[] = [];
-    const quotientValue = Math.floor(dividend / divisor);
-    const qStr = quotientValue.toString();
-    const dLen = dividend.toString().length;
-    
-    steps.push({
-      explanation: `Set the dividend ${dividend} starting from Rod 1 (left). Set the divisor ${divisor} on the right side.`,
-      operation: `Initialize Lab`,
-      dividend: dividend,
-      quotient: 0,
-      divisor: divisor,
-      dividendLen: dLen
-    });
-
-    let currentDividend = dividend;
-    let currentQuotient = 0;
-
-    for (let i = 0; i < qStr.length; i++) {
-      const qDigit = parseInt(qStr[i]);
-      if (qDigit === 0) continue;
-
-      const power = qStr.length - 1 - i;
-      const subtrahend = qDigit * divisor * Math.pow(10, power);
-      
-      currentDividend -= subtrahend;
-      currentQuotient += qDigit * Math.pow(10, power);
-      
-      steps.push({
-        operation: `Build Quotient: ${currentQuotient}`,
-        explanation: `${divisor} goes into the current segment ${qDigit} times. Subtract the result from the dividend and increment the quotient.`,
-        dividend: currentDividend,
-        quotient: currentQuotient,
-        divisor: divisor,
-        dividendLen: dLen
-      });
-    }
-
-    return steps;
+    return generateDivisionSteps15(dividend, divisor);
   }, [dividend, divisor]);
 
   const currentDivState15 = useMemo(() => {
-    const abacus = new Array(15).fill(0);
-    if (divStepIndex < 0) return abacus;
-    
-    const step = divisionSteps15[divStepIndex];
-    
-    // Dividend on Left 7 Rods (Fixed mapping D1-D7)
-    const dStr = step.dividend.toString().padStart(step.dividendLen, '0');
-    for(let i=0; i < dStr.length && i < 7; i++) {
-        abacus[i] = parseInt(dStr[i]);
-    }
-
-    // Quotient on Rods 8 to 12 (Indices 7-11)
-    const qStr = step.quotient.toString();
-    for(let i=0; i < qStr.length && i < 5; i++) {
-        abacus[7 + i] = parseInt(qStr[i]);
-    }
-
-    // Divisor on Last 3 Rods (Indices 12-14)
-    const sStr = step.divisor.toString().split('').reverse().join('');
-    for(let i=0; i < sStr.length && i < 3; i++) {
-        abacus[14 - i] = parseInt(sStr[i]);
-    }
-
-    return abacus;
+    if (divStepIndex < 0) return new Array(15).fill(0);
+    return divisionSteps15[divStepIndex]?.fullState || new Array(15).fill(0);
   }, [divStepIndex, divisionSteps15]);
 
   const divisionLabels = [
@@ -533,7 +448,7 @@ function ToolPreviewContent() {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <p className="text-3xl font-black text-slate-900">{multiplicationSteps[multStepIndex].text}</p>
+                    <p className="text-3xl font-black text-slate-900">{multiplicationSteps[multStepIndex].operation}</p>
                     <p className="text-sm text-slate-500 leading-relaxed font-medium italic">
                       {multiplicationSteps[multStepIndex].explanation}
                     </p>

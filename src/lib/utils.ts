@@ -127,7 +127,8 @@ export function generateDivisionSteps15(dividend: number, divisor: number): Step
   const steps: Step[] = [];
   const quotientValue = Math.floor(dividend / divisor);
   const qStr = quotientValue.toString();
-  const dLen = dividend.toString().length;
+  const dStrOriginal = dividend.toString();
+  const dLen = dStrOriginal.length;
 
   const buildState = (currDividend: number, currQuotient: number) => {
     const state = new Array(15).fill(0);
@@ -161,18 +162,38 @@ export function generateDivisionSteps15(dividend: number, divisor: number): Step
 
   for (let i = 0; i < qStr.length; i++) {
     const qDigit = parseInt(qStr[i]);
-    if (qDigit === 0) continue;
-
     const power = qStr.length - 1 - i;
-    const subtrahend = qDigit * divisor * Math.pow(10, power);
+    
+    if (qDigit === 0) {
+      const localValueAtPos = Math.floor(currentDividend / Math.pow(10, power));
+      const localDigit = localValueAtPos % 10;
+      
+      let explanation = "";
+      if (localValueAtPos === 0) {
+          explanation = "No remainder left in this segment to divide. The quotient digit is 0.";
+      } else {
+          explanation = `The value ${localDigit} is smaller than ${divisor}. We cannot divide further here, so the quotient digit is 0.`;
+      }
+
+      steps.push({
+        operation: `Quotient Digit: 0`,
+        value: currentQuotient,
+        explanation: explanation,
+        fullState: buildState(currentDividend, currentQuotient)
+      });
+      continue;
+    }
+
+    const localProduct = qDigit * divisor;
+    const subtrahend = localProduct * Math.pow(10, power);
     
     currentDividend -= subtrahend;
     currentQuotient += qDigit * Math.pow(10, power);
     
     steps.push({
-      operation: `Subtract ${subtrahend}`,
+      operation: `${divisor} × ${qDigit} = ${localProduct}`,
       value: currentQuotient,
-      explanation: `${divisor} goes into the current segment ${qDigit} times. Subtract the result from the dividend and increment the quotient in the center (Q1-Q5).`,
+      explanation: `${divisor} goes into the current segment ${qDigit} times. Subtract ${localProduct} from the appropriate rods and update the quotient in the center (Q1-Q5).`,
       fullState: buildState(currentDividend, currentQuotient)
     });
   }
