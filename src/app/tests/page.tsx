@@ -112,7 +112,7 @@ export default function TestsPage() {
             </CardContent>
             <CardContent>
                 <Button asChild className="w-full">
-                    <Link href={category.href}>Go to {category.title} <ArrowRight className="ml-2 h-5 w-5" /></Link>
+                    <Link href={category.href}>Go to {category.title} <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
             </CardContent>
           </Card>

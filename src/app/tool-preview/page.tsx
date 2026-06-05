@@ -9,14 +9,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronLeft, ChevronRight, RotateCcw, Calculator, Info, Lightbulb, PlusMinus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RotateCcw, Calculator, Info, Lightbulb, Divide } from 'lucide-react';
 import { cn, parseCalculationSteps } from '@/lib/utils';
 import PageGuide from '@/components/shared/PageGuide';
+import type { Question } from '@/types';
+
+interface Step {
+  operation: string;
+  value: number;
+  explanation?: string;
+  atRodFromRight?: number;
+}
 
 interface MultiplicationStep {
   text: string;
   add: number;
-  atRodFromRight: number; // 1 is units, 2 is tens, etc.
+  atRodFromRight: number;
   explanation: string;
 }
 
@@ -60,14 +68,19 @@ function ToolPreviewContent() {
   // Free Play States
   const [value, setValue] = useState(0);
 
+  // Addition & Subtraction Lab States
+  const [addSubInput, setAddSubInput] = useState('123 + 456 - 78');
+  const [addSubStepIndex, setAddSubStepIndex] = useState(-1);
+
   // Multiplication Lab States
   const [multiplicand, setMultiplicand] = useState(123);
   const [multiplier, setMultiplier] = useState(45);
-  const [currentStepIndex, setCurrentStepIndex] = useState(-1);
+  const [multStepIndex, setMultStepIndex] = useState(-1);
 
-  // Add/Sub Lab States
-  const [addSubInput, setAddSubInput] = useState('123 + 456 - 78');
-  const [addSubStepIndex, setAddSubStepIndex] = useState(-1);
+  // Division Lab States
+  const [dividend, setDividend] = useState(225);
+  const [divisor, setDivisor] = useState(15);
+  const [divStepIndex, setDivStepIndex] = useState(-1);
 
   useEffect(() => {
     if (initialValue !== null) {
@@ -78,7 +91,17 @@ function ToolPreviewContent() {
     }
   }, [initialValue]);
 
-  // multiplication logic
+  // Addition & Subtraction Steps
+  const addSubSteps = useMemo(() => {
+    return parseCalculationSteps(addSubInput);
+  }, [addSubInput]);
+
+  const currentAddSubValue = useMemo(() => {
+    if (addSubStepIndex < 0) return 0;
+    return addSubSteps[addSubStepIndex]?.value || 0;
+  }, [addSubStepIndex, addSubSteps]);
+
+  // Multiplication Steps
   const multiplicationSteps = useMemo(() => {
     const steps: MultiplicationStep[] = [];
     const m1Str = multiplicand.toString();
@@ -106,9 +129,9 @@ function ToolPreviewContent() {
     return steps;
   }, [multiplicand, multiplier]);
 
-  const currentLabValue = useMemo(() => {
+  const currentMultValue = useMemo(() => {
     let rods = new Array(7).fill(0);
-    for (let i = 0; i <= currentStepIndex; i++) {
+    for (let i = 0; i <= multStepIndex; i++) {
       const step = multiplicationSteps[i];
       let valToAdd = step.add;
       let rodIdx = 7 - step.atRodFromRight;
@@ -123,52 +146,97 @@ function ToolPreviewContent() {
       }
     }
     return parseInt(rods.join(''), 10) || 0;
-  }, [currentStepIndex, multiplicationSteps]);
+  }, [multStepIndex, multiplicationSteps]);
 
-  // Add/Sub Lab Logic
-  const addSubSteps = useMemo(() => {
-    return parseCalculationSteps(addSubInput);
-  }, [addSubInput]);
+  const multActiveRodIndex = useMemo(() => {
+    if (multStepIndex < 0) return -1;
+    return 7 - multiplicationSteps[multStepIndex].atRodFromRight;
+  }, [multStepIndex, multiplicationSteps]);
 
-  const currentAddSubValue = useMemo(() => {
-    if (addSubStepIndex < 0) return 0;
-    return addSubSteps[addSubStepIndex]?.value || 0;
-  }, [addSubStepIndex, addSubSteps]);
+  // Division Steps
+  const divisionSteps = useMemo(() => {
+    if (divisor <= 0) return [];
+    const steps: Step[] = [];
+    const quotient = Math.floor(dividend / divisor);
+    const qStr = quotient.toString();
+    
+    steps.push({
+      operation: `Set ${dividend}`,
+      value: dividend,
+      explanation: `Start by setting the dividend ${dividend} on the abacus.`
+    });
 
-  const activeRodIndex = useMemo(() => {
-    if (currentStepIndex < 0) return -1;
-    return 7 - multiplicationSteps[currentStepIndex].atRodFromRight;
-  }, [currentStepIndex, multiplicationSteps]);
+    let currentVal = dividend;
+
+    for (let i = 0; i < qStr.length; i++) {
+      const qDigit = parseInt(qStr[i]);
+      if (qDigit === 0) continue;
+
+      const power = qStr.length - 1 - i;
+      const subtrahend = qDigit * divisor * Math.pow(10, power);
+      
+      currentVal -= subtrahend;
+      
+      steps.push({
+        operation: `Subtract ${subtrahend}`,
+        value: currentVal,
+        explanation: `${divisor} goes into the current segment ${qDigit} times at the ${Math.pow(10, power)}s place. Subtract the product (${qDigit} × ${divisor} = ${qDigit * divisor}) at rod position ${power + 1}.`
+      });
+    }
+
+    const remainder = dividend % divisor;
+    if (remainder > 0) {
+      steps.push({
+        operation: `Remainder: ${remainder}`,
+        value: currentVal,
+        explanation: `The calculation is complete. The remaining beads represent the remainder ${remainder}.`
+      });
+    } else {
+      steps.push({
+        operation: `Final Result: ${quotient}`,
+        value: currentVal,
+        explanation: `The calculation is complete. The dividend has been fully reduced, and the quotient is exactly ${quotient}.`
+      });
+    }
+
+    return steps;
+  }, [dividend, divisor]);
+
+  const currentDivValue = useMemo(() => {
+    if (divStepIndex < 0) return 0;
+    return divisionSteps[divStepIndex]?.value || 0;
+  }, [divStepIndex, divisionSteps]);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-8">
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-extrabold tracking-tight font-headline flex items-center justify-center gap-3">
           <Calculator className="w-10 h-10 text-primary" />
           Interactive Abacus Tool
         </h1>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <p className="text-muted-foreground text-lg">Master visualization and complex operations with our digital Soroban.</p>
+          <p className="text-muted-foreground text-lg font-medium">Master visualization and complex operations with our digital Soroban.</p>
           <PageGuide guideKey="abacus_tool" triggerLabel="How to Use Tool" />
         </div>
       </div>
 
       <Tabs defaultValue="freeplay" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto h-12 mb-8">
-          <TabsTrigger value="freeplay" className="font-bold">Free Play</TabsTrigger>
-          <TabsTrigger value="addsub" className="font-bold">Add & Sub Lab</TabsTrigger>
-          <TabsTrigger value="lab" className="font-bold">Multiplication Lab</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 max-w-4xl mx-auto h-auto p-1 mb-12 bg-muted/50 rounded-2xl">
+          <TabsTrigger value="freeplay" className="font-bold py-3 px-2 rounded-xl">Free Play</TabsTrigger>
+          <TabsTrigger value="addsub" className="font-bold py-3 px-2 rounded-xl">Add & Sub Lab</TabsTrigger>
+          <TabsTrigger value="multlab" className="font-bold py-3 px-2 rounded-xl">Multiplication Lab</TabsTrigger>
+          <TabsTrigger value="divlab" className="font-bold py-3 px-2 rounded-xl">Division Lab</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="freeplay" className="space-y-8">
-          <Card className="shadow-xl border-primary/10 overflow-hidden">
+        <TabsContent value="freeplay" className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+          <Card className="shadow-xl border-primary/10 overflow-hidden rounded-[2.5rem]">
             <CardHeader className="bg-muted/30">
-              <CardTitle className="font-headline">Abacus Playground</CardTitle>
-              <CardDescription>Click the beads to change their position and visualize any number.</CardDescription>
+              <CardTitle className="font-headline text-2xl">Abacus Playground</CardTitle>
+              <CardDescription className="text-base font-medium">Click the beads to change their position and visualize any number.</CardDescription>
             </CardHeader>
             <CardContent className="pt-10 flex flex-col items-center gap-10">
               <div className="w-full max-w-xs space-y-3">
-                <Label htmlFor="abacus-value" className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Current Value</Label>
+                <Label htmlFor="abacus-value" className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Current Value</Label>
                 <div className="relative">
                   <Input
                     id="abacus-value"
@@ -178,12 +246,12 @@ function ToolPreviewContent() {
                       const val = parseInt(e.target.value, 10);
                       setValue(isNaN(val) ? 0 : Math.min(val, 9999999));
                     }}
-                    className="h-16 text-center text-4xl font-black rounded-xl border-2 focus:ring-primary"
+                    className="h-16 text-center text-4xl font-black rounded-2xl border-4 focus:ring-primary shadow-inner"
                   />
                   <Button 
                     size="icon" 
                     variant="ghost" 
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 text-muted-foreground"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 text-muted-foreground rounded-full"
                     onClick={() => setValue(0)}
                   >
                     <RotateCcw className="w-5 h-5" />
@@ -191,7 +259,7 @@ function ToolPreviewContent() {
                 </div>
               </div>
               
-              <div className="w-full">
+              <div className="w-full py-10">
                   <BeadDisplay value={value} onChange={setValue} rodCount={7} />
               </div>
             </CardContent>
@@ -199,48 +267,49 @@ function ToolPreviewContent() {
           <PlaceValueGuide />
         </TabsContent>
 
-        <TabsContent value="addsub" className="space-y-8">
+        <TabsContent value="addsub" className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-6">
-              <Card>
+              <Card className="rounded-3xl shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-xl">Step-by-Step Training</CardTitle>
-                  <CardDescription>Enter a calculation to see it solved on the abacus.</CardDescription>
+                  <CardTitle className="text-xl font-bold">Calculation Builder</CardTitle>
+                  <CardDescription className="font-medium text-muted-foreground">Enter any multi-step arithmetic problem.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="font-bold">Enter Problem</Label>
+                    <Label className="font-bold uppercase text-[10px] text-muted-foreground tracking-widest">Enter Problem</Label>
                     <Input 
                       placeholder="e.g. 12 + 34 - 5" 
                       value={addSubInput} 
                       onChange={(e) => { setAddSubInput(e.target.value); setAddSubStepIndex(-1); }}
+                      className="h-12 border-2 rounded-xl font-bold"
                     />
                   </div>
                   <div className="pt-4">
-                    <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg text-center">
-                      <p className="text-sm font-bold text-primary uppercase">Final Target</p>
-                      <p className="text-3xl font-black">{addSubSteps[addSubSteps.length - 1]?.value || 0}</p>
+                    <div className="p-6 bg-primary/5 border-2 border-dashed border-primary/20 rounded-2xl text-center">
+                      <p className="text-xs font-black text-primary uppercase tracking-tighter">Final Result</p>
+                      <p className="text-4xl font-black text-slate-900 mt-1">{addSubSteps[addSubSteps.length - 1]?.value || 0}</p>
                     </div>
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button onClick={() => setAddSubStepIndex(-1)} variant="outline" className="w-full">
-                    <RotateCcw className="w-4 h-4 mr-2" /> Reset Steps
+                  <Button onClick={() => setAddSubStepIndex(-1)} variant="outline" className="w-full h-12 rounded-xl font-bold border-2">
+                    <RotateCcw className="w-4 h-4 mr-2" /> Reset Training
                   </Button>
                 </CardFooter>
               </Card>
 
               {addSubStepIndex >= 0 && (
-                <Card className="border-primary bg-primary/5 animate-in fade-in slide-in-from-bottom-4">
+                <Card className="border-primary border-2 bg-primary/5 rounded-3xl animate-in slide-in-from-bottom-4 shadow-xl">
                   <CardHeader className="pb-2">
-                    <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-tighter">
+                    <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-[10px]">
                       <Lightbulb className="w-4 h-4" />
-                      Step {addSubStepIndex + 1}
+                      Step {addSubStepIndex + 1} of {addSubSteps.length}
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <p className="text-2xl font-black text-foreground">{addSubSteps[addSubStepIndex].operation}</p>
-                    <p className="text-sm text-muted-foreground leading-relaxed italic">
+                    <p className="text-3xl font-black text-slate-900">{addSubSteps[addSubStepIndex].operation}</p>
+                    <p className="text-sm text-slate-500 leading-relaxed font-medium italic">
                       {addSubSteps[addSubStepIndex].explanation}
                     </p>
                   </CardContent>
@@ -249,37 +318,34 @@ function ToolPreviewContent() {
             </div>
 
             <div className="lg:col-span-2 space-y-6">
-              <Card className="shadow-xl">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Abacus Lab View</CardTitle>
-                    <CardDescription>Watch the beads move per operation.</CardDescription>
-                  </div>
-                  <div className="px-4 py-2 bg-slate-900 text-white rounded-lg font-mono text-xl shadow-inner">
-                    {currentAddSubValue.toLocaleString()}
+              <Card className="shadow-2xl rounded-[3rem] border-none overflow-hidden">
+                <CardHeader className="bg-slate-900 text-white p-8">
+                  <div className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Abacus Lab View</CardTitle>
+                      <CardDescription className="font-bold text-slate-400">Step-by-Step Visualization</CardDescription>
+                    </div>
+                    <div className="px-6 py-3 bg-white/10 backdrop-blur-md text-white rounded-2xl font-mono text-3xl font-black shadow-inner border border-white/10">
+                      {currentAddSubValue.toLocaleString()}
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent className="py-10">
+                <CardContent className="py-16 px-10">
                   <BeadDisplay value={currentAddSubValue} rodCount={7} />
                 </CardContent>
-                <CardFooter className="bg-muted/30 border-t flex flex-col sm:flex-row items-center justify-between p-6 gap-4">
+                <CardFooter className="bg-muted/30 border-t flex flex-col sm:flex-row items-center justify-between p-8 gap-6">
                   <Button 
                     variant="outline" 
                     onClick={() => setAddSubStepIndex(p => Math.max(-1, p - 1))}
                     disabled={addSubStepIndex < 0}
-                    className="h-12 px-6 w-full sm:w-auto"
+                    className="h-14 px-8 w-full sm:w-auto rounded-2xl border-2 font-bold"
                   >
-                    <ChevronLeft className="w-5 h-5 mr-2" /> Previous
+                    <ChevronLeft className="w-5 h-5 mr-2" /> Previous Step
                   </Button>
-                  <div className="text-center">
-                    <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-                      {addSubStepIndex + 1} / {addSubSteps.length}
-                    </span>
-                  </div>
                   <Button 
                     onClick={() => setAddSubStepIndex(p => Math.min(addSubSteps.length - 1, p + 1))}
                     disabled={addSubStepIndex >= addSubSteps.length - 1}
-                    className="h-12 px-6 w-full sm:w-auto"
+                    className="h-14 px-10 w-full sm:w-auto rounded-2xl shadow-xl font-black uppercase tracking-widest text-base"
                   >
                     Next Operation <ChevronRight className="w-5 h-5 ml-2" />
                   </Button>
@@ -289,59 +355,61 @@ function ToolPreviewContent() {
           </div>
         </TabsContent>
 
-        <TabsContent value="lab" className="space-y-8">
+        <TabsContent value="multlab" className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-6">
-              <Card>
+              <Card className="rounded-3xl shadow-lg border-2">
                 <CardHeader>
-                  <CardTitle className="text-xl">Calculation Setup</CardTitle>
-                  <CardDescription>Define the numbers you want to multiply step-by-step.</CardDescription>
+                  <CardTitle className="text-xl font-bold">Multiplication Input</CardTitle>
+                  <CardDescription className="font-medium">Watch the product build rod-by-rod.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="font-bold">Multiplicand</Label>
+                    <Label className="font-black uppercase text-[10px] text-muted-foreground tracking-widest">Multiplicand</Label>
                     <Input 
                       type="number" 
                       value={multiplicand} 
                       onChange={(e) => setMultiplicand(parseInt(e.target.value) || 0)} 
-                      disabled={currentStepIndex >= 0}
+                      disabled={multStepIndex >= 0}
+                      className="h-12 border-2 font-bold rounded-xl"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="font-bold">Multiplier</Label>
+                    <Label className="font-black uppercase text-[10px] text-muted-foreground tracking-widest">Multiplier</Label>
                     <Input 
                       type="number" 
                       value={multiplier} 
                       onChange={(e) => setMultiplier(parseInt(e.target.value) || 0)} 
-                      disabled={currentStepIndex >= 0}
+                      disabled={multStepIndex >= 0}
+                      className="h-12 border-2 font-bold rounded-xl"
                     />
                   </div>
                   <div className="pt-4">
-                    <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg text-center">
-                      <p className="text-sm font-bold text-primary uppercase">Final Target</p>
-                      <p className="text-3xl font-black">{(multiplicand * multiplier).toLocaleString()}</p>
+                    <div className="p-6 bg-primary/5 border-2 border-dashed border-primary/20 rounded-2xl text-center">
+                      <p className="text-xs font-black text-primary uppercase tracking-tighter">Target Product</p>
+                      <p className="text-4xl font-black text-slate-900 mt-1">{(multiplicand * multiplier).toLocaleString()}</p>
                     </div>
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button onClick={() => setCurrentStepIndex(-1)} variant="outline" className="w-full">
+                  <Button onClick={() => setMultStepIndex(-1)} variant="outline" className="w-full h-12 rounded-xl border-2 font-bold">
                     <RotateCcw className="w-4 h-4 mr-2" /> Reset Lab
                   </Button>
                 </CardFooter>
               </Card>
 
-              {currentStepIndex >= 0 && (
-                <Card className="border-primary bg-primary/5 animate-in fade-in slide-in-from-bottom-4">
+              {multStepIndex >= 0 && (
+                <Card className="border-primary border-2 bg-primary/5 rounded-3xl shadow-xl animate-in slide-in-from-bottom-4">
                   <CardHeader className="pb-2">
-                    <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-tighter">
+                    <div className="flex items-center gap-2 text-primary font-black uppercase text-[10px] tracking-widest">
                       <Lightbulb className="w-4 h-4" />
-                      Step {currentStepIndex + 1}
+                      Step {multStepIndex + 1} of {multiplicationSteps.length}
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <p className="text-2xl font-black text-foreground">{multiplicationSteps[currentStepIndex].text}</p>
-                    <p className="text-sm text-muted-foreground leading-relaxed italic">
-                      {multiplicationSteps[currentStepIndex].explanation}
+                    <p className="text-3xl font-black text-slate-900">{multiplicationSteps[multStepIndex].text}</p>
+                    <p className="text-sm text-slate-500 leading-relaxed font-medium italic">
+                      {multiplicationSteps[multStepIndex].explanation}
                     </p>
                   </CardContent>
                 </Card>
@@ -349,47 +417,142 @@ function ToolPreviewContent() {
             </div>
 
             <div className="lg:col-span-2 space-y-6">
-              <Card className="shadow-xl">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Abacus Lab View</CardTitle>
-                    <CardDescription>Observe how the value builds on the rods.</CardDescription>
-                  </div>
-                  <div className="px-4 py-2 bg-slate-900 text-white rounded-lg font-mono text-xl shadow-inner">
-                    {currentLabValue.toLocaleString()}
+              <Card className="shadow-2xl rounded-[3rem] border-none overflow-hidden">
+                <CardHeader className="bg-slate-900 text-white p-8">
+                  <div className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Building the Product</CardTitle>
+                      <CardDescription className="font-bold text-slate-400">Visualization Lab</CardDescription>
+                    </div>
+                    <div className="px-6 py-3 bg-white/10 border border-white/10 rounded-2xl font-mono text-3xl font-black shadow-inner">
+                      {currentMultValue.toLocaleString()}
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent className="py-10">
+                <CardContent className="py-16 px-10">
                   <BeadDisplay 
-                    value={currentLabValue} 
+                    value={currentMultValue} 
                     rodCount={7} 
-                    activeRodIndex={activeRodIndex}
+                    activeRodIndex={multActiveRodIndex}
                   />
                 </CardContent>
-                <CardFooter className="bg-muted/30 border-t flex flex-col sm:flex-row items-center justify-between p-6 gap-4">
+                <CardFooter className="bg-muted/30 border-t flex flex-col sm:flex-row items-center justify-between p-8 gap-6">
                   <Button 
                     variant="outline" 
-                    onClick={() => setCurrentStepIndex(p => Math.max(-1, p - 1))}
-                    disabled={currentStepIndex < 0}
-                    className="h-12 px-6 w-full sm:w-auto"
+                    onClick={() => setMultStepIndex(p => Math.max(-1, p - 1))}
+                    disabled={multStepIndex < 0}
+                    className="h-14 px-8 w-full sm:w-auto rounded-2xl border-2 font-bold"
                   >
                     <ChevronLeft className="w-5 h-5 mr-2" /> Previous
                   </Button>
-                  <div className="text-center">
-                    <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-                      {currentStepIndex + 1} / {multiplicationSteps.length}
-                    </span>
-                  </div>
                   <Button 
-                    onClick={() => setCurrentStepIndex(p => Math.min(multiplicationSteps.length - 1, p + 1))}
-                    disabled={currentStepIndex >= multiplicationSteps.length - 1}
-                    className="h-12 px-6 w-full sm:w-auto"
+                    onClick={() => setMultStepIndex(p => Math.min(multiplicationSteps.length - 1, p + 1))}
+                    disabled={multStepIndex >= multiplicationSteps.length - 1}
+                    className="h-14 px-10 w-full sm:w-auto rounded-2xl shadow-xl font-black uppercase tracking-widest text-base"
                   >
                     Next Step <ChevronRight className="w-5 h-5 ml-2" />
                   </Button>
                 </CardFooter>
               </Card>
-              <PlaceValueGuide />
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="divlab" className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
+           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-1 space-y-6">
+              <Card className="rounded-3xl shadow-lg border-2">
+                <CardHeader>
+                  <CardTitle className="text-xl font-bold">Division Input</CardTitle>
+                  <CardDescription className="font-medium text-muted-foreground text-sm">Visualize segment-based division reduction.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="font-black uppercase text-[10px] text-muted-foreground tracking-widest">Dividend</Label>
+                    <Input 
+                      type="number" 
+                      value={dividend} 
+                      onChange={(e) => setDividend(parseInt(e.target.value) || 0)} 
+                      disabled={divStepIndex >= 0}
+                      className="h-12 border-2 font-bold rounded-xl"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-black uppercase text-[10px] text-muted-foreground tracking-widest">Divisor</Label>
+                    <Input 
+                      type="number" 
+                      value={divisor} 
+                      onChange={(e) => setDivisor(parseInt(e.target.value) || 0)} 
+                      disabled={divStepIndex >= 0}
+                      className="h-12 border-2 font-bold rounded-xl"
+                    />
+                  </div>
+                  <div className="pt-4">
+                    <div className="p-6 bg-primary/5 border-2 border-dashed border-primary/20 rounded-2xl text-center">
+                      <p className="text-xs font-black text-primary uppercase tracking-tighter">Target Quotient</p>
+                      <p className="text-4xl font-black text-slate-900 mt-1">{divisor > 0 ? Math.floor(dividend / divisor) : 'Error'}</p>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button onClick={() => setDivStepIndex(-1)} variant="outline" className="w-full h-12 rounded-xl font-bold border-2">
+                    <RotateCcw className="w-4 h-4 mr-2" /> Reset Training
+                  </Button>
+                </CardFooter>
+              </Card>
+
+              {divStepIndex >= 0 && (
+                <Card className="border-primary border-2 bg-primary/5 rounded-3xl animate-in slide-in-from-bottom-4 shadow-xl">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-[10px]">
+                      <Lightbulb className="w-4 h-4" />
+                      Step {divStepIndex + 1} of {divisionSteps.length}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-2xl font-black text-slate-900 leading-tight">{divisionSteps[divStepIndex].operation}</p>
+                    <p className="text-sm text-slate-500 leading-relaxed font-medium italic">
+                      {divisionSteps[divStepIndex].explanation}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            <div className="lg:col-span-2 space-y-6">
+              <Card className="shadow-2xl rounded-[3rem] border-none overflow-hidden">
+                <CardHeader className="bg-slate-900 text-white p-8">
+                  <div className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Division Reduction</CardTitle>
+                      <CardDescription className="font-bold text-slate-400">Watch beads transform into quotient</CardDescription>
+                    </div>
+                    <div className="px-6 py-3 bg-white/10 backdrop-blur-md text-white rounded-2xl font-mono text-3xl font-black shadow-inner border border-white/10">
+                      {currentDivValue.toLocaleString()}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="py-16 px-10">
+                  <BeadDisplay value={currentDivValue} rodCount={7} />
+                </CardContent>
+                <CardFooter className="bg-muted/30 border-t flex flex-col sm:flex-row items-center justify-between p-8 gap-6">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setDivStepIndex(p => Math.max(-1, p - 1))}
+                    disabled={divStepIndex < 0}
+                    className="h-14 px-8 w-full sm:w-auto rounded-2xl border-2 font-bold"
+                  >
+                    <ChevronLeft className="w-5 h-5 mr-2" /> Previous Step
+                  </Button>
+                  <Button 
+                    onClick={() => setDivStepIndex(p => Math.min(divisionSteps.length - 1, p + 1))}
+                    disabled={divStepIndex >= divisionSteps.length - 1}
+                    className="h-14 px-10 w-full sm:w-auto rounded-2xl shadow-xl font-black uppercase tracking-widest text-base"
+                  >
+                    Next Calculation <ChevronRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </CardFooter>
+              </Card>
             </div>
           </div>
         </TabsContent>
