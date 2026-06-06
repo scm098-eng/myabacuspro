@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import BeadDisplay from '@/components/BeadDisplay';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { usePageBackground } from '@/hooks/usePageBackground';
@@ -9,9 +9,32 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronLeft, ChevronRight, RotateCcw, Calculator, Info, Lightbulb, Plus, Minus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RotateCcw, Calculator, Info, Lightbulb, Plus, Minus, Lock, Crown } from 'lucide-react';
 import { parseCalculationSteps, generateDivisionSteps15, type Step } from '@/lib/utils';
 import PageGuide from '@/components/shared/PageGuide';
+import { useAuth } from '@/hooks/useAuth';
+import Link from 'next/link';
+
+const ProLockOverlay = () => (
+  <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-md rounded-[2.5rem] p-6 text-center">
+    <Card className="max-w-sm border-none shadow-2xl bg-white/90">
+      <CardHeader>
+        <div className="mx-auto bg-orange-100 p-4 rounded-full w-fit mb-4">
+          <Crown className="w-10 h-10 text-orange-600" />
+        </div>
+        <CardTitle className="text-2xl font-black uppercase tracking-tighter">Pro Access Required</CardTitle>
+        <CardDescription className="text-slate-600 font-bold">
+          Mastery Labs are exclusive to Pro members. Upgrade now to visualize complex formulas and advanced arithmetic.
+        </CardDescription>
+      </CardHeader>
+      <CardFooter className="flex flex-col gap-3">
+        <Button asChild className="w-full h-12 text-base font-black rounded-xl shadow-lg bg-orange-500 hover:bg-orange-600">
+          <Link href="/pricing">Upgrade to Pro</Link>
+        </Button>
+      </CardFooter>
+    </Card>
+  </div>
+);
 
 const PlaceValueGuide = () => (
   <Card className="mt-8 border-primary/20 bg-muted/30">
@@ -61,7 +84,7 @@ const RodLegend = () => (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="flex flex-col gap-2 p-4 bg-background rounded-2xl border-2 border-slate-100 shadow-sm">
            <span className="text-sm font-black text-slate-700 uppercase tracking-widest">Dividend (D1-D7)</span>
-           <p className="text-xs text-muted-foreground font-medium">The leftmost area where the initial number and its remaining balance (Remainder) reside.</p>
+           <p className="text-xs text-muted-foreground font-medium">The leftmost area where the initial number and its remaining balance reside.</p>
         </div>
         <div className="flex flex-col gap-2 p-4 bg-background rounded-2xl border-2 border-slate-100 shadow-sm">
            <span className="text-sm font-black text-slate-700 uppercase tracking-widest">Quotient (Q1-Q5)</span>
@@ -69,7 +92,7 @@ const RodLegend = () => (
         </div>
         <div className="flex flex-col gap-2 p-4 bg-background rounded-2xl border-2 border-slate-100 shadow-sm">
            <span className="text-sm font-black text-slate-700 uppercase tracking-widest">Divisor (S1-S3)</span>
-           <p className="text-xs text-muted-foreground font-medium">The far-right segment where the number you are dividing by stays fixed.</p>
+           <p className="text-xs text-muted-foreground font-medium">The far-right segment where the divisor stays fixed.</p>
         </div>
       </div>
     </CardContent>
@@ -112,23 +135,22 @@ const ZoomControls = ({ zoom, setZoom }: { zoom: number, setZoom: React.Dispatch
 );
 
 function ToolPreviewContent() {
+  const { profile } = useAuth();
   const searchParams = useSearchParams();
   const initialValue = searchParams.get('value');
   
-  // App States
+  const isPro = profile?.subscriptionStatus === 'pro' || profile?.role === 'admin' || profile?.role === 'teacher';
+
   const [zoom, setZoom] = useState(1);
   const [value, setValue] = useState(0);
 
-  // Addition & Subtraction Lab States
   const [addSubInput, setAddSubInput] = useState('123 + 456 - 78');
   const [addSubStepIndex, setAddSubStepIndex] = useState(-1);
 
-  // Multiplication Lab States
   const [multiplicand, setMultiplicand] = useState(123);
   const [multiplier, setMultiplier] = useState(45);
   const [multStepIndex, setMultStepIndex] = useState(-1);
 
-  // Division Lab States (15-Rod specialized)
   const [dividend, setDividend] = useState(2256);
   const [divisor, setDivisor] = useState(5);
   const [divStepIndex, setDivStepIndex] = useState(-1);
@@ -142,17 +164,13 @@ function ToolPreviewContent() {
     }
   }, [initialValue]);
 
-  // Addition & Subtraction Steps
-  const addSubSteps = useMemo(() => {
-    return parseCalculationSteps(addSubInput);
-  }, [addSubInput]);
+  const addSubSteps = useMemo(() => parseCalculationSteps(addSubInput), [addSubInput]);
 
   const currentAddSubValue = useMemo(() => {
     if (addSubStepIndex < 0) return 0;
     return addSubSteps[addSubStepIndex]?.value || 0;
   }, [addSubStepIndex, addSubSteps]);
 
-  // Multiplication Steps
   const multiplicationSteps = useMemo(() => {
     const steps: Step[] = [];
     const m1Str = multiplicand.toString();
@@ -184,7 +202,7 @@ function ToolPreviewContent() {
         steps.push({
           operation: `${m2Digit} × ${m1Digit} = ${product.toString().padStart(2, '0')}`,
           value: parseInt(rods.join(''), 10),
-          explanation: `Multiply ${m2Digit} by ${m1Digit}. Place ${product} starting from rod ${targetRodFromRight} (counting from the right).`,
+          explanation: `Multiply ${m2Digit} by ${m1Digit}. Place ${product} starting from rod ${targetRodFromRight}.`,
           atRodFromRight: targetRodFromRight
         });
       }
@@ -202,10 +220,7 @@ function ToolPreviewContent() {
     return 7 - (multiplicationSteps[multStepIndex].atRodFromRight || 0);
   }, [multStepIndex, multiplicationSteps]);
 
-  // Division Steps (15 Rod Logic)
-  const divisionSteps15 = useMemo(() => {
-    return generateDivisionSteps15(dividend, divisor);
-  }, [dividend, divisor]);
+  const divisionSteps15 = useMemo(() => generateDivisionSteps15(dividend, divisor), [dividend, divisor]);
 
   const currentDivState15 = useMemo(() => {
     if (divStepIndex < 0) return new Array(15).fill(0);
@@ -219,7 +234,7 @@ function ToolPreviewContent() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-8 pb-12">
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-extrabold tracking-tight font-headline flex items-center justify-center gap-3">
           <Calculator className="w-10 h-10 text-primary" />
@@ -234,9 +249,15 @@ function ToolPreviewContent() {
       <Tabs defaultValue="freeplay" className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 max-w-4xl mx-auto h-auto p-1 mb-12 bg-muted/50 rounded-2xl">
           <TabsTrigger value="freeplay" className="font-bold py-3 px-2 rounded-xl">Free Play</TabsTrigger>
-          <TabsTrigger value="addsub" className="font-bold py-3 px-2 rounded-xl">Add & Sub Lab</TabsTrigger>
-          <TabsTrigger value="multlab" className="font-bold py-3 px-2 rounded-xl">Multiplication Lab</TabsTrigger>
-          <TabsTrigger value="divlab" className="font-bold py-3 px-2 rounded-xl">Division Lab</TabsTrigger>
+          <TabsTrigger value="addsub" className="font-bold py-3 px-2 rounded-xl flex items-center gap-2">
+            {!isPro && <Lock className="w-3 h-3" />} Add & Sub Lab
+          </TabsTrigger>
+          <TabsTrigger value="multlab" className="font-bold py-3 px-2 rounded-xl flex items-center gap-2">
+            {!isPro && <Lock className="w-3 h-3" />} Multi Lab
+          </TabsTrigger>
+          <TabsTrigger value="divlab" className="font-bold py-3 px-2 rounded-xl flex items-center gap-2">
+            {!isPro && <Lock className="w-3 h-3" />} Division Lab
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="freeplay" className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
@@ -293,13 +314,13 @@ function ToolPreviewContent() {
           <PlaceValueGuide />
         </TabsContent>
 
-        <TabsContent value="addsub" className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
+        <TabsContent value="addsub" className="relative min-h-[600px] animate-in fade-in slide-in-from-right-8 duration-500">
+          {!isPro && <ProLockOverlay />}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-6">
               <Card className="rounded-3xl shadow-lg">
                 <CardHeader>
                   <CardTitle className="text-xl font-bold">Calculation Builder</CardTitle>
-                  <CardDescription className="font-medium text-muted-foreground">Enter any multi-step arithmetic problem.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -326,7 +347,7 @@ function ToolPreviewContent() {
               </Card>
 
               {addSubStepIndex >= 0 && (
-                <Card className="border-primary border-2 bg-primary/5 rounded-3xl animate-in slide-in-from-bottom-4 shadow-xl">
+                <Card className="border-primary border-2 bg-primary/5 rounded-3xl shadow-xl">
                   <CardHeader className="pb-2">
                     <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-[10px]">
                       <Lightbulb className="w-4 h-4" />
@@ -349,7 +370,6 @@ function ToolPreviewContent() {
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div>
                       <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Abacus Lab View</CardTitle>
-                      <CardDescription className="font-bold text-slate-400">Step-by-Step Visualization</CardDescription>
                     </div>
                     <div className="flex items-center gap-6">
                       <ZoomControls zoom={zoom} setZoom={setZoom} />
@@ -396,13 +416,13 @@ function ToolPreviewContent() {
           </div>
         </TabsContent>
 
-        <TabsContent value="multlab" className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
+        <TabsContent value="multlab" className="relative min-h-[600px] animate-in fade-in slide-in-from-right-8 duration-500">
+          {!isPro && <ProLockOverlay />}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-6">
               <Card className="rounded-3xl shadow-lg border-2">
                 <CardHeader>
                   <CardTitle className="text-xl font-bold">Multiplication Input</CardTitle>
-                  <CardDescription className="font-medium">Watch the product build rod-by-rod.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -440,7 +460,7 @@ function ToolPreviewContent() {
               </Card>
 
               {multStepIndex >= 0 && (
-                <Card className="border-primary border-2 bg-primary/5 rounded-3xl shadow-xl animate-in slide-in-from-bottom-4">
+                <Card className="border-primary border-2 bg-primary/5 rounded-3xl shadow-xl">
                   <CardHeader className="pb-2">
                     <div className="flex items-center gap-2 text-primary font-black uppercase text-[10px] tracking-widest">
                       <Lightbulb className="w-4 h-4" />
@@ -463,7 +483,6 @@ function ToolPreviewContent() {
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div>
                       <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Building the Product</CardTitle>
-                      <CardDescription className="font-bold text-slate-400">Visualization Lab</CardDescription>
                     </div>
                     <div className="flex items-center gap-6">
                       <ZoomControls zoom={zoom} setZoom={setZoom} />
@@ -514,13 +533,13 @@ function ToolPreviewContent() {
           </div>
         </TabsContent>
 
-        <TabsContent value="divlab" className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
+        <TabsContent value="divlab" className="relative min-h-[600px] animate-in fade-in slide-in-from-right-8 duration-500">
+          {!isPro && <ProLockOverlay />}
            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-6">
               <Card className="rounded-3xl shadow-lg border-2">
                 <CardHeader>
                   <CardTitle className="text-xl font-bold">Division Input</CardTitle>
-                  <CardDescription className="font-medium text-muted-foreground text-sm">Visualize Soroban segment mapping.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -586,7 +605,6 @@ function ToolPreviewContent() {
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div>
                       <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Professional 15-Rod View</CardTitle>
-                      <CardDescription className="font-bold text-slate-400">Division Segment Visualization</CardDescription>
                     </div>
                     <ZoomControls zoom={zoom} setZoom={setZoom} />
                   </div>
