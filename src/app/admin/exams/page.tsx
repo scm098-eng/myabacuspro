@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
-import { CheckCircle2, XCircle, Search, Trophy, Eye, ScrollText, RefreshCcw, Megaphone, Calendar, Loader2, Save, Ban, Trash2 } from 'lucide-react';
+import { CheckCircle2, XCircle, Search, Trophy, Eye, ScrollText, RefreshCcw, Megaphone, Calendar, Loader2, Save, Ban, Trash2, RotateCcw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -91,7 +91,7 @@ export default function AdminExamsPage() {
   const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected' | 'pending') => {
     const db = getFirestore(firebaseApp);
     updateDoc(doc(db, "examApplications", id), { status })
-      .then(() => toast({ title: `Application ${status}` }))
+      .then(() => toast({ title: `Application ${status.toUpperCase()}` }))
       .catch(async (e) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'update' })));
   };
 
@@ -194,88 +194,94 @@ export default function AdminExamsPage() {
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div>
               <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tight">Exam Administration</CardTitle>
+              <CardDescription className="font-bold">Review applications and manage the schedule cycle.</CardDescription>
             </div>
             <div className="relative w-full lg:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search student..." className="pl-10" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+              <Input placeholder="Search student..." className="pl-10 h-11 rounded-xl" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="applications">
-            <TabsList className="mb-8 w-full justify-start overflow-x-auto h-auto p-1 bg-muted/50 rounded-xl">
-              <TabsTrigger value="applications" className="font-bold py-2">Applications ({applications.length})</TabsTrigger>
-              <TabsTrigger value="final-results" className="font-bold py-2">Results</TabsTrigger>
-              <TabsTrigger value="schedule" className="font-bold py-2">Schedule Manager</TabsTrigger>
+            <TabsList className="mb-8 w-full justify-start overflow-x-auto h-auto p-1 bg-muted/50 rounded-xl border">
+              <TabsTrigger value="applications" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Applications ({applications.length})</TabsTrigger>
+              <TabsTrigger value="final-results" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Exam Audit</TabsTrigger>
+              <TabsTrigger value="schedule" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Cycle Settings</TabsTrigger>
             </TabsList>
 
             <TabsContent value="applications">
-              <div className="rounded-xl border overflow-hidden bg-white shadow-sm">
+              <div className="rounded-2xl border overflow-hidden bg-white shadow-sm">
                 <Table>
                   <TableHeader className="bg-muted/30 border-b">
                     <TableRow>
-                      <TableHead className="pl-6">Student</TableHead>
-                      <TableHead>Group Applied</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right pr-6">Actions</TableHead>
+                      <TableHead className="pl-6 h-14 text-[10px] font-black uppercase tracking-widest">Student</TableHead>
+                      <TableHead className="h-14 text-[10px] font-black uppercase tracking-widest">Group Applied</TableHead>
+                      <TableHead className="h-14 text-[10px] font-black uppercase tracking-widest text-center">Status</TableHead>
+                      <TableHead className="text-right pr-6 h-14 text-[10px] font-black uppercase tracking-widest">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredApps.map(app => (
-                      <TableRow key={app.id} className="hover:bg-muted/10">
-                        <TableCell className="font-bold pl-6">{app.studentName}</TableCell>
+                      <TableRow key={app.id} className="hover:bg-muted/10 transition-colors">
+                        <TableCell className="font-bold pl-6 py-4">{app.studentName}</TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className="px-4 text-[10px] font-black tracking-widest uppercase">
+                          <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-4 py-1 text-[10px] font-black tracking-widest uppercase rounded-lg">
                             GROUP {app.group || '?'}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-center">
                           <Badge 
-                            variant={app.status?.toLowerCase() === 'approved' ? 'default' : (app.status?.toLowerCase() === 'pending' ? 'outline' : 'destructive')} 
-                            className={cn("font-black text-[10px] uppercase", app.status === 'approved' && "bg-green-600")}
+                            variant={app.status === 'approved' ? 'default' : (app.status === 'pending' ? 'outline' : 'destructive')} 
+                            className={cn(
+                              "font-black text-[10px] uppercase min-w-[80px] justify-center py-1 rounded-full border-2", 
+                              app.status === 'approved' && "bg-green-600 border-green-700",
+                              app.status === 'pending' && "border-orange-200 text-orange-700 bg-orange-50"
+                            )}
                           >
-                            {app.status || 'PENDING'}
+                            {app.status?.toUpperCase() || 'PENDING'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right pr-6">
+                        <TableCell className="text-right pr-6 py-4">
                           <div className="flex justify-end gap-2">
                             {app.status === 'pending' ? (
                               <>
                                 <Button 
                                   size="sm" 
-                                  className="bg-green-600 hover:bg-green-700 font-bold h-9" 
+                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md shadow-green-900/10" 
                                   onClick={() => handleUpdateStatus(app.id, 'approved')}
                                 >
-                                  <CheckCircle2 className="w-4 h-4 mr-1.5" /> Approve
+                                  <CheckCircle2 className="w-4 h-4 mr-2" /> Approve
                                 </Button>
                                 <Button 
                                   size="sm" 
                                   variant="destructive" 
-                                  className="font-bold h-9" 
+                                  className="font-bold h-10 px-4 rounded-xl shadow-md shadow-red-900/10" 
                                   onClick={() => handleUpdateStatus(app.id, 'rejected')}
                                 >
-                                  <Ban className="w-4 h-4 mr-1.5" /> Reject
+                                  <Ban className="w-4 h-4 mr-2" /> Reject
                                 </Button>
                               </>
                             ) : (
-                              <>
+                              <div className="flex items-center gap-2">
                                 <Button 
                                   size="sm" 
                                   variant="outline" 
-                                  className="font-bold h-9 border-2" 
+                                  className="font-bold h-10 border-2 rounded-xl" 
                                   onClick={() => handleUpdateStatus(app.id, 'pending')}
                                 >
-                                  <RefreshCcw className="w-3.5 h-3.5 mr-1.5" /> Reset to Pending
+                                  <RefreshCcw className="w-4 h-4 mr-2" /> Reset
                                 </Button>
                                 <Button 
                                   size="sm" 
                                   variant="ghost" 
-                                  className="font-bold h-9 text-red-600 hover:bg-red-50 hover:text-red-700" 
+                                  className="font-bold h-10 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl" 
                                   onClick={() => handleDeleteApplication(app.id)}
+                                  title="Allows student to choose a different group and re-apply"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Allow Re-apply
+                                  <RotateCcw className="w-4 h-4 mr-2" /> Allow Re-apply
                                 </Button>
-                              </>
+                              </div>
                             )}
                           </div>
                         </TableCell>
@@ -283,7 +289,10 @@ export default function AdminExamsPage() {
                     ))}
                     {filteredApps.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-20 text-muted-foreground font-medium italic">No applications found.</TableCell>
+                        <TableCell colSpan={4} className="text-center py-24 text-muted-foreground font-medium italic bg-muted/5">
+                           <Search className="w-10 h-10 mx-auto opacity-10 mb-4" />
+                           No applications found.
+                        </TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -294,95 +303,103 @@ export default function AdminExamsPage() {
             <TabsContent value="final-results" className="space-y-12">
               {Object.keys(groupedResults).length > 0 ? Object.keys(groupedResults).map(group => (
                 <div key={group} className="space-y-6">
-                  <h2 className="text-xl font-black uppercase border-b pb-2">Group {group} Results</h2>
+                  <h2 className="text-xl font-black uppercase border-b-4 border-primary/20 pb-2 inline-block">Group {group} Results</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {groupedResults[group].map(r => (
-                      <Card key={r.id} className="border-2 rounded-2xl overflow-hidden shadow-sm">
-                        <CardHeader className="bg-slate-900 text-white p-4">
-                            <div className="flex justify-between items-center text-xs font-black uppercase">
-                              <span>Official Final</span>
-                              {r.resultDeclared && <Badge className="bg-green-500">DECLARED</Badge>}
+                      <Card key={r.id} className="border-2 border-slate-100 rounded-3xl overflow-hidden shadow-md group hover:border-primary/30 transition-all">
+                        <CardHeader className="bg-slate-900 text-white p-5">
+                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                              <span>Grand Final Attempt</span>
+                              {r.resultDeclared && <Badge className="bg-green-500 border-none px-3">DECLARED</Badge>}
                             </div>
                         </CardHeader>
-                        <CardContent className="p-6">
-                            <p className="text-lg font-black">{r.studentName}</p>
-                            <p className="text-3xl font-black text-primary mt-2">{r.score}/{r.totalQuestions}</p>
-                            <Button variant="outline" className="w-full mt-4 font-bold" onClick={() => setSelectedResult(r)}><Eye className="w-4 h-4 mr-2" /> View Audit</Button>
-                            {!r.resultDeclared && (
-                                <Button className="w-full mt-2 bg-green-600 hover:bg-green-700 font-bold" onClick={() => handleDeclareResult(r.id)}>Declare Result</Button>
-                            )}
+                        <CardContent className="p-6 text-center space-y-4">
+                            <p className="text-xl font-black text-slate-900">{r.studentName}</p>
+                            <div className="bg-muted/50 p-4 rounded-2xl border border-muted">
+                              <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Score</p>
+                              <p className="text-4xl font-black text-primary leading-none">{r.score}/{r.totalQuestions}</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 pt-2">
+                                <Button variant="outline" className="font-bold h-11 rounded-xl" onClick={() => setSelectedResult(r)}><Eye className="w-4 h-4 mr-2" /> Audit</Button>
+                                {!r.resultDeclared && (
+                                    <Button className="bg-green-600 hover:bg-green-700 font-bold h-11 rounded-xl shadow-lg" onClick={() => handleDeclareResult(r.id)}>Declare</Button>
+                                )}
+                            </div>
                         </CardContent>
                       </Card>
                     ))}
                   </div>
                 </div>
               )) : (
-                <div className="text-center py-20 bg-muted/30 rounded-3xl">
-                   <ScrollText className="w-12 h-12 mx-auto text-muted-foreground opacity-20 mb-4" />
+                <div className="text-center py-24 bg-muted/30 rounded-[3rem] border-2 border-dashed">
+                   <ScrollText className="w-16 h-16 mx-auto text-muted-foreground opacity-10 mb-4" />
                    <p className="text-muted-foreground font-bold uppercase tracking-widest text-sm">No official results to audit</p>
                 </div>
               )}
             </TabsContent>
 
             <TabsContent value="schedule">
-              <Card className="border-2 border-primary/20 rounded-3xl overflow-hidden">
-                <CardHeader className="bg-muted/30">
-                  <CardTitle>Schedule Manager</CardTitle>
-                  <CardDescription>Configure the active testing window and application deadline.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pt-8 px-6 sm:px-8">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Exam Date</Label>
-                    <Input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} className="h-12 border-2" />
+              <Card className="border-2 border-primary/20 rounded-[2.5rem] overflow-hidden shadow-2xl">
+                <CardHeader className="bg-muted/30 p-8 border-b">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="w-6 h-6 text-primary" />
+                    <CardTitle className="text-2xl font-black uppercase tracking-tight">Cycle Configuration</CardTitle>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Start Time (24h)</Label>
-                    <div className="flex gap-1 h-12">
+                  <CardDescription className="font-medium">Define the exam dates and registration deadlines for the entire platform.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 p-10">
+                  <div className="space-y-3">
+                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Exam Date</Label>
+                    <Input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} className="h-14 border-2 rounded-2xl font-bold shadow-sm focus:border-primary" />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Start Time (24h)</Label>
+                    <div className="flex gap-2 h-14">
                       <Select value={startH} onValueChange={setStartH}>
-                        <SelectTrigger className="w-full h-full border-2"><SelectValue /></SelectTrigger>
-                        <SelectContent className="max-h-60"><ScrollArea className="h-60">{Array.from({length: 24}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
+                        <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
+                        <SelectContent className="max-h-60 rounded-2xl"><ScrollArea className="h-60">{Array.from({length: 24}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
                       </Select>
                       <Select value={startM} onValueChange={setStartM}>
-                        <SelectTrigger className="w-full h-full border-2"><SelectValue /></SelectTrigger>
-                        <SelectContent className="max-h-60"><ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
+                        <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
+                        <SelectContent className="max-h-60 rounded-2xl"><ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
                       </Select>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">End Time (24h)</Label>
-                    <div className="flex gap-1 h-12">
+                  <div className="space-y-3">
+                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">End Time (24h)</Label>
+                    <div className="flex gap-2 h-14">
                       <Select value={endH} onValueChange={setEndH}>
-                        <SelectTrigger className="w-full h-full border-2"><SelectValue /></SelectTrigger>
-                        <SelectContent className="max-h-60"><ScrollArea className="h-60">{Array.from({length: 24}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
+                        <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
+                        <SelectContent className="max-h-60 rounded-2xl"><ScrollArea className="h-60">{Array.from({length: 24}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
                       </Select>
                       <Select value={endM} onValueChange={setEndM}>
-                        <SelectTrigger className="w-full h-full border-2"><SelectValue /></SelectTrigger>
-                        <SelectContent className="max-h-60"><ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
+                        <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
+                        <SelectContent className="max-h-60 rounded-2xl"><ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
                       </Select>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-black uppercase tracking-widest text-red-600">Apply Deadline</Label>
-                    <Input type="date" value={lastApplyDate} onChange={e => setLastApplyDate(e.target.value)} className="h-12 border-2 border-red-100" />
+                  <div className="space-y-3">
+                    <Label className="text-xs font-black uppercase tracking-widest text-red-600 ml-1">Reg. Deadline</Label>
+                    <Input type="date" value={lastApplyDate} onChange={e => setLastApplyDate(e.target.value)} className="h-14 border-2 border-red-100 bg-red-50/20 rounded-2xl font-bold shadow-sm focus:border-red-400" />
                   </div>
                 </CardContent>
-                <CardFooter className="bg-muted/10 p-6 sm:p-8 flex flex-col sm:flex-row justify-end gap-4 mt-8 flex-wrap">
+                <CardFooter className="bg-muted/10 p-10 flex flex-col sm:flex-row justify-end gap-5 border-t border-muted">
                   <Button 
                     onClick={handleUpdateOnly} 
                     disabled={isUpdatingOnly || isSavingSchedule} 
                     variant="outline" 
-                    className="h-14 px-6 sm:px-8 font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted w-full sm:w-auto"
+                    className="h-14 px-8 font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted text-xs sm:text-sm w-full sm:w-auto shadow-sm"
                   >
                     {isUpdatingOnly ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 w-5 h-5" />}
-                    Update Schedule Only
+                    Save Schedule Only
                   </Button>
                   <Button 
                     onClick={handleSaveAndReset} 
                     disabled={isSavingSchedule || isUpdatingOnly} 
-                    className="h-14 px-6 sm:px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 w-full sm:w-auto"
+                    className="h-14 px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 text-xs sm:text-sm w-full sm:w-auto"
                   >
-                    {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <RefreshCcw className="mr-2" />}
-                    Reset & Publish New Cycle
+                    {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <RefreshCcw className="mr-2 w-5 h-5" />}
+                    Global Cycle Reset
                   </Button>
                 </CardFooter>
               </Card>
@@ -392,21 +409,32 @@ export default function AdminExamsPage() {
       </Card>
 
       <Dialog open={!!selectedResult} onOpenChange={() => setSelectedResult(null)}>
-        <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
-          <DialogHeader className="p-6 bg-slate-900 text-white shrink-0">
-            <DialogTitle>Exam Audit: Group {selectedResult?.group}</DialogTitle>
+        <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0 rounded-[2.5rem] overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="p-8 bg-slate-900 text-white shrink-0">
+            <div className="flex justify-between items-center">
+              <div>
+                <DialogTitle className="text-2xl font-black uppercase tracking-tight">Audit Log: {selectedResult?.studentName}</DialogTitle>
+                <DialogDescription className="text-slate-400 font-bold">Group {selectedResult?.group} • Final Submission Audit</DialogDescription>
+              </div>
+              <div className="text-right">
+                <p className="text-3xl font-black text-primary">{selectedResult?.score}/{selectedResult?.totalQuestions}</p>
+              </div>
+            </div>
           </DialogHeader>
-          <ScrollArea className="flex-1 p-6">
-            <div className="space-y-4">
+          <ScrollArea className="flex-1 p-8">
+            <div className="space-y-4 pb-20">
               {selectedResult?.details?.map((item: any, i: number) => (
-                <div key={i} className="flex justify-between p-4 bg-muted rounded-xl border">
-                  <span className="font-bold">Question {i+1}</span>
-                  <div className="flex gap-8">
-                    <div><p className="text-[10px] uppercase font-bold text-muted-foreground">Key</p><p className="font-black">{item.correct}</p></div>
-                    <div><p className="text-[10px] uppercase font-bold text-muted-foreground">User</p><p className={cn("font-black", item.student === item.correct ? "text-green-600" : "text-red-500")}>{item.student ?? 'N/A'}</p></div>
+                <div key={i} className="flex justify-between items-center p-5 bg-muted/40 rounded-2xl border border-muted group hover:bg-muted/60 transition-colors">
+                  <span className="font-bold text-slate-700">Question {i+1}</span>
+                  <div className="flex gap-10 items-center">
+                    <div className="text-center"><p className="text-[9px] uppercase font-black text-muted-foreground mb-1">Key</p><p className="font-black text-slate-900">{item.correct}</p></div>
+                    <div className="text-center"><p className="text-[9px] uppercase font-black text-muted-foreground mb-1">User</p><p className={cn("font-black px-3 py-1 rounded-lg", item.student === item.correct ? "text-green-700 bg-green-100" : "text-red-700 bg-red-100")}>{item.student ?? 'N/A'}</p></div>
                   </div>
                 </div>
               ))}
+              {(!selectedResult?.details || selectedResult.details.length === 0) && (
+                <div className="text-center py-20 bg-muted/20 rounded-2xl italic text-muted-foreground font-medium">No detail log available for this submission.</div>
+              )}
             </div>
             <ScrollBar orientation="vertical" />
           </ScrollArea>
@@ -415,3 +443,4 @@ export default function AdminExamsPage() {
     </div>
   );
 }
+

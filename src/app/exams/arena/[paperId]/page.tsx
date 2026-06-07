@@ -78,8 +78,8 @@ export default function ExamArenaPage() {
         const initialAnswers = new Array(generated.length).fill(null);
         setAnswers(initialAnswers);
         answersRef.current = initialAnswers;
-        setTimeLeft(app.timeLimit);
-        timeLeftRef.current = app.timeLimit;
+        setTimeLeft(app.timeLimit || 600);
+        timeLeftRef.current = app.timeLimit || 600;
         setLoading(false);
       } catch (error) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examApplications', operation: 'list' }));
@@ -115,6 +115,11 @@ export default function ExamArenaPage() {
       isFinal: paperId === 'final',
       resultDeclared: paperId !== 'final',
       submittedAt: serverTimestamp(),
+      // Add detailed breakdown for audit
+      details: questions.map((q, i) => ({
+        correct: q.answer,
+        student: currentAnswers[i]
+      }))
     };
 
     addDoc(collection(getFirestore(firebaseApp), "examResults"), payload)
@@ -232,7 +237,7 @@ export default function ExamArenaPage() {
           </div>
         </CardContent>
         <CardFooter className="p-8 flex justify-end">
-          <Button disabled={isSubmitting} className="h-16 px-10 text-xl font-black bg-green-600 hover:bg-green-700 rounded-2xl" onClick={() => finishExam()}>
+          <Button disabled={isSubmitting} className="h-16 px-10 text-xl font-black bg-green-600 hover:bg-green-700 rounded-2xl shadow-xl" onClick={() => finishExam()}>
             {isSubmitting ? <Loader2 className="animate-spin" /> : <CheckCircle2 className="mr-2" />} End Exam
           </Button>
         </CardFooter>
