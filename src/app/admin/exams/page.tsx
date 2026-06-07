@@ -72,8 +72,10 @@ export default function AdminExamsPage() {
       (snap) => {
         setApplications(snap.docs.map(doc => {
           const data = doc.data();
-          // Support multiple group field names for backward compatibility
-          const group = data.group || (data as any).masteryGroup || (data as any).mastery_group || '?';
+          // Comprehensive check for all possible group field names
+          const rawGroup = data.group || (data as any).masteryGroup || (data as any).mastery_group || (data as any).mastery_level;
+          const group = typeof rawGroup === 'string' ? rawGroup.toUpperCase() : '?';
+          
           return { 
             id: doc.id, 
             ...data, 
@@ -104,7 +106,10 @@ export default function AdminExamsPage() {
       .catch(async (e) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'update' })));
   };
 
-  const handleAllowReapply = async (id: string) => {
+  const handleAllowReapply = async (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (!confirm("This will permanently clear the student's current application. They will be able to select a new group and re-apply from their dashboard. Continue?")) return;
     
     setIsClearingApp(id);
@@ -114,8 +119,12 @@ export default function AdminExamsPage() {
       .then(() => {
         toast({ title: "Ready to Re-apply", description: "The student's dashboard has been reset." });
       })
-      .catch(async (e) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'delete' }));
+      .catch(async (err: any) => {
+        console.error("Delete application error:", err);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: `examApplications/${id}`, 
+          operation: 'delete' 
+        }));
       })
       .finally(() => setIsClearingApp(null));
   };
@@ -284,7 +293,7 @@ export default function AdminExamsPage() {
                                 size="sm" 
                                 variant="outline" 
                                 className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl" 
-                                onClick={() => handleAllowReapply(app.id)}
+                                onClick={(e) => handleAllowReapply(e, app.id)}
                                 disabled={isClearingApp === app.id}
                               >
                                 {isClearingApp === app.id ? <Loader2 className="animate-spin mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}

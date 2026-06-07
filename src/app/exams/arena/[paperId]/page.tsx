@@ -115,7 +115,6 @@ export default function ExamArenaPage() {
       isFinal: paperId === 'final',
       resultDeclared: paperId !== 'final',
       submittedAt: serverTimestamp(),
-      // Add detailed breakdown for audit
       details: questions.map((q, i) => ({
         correct: q.answer,
         student: currentAnswers[i]
