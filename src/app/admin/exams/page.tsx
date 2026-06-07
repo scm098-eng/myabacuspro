@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
-import { CheckCircle2, XCircle, Search, Trophy, Eye, ScrollText, RefreshCcw, Megaphone, Calendar, Loader2, Save } from 'lucide-react';
+import { CheckCircle2, XCircle, Search, Trophy, Eye, ScrollText, RefreshCcw, Megaphone, Calendar, Loader2, Save, Ban } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -82,7 +82,6 @@ export default function AdminExamsPage() {
     return () => { unsubApps(); unsubResults(); };
   }, []);
 
-  // Update Status logic to support 'pending' properly
   const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected' | 'pending') => {
     const db = getFirestore(firebaseApp);
     updateDoc(doc(db, "examApplications", id), { status })
@@ -211,7 +210,11 @@ export default function AdminExamsPage() {
                     {filteredApps.map(app => (
                       <TableRow key={app.id} className="hover:bg-muted/10">
                         <TableCell className="font-bold">{app.studentName}</TableCell>
-                        <TableCell><Badge variant="secondary" className="px-4 text-[10px] font-black tracking-widest">GROUP {app.group}</Badge></TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="px-4 text-[10px] font-black tracking-widest uppercase">
+                            GROUP {app.group}
+                          </Badge>
+                        </TableCell>
                         <TableCell>
                           <Badge variant={app.status?.toLowerCase() === 'approved' ? 'default' : (app.status?.toLowerCase() === 'pending' ? 'outline' : 'destructive')} className="font-bold text-[10px]">
                             {app.status?.toUpperCase() || 'PENDING'}
@@ -220,9 +223,32 @@ export default function AdminExamsPage() {
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             {app.status?.toLowerCase() === 'pending' ? (
-                              <Button size="sm" className="bg-green-600 hover:bg-green-700 font-bold h-8" onClick={() => handleUpdateStatus(app.id, 'approved')}>Approve</Button>
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  className="bg-green-600 hover:bg-green-700 font-bold h-8" 
+                                  onClick={() => handleUpdateStatus(app.id, 'approved')}
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Approve
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive" 
+                                  className="font-bold h-8" 
+                                  onClick={() => handleUpdateStatus(app.id, 'rejected')}
+                                >
+                                  <Ban className="w-3.5 h-3.5 mr-1" /> Reject
+                                </Button>
+                              </>
                             ) : (
-                              <Button size="sm" variant="outline" className="font-bold h-8" onClick={() => handleUpdateStatus(app.id, 'pending')}>Re-apply</Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="font-bold h-8" 
+                                onClick={() => handleUpdateStatus(app.id, 'pending')}
+                              >
+                                <RefreshCcw className="w-3.5 h-3.5 mr-1" /> Reset Status
+                              </Button>
                             )}
                           </div>
                         </TableCell>
