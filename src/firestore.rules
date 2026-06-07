@@ -42,7 +42,7 @@ service cloud.firestore {
       allow create: if request.auth != null && isNotSuspended() && request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin();
       // Allow student to delete their own application (used for re-applying after rejection)
-      // Allow Admin to delete during global cycle reset
+      // Allow Admin to delete to trigger the "Allow Re-apply" reset logic
       allow delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
     }
 

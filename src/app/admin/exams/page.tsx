@@ -38,6 +38,8 @@ export default function AdminExamsPage() {
   
   const [isSavingSchedule, setIsSavingSchedule] = useState(false);
   const [isUpdatingOnly, setIsUpdatingOnly] = useState(false);
+  const [isClearingApp, setIsClearingApp] = useState<string | null>(null);
+
   const [examDate, setExamDate] = useState('');
   const [startH, setStartH] = useState('12');
   const [startM, setStartM] = useState('30');
@@ -70,10 +72,11 @@ export default function AdminExamsPage() {
       (snap) => {
         setApplications(snap.docs.map(doc => {
           const data = doc.data();
+          // Map either 'group' or legacy 'masteryGroup' field
           return { 
             id: doc.id, 
             ...data, 
-            group: data.group || (data as any).masteryGroup 
+            group: data.group || (data as any).masteryGroup || '?'
           } as ExamApplication;
         }));
         setLoading(false);
@@ -102,12 +105,20 @@ export default function AdminExamsPage() {
       .catch(async (e) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'update' })));
   };
 
-  const handleDeleteApplication = async (id: string) => {
-    if (!confirm("This will permanently remove this application, allowing the student to select a different group and re-apply. Continue?")) return;
+  const handleAllowReapply = async (id: string) => {
+    if (!confirm("This will permanently clear the student's current application. They will be able to select a new group and re-apply from their dashboard. Continue?")) return;
+    
+    setIsClearingApp(id);
     const db = getFirestore(firebaseApp);
+    
     deleteDoc(doc(db, "examApplications", id))
-      .then(() => toast({ title: "Application Cleared", description: "Student can now re-apply." }))
-      .catch(async (e) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'delete' })));
+      .then(() => {
+        toast({ title: "Ready to Re-apply", description: "The student's dashboard has been reset." });
+      })
+      .catch(async (e) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'delete' }));
+      })
+      .finally(() => setIsClearingApp(null));
   };
 
   const handleDeclareResult = async (id: string) => {
@@ -192,7 +203,7 @@ export default function AdminExamsPage() {
     return grouped;
   }, [allResults, applications]);
 
-  if (loading || authLoading) return <div className="p-8 text-center font-bold uppercase tracking-widest animate-pulse">Loading Arena Data...</div>;
+  if (loading || authLoading) return <div className="p-8 text-center font-bold uppercase tracking-widest animate-pulse">Loading Exam Center...</div>;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12 px-4 sm:px-6">
@@ -201,11 +212,11 @@ export default function AdminExamsPage() {
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div>
               <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tight">Exam Administration</CardTitle>
-              <CardDescription className="font-bold">Review applications and manage the schedule cycle.</CardDescription>
+              <CardDescription className="font-bold">Manage applications, results, and cycle schedules.</CardDescription>
             </div>
             <div className="relative w-full lg:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search student..." className="pl-10 h-11 rounded-xl" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+              <Input placeholder="Search student name..." className="pl-10 h-11 rounded-xl" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
           </div>
         </CardHeader>
@@ -234,7 +245,7 @@ export default function AdminExamsPage() {
                         <TableCell className="font-bold pl-6 py-4">{app.studentName}</TableCell>
                         <TableCell>
                           <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-4 py-1 text-[10px] font-black tracking-widest uppercase rounded-lg">
-                            GROUP {app.group || (app as any).masteryGroup || '?'}
+                            GROUP {app.group || '?'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center">
@@ -255,7 +266,7 @@ export default function AdminExamsPage() {
                               <>
                                 <Button 
                                   size="sm" 
-                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md shadow-green-900/10" 
+                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md" 
                                   onClick={() => handleUpdateStatus(app.id, 'approved')}
                                 >
                                   <CheckCircle2 className="w-4 h-4 mr-2" /> Approve
@@ -263,24 +274,23 @@ export default function AdminExamsPage() {
                                 <Button 
                                   size="sm" 
                                   variant="destructive" 
-                                  className="font-bold h-10 px-4 rounded-xl shadow-md shadow-red-900/10" 
+                                  className="font-bold h-10 px-4 rounded-xl shadow-md" 
                                   onClick={() => handleUpdateStatus(app.id, 'rejected')}
                                 >
                                   <Ban className="w-4 h-4 mr-2" /> Reject
                                 </Button>
                               </>
                             ) : (
-                              <div className="flex items-center gap-2">
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="font-bold h-10 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl" 
-                                  onClick={() => handleDeleteApplication(app.id)}
-                                  title="Allows student to choose a different group and re-apply"
-                                >
-                                  <RotateCcw className="w-4 h-4 mr-2" /> Allow Re-apply
-                                </Button>
-                              </div>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="font-bold h-10 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl" 
+                                onClick={() => handleAllowReapply(app.id)}
+                                disabled={isClearingApp === app.id}
+                              >
+                                {isClearingApp === app.id ? <Loader2 className="animate-spin" /> : <RotateCcw className="w-4 h-4 mr-2" />}
+                                Allow Re-apply
+                              </Button>
                             )}
                           </div>
                         </TableCell>
@@ -289,7 +299,6 @@ export default function AdminExamsPage() {
                     {filteredApps.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={4} className="text-center py-24 text-muted-foreground font-medium italic bg-muted/5">
-                           <Search className="w-10 h-10 mx-auto opacity-10 mb-4" />
                            No applications found.
                         </TableCell>
                       </TableRow>
