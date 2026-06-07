@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
-import { CheckCircle2, XCircle, Search, Trophy, Eye, ScrollText, RefreshCcw, Megaphone, Calendar, Loader2, Save, Ban } from 'lucide-react';
+import { CheckCircle2, XCircle, Search, Trophy, Eye, ScrollText, RefreshCcw, Megaphone, Calendar, Loader2, Save, Ban, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -71,12 +71,18 @@ export default function AdminExamsPage() {
         setApplications(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamApplication)));
         setLoading(false);
       },
-      async (err) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examApplications', operation: 'list' }))
+      async (err) => {
+        const permissionError = new FirestorePermissionError({ path: 'examApplications', operation: 'list' });
+        errorEmitter.emit('permission-error', permissionError);
+      }
     );
 
     const unsubResults = onSnapshot(query(collection(db, "examResults"), orderBy("submittedAt", "desc")), 
       (snap) => setAllResults(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamResult))),
-      async (err) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examResults', operation: 'list' }))
+      async (err) => {
+        const permissionError = new FirestorePermissionError({ path: 'examResults', operation: 'list' });
+        errorEmitter.emit('permission-error', permissionError);
+      }
     );
 
     return () => { unsubApps(); unsubResults(); };
@@ -87,6 +93,14 @@ export default function AdminExamsPage() {
     updateDoc(doc(db, "examApplications", id), { status })
       .then(() => toast({ title: `Application ${status}` }))
       .catch(async (e) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'update' })));
+  };
+
+  const handleDeleteApplication = async (id: string) => {
+    if (!confirm("This will permanently remove this application, allowing the student to select a different group and re-apply. Continue?")) return;
+    const db = getFirestore(firebaseApp);
+    deleteDoc(doc(db, "examApplications", id))
+      .then(() => toast({ title: "Application Cleared", description: "Student can now re-apply." }))
+      .catch(async (e) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'delete' })));
   };
 
   const handleDeclareResult = async (id: string) => {
@@ -171,7 +185,7 @@ export default function AdminExamsPage() {
     return grouped;
   }, [allResults, applications]);
 
-  if (loading || authLoading) return <div className="p-8">Loading...</div>;
+  if (loading || authLoading) return <div className="p-8 text-center font-bold uppercase tracking-widest animate-pulse">Loading Arena Data...</div>;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12 px-4 sm:px-6">
@@ -196,59 +210,72 @@ export default function AdminExamsPage() {
             </TabsList>
 
             <TabsContent value="applications">
-              <div className="rounded-xl border overflow-hidden">
+              <div className="rounded-xl border overflow-hidden bg-white shadow-sm">
                 <Table>
-                  <TableHeader className="bg-muted/30">
+                  <TableHeader className="bg-muted/30 border-b">
                     <TableRow>
-                      <TableHead>Student</TableHead>
+                      <TableHead className="pl-6">Student</TableHead>
                       <TableHead>Group Applied</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="text-right pr-6">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredApps.map(app => (
                       <TableRow key={app.id} className="hover:bg-muted/10">
-                        <TableCell className="font-bold">{app.studentName}</TableCell>
+                        <TableCell className="font-bold pl-6">{app.studentName}</TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="px-4 text-[10px] font-black tracking-widest uppercase">
-                            GROUP {app.group}
+                            GROUP {app.group || '?'}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={app.status?.toLowerCase() === 'approved' ? 'default' : (app.status?.toLowerCase() === 'pending' ? 'outline' : 'destructive')} className="font-bold text-[10px]">
-                            {app.status?.toUpperCase() || 'PENDING'}
+                          <Badge 
+                            variant={app.status?.toLowerCase() === 'approved' ? 'default' : (app.status?.toLowerCase() === 'pending' ? 'outline' : 'destructive')} 
+                            className={cn("font-black text-[10px] uppercase", app.status === 'approved' && "bg-green-600")}
+                          >
+                            {app.status || 'PENDING'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right pr-6">
                           <div className="flex justify-end gap-2">
-                            {app.status?.toLowerCase() === 'pending' ? (
+                            {app.status === 'pending' ? (
                               <>
                                 <Button 
                                   size="sm" 
-                                  className="bg-green-600 hover:bg-green-700 font-bold h-8" 
+                                  className="bg-green-600 hover:bg-green-700 font-bold h-9" 
                                   onClick={() => handleUpdateStatus(app.id, 'approved')}
                                 >
-                                  <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Approve
+                                  <CheckCircle2 className="w-4 h-4 mr-1.5" /> Approve
                                 </Button>
                                 <Button 
                                   size="sm" 
                                   variant="destructive" 
-                                  className="font-bold h-8" 
+                                  className="font-bold h-9" 
                                   onClick={() => handleUpdateStatus(app.id, 'rejected')}
                                 >
-                                  <Ban className="w-3.5 h-3.5 mr-1" /> Reject
+                                  <Ban className="w-4 h-4 mr-1.5" /> Reject
                                 </Button>
                               </>
                             ) : (
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="font-bold h-8" 
-                                onClick={() => handleUpdateStatus(app.id, 'pending')}
-                              >
-                                <RefreshCcw className="w-3.5 h-3.5 mr-1" /> Reset Status
-                              </Button>
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="font-bold h-9 border-2" 
+                                  onClick={() => handleUpdateStatus(app.id, 'pending')}
+                                >
+                                  <RefreshCcw className="w-3.5 h-3.5 mr-1.5" /> Reset to Pending
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="font-bold h-9 text-red-600 hover:bg-red-50 hover:text-red-700" 
+                                  onClick={() => handleDeleteApplication(app.id)}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Allow Re-apply
+                                </Button>
+                              </>
                             )}
                           </div>
                         </TableCell>
@@ -256,7 +283,7 @@ export default function AdminExamsPage() {
                     ))}
                     {filteredApps.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-10 text-muted-foreground font-medium italic">No applications found.</TableCell>
+                        <TableCell colSpan={4} className="text-center py-20 text-muted-foreground font-medium italic">No applications found.</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
