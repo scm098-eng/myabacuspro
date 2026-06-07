@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
-import { CheckCircle2, XCircle, Search, Trophy, Eye, ScrollText, RefreshCcw, Megaphone, Calendar, Loader2, Save, Ban, Trash2, RotateCcw } from 'lucide-react';
+import { CheckCircle2, Search, Trophy, Eye, ScrollText, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -72,26 +72,25 @@ export default function AdminExamsPage() {
       (snap) => {
         setApplications(snap.docs.map(doc => {
           const data = doc.data();
-          // Map either 'group' or legacy 'masteryGroup' field
+          // Support multiple group field names for backward compatibility
+          const group = data.group || (data as any).masteryGroup || (data as any).mastery_group || '?';
           return { 
             id: doc.id, 
             ...data, 
-            group: data.group || (data as any).masteryGroup || '?'
+            group 
           } as ExamApplication;
         }));
         setLoading(false);
       },
       async (err) => {
-        const permissionError = new FirestorePermissionError({ path: 'examApplications', operation: 'list' });
-        errorEmitter.emit('permission-error', permissionError);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examApplications', operation: 'list' }));
       }
     );
 
     const unsubResults = onSnapshot(query(collection(db, "examResults"), orderBy("submittedAt", "desc")), 
       (snap) => setAllResults(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamResult))),
       async (err) => {
-        const permissionError = new FirestorePermissionError({ path: 'examResults', operation: 'list' });
-        errorEmitter.emit('permission-error', permissionError);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examResults', operation: 'list' }));
       }
     );
 
@@ -283,12 +282,12 @@ export default function AdminExamsPage() {
                             ) : (
                               <Button 
                                 size="sm" 
-                                variant="ghost" 
-                                className="font-bold h-10 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl" 
+                                variant="outline" 
+                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl" 
                                 onClick={() => handleAllowReapply(app.id)}
                                 disabled={isClearingApp === app.id}
                               >
-                                {isClearingApp === app.id ? <Loader2 className="animate-spin" /> : <RotateCcw className="w-4 h-4 mr-2" />}
+                                {isClearingApp === app.id ? <Loader2 className="animate-spin mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}
                                 Allow Re-apply
                               </Button>
                             )}
