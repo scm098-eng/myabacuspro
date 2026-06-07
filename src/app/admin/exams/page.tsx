@@ -72,8 +72,13 @@ export default function AdminExamsPage() {
       (snap) => {
         setApplications(snap.docs.map(doc => {
           const data = doc.data();
-          // Comprehensive check for all possible group field names
-          const rawGroup = data.group || (data as any).masteryGroup || (data as any).mastery_group || (data as any).mastery_level;
+          // Extremely robust group field detection
+          const rawGroup = data.group || 
+                           (data as any).masteryGroup || 
+                           (data as any).mastery_group || 
+                           (data as any).mastery_level || 
+                           (data as any).masteryLevel;
+          
           const group = typeof rawGroup === 'string' ? rawGroup.toUpperCase() : '?';
           
           return { 
@@ -99,7 +104,9 @@ export default function AdminExamsPage() {
     return () => { unsubApps(); unsubResults(); };
   }, []);
 
-  const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected' | 'pending') => {
+  const handleUpdateStatus = async (e: React.MouseEvent, id: string, status: 'approved' | 'rejected' | 'pending') => {
+    e.preventDefault();
+    e.stopPropagation();
     const db = getFirestore(firebaseApp);
     updateDoc(doc(db, "examApplications", id), { status })
       .then(() => toast({ title: `Application ${status.toUpperCase()}` }))
@@ -110,7 +117,8 @@ export default function AdminExamsPage() {
     e.preventDefault();
     e.stopPropagation();
     
-    if (!confirm("This will permanently clear the student's current application. They will be able to select a new group and re-apply from their dashboard. Continue?")) return;
+    // Explicit window confirm to avoid scoping issues
+    if (!window.confirm("This will permanently clear the student's current application. They will be able to select a new group and re-apply from their dashboard. Continue?")) return;
     
     setIsClearingApp(id);
     const db = getFirestore(firebaseApp);
@@ -120,7 +128,7 @@ export default function AdminExamsPage() {
         toast({ title: "Ready to Re-apply", description: "The student's dashboard has been reset." });
       })
       .catch(async (err: any) => {
-        console.error("Delete application error:", err);
+        console.error("Critical Permission Error (Delete Application):", err);
         errorEmitter.emit('permission-error', new FirestorePermissionError({ 
           path: `examApplications/${id}`, 
           operation: 'delete' 
@@ -166,7 +174,7 @@ export default function AdminExamsPage() {
       toast({ title: "Configuration Missing", variant: "destructive" });
       return;
     }
-    if (!confirm("This will DELETE all current applications and results. Continue?")) return;
+    if (!window.confirm("This will DELETE all current applications and results. Continue?")) return;
     
     setIsSavingSchedule(true);
     const db = getFirestore(firebaseApp);
@@ -273,26 +281,29 @@ export default function AdminExamsPage() {
                             {app.status === 'pending' ? (
                               <>
                                 <Button 
+                                  type="button"
                                   size="sm" 
-                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md" 
-                                  onClick={() => handleUpdateStatus(app.id, 'approved')}
+                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md pointer-events-auto" 
+                                  onClick={(e) => handleUpdateStatus(e, app.id, 'approved')}
                                 >
                                   <CheckCircle2 className="w-4 h-4 mr-2" /> Approve
                                 </Button>
                                 <Button 
+                                  type="button"
                                   size="sm" 
                                   variant="destructive" 
-                                  className="font-bold h-10 px-4 rounded-xl shadow-md" 
-                                  onClick={() => handleUpdateStatus(app.id, 'rejected')}
+                                  className="font-bold h-10 px-4 rounded-xl shadow-md pointer-events-auto" 
+                                  onClick={(e) => handleUpdateStatus(e, app.id, 'rejected')}
                                 >
                                   <Ban className="w-4 h-4 mr-2" /> Reject
                                 </Button>
                               </>
                             ) : (
                               <Button 
+                                type="button"
                                 size="sm" 
                                 variant="outline" 
-                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl" 
+                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl pointer-events-auto" 
                                 onClick={(e) => handleAllowReapply(e, app.id)}
                                 disabled={isClearingApp === app.id}
                               >
