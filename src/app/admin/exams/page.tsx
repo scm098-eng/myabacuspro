@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -68,7 +67,15 @@ export default function AdminExamsPage() {
 
     const unsubApps = onSnapshot(query(collection(db, "examApplications"), orderBy("appliedAt", "desc")), 
       (snap) => {
-        setApplications(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamApplication)));
+        setApplications(snap.docs.map(doc => {
+          const data = doc.data();
+          return { 
+            id: doc.id, 
+            ...data, 
+            // Handle both field name possibilities for group
+            group: data.group || (data as any).masteryGroup 
+          } as ExamApplication;
+        }));
         setLoading(false);
       },
       async (err) => {
@@ -266,14 +273,6 @@ export default function AdminExamsPage() {
                               <div className="flex items-center gap-2">
                                 <Button 
                                   size="sm" 
-                                  variant="outline" 
-                                  className="font-bold h-10 border-2 rounded-xl" 
-                                  onClick={() => handleUpdateStatus(app.id, 'pending')}
-                                >
-                                  <RefreshCcw className="w-4 h-4 mr-2" /> Reset
-                                </Button>
-                                <Button 
-                                  size="sm" 
                                   variant="ghost" 
                                   className="font-bold h-10 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl" 
                                   onClick={() => handleDeleteApplication(app.id)}
@@ -443,4 +442,3 @@ export default function AdminExamsPage() {
     </div>
   );
 }
-
