@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -72,7 +73,6 @@ export default function AdminExamsPage() {
           return { 
             id: doc.id, 
             ...data, 
-            // Handle both field name possibilities for group
             group: data.group || (data as any).masteryGroup 
           } as ExamApplication;
         }));
@@ -213,8 +213,8 @@ export default function AdminExamsPage() {
           <Tabs defaultValue="applications">
             <TabsList className="mb-8 w-full justify-start overflow-x-auto h-auto p-1 bg-muted/50 rounded-xl border">
               <TabsTrigger value="applications" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Applications ({applications.length})</TabsTrigger>
-              <TabsTrigger value="final-results" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Exam Audit</TabsTrigger>
-              <TabsTrigger value="schedule" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Cycle Settings</TabsTrigger>
+              <TabsTrigger value="final-results" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Results</TabsTrigger>
+              <TabsTrigger value="schedule" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Schedule Manager</TabsTrigger>
             </TabsList>
 
             <TabsContent value="applications">
@@ -234,7 +234,7 @@ export default function AdminExamsPage() {
                         <TableCell className="font-bold pl-6 py-4">{app.studentName}</TableCell>
                         <TableCell>
                           <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-4 py-1 text-[10px] font-black tracking-widest uppercase rounded-lg">
-                            GROUP {app.group || '?'}
+                            GROUP {app.group || (app as any).masteryGroup || '?'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center">
@@ -342,9 +342,9 @@ export default function AdminExamsPage() {
                 <CardHeader className="bg-muted/30 p-8 border-b">
                   <div className="flex items-center gap-3">
                     <Calendar className="w-6 h-6 text-primary" />
-                    <CardTitle className="text-2xl font-black uppercase tracking-tight">Cycle Configuration</CardTitle>
+                    <CardTitle className="text-2xl font-black uppercase tracking-tight">Schedule Manager</CardTitle>
                   </div>
-                  <CardDescription className="font-medium">Define the exam dates and registration deadlines for the entire platform.</CardDescription>
+                  <CardDescription className="font-medium">Configure the active testing window and application deadline.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 p-10">
                   <div className="space-y-3">
@@ -378,7 +378,7 @@ export default function AdminExamsPage() {
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <Label className="text-xs font-black uppercase tracking-widest text-red-600 ml-1">Reg. Deadline</Label>
+                    <Label className="text-xs font-black uppercase tracking-widest text-red-600 ml-1">Apply Deadline</Label>
                     <Input type="date" value={lastApplyDate} onChange={e => setLastApplyDate(e.target.value)} className="h-14 border-2 border-red-100 bg-red-50/20 rounded-2xl font-bold shadow-sm focus:border-red-400" />
                   </div>
                 </CardContent>
@@ -390,7 +390,7 @@ export default function AdminExamsPage() {
                     className="h-14 px-8 font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted text-xs sm:text-sm w-full sm:w-auto shadow-sm"
                   >
                     {isUpdatingOnly ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 w-5 h-5" />}
-                    Save Schedule Only
+                    UPDATE SCHEDULE ONLY
                   </Button>
                   <Button 
                     onClick={handleSaveAndReset} 
@@ -398,7 +398,7 @@ export default function AdminExamsPage() {
                     className="h-14 px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 text-xs sm:text-sm w-full sm:w-auto"
                   >
                     {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <RefreshCcw className="mr-2 w-5 h-5" />}
-                    Global Cycle Reset
+                    RESET & PUBLISH NEW CYCLE
                   </Button>
                 </CardFooter>
               </Card>
