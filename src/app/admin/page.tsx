@@ -28,6 +28,8 @@ import { cn, extractFirstImage } from "@/lib/utils";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { ADMIN_EMAILS } from '@/lib/constants';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 function getUTCMondayKey() {
     const now = new Date();
@@ -143,9 +145,18 @@ export default function AdminDashboardPage() {
     const unsubscribers: (() => void)[] = [];
 
     if (profile.role === 'admin') {
-      const blogUnsub = onSnapshot(query(collection(db, "blogs"), orderBy("createdAt", "desc")), (snap) => {
+      const blogUnsub = onSnapshot(
+        query(collection(db, "blogs"), orderBy("createdAt", "desc")), 
+        (snap) => {
           setBlogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost)));
-      });
+        },
+        async (error) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: 'blogs',
+            operation: 'list',
+          }));
+        }
+      );
       unsubscribers.push(blogUnsub);
     }
 
@@ -155,13 +166,22 @@ export default function AdminDashboardPage() {
       else if (leaderboardTab === 'monthlyPoints') q = query(collection(db, "users"), where("role", "==", "student"), where("lastMonthlyReset", "==", currentMonthKey), orderBy("monthlyPoints", "desc"), limit(20));
       else q = query(collection(db, "users"), where("role", "==", "student"), orderBy("totalPoints", "desc"), limit(20));
 
-      const leaderboardUnsub = onSnapshot(q, (snapshot) => {
+      const leaderboardUnsub = onSnapshot(
+        q, 
+        (snapshot) => {
           const filtered = snapshot.docs.map(doc => {
               const ud = doc.data() as ProfileData;
               return { uid: doc.id, email: ud.email?.toLowerCase(), name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: (ud as any)[leaderboardTab] || 0, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
           }).filter(s => !ADMIN_EMAILS.includes(s.email)).slice(0, 10);
           setLeaderboard(filtered);
-      });
+        },
+        async (error) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: 'users',
+            operation: 'list',
+          }));
+        }
+      );
       unsubscribers.push(leaderboardUnsub);
     }
     return () => unsubscribers.forEach(unsub => unsub());
@@ -255,14 +275,33 @@ export default function AdminDashboardPage() {
       toast({ title: "Blog Article Saved" }); 
       setIsBlogDialogOpen(false); 
       setEditingBlog(null); 
-    } catch (err: any) { toast({ title: "Save Failed", description: err.message, variant: "destructive" }); }
+    } catch (err: any) { 
+      if (err.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: `blogs/${id}`,
+          operation: 'update',
+          requestResourceData: blogData,
+        }));
+      } else {
+        toast({ title: "Save Failed", description: err.message, variant: "destructive" }); 
+      }
+    }
     finally { setIsSavingBlog(false); }
   };
 
   const handleDeleteBlog = async (id: string) => {
     if (!confirm("Are you sure?")) return;
     try { await deleteDoc(doc(getFirestore(firebaseApp), "blogs", id)); toast({ title: "Article Deleted" }); }
-    catch (e) { toast({ title: "Deletion Failed", variant: "destructive" }); }
+    catch (e: any) { 
+      if (e.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: `blogs/${id}`,
+          operation: 'delete',
+        }));
+      } else {
+        toast({ title: "Deletion Failed", variant: "destructive" }); 
+      }
+    }
   };
 
   const processedData = useMemo(() => {
@@ -433,7 +472,7 @@ export default function AdminDashboardPage() {
 
       <Dialog open={isBlogDialogOpen} onOpenChange={setIsBlogDialogOpen}>
         <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden p-0 rounded-[2rem] border-none shadow-2xl flex flex-col">
-          <DialogHeader className="p-6 bg-muted/30 border-b shrink-0 flex flex-row items-center justify-between"><div><DialogTitle className="text-2xl font-headline">{editingBlog?.id ? 'Manage Article' : 'Create Article'}</DialogTitle></div><div className="flex bg-muted p-1 rounded-xl gap-1"><Button variant={blogDialogMode === 'edit' ? 'default' : 'ghost'} size="sm" onClick={() => setBlogDialogMode('edit')} className="rounded-lg h-9 px-4"><Edit className="w-4 h-4 mr-2" /> Editor</Button></div></DialogHeader>
+          <DialogHeader className="p-6 bg-muted/30 border-b shrink-0 flex flex-row items-center justify-between"><div><DialogTitle className="text-2xl font-headline">{editingBlog?.id ? 'Manage Article' : 'Create Article'}</DialogTitle></div><div className="flex bg-muted p-1 rounded-xl gap-1"><Button variant={blogDialogMode === 'edit' ? 'default' : 'ghost'} size="sm" onClick={() => setBlogDialogMode('edit'} className="rounded-lg h-9 px-4"><Edit className="w-4 h-4 mr-2" /> Editor</Button></div></DialogHeader>
           <div className="flex-1 overflow-y-auto">
             {blogDialogMode === 'edit' ? (
               <form id="blog-save-form" onSubmit={handleSaveBlog} className="p-8 space-y-10">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -22,10 +21,14 @@ import { ref, uploadBytes, getDownloadURL, getStorage } from 'firebase/storage';
 import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload } from '@/types';
 import { useRouter, usePathname } from 'next/navigation';
 import { RANK_CRITERIA, ADMIN_EMAILS, EXCLUDED_FROM_TEACHER_LIST } from '@/lib/constants';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 interface AuthContextType {
   user: User | null;
   profile: ProfileData | null;
+  login: (email: string, pass: string) => Promise<ProfileData | null>;
+  signup: (values: SignupData) => Promise<void>;
   login: (email: string, pass: string) => Promise<ProfileData | null>;
   signup: (values: SignupData) => Promise<void>;
   loginWithGoogle: () => Promise<ProfileData | null>;
@@ -117,7 +120,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { ...data, uid: authUser.uid };
       }
       return null;
-    } catch (e) {
+    } catch (e: any) {
+      if (e.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: `users/${authUser.uid}`,
+          operation: 'get',
+        }));
+      }
       return null;
     }
   }, [firestore]);
@@ -178,8 +187,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setProfile(null);
           }
           setIsLoading(false);
-        }, (error) => {
+        }, async (error) => {
           setIsLoading(false);
+          if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: `users/${authUser.uid}`,
+              operation: 'get',
+            }));
+          }
         });
       } else {
         setProfile(null);
