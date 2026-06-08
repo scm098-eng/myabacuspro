@@ -132,8 +132,8 @@ export default function ExamDashboardPage() {
       });
   };
 
-  const isApproved = application?.status === 'approved';
-  const isRejected = application?.status === 'rejected';
+  const isApproved = application?.status?.toLowerCase() === 'approved';
+  const isRejected = application?.status?.toLowerCase() === 'rejected';
 
   const hasFinishedFinal = useMemo(() => {
     if (!application || results.length === 0) return false;
@@ -297,18 +297,18 @@ export default function ExamDashboardPage() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2"><Trophy className="text-yellow-500 w-7 h-7" /> Practice Papers (Group {application.group})</h2>
-                  <Badge className={cn("py-1.5 px-4 font-black", (hasFinishedFinal || examEnded) ? "bg-slate-400" : "bg-green-500")}>
-                    {hasFinishedFinal ? 'CYCLE COMPLETE' : examEnded ? 'EXAM CLOSED' : 'APPROVED'}
+                  <Badge className={cn("py-1.5 px-4 font-black", (hasFinishedFinal) ? "bg-slate-400" : "bg-green-500")}>
+                    {hasFinishedFinal ? 'CYCLE COMPLETE' : 'APPROVED'}
                   </Badge>
                 </div>
                 
-                {(hasFinishedFinal || examEnded) && (
+                {(hasFinishedFinal) && (
                   <div className="bg-amber-50 border-2 border-amber-200 p-6 rounded-3xl flex items-start gap-4">
                     <AlertTriangle className="text-amber-600 shrink-0 mt-1" />
                     <div>
                       <p className="text-amber-900 font-black uppercase tracking-tight text-sm">Practice Papers Locked</p>
                       <p className="text-amber-700 text-xs font-bold leading-relaxed">
-                        Practice papers are disabled for this cycle.
+                        Practice papers are disabled as you have finished this cycle.
                       </p>
                     </div>
                   </div>
@@ -318,7 +318,7 @@ export default function ExamDashboardPage() {
                   {Array.from({ length: 20 }).map((_, i) => {
                     const paperId = `paper-${i + 1}`;
                     const isDone = results.some(r => r.paperId === paperId && !r.isFinal);
-                    const isLocked = hasFinishedFinal || examEnded || !schedule;
+                    const isLocked = hasFinishedFinal; // Allow practice even if schedule is null or expired
 
                     return (
                       <Button 
@@ -354,7 +354,7 @@ export default function ExamDashboardPage() {
                     </CardHeader>
                     <CardContent className="p-8 space-y-6">
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-muted p-4 rounded-2xl text-center"><p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Time Limit</p><p className="text-xl font-bold">{application.timeLimit / 60} Mins</p></div>
+                        <div className="bg-muted p-4 rounded-2xl text-center"><p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Time Limit</p><p className="text-xl font-bold">{(application.timeLimit || 600) / 60} Mins</p></div>
                         <div className="bg-muted p-4 rounded-2xl text-center"><p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Questions</p><p className="text-xl font-bold">150 Questions</p></div>
                       </div>
                     </CardContent>
@@ -399,3 +399,4 @@ export default function ExamDashboardPage() {
     </div>
   );
 }
+

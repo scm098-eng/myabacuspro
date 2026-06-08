@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -82,7 +83,7 @@ export default function AdminExamsPage() {
           const data = doc.data();
           const rawGroup = data.group || data.masteryGroup || data.mastery_group || data.masteryLevel || '?';
           const group = String(rawGroup).toUpperCase();
-          // Normalize status to lowercase for robust conditional checking
+          // Normalize status for logic checking
           const status = (data.status || 'pending').toLowerCase() as 'pending' | 'approved' | 'rejected';
           return { id: doc.id, ...data, group, status } as ExamApplication;
         }));
@@ -126,23 +127,17 @@ export default function AdminExamsPage() {
     
     deleteDoc(docRef)
       .then(() => {
-        toast({ 
-          title: "Dashboard Reset", 
-          description: "Student record cleared. They can now re-apply." 
-        });
+        toast({ title: "Dashboard Reset", description: "Student can now re-apply." });
       })
       .catch(async (err: any) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-          path: docRef.path, 
-          operation: 'delete' 
-        }));
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
       })
       .finally(() => setIsClearingApp(null));
   };
 
   const handleUpdateOnly = () => {
     if (!examDate) {
-      toast({ title: "Configuration Missing", description: "Exam date is required.", variant: "destructive" });
+      toast({ title: "Configuration Missing", variant: "destructive" });
       return;
     }
     setIsUpdatingOnly(true);
@@ -179,7 +174,7 @@ export default function AdminExamsPage() {
     };
 
     setDoc(docRef, payload, { merge: true })
-      .then(() => toast({ title: "Exam Cancelled", description: "Arena access locked for all students." }))
+      .then(() => toast({ title: "Exam Cancelled" }))
       .catch(async (err: any) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ 
           path: docRef.path, 
@@ -191,11 +186,7 @@ export default function AdminExamsPage() {
   };
 
   const handleSaveAndReset = async () => {
-    if (!examDate || !lastApplyDate) {
-      toast({ title: "Configuration Missing", variant: "destructive" });
-      return;
-    }
-    
+    if (!examDate) return;
     setIsSavingSchedule(true);
     const db = getFirestore(firebaseApp);
     try {
@@ -220,7 +211,7 @@ export default function AdminExamsPage() {
       await batch.commit();
       toast({ title: "Cycle Reset & Published" });
     } catch (e: any) {
-      toast({ title: "Reset Failed", description: e.message, variant: "destructive" });
+      toast({ title: "Reset Failed", variant: "destructive" });
     } finally { setIsSavingSchedule(false); }
   };
 
@@ -249,7 +240,6 @@ export default function AdminExamsPage() {
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div className="space-y-1">
               <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tight">Records & Schedule</CardTitle>
-              {/* Corrected nesting to avoid hydration error (p cannot contain div/Badge) */}
               <div className="text-sm font-bold text-slate-500 flex items-center flex-wrap gap-2">
                 <span>Current: {examDate ? format(new Date(examDate), 'MMMM do') : 'None'} • Status:</span>
                 <Badge className={cn("px-3 border-none", isActive ? "bg-green-500" : "bg-red-500")}>
@@ -560,3 +550,4 @@ export default function AdminExamsPage() {
     </div>
   );
 }
+
