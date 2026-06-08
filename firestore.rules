@@ -91,6 +91,6 @@ service cloud.firestore {
       allow write: if false;
     }
     
-    // Deployment trigger nudge: 2026-06-15T09:45:00Z - Confirming admin cancel/delete permissions are live.
+    // Deployment trigger nudge: 2026-06-16T10:30:00Z - Synchronizing exam cancellation and student reset permissions.
   }
 }

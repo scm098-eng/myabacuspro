@@ -48,30 +48,23 @@ export default function ExamDashboardPage() {
     if (!user) return;
     const db = getFirestore(firebaseApp);
     
-    const fetchSchedule = async () => {
-      try {
-        const snap = await getDoc(doc(db, "stats", "examSchedule"));
-        if (snap.exists()) {
-          const data = snap.data();
-          if (data.date) {
-             const dateString = data.date;
-             setSchedule({
-               date: dateString,
-               start: new Date(`${dateString}T${data.startTime || '12:30'}:00`),
-               end: new Date(`${dateString}T${data.endTime || '16:00'}:00`),
-               lastApplyDate: data.lastApplyDate,
-               isActive: data.isActive !== false // Default to true unless explicitly false
-             });
-          }
+    const unsubSchedule = onSnapshot(doc(db, "stats", "examSchedule"), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.date) {
+           const dateString = data.date;
+           setSchedule({
+             date: dateString,
+             start: new Date(`${dateString}T${data.startTime || '12:30'}:00`),
+             end: new Date(`${dateString}T${data.endTime || '16:00'}:00`),
+             lastApplyDate: data.lastApplyDate,
+             isActive: data.isActive !== false
+           });
         }
-      } catch (error) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-          path: 'stats/examSchedule', 
-          operation: 'get' 
-        }));
       }
-    };
-    fetchSchedule();
+    }, async (error) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'stats/examSchedule', operation: 'get' }));
+    });
     
     const appQuery = query(collection(db, "examApplications"), where("userId", "==", user.uid));
     const unsubscribeApp = onSnapshot(appQuery, 
@@ -99,6 +92,7 @@ export default function ExamDashboardPage() {
     );
 
     return () => {
+      unsubSchedule();
       unsubscribeApp();
       unsubscribeResults();
     };

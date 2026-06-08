@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
@@ -9,16 +9,17 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, setDoc, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, getDoc, setDoc, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
-import { CheckCircle2, Search, Trophy, Eye, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw, XCircle } from 'lucide-react';
+import { CheckCircle2, Search, Trophy, Eye, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw, XCircle, ShieldAlert, AlertTriangle, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -47,6 +48,7 @@ export default function AdminExamsPage() {
   const [endH, setEndH] = useState('16');
   const [endM, setEndM] = useState('00');
   const [lastApplyDate, setLastApplyDate] = useState('');
+  const [isActive, setIsActive] = useState(true);
 
   useEffect(() => {
     if (!authLoading && (!profile || profile.role !== 'admin')) {
@@ -57,10 +59,11 @@ export default function AdminExamsPage() {
   useEffect(() => {
     const db = getFirestore(firebaseApp);
     
-    getDoc(doc(db, "stats", "examSchedule")).then(snap => {
+    const unsubSchedule = onSnapshot(doc(db, "stats", "examSchedule"), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         setExamDate(data.date || '');
+        setIsActive(data.isActive !== false);
         const startTime = data.startTime || '12:30';
         const endTime = data.endTime || '16:00';
         const [sh, sm] = startTime.split(':');
@@ -95,7 +98,7 @@ export default function AdminExamsPage() {
       }
     );
 
-    return () => { unsubApps(); unsubResults(); };
+    return () => { unsubSchedule(); unsubApps(); unsubResults(); };
   }, []);
 
   const handleUpdateStatus = (id: string, status: 'approved' | 'rejected' | 'pending') => {
@@ -103,7 +106,7 @@ export default function AdminExamsPage() {
     const docRef = doc(db, "examApplications", id);
     const payload = { status, updatedAt: serverTimestamp() };
 
-    updateDoc(docRef, payload)
+    setDoc(docRef, payload, { merge: true })
       .then(() => toast({ title: `Application ${status.toUpperCase()}` }))
       .catch(async (e) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ 
@@ -115,8 +118,6 @@ export default function AdminExamsPage() {
   };
 
   const handleAllowReapply = (id: string) => {
-    if (!window.confirm("This will permanently clear the student's current application. They will be able to select a new group and re-apply from their dashboard. Continue?")) return;
-    
     setIsClearingApp(id);
     const db = getFirestore(firebaseApp);
     const docRef = doc(db, "examApplications", id);
@@ -125,7 +126,7 @@ export default function AdminExamsPage() {
       .then(() => {
         toast({ 
           title: "Dashboard Reset", 
-          description: "The student record is cleared. They can now select a different group and re-apply." 
+          description: "Student record cleared. They can now re-apply." 
         });
       })
       .catch(async (err: any) => {
@@ -135,25 +136,6 @@ export default function AdminExamsPage() {
         }));
       })
       .finally(() => setIsClearingApp(null));
-  };
-
-  const handleDeclareResult = (id: string) => {
-    const db = getFirestore(firebaseApp);
-    const docRef = doc(db, "examResults", id);
-    const payload = { resultDeclared: true, updatedAt: serverTimestamp() };
-
-    updateDoc(docRef, payload)
-      .then(() => {
-        setDoc(doc(db, "stats", "examSchedule"), { lastResultDeclaredAt: serverTimestamp() }, { merge: true });
-        toast({ title: "Result Declared" });
-      })
-      .catch(async (err: any) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-          path: docRef.path, 
-          operation: 'update',
-          requestResourceData: payload
-        }));
-      });
   };
 
   const handleUpdateOnly = () => {
@@ -169,6 +151,7 @@ export default function AdminExamsPage() {
       startTime: `${startH}:${startM}`,
       endTime: `${endH}:${endM}`,
       lastApplyDate: lastApplyDate || "",
+      isActive: true, // Auto-reactive on update
       updatedAt: serverTimestamp()
     };
 
@@ -185,7 +168,6 @@ export default function AdminExamsPage() {
   };
 
   const handleCancelExam = () => {
-    if (!window.confirm("Are you sure you want to cancel the current exam cycle? This will lock the arena for all students. Continue?")) return;
     setIsCancelling(true);
     const db = getFirestore(firebaseApp);
     const docRef = doc(db, "stats", "examSchedule");
@@ -195,7 +177,7 @@ export default function AdminExamsPage() {
     };
 
     setDoc(docRef, payload, { merge: true })
-      .then(() => toast({ title: "Exam Cancelled", description: "The exam cycle has been deactivated." }))
+      .then(() => toast({ title: "Exam Cancelled", description: "Arena access locked for all students." }))
       .catch(async (err: any) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ 
           path: docRef.path, 
@@ -211,7 +193,6 @@ export default function AdminExamsPage() {
       toast({ title: "Configuration Missing", variant: "destructive" });
       return;
     }
-    if (!window.confirm("This will DELETE all current applications and results. Continue?")) return;
     
     setIsSavingSchedule(true);
     const db = getFirestore(firebaseApp);
@@ -260,16 +241,61 @@ export default function AdminExamsPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12 px-4 sm:px-6">
+      
+      {/* 🚀 Emergency Control Center */}
+      <Card className="rounded-[2.5rem] border-none shadow-2xl bg-slate-900 text-white overflow-hidden relative">
+        <div className="absolute top-0 right-0 p-8 opacity-10"><ShieldAlert className="w-48 h-48" /></div>
+        <CardHeader className="p-8 sm:p-10 relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="space-y-2 text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-2">
+                <Badge className={cn("px-4 py-1 font-black", isActive ? "bg-green-500" : "bg-red-500")}>
+                  {isActive ? "ARENA ACTIVE" : "ARENA LOCKED"}
+                </Badge>
+              </div>
+              <CardTitle className="text-3xl sm:text-5xl font-black uppercase tracking-tighter italic">Cycle Management</CardTitle>
+              <CardDescription className="text-slate-400 font-bold text-lg">
+                Current: {examDate ? format(new Date(examDate), 'MMMM do') : 'None'} • Deadline: {lastApplyDate ? format(new Date(lastApplyDate), 'MMM d') : 'None'}
+              </CardDescription>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="h-16 px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-red-900/40 border-2 border-red-500/50 hover:scale-[1.02] transition-transform">
+                    <XCircle className="mr-2 w-6 h-6" /> Cancel Current Exam
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="rounded-3xl border-4 border-red-100">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-2xl font-black uppercase text-red-700">Deactivate Cycle?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-base font-bold">
+                      This will instantly lock the Exam Arena for all students. Applications and results will NOT be deleted.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="mt-6">
+                    <AlertDialogCancel className="rounded-xl h-12 font-bold">Abort</AlertDialogCancel>
+                    <AlertDialogAction onClick={(e) => { e.preventDefault(); handleCancelExam(); }} className="rounded-xl h-12 font-black bg-red-600 hover:bg-red-700">
+                      Confirm Cancellation
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
       <Card className="rounded-[2rem] border-none shadow-xl">
         <CardHeader>
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div>
-              <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tight">Exam Administration</CardTitle>
-              <CardDescription className="font-bold text-slate-500">Manage applications, results, and cycle schedules.</CardDescription>
+              <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tight">Records & Schedule</CardTitle>
+              <CardDescription className="font-bold text-slate-500">Manage student eligibility and testing windows.</CardDescription>
             </div>
             <div className="relative w-full lg:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search student name..." className="pl-10 h-11 rounded-xl" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+              <Input placeholder="Search student..." className="pl-10 h-11 rounded-xl" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
           </div>
         </CardHeader>
@@ -313,7 +339,7 @@ export default function AdminExamsPage() {
                             {app.status?.toUpperCase() || 'PENDING'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right pr-6 py-4 relative">
+                        <TableCell className="text-right pr-6 py-4 relative isolate">
                           <div className="flex justify-end gap-2 relative z-50">
                             {app.status === 'pending' ? (
                               <>
@@ -321,11 +347,7 @@ export default function AdminExamsPage() {
                                   type="button"
                                   size="sm" 
                                   className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
-                                  onClick={(e) => { 
-                                    e.preventDefault(); 
-                                    e.stopPropagation(); 
-                                    handleUpdateStatus(app.id, 'approved'); 
-                                  }}
+                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUpdateStatus(app.id, 'approved'); }}
                                 >
                                   <CheckCircle2 className="w-4 h-4 mr-2" /> Approve
                                 </Button>
@@ -334,35 +356,38 @@ export default function AdminExamsPage() {
                                   size="sm" 
                                   variant="destructive" 
                                   className="font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
-                                  onClick={(e) => { 
-                                    e.preventDefault(); 
-                                    e.stopPropagation(); 
-                                    handleUpdateStatus(app.id, 'rejected'); 
-                                  }}
+                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUpdateStatus(app.id, 'rejected'); }}
                                 >
                                   <Ban className="w-4 h-4 mr-2" /> Reject
                                 </Button>
                               </>
                             ) : (
-                              <Button 
-                                type="button"
-                                size="sm" 
-                                variant="outline" 
-                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl cursor-pointer" 
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleAllowReapply(app.id);
-                                }}
-                                disabled={isClearingApp === app.id}
-                              >
-                                {isClearingApp === app.id ? (
-                                  <Loader2 className="animate-spin mr-2 w-4 h-4" />
-                                ) : (
-                                  <RotateCcw className="w-4 h-4 mr-2" />
-                                )}
-                                Allow Re-apply
-                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    type="button"
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl cursor-pointer" 
+                                  >
+                                    <RotateCcw className="w-4 h-4 mr-2" /> Allow Re-apply
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="rounded-3xl">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle className="font-black uppercase tracking-tight">Reset Student Dashboard?</AlertDialogTitle>
+                                    <AlertDialogDescription className="text-slate-600 font-bold">
+                                      This will clear the current application for <strong>{app.studentName}</strong>. They will be able to select a new mastery group and apply again instantly.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter className="mt-4">
+                                    <AlertDialogCancel className="rounded-xl h-11">Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={(e) => { e.preventDefault(); handleAllowReapply(app.id); }} className="rounded-xl h-11 font-black bg-red-600 hover:bg-red-700">
+                                      {isClearingApp === app.id ? <Loader2 className="animate-spin w-5 h-5" /> : "Confirm Reset"}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             )}
                           </div>
                         </TableCell>
@@ -373,6 +398,7 @@ export default function AdminExamsPage() {
               </div>
             </TabsContent>
 
+            {/* Results Tab */}
             <TabsContent value="results" className="space-y-12">
               {Object.keys(groupedResults).length > 0 ? Object.keys(groupedResults).map(group => (
                 <div key={group} className="space-y-6">
@@ -392,12 +418,7 @@ export default function AdminExamsPage() {
                               <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Score</p>
                               <p className="text-4xl font-black text-primary leading-none">{r.score}/{r.totalQuestions}</p>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 pt-2">
-                                <Button variant="outline" className="font-bold h-11 rounded-xl" onClick={() => setSelectedResult(r)}><Eye className="w-4 h-4 mr-2" /> Audit</Button>
-                                {!r.resultDeclared && (
-                                    <Button className="bg-green-600 hover:bg-green-700 font-bold h-11 rounded-xl shadow-lg" onClick={() => handleDeclareResult(r.id)}>Declare</Button>
-                                )}
-                            </div>
+                            <Button variant="outline" className="w-full font-bold h-11 rounded-xl" onClick={() => setSelectedResult(r)}><Eye className="w-4 h-4 mr-2" /> Audit</Button>
                         </CardContent>
                       </Card>
                     ))}
@@ -406,24 +427,25 @@ export default function AdminExamsPage() {
               )) : (
                 <div className="text-center py-24 bg-muted/30 rounded-[3rem] border-2 border-dashed">
                    <Trophy className="w-16 h-16 mx-auto text-muted-foreground opacity-10 mb-4" />
-                   <p className="text-muted-foreground font-bold uppercase tracking-widest text-sm">No official results to audit</p>
+                   <p className="text-muted-foreground font-bold uppercase tracking-widest text-sm">No official results found</p>
                 </div>
               )}
             </TabsContent>
 
+            {/* Schedule Manager Tab */}
             <TabsContent value="schedule">
               <Card className="border-2 border-primary/20 rounded-[2.5rem] overflow-hidden shadow-2xl">
                 <CardHeader className="bg-muted/30 p-8 border-b">
                   <div className="flex items-center gap-3">
                     <Calendar className="w-6 h-6 text-primary" />
-                    <CardTitle className="text-2xl font-black uppercase tracking-tight">Schedule Manager</CardTitle>
+                    <CardTitle className="text-2xl font-black uppercase tracking-tight">Cycle Configuration</CardTitle>
                   </div>
-                  <CardDescription className="font-medium">Configure the active testing window and application deadline.</CardDescription>
+                  <CardDescription className="font-medium">Define the testing window and application deadlines.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 p-10">
                   <div className="space-y-3">
                     <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Exam Date</Label>
-                    <Input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} className="h-14 border-2 rounded-2xl font-bold shadow-sm focus:border-primary" />
+                    <Input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} className="h-14 border-2 rounded-2xl font-bold" />
                   </div>
                   <div className="space-y-3">
                     <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Start Time (24h)</Label>
@@ -431,23 +453,13 @@ export default function AdminExamsPage() {
                       <Select value={startH} onValueChange={setStartH}>
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
                         <SelectContent className="max-h-60 rounded-2xl">
-                          <ScrollArea className="h-60">
-                            {Array.from({length: 24}).map((_, i) => {
-                              const val = i.toString().padStart(2,'0');
-                              return <SelectItem key={val} value={val}>{val}</SelectItem>;
-                            })}
-                          </ScrollArea>
+                          <ScrollArea className="h-60">{Array.from({length: 24}).map((_, i) => { const v = i.toString().padStart(2,'0'); return <SelectItem key={v} value={v}>{v}</SelectItem>; })}</ScrollArea>
                         </SelectContent>
                       </Select>
                       <Select value={startM} onValueChange={setStartM}>
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
                         <SelectContent className="max-h-60 rounded-2xl">
-                          <ScrollArea className="h-60">
-                            {Array.from({length: 60}).map((_, i) => {
-                              const val = i.toString().padStart(2,'0');
-                              return <SelectItem key={val} value={val}>{val}</SelectItem>;
-                            })}
-                          </ScrollArea>
+                          <ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => { const v = i.toString().padStart(2,'0'); return <SelectItem key={v} value={v}>{v}</SelectItem>; })}</ScrollArea>
                         </SelectContent>
                       </Select>
                     </div>
@@ -458,62 +470,59 @@ export default function AdminExamsPage() {
                       <Select value={endH} onValueChange={setEndH}>
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
                         <SelectContent className="max-h-60 rounded-2xl">
-                          <ScrollArea className="h-60">
-                            {Array.from({length: 24}).map((_, i) => {
-                              const val = i.toString().padStart(2,'0');
-                              return <SelectItem key={val} value={val}>{val}</SelectItem>;
-                            })}
-                          </ScrollArea>
+                          <ScrollArea className="h-60">{Array.from({length: 24}).map((_, i) => { const v = i.toString().padStart(2,'0'); return <SelectItem key={v} value={v}>{v}</SelectItem>; })}</ScrollArea>
                         </SelectContent>
                       </Select>
                       <Select value={endM} onValueChange={setEndM}>
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
                         <SelectContent className="max-h-60 rounded-2xl">
-                          <ScrollArea className="h-60">
-                            {Array.from({length: 60}).map((_, i) => {
-                              const val = i.toString().padStart(2,'0');
-                              return <SelectItem key={val} value={val}>{val}</SelectItem>;
-                            })}
-                          </ScrollArea>
+                          <ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => { const v = i.toString().padStart(2,'0'); return <SelectItem key={v} value={v}>{v}</SelectItem>; })}</ScrollArea>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                   <div className="space-y-3">
                     <Label className="text-xs font-black uppercase tracking-widest text-red-600 ml-1">Apply Deadline</Label>
-                    <Input type="date" value={lastApplyDate} onChange={e => setLastApplyDate(e.target.value)} className="h-14 border-2 border-red-100 bg-red-50/20 rounded-2xl font-bold shadow-sm focus:border-red-400" />
+                    <Input type="date" value={lastApplyDate} onChange={e => setLastApplyDate(e.target.value)} className="h-14 border-2 border-red-100 bg-red-50/20 rounded-2xl font-bold shadow-sm" />
                   </div>
                 </CardContent>
-                <CardFooter className="bg-muted/10 p-6 sm:p-10 flex flex-col sm:flex-row flex-wrap justify-center sm:justify-end gap-4 border-t border-muted min-h-[100px]">
-                  <Button 
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCancelExam(); }} 
-                    disabled={isCancelling} 
-                    variant="destructive" 
-                    className="h-12 px-6 w-full sm:w-auto font-black uppercase tracking-widest rounded-xl border-2 hover:bg-red-700 text-[10px] sm:text-xs shadow-md"
-                  >
-                    {isCancelling ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <XCircle className="mr-2 w-5 h-5" />}
-                    CANCEL CURRENT EXAM
-                  </Button>
+                <CardFooter className="bg-muted/10 p-6 sm:p-10 flex flex-col sm:flex-row flex-wrap justify-end gap-4 border-t border-muted">
                   <Button 
                     type="button"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUpdateOnly(); }} 
                     disabled={isUpdatingOnly || isSavingSchedule} 
                     variant="outline" 
-                    className="h-12 px-6 w-full sm:w-auto font-black uppercase tracking-widest rounded-xl border-2 hover:bg-muted text-[10px] sm:text-xs shadow-sm bg-white"
+                    className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted text-xs bg-white shadow-md"
                   >
-                    {isUpdatingOnly ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Save className="mr-2 w-5 h-5" />}
-                    UPDATE SCHEDULE ONLY
+                    {isUpdatingOnly ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <Save className="mr-2 w-5 h-5" />}
+                    Update Schedule Only
                   </Button>
-                  <Button 
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSaveAndReset(); }} 
-                    disabled={isSavingSchedule || isUpdatingOnly} 
-                    className="h-12 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-xl shadow-xl bg-red-600 hover:bg-red-700 text-[10px] sm:text-xs"
-                  >
-                    {isSavingSchedule ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <RefreshCcw className="mr-2 w-5 h-5" />}
-                    RESET & PUBLISH NEW CYCLE
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        type="button"
+                        disabled={isSavingSchedule || isUpdatingOnly} 
+                        className="h-14 px-10 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 text-xs"
+                      >
+                        {isSavingSchedule ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <RefreshCcw className="mr-2 w-5 h-5" />}
+                        Reset & Publish Cycle
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-3xl">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-red-700">Permanent Data Reset</AlertDialogTitle>
+                        <AlertDialogDescription className="font-bold">
+                          Warning: This will PERMANENTLY DELETE all current applications and results. This is required to start a completely fresh exam cycle.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="rounded-xl">Abort</AlertDialogCancel>
+                        <AlertDialogAction onClick={(e) => { e.preventDefault(); handleSaveAndReset(); }} className="bg-red-600 hover:bg-red-700 rounded-xl">
+                          Confirm Full Reset
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </CardFooter>
               </Card>
             </TabsContent>
