@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -83,7 +82,9 @@ export default function AdminExamsPage() {
           const data = doc.data();
           const rawGroup = data.group || data.masteryGroup || data.mastery_group || data.masteryLevel || '?';
           const group = String(rawGroup).toUpperCase();
-          return { id: doc.id, ...data, group } as ExamApplication;
+          // Normalize status to lowercase for robust conditional checking
+          const status = (data.status || 'pending').toLowerCase() as 'pending' | 'approved' | 'rejected';
+          return { id: doc.id, ...data, group, status } as ExamApplication;
         }));
         setLoading(false);
       },
@@ -251,7 +252,7 @@ export default function AdminExamsPage() {
               {/* Corrected nesting to avoid hydration error (p cannot contain div/Badge) */}
               <div className="text-sm font-bold text-slate-500 flex items-center flex-wrap gap-2">
                 <span>Current: {examDate ? format(new Date(examDate), 'MMMM do') : 'None'} • Status:</span>
-                <Badge className={cn("px-3", isActive ? "bg-green-500" : "bg-red-500")}>
+                <Badge className={cn("px-3 border-none", isActive ? "bg-green-500" : "bg-red-500")}>
                   {isActive ? "ACTIVE" : "CANCELLED"}
                 </Badge>
               </div>
@@ -356,7 +357,7 @@ export default function AdminExamsPage() {
                                   </AlertDialogHeader>
                                   <AlertDialogFooter className="mt-4">
                                     <AlertDialogCancel className="rounded-xl h-11">Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleAllowReapply(app.id)} className="rounded-xl h-11 font-black bg-red-600 hover:bg-red-700">
+                                    <AlertDialogAction onClick={() => handleAllowReapply(app.id)} className="rounded-xl h-11 font-black bg-red-600 hover:bg-red-700 border-none text-white">
                                       Confirm Reset
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
@@ -459,10 +460,10 @@ export default function AdminExamsPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="bg-muted/10 p-6 sm:p-10 border-t border-muted">
-                  <div className="grid grid-cols-1 sm:flex sm:flex-wrap sm:justify-end items-center gap-4 w-full">
+                  <div className="flex flex-col sm:flex-row flex-wrap justify-end items-center gap-4 w-full">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" className="h-14 px-8 font-black uppercase tracking-widest rounded-2xl shadow-xl">
+                        <Button variant="destructive" className="h-14 px-8 font-black uppercase tracking-widest rounded-2xl shadow-xl border-none">
                           <XCircle className="mr-2 w-5 h-5" /> Cancel Current Exam
                         </Button>
                       </AlertDialogTrigger>
@@ -475,7 +476,7 @@ export default function AdminExamsPage() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel className="rounded-xl h-12">Abort</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleCancelExam} className="rounded-xl h-12 font-black bg-red-600 hover:bg-red-700">
+                          <AlertDialogAction onClick={handleCancelExam} className="rounded-xl h-12 font-black bg-red-600 hover:bg-red-700 border-none text-white">
                             Confirm Cancellation
                           </AlertDialogAction>
                         </AlertDialogFooter>
@@ -487,7 +488,7 @@ export default function AdminExamsPage() {
                       onClick={handleUpdateOnly} 
                       disabled={isUpdatingOnly || isSavingSchedule} 
                       variant="outline" 
-                      className="h-14 px-8 font-black uppercase tracking-widest rounded-2xl border-2 bg-white shadow-md"
+                      className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 bg-white shadow-md"
                     >
                       {isUpdatingOnly ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <Save className="mr-2 h-5 w-5" />}
                       Update Schedule Only
@@ -498,7 +499,7 @@ export default function AdminExamsPage() {
                         <Button 
                           type="button"
                           disabled={isSavingSchedule || isUpdatingOnly} 
-                          className="h-14 px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700"
+                          className="h-14 px-10 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 border-none text-white"
                         >
                           {isSavingSchedule ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <RefreshCcw className="mr-2 h-5 w-5" />}
                           Reset & Publish Cycle
@@ -513,7 +514,7 @@ export default function AdminExamsPage() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel className="rounded-xl">Abort</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleSaveAndReset} className="bg-red-600 hover:bg-red-700 rounded-xl">
+                          <AlertDialogAction onClick={handleSaveAndReset} className="bg-red-600 hover:bg-red-700 rounded-xl border-none text-white">
                             Confirm Full Reset
                           </AlertDialogAction>
                         </AlertDialogFooter>
