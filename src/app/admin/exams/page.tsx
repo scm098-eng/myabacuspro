@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -12,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
-import { CheckCircle2, Search, Trophy, Eye, ScrollText, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw } from 'lucide-react';
+import { CheckCircle2, Search, Trophy, Eye, ScrollText, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw, XCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,6 +37,7 @@ export default function AdminExamsPage() {
   
   const [isSavingSchedule, setIsSavingSchedule] = useState(false);
   const [isUpdatingOnly, setIsUpdatingOnly] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [isClearingApp, setIsClearingApp] = useState<string | null>(null);
 
   const [examDate, setExamDate] = useState('');
@@ -159,6 +159,21 @@ export default function AdminExamsPage() {
     } finally { setIsUpdatingOnly(false); }
   };
 
+  const handleCancelExam = async () => {
+    if (!window.confirm("Are you sure you want to cancel the current exam cycle? This will lock the arena and disable applications for all students. Continue?")) return;
+    setIsCancelling(true);
+    const db = getFirestore(firebaseApp);
+    try {
+      await updateDoc(doc(db, "stats", "examSchedule"), {
+        isActive: false,
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: "Exam Cancelled", description: "The exam cycle has been deactivated." });
+    } catch (e: any) {
+      toast({ title: "Cancellation Failed", description: e.message, variant: "destructive" });
+    } finally { setIsCancelling(false); }
+  };
+
   const handleSaveAndReset = async () => {
     if (!examDate || !lastApplyDate) {
       toast({ title: "Configuration Missing", variant: "destructive" });
@@ -263,13 +278,13 @@ export default function AdminExamsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right pr-6 py-4 relative">
-                          <div className="flex justify-end gap-2 relative z-50">
+                          <div className="flex justify-end gap-2 relative z-50 isolate">
                             {app.status === 'pending' ? (
                               <>
                                 <Button 
                                   type="button"
                                   size="sm" 
-                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
+                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer relative z-10" 
                                   onClick={(e) => { 
                                     e.preventDefault(); 
                                     e.stopPropagation(); 
@@ -282,7 +297,7 @@ export default function AdminExamsPage() {
                                   type="button"
                                   size="sm" 
                                   variant="destructive" 
-                                  className="font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
+                                  className="font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer relative z-10" 
                                   onClick={(e) => { 
                                     e.preventDefault(); 
                                     e.stopPropagation(); 
@@ -297,7 +312,7 @@ export default function AdminExamsPage() {
                                 type="button"
                                 size="sm" 
                                 variant="outline" 
-                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl cursor-pointer" 
+                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl cursor-pointer relative z-10" 
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -359,7 +374,7 @@ export default function AdminExamsPage() {
                 </div>
               )) : (
                 <div className="text-center py-24 bg-muted/30 rounded-[3rem] border-2 border-dashed">
-                   <ScrollText className="w-16 h-16 mx-auto text-muted-foreground opacity-10 mb-4" />
+                   <Trophy className="w-16 h-16 mx-auto text-muted-foreground opacity-10 mb-4" />
                    <p className="text-muted-foreground font-bold uppercase tracking-widest text-sm">No official results to audit</p>
                 </div>
               )}
@@ -435,6 +450,10 @@ export default function AdminExamsPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="bg-muted/10 p-10 flex flex-col sm:flex-row justify-end gap-5 border-t border-muted">
+                  <Button onClick={handleCancelExam} disabled={isCancelling} variant="destructive" className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-red-700 text-xs sm:text-sm shadow-md">
+                    {isCancelling ? <Loader2 className="animate-spin mr-2" /> : <XCircle className="mr-2 w-5 h-5" />}
+                    CANCEL CURRENT EXAM
+                  </Button>
                   <Button onClick={handleUpdateOnly} disabled={isUpdatingOnly || isSavingSchedule} variant="outline" className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted text-xs sm:text-sm shadow-sm">
                     {isUpdatingOnly ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 w-5 h-5" />}
                     UPDATE SCHEDULE ONLY
