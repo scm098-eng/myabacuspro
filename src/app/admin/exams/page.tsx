@@ -76,8 +76,9 @@ export default function AdminExamsPage() {
       (snap) => {
         setApplications(snap.docs.map(doc => {
           const data = doc.data();
-          const rawGroup = data.group || (data as any).masteryGroup || (data as any).mastery_group || (data as any).mastery_level || (data as any).masteryLevel;
-          const group = typeof rawGroup === 'string' ? rawGroup.toUpperCase() : (rawGroup ? rawGroup.toString() : '?');
+          // Comprehensive field check to avoid the Question Mark issue
+          const rawGroup = data.group || data.masteryGroup || data.mastery_group || data.mastery_level || (data as any).masteryLevel || '?';
+          const group = typeof rawGroup === 'string' ? rawGroup.toUpperCase() : rawGroup.toString().toUpperCase();
           return { id: doc.id, ...data, group } as ExamApplication;
         }));
         setLoading(false);
@@ -97,9 +98,7 @@ export default function AdminExamsPage() {
     return () => { unsubApps(); unsubResults(); };
   }, []);
 
-  const handleUpdateStatus = async (e: React.MouseEvent, id: string, status: 'approved' | 'rejected' | 'pending') => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected' | 'pending') => {
     const db = getFirestore(firebaseApp);
     updateDoc(doc(db, "examApplications", id), { status })
       .then(() => toast({ title: `Application ${status.toUpperCase()}` }))
@@ -215,7 +214,7 @@ export default function AdminExamsPage() {
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div>
               <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tight">Exam Administration</CardTitle>
-              <CardDescription className="font-bold">Manage applications, results, and cycle schedules.</CardDescription>
+              <CardDescription className="font-bold text-slate-500">Manage applications, results, and cycle schedules.</CardDescription>
             </div>
             <div className="relative w-full lg:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -248,7 +247,7 @@ export default function AdminExamsPage() {
                         <TableCell className="font-bold pl-6 py-4">{app.studentName}</TableCell>
                         <TableCell>
                           <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-4 py-1 text-[10px] font-black tracking-widest uppercase rounded-lg">
-                            GROUP {app.group || '?'}
+                            GROUP {app.group}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center">
@@ -271,7 +270,7 @@ export default function AdminExamsPage() {
                                   type="button"
                                   size="sm" 
                                   className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md pointer-events-auto relative z-50 cursor-pointer" 
-                                  onClick={(e) => handleUpdateStatus(e, app.id, 'approved')}
+                                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleUpdateStatus(app.id, 'approved'); }}
                                 >
                                   <CheckCircle2 className="w-4 h-4 mr-2" /> Approve
                                 </Button>
@@ -280,7 +279,7 @@ export default function AdminExamsPage() {
                                   size="sm" 
                                   variant="destructive" 
                                   className="font-bold h-10 px-4 rounded-xl shadow-md pointer-events-auto relative z-50 cursor-pointer" 
-                                  onClick={(e) => handleUpdateStatus(e, app.id, 'rejected')}
+                                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleUpdateStatus(app.id, 'rejected'); }}
                                 >
                                   <Ban className="w-4 h-4 mr-2" /> Reject
                                 </Button>
@@ -290,10 +289,10 @@ export default function AdminExamsPage() {
                                 type="button"
                                 size="sm" 
                                 variant="outline" 
-                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl pointer-events-auto relative z-50 cursor-pointer" 
+                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl relative z-50 cursor-pointer pointer-events-auto" 
                                 onClick={(e) => {
-                                  e.preventDefault();
                                   e.stopPropagation();
+                                  e.preventDefault();
                                   handleAllowReapply(app.id);
                                 }}
                                 disabled={isClearingApp === app.id}
@@ -306,6 +305,11 @@ export default function AdminExamsPage() {
                         </TableCell>
                       </TableRow>
                     ))}
+                    {filteredApps.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-12 text-slate-400 font-medium italic">No applications found.</TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -368,11 +372,23 @@ export default function AdminExamsPage() {
                     <div className="flex gap-2 h-14">
                       <Select value={startH} onValueChange={setStartH}>
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
-                        <SelectContent className="max-h-60 rounded-2xl"><ScrollArea className="h-60">{Array.from({length: 24}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
+                        <SelectContent className="max-h-60 rounded-2xl">
+                          <ScrollArea className="h-60">
+                            {Array.from({length: 24}).map((_, i) => (
+                              <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>
+                            ))}
+                          </ScrollArea>
+                        </SelectContent>
                       </Select>
                       <Select value={startM} onValueChange={setStartM}>
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
-                        <SelectContent className="max-h-60 rounded-2xl"><ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
+                        <SelectContent className="max-h-60 rounded-2xl">
+                          <ScrollArea className="h-60">
+                            {Array.from({length: 60}).map((_, i) => (
+                              <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>
+                            ))}
+                          </ScrollArea>
+                        </SelectContent>
                       </Select>
                     </div>
                   </div>
@@ -381,11 +397,23 @@ export default function AdminExamsPage() {
                     <div className="flex gap-2 h-14">
                       <Select value={endH} onValueChange={setEndH}>
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
-                        <SelectContent className="max-h-60 rounded-2xl"><ScrollArea className="h-60">{Array.from({length: 24}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
+                        <SelectContent className="max-h-60 rounded-2xl">
+                          <ScrollArea className="h-60">
+                            {Array.from({length: 24}).map((_, i) => (
+                              <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>
+                            ))}
+                          </ScrollArea>
+                        </SelectContent>
                       </Select>
                       <Select value={endM} onValueChange={setEndM}>
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
-                        <SelectContent className="max-h-60 rounded-2xl"><ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
+                        <SelectContent className="max-h-60 rounded-2xl">
+                          <ScrollArea className="h-60">
+                            {Array.from({length: 60}).map((_, i) => (
+                              <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>
+                            ))}
+                          </ScrollArea>
+                        </SelectContent>
                       </Select>
                     </div>
                   </div>
