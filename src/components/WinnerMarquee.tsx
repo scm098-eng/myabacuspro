@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
 import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
-import { Trophy, Star, Crown, Megaphone, Calendar, ScrollText } from 'lucide-react';
+import { Trophy, Star, Crown, Megaphone, Calendar, ScrollText, XCircle } from 'lucide-react';
 import { isSameDay, parseISO, isAfter, isBefore } from 'date-fns';
 
 export default function WinnerMarquee() {
@@ -26,6 +27,18 @@ export default function WinnerMarquee() {
     const now = new Date();
     const { winners, schedule } = data;
 
+    // 1. Exam Cancelled Message (Check updated time within last 24 hours)
+    if (schedule?.isActive === false && schedule?.updatedAt) {
+      const updatedAt = schedule.updatedAt.toDate?.() || new Date(schedule.updatedAt);
+      const oneDayAfter = new Date(updatedAt.getTime() + 86400000);
+      if (isAfter(now, updatedAt) && isBefore(now, oneDayAfter)) {
+        msgs.push({ 
+          text: "EXAM CANCELLED! ACCESS RESTRICTED FOR THIS CYCLE.", 
+          icon: <XCircle className="w-5 h-5 text-red-400 animate-pulse" /> 
+        });
+      }
+    }
+
     if (schedule?.lastResultDeclaredAt) {
       const declaredAt = schedule.lastResultDeclaredAt.toDate?.() || new Date(schedule.lastResultDeclaredAt);
       if (isAfter(now, declaredAt) && isBefore(now, new Date(declaredAt.getTime() + 86400000))) {
@@ -33,7 +46,7 @@ export default function WinnerMarquee() {
       }
     }
 
-    if (schedule?.date) {
+    if (schedule?.isActive !== false && schedule?.date) {
       if (isSameDay(now, parseISO(schedule.date))) {
         msgs.push({ text: `EXAM DAY IS HERE! ARENA OPEN UNTIL ${schedule.endTime}!`, icon: <Megaphone className="w-5 h-5 text-yellow-300 animate-pulse" /> });
       } else if (schedule.lastApplyDate && isBefore(now, parseISO(schedule.lastApplyDate))) {

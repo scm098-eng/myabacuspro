@@ -243,56 +243,17 @@ export default function AdminExamsPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12 px-4 sm:px-6">
       
-      {/* 🚀 Emergency Control Center */}
-      <Card className="rounded-[2.5rem] border-none shadow-2xl bg-slate-900 text-white overflow-hidden relative">
-        <div className="absolute top-0 right-0 p-8 opacity-10"><ShieldAlert className="w-48 h-48" /></div>
-        <CardHeader className="p-8 sm:p-10 relative z-10">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="space-y-2 text-center md:text-left">
-              <div className="flex items-center justify-center md:justify-start gap-2">
-                <Badge className={cn("px-4 py-1 font-black", isActive ? "bg-green-500" : "bg-red-500")}>
-                  {isActive ? "ARENA ACTIVE" : "ARENA LOCKED"}
-                </Badge>
-              </div>
-              <CardTitle className="text-3xl sm:text-5xl font-black uppercase tracking-tighter italic">Cycle Management</CardTitle>
-              <CardDescription className="text-slate-400 font-bold text-lg">
-                Current: {examDate ? format(new Date(examDate), 'MMMM do') : 'None'} • Deadline: {lastApplyDate ? format(new Date(lastApplyDate), 'MMM d') : 'None'}
-              </CardDescription>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto isolate">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="h-16 px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-red-900/40 border-2 border-red-500/50 hover:scale-[1.02] transition-transform relative z-10">
-                    <XCircle className="mr-2 w-6 h-6" /> Cancel Current Exam
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="rounded-3xl border-4 border-red-100">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="text-2xl font-black uppercase text-red-700">Deactivate Cycle?</AlertDialogTitle>
-                    <AlertDialogDescription className="text-base font-bold">
-                      This will instantly lock the Exam Arena for all students. Applications and results will NOT be deleted.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter className="mt-6">
-                    <AlertDialogCancel className="rounded-xl h-12 font-bold">Abort</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleCancelExam} className="rounded-xl h-12 font-black bg-red-600 hover:bg-red-700">
-                      Confirm Cancellation
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
       <Card className="rounded-[2rem] border-none shadow-xl">
         <CardHeader>
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div>
               <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tight">Records & Schedule</CardTitle>
-              <CardDescription className="font-bold text-slate-500">Manage student eligibility and testing windows.</CardDescription>
+              <CardDescription className="font-bold text-slate-500">
+                Current: {examDate ? format(new Date(examDate), 'MMMM do') : 'None'} • Status: 
+                <Badge className={cn("ml-2 px-3", isActive ? "bg-green-500" : "bg-red-500")}>
+                  {isActive ? "ACTIVE" : "CANCELLED"}
+                </Badge>
+              </CardDescription>
             </div>
             <div className="relative w-full lg:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -340,15 +301,19 @@ export default function AdminExamsPage() {
                             {app.status?.toUpperCase() || 'PENDING'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right pr-6 py-4 isolate relative">
-                          <div className="flex justify-end gap-2 isolate relative z-50">
+                        <TableCell className="text-right pr-6 py-4 relative">
+                          <div className="flex justify-end gap-2 relative z-50">
                             {app.status === 'pending' ? (
                               <>
                                 <Button 
                                   type="button"
                                   size="sm" 
-                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer relative z-10" 
-                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUpdateStatus(app.id, 'approved'); }}
+                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
+                                  onClick={(e) => { 
+                                    e.preventDefault(); 
+                                    e.stopPropagation(); 
+                                    handleUpdateStatus(app.id, 'approved'); 
+                                  }}
                                 >
                                   <CheckCircle2 className="w-4 h-4 mr-2" /> Approve
                                 </Button>
@@ -356,8 +321,12 @@ export default function AdminExamsPage() {
                                   type="button"
                                   size="sm" 
                                   variant="destructive" 
-                                  className="font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer relative z-10" 
-                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUpdateStatus(app.id, 'rejected'); }}
+                                  className="font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
+                                  onClick={(e) => { 
+                                    e.preventDefault(); 
+                                    e.stopPropagation(); 
+                                    handleUpdateStatus(app.id, 'rejected'); 
+                                  }}
                                 >
                                   <Ban className="w-4 h-4 mr-2" /> Reject
                                 </Button>
@@ -369,10 +338,11 @@ export default function AdminExamsPage() {
                                     type="button"
                                     size="sm" 
                                     variant="outline" 
-                                    className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl cursor-pointer relative z-10" 
+                                    className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl cursor-pointer" 
                                     disabled={isClearingApp === app.id}
                                   >
-                                    <RotateCcw className="w-4 h-4 mr-2" /> Allow Re-apply
+                                    {isClearingApp === app.id ? <Loader2 className="animate-spin mr-2 w-4 h-4" /> : <RotateCcw className="w-4 h-4 mr-2" />}
+                                    Allow Re-apply
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent className="rounded-3xl">
@@ -385,7 +355,7 @@ export default function AdminExamsPage() {
                                   <AlertDialogFooter className="mt-4">
                                     <AlertDialogCancel className="rounded-xl h-11">Cancel</AlertDialogCancel>
                                     <AlertDialogAction onClick={() => handleAllowReapply(app.id)} className="rounded-xl h-11 font-black bg-red-600 hover:bg-red-700">
-                                      {isClearingApp === app.id ? <Loader2 className="animate-spin w-5 h-5" /> : "Confirm Reset"}
+                                      Confirm Reset
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -486,13 +456,35 @@ export default function AdminExamsPage() {
                     <Input type="date" value={lastApplyDate} onChange={e => setLastApplyDate(e.target.value)} className="h-14 border-2 border-red-100 bg-red-50/20 rounded-2xl font-bold shadow-sm" />
                   </div>
                 </CardContent>
-                <CardFooter className="bg-muted/10 p-6 sm:p-10 flex flex-col sm:flex-row flex-wrap justify-end gap-4 border-t border-muted">
+                <CardFooter className="bg-muted/10 p-6 sm:p-10 flex flex-col sm:flex-row flex-wrap justify-end items-center gap-4 border-t border-muted">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl shadow-xl">
+                        <XCircle className="mr-2 w-5 h-5" /> Cancel Current Exam
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-3xl">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-red-700 uppercase font-black">Deactivate Cycle?</AlertDialogTitle>
+                        <AlertDialogDescription className="font-bold">
+                          This will instantly lock the Exam Arena for all students. The marquee scroll will announce the cancellation for 24 hours.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="rounded-xl h-12">Abort</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleCancelExam} className="rounded-xl h-12 font-black bg-red-600 hover:bg-red-700">
+                          Confirm Cancellation
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+
                   <Button 
                     type="button"
                     onClick={handleUpdateOnly} 
                     disabled={isUpdatingOnly || isSavingSchedule} 
                     variant="outline" 
-                    className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted text-xs bg-white shadow-md"
+                    className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 bg-white shadow-md"
                   >
                     {isUpdatingOnly ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <Save className="mr-2 w-5 h-5" />}
                     Update Schedule Only
@@ -502,7 +494,7 @@ export default function AdminExamsPage() {
                       <Button 
                         type="button"
                         disabled={isSavingSchedule || isUpdatingOnly} 
-                        className="h-14 px-10 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 text-xs"
+                        className="h-14 px-10 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700"
                       >
                         {isSavingSchedule ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <RefreshCcw className="mr-2 w-5 h-5" />}
                         Reset & Publish Cycle
@@ -510,8 +502,8 @@ export default function AdminExamsPage() {
                     </AlertDialogTrigger>
                     <AlertDialogContent className="rounded-3xl">
                       <AlertDialogHeader>
-                        <AlertDialogTitle className="text-red-700">Permanent Data Reset</AlertDialogTitle>
-                        <AlertDialogDescription className="font-bold">
+                        <AlertDialogTitle className="text-red-700 uppercase font-black">Permanent Data Reset</AlertDialogTitle>
+                        <AlertDialogDescription className="font-bold text-slate-600">
                           Warning: This will PERMANENTLY DELETE all current applications and results. This is required to start a completely fresh exam cycle.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
