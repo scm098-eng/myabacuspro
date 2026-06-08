@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
@@ -72,20 +72,9 @@ export default function AdminExamsPage() {
       (snap) => {
         setApplications(snap.docs.map(doc => {
           const data = doc.data();
-          // Extremely robust group field detection
-          const rawGroup = data.group || 
-                           (data as any).masteryGroup || 
-                           (data as any).mastery_group || 
-                           (data as any).mastery_level || 
-                           (data as any).masteryLevel;
-          
+          const rawGroup = data.group || (data as any).masteryGroup || (data as any).mastery_group || (data as any).mastery_level || (data as any).masteryLevel;
           const group = typeof rawGroup === 'string' ? rawGroup.toUpperCase() : '?';
-          
-          return { 
-            id: doc.id, 
-            ...data, 
-            group 
-          } as ExamApplication;
+          return { id: doc.id, ...data, group } as ExamApplication;
         }));
         setLoading(false);
       },
@@ -113,29 +102,34 @@ export default function AdminExamsPage() {
       .catch(async (e) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'update' })));
   };
 
-  const handleAllowReapply = async (e: React.MouseEvent, id: string) => {
+  const handleAllowReapply = useCallback(async (e: React.MouseEvent, id: string) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Explicit window confirm to avoid scoping issues
-    if (!window.confirm("This will permanently clear the student's current application. They will be able to select a new group and re-apply from their dashboard. Continue?")) return;
+    console.log("Allow Re-apply triggered for application ID:", id);
+    
+    const isConfirmed = window.confirm("This will permanently clear the student's current application. They will be able to select a new group and re-apply from their dashboard. Continue?");
+    if (!isConfirmed) return;
     
     setIsClearingApp(id);
     const db = getFirestore(firebaseApp);
     
-    deleteDoc(doc(db, "examApplications", id))
-      .then(() => {
-        toast({ title: "Ready to Re-apply", description: "The student's dashboard has been reset." });
-      })
-      .catch(async (err: any) => {
-        console.error("Critical Permission Error (Delete Application):", err);
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-          path: `examApplications/${id}`, 
-          operation: 'delete' 
-        }));
-      })
-      .finally(() => setIsClearingApp(null));
-  };
+    try {
+      await deleteDoc(doc(db, "examApplications", id));
+      toast({ 
+        title: "Dashboard Reset", 
+        description: "The student can now select a different group and re-apply." 
+      });
+    } catch (err: any) {
+      console.error("Critical Permission Error (Delete Application):", err);
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+        path: `examApplications/${id}`, 
+        operation: 'delete' 
+      }));
+    } finally {
+      setIsClearingApp(null);
+    }
+  }, [toast]);
 
   const handleDeclareResult = async (id: string) => {
     const db = getFirestore(firebaseApp);
@@ -151,10 +145,8 @@ export default function AdminExamsPage() {
       toast({ title: "Configuration Missing", description: "Exam date is required.", variant: "destructive" });
       return;
     }
-    
     setIsUpdatingOnly(true);
     const db = getFirestore(firebaseApp);
-    
     try {
       await updateDoc(doc(db, "stats", "examSchedule"), {
         date: examDate,
@@ -163,7 +155,7 @@ export default function AdminExamsPage() {
         lastApplyDate: lastApplyDate || "",
         updatedAt: serverTimestamp()
       });
-      toast({ title: "Schedule Updated", description: "Changes saved without clearing existing data." });
+      toast({ title: "Schedule Updated" });
     } catch (e: any) {
       toast({ title: "Update Failed", description: e.message, variant: "destructive" });
     } finally { setIsUpdatingOnly(false); }
@@ -178,15 +170,12 @@ export default function AdminExamsPage() {
     
     setIsSavingSchedule(true);
     const db = getFirestore(firebaseApp);
-    
     try {
       const apps = await getDocs(collection(db, "examApplications"));
       const ress = await getDocs(collection(db, "examResults"));
-      
       const batch = writeBatch(db);
       apps.forEach(d => batch.delete(d.ref));
       ress.forEach(d => batch.delete(d.ref));
-      
       batch.set(doc(db, "stats", "examSchedule"), {
         date: examDate,
         startTime: `${startH}:${startM}`,
@@ -196,7 +185,6 @@ export default function AdminExamsPage() {
         resultsDeclared: false,
         updatedAt: serverTimestamp()
       }, { merge: true });
-
       await batch.commit();
       toast({ title: "Cycle Reset & Published" });
     } catch (e: any) {
@@ -240,7 +228,7 @@ export default function AdminExamsPage() {
           <Tabs defaultValue="applications">
             <TabsList className="mb-8 w-full justify-start overflow-x-auto h-auto p-1 bg-muted/50 rounded-xl border">
               <TabsTrigger value="applications" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Applications ({applications.length})</TabsTrigger>
-              <TabsTrigger value="final-results" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Results</TabsTrigger>
+              <TabsTrigger value="results" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Results</TabsTrigger>
               <TabsTrigger value="schedule" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Schedule Manager</TabsTrigger>
             </TabsList>
 
@@ -283,7 +271,7 @@ export default function AdminExamsPage() {
                                 <Button 
                                   type="button"
                                   size="sm" 
-                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md pointer-events-auto" 
+                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md pointer-events-auto relative z-50 cursor-pointer" 
                                   onClick={(e) => handleUpdateStatus(e, app.id, 'approved')}
                                 >
                                   <CheckCircle2 className="w-4 h-4 mr-2" /> Approve
@@ -292,7 +280,7 @@ export default function AdminExamsPage() {
                                   type="button"
                                   size="sm" 
                                   variant="destructive" 
-                                  className="font-bold h-10 px-4 rounded-xl shadow-md pointer-events-auto" 
+                                  className="font-bold h-10 px-4 rounded-xl shadow-md pointer-events-auto relative z-50 cursor-pointer" 
                                   onClick={(e) => handleUpdateStatus(e, app.id, 'rejected')}
                                 >
                                   <Ban className="w-4 h-4 mr-2" /> Reject
@@ -303,7 +291,7 @@ export default function AdminExamsPage() {
                                 type="button"
                                 size="sm" 
                                 variant="outline" 
-                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl pointer-events-auto" 
+                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl pointer-events-auto relative z-50 cursor-pointer" 
                                 onClick={(e) => handleAllowReapply(e, app.id)}
                                 disabled={isClearingApp === app.id}
                               >
@@ -315,19 +303,12 @@ export default function AdminExamsPage() {
                         </TableCell>
                       </TableRow>
                     ))}
-                    {filteredApps.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-24 text-muted-foreground font-medium italic bg-muted/5">
-                           No applications found.
-                        </TableCell>
-                      </TableRow>
-                    )}
                   </TableBody>
                 </Table>
               </div>
             </TabsContent>
 
-            <TabsContent value="final-results" className="space-y-12">
+            <TabsContent value="results" className="space-y-12">
               {Object.keys(groupedResults).length > 0 ? Object.keys(groupedResults).map(group => (
                 <div key={group} className="space-y-6">
                   <h2 className="text-xl font-black uppercase border-b-4 border-primary/20 pb-2 inline-block">Group {group} Results</h2>
@@ -389,8 +370,7 @@ export default function AdminExamsPage() {
                       <Select value={startM} onValueChange={setStartM}>
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
                         <SelectContent className="max-h-60 rounded-2xl"><ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
-                      </Select>
-                    </div>
+                      </div>
                   </div>
                   <div className="space-y-3">
                     <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">End Time (24h)</Label>
@@ -402,8 +382,7 @@ export default function AdminExamsPage() {
                       <Select value={endM} onValueChange={setEndM}>
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
                         <SelectContent className="max-h-60 rounded-2xl"><ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
-                      </Select>
-                    </div>
+                      </div>
                   </div>
                   <div className="space-y-3">
                     <Label className="text-xs font-black uppercase tracking-widest text-red-600 ml-1">Apply Deadline</Label>
@@ -411,20 +390,11 @@ export default function AdminExamsPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="bg-muted/10 p-10 flex flex-col sm:flex-row justify-end gap-5 border-t border-muted">
-                  <Button 
-                    onClick={handleUpdateOnly} 
-                    disabled={isUpdatingOnly || isSavingSchedule} 
-                    variant="outline" 
-                    className="h-14 px-8 font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted text-xs sm:text-sm w-full sm:w-auto shadow-sm"
-                  >
+                  <Button onClick={handleUpdateOnly} disabled={isUpdatingOnly || isSavingSchedule} variant="outline" className="h-14 px-8 font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted text-xs sm:text-sm w-full sm:w-auto shadow-sm">
                     {isUpdatingOnly ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 w-5 h-5" />}
                     UPDATE SCHEDULE ONLY
                   </Button>
-                  <Button 
-                    onClick={handleSaveAndReset} 
-                    disabled={isSavingSchedule || isUpdatingOnly} 
-                    className="h-14 px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 text-xs sm:text-sm w-full sm:w-auto"
-                  >
+                  <Button onClick={handleSaveAndReset} disabled={isSavingSchedule || isUpdatingOnly} className="h-14 px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 text-xs sm:text-sm w-full sm:w-auto">
                     {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <RefreshCcw className="mr-2 w-5 h-5" />}
                     RESET & PUBLISH NEW CYCLE
                   </Button>
@@ -459,9 +429,6 @@ export default function AdminExamsPage() {
                   </div>
                 </div>
               ))}
-              {(!selectedResult?.details || selectedResult.details.length === 0) && (
-                <div className="text-center py-20 bg-muted/20 rounded-2xl italic text-muted-foreground font-medium">No detail log available for this submission.</div>
-              )}
             </div>
             <ScrollBar orientation="vertical" />
           </ScrollArea>
