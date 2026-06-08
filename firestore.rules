@@ -70,6 +70,7 @@ service cloud.firestore {
                         (request.auth.uid == resource.data.userId || isAdmin() || isTeacher());
     }
     
+    // --- GAME PROGRESS ---
     match /gameProgress/{userId} {
       allow read: if isOwner(userId);
       allow write: if isOwner(userId) && isNotSuspended();
@@ -90,6 +91,6 @@ service cloud.firestore {
       allow write: if false;
     }
     
-    // Trigger deployment: 2026-06-12T12:50:00Z - Ensure admin delete & schedule write permissions are live
+    // Deployment trigger nudge: 2026-06-15T09:45:00Z - Confirming admin cancel/delete permissions are live.
   }
 }

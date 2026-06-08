@@ -77,7 +77,8 @@ export default function AdminExamsPage() {
       (snap) => {
         setApplications(snap.docs.map(doc => {
           const data = doc.data();
-          const rawGroup = data.group || data.masteryGroup || data.mastery_group || data.masteryLevel || '?';
+          // Comprehensive fallback for group identifiers
+          const rawGroup = data.group || data.masteryGroup || data.mastery_group || data.masteryLevel || data.mastery_level || '?';
           const group = String(rawGroup).toUpperCase();
           return { id: doc.id, ...data, group } as ExamApplication;
         }));
@@ -106,6 +107,7 @@ export default function AdminExamsPage() {
   };
 
   const handleAllowReapply = useCallback(async (id: string) => {
+    console.log("Triggering Allow Re-apply for:", id);
     const isConfirmed = window.confirm("This will permanently clear the student's current application. They will be able to select a new group and re-apply from their dashboard. Continue?");
     if (!isConfirmed) return;
     
@@ -159,16 +161,19 @@ export default function AdminExamsPage() {
   };
 
   const handleCancelExam = async () => {
+    console.log("Triggering Cancel Exam...");
     if (!window.confirm("Are you sure you want to cancel the current exam cycle? This will lock the arena for all students. Continue?")) return;
     setIsCancelling(true);
     const db = getFirestore(firebaseApp);
     try {
+      // Use setDoc with merge to ensure the document exists
       await setDoc(doc(db, "stats", "examSchedule"), {
         isActive: false,
         updatedAt: serverTimestamp()
       }, { merge: true });
       toast({ title: "Exam Cancelled", description: "The exam cycle has been deactivated." });
     } catch (e: any) {
+      console.error("Cancel Exam Failed:", e);
       toast({ title: "Cancellation Failed", description: e.message, variant: "destructive" });
     } finally { setIsCancelling(false); }
   };
@@ -276,8 +281,8 @@ export default function AdminExamsPage() {
                             {app.status?.toUpperCase() || 'PENDING'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right pr-6 py-4 isolate relative">
-                          <div className="flex justify-end gap-2 isolate relative z-50">
+                        <TableCell className="text-right pr-6 py-4 relative">
+                          <div className="flex justify-end gap-2 relative z-50">
                             {app.status === 'pending' ? (
                               <>
                                 <Button 
@@ -311,7 +316,7 @@ export default function AdminExamsPage() {
                                 type="button"
                                 size="sm" 
                                 variant="outline" 
-                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl relative z-20 cursor-pointer" 
+                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl cursor-pointer" 
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -395,9 +400,10 @@ export default function AdminExamsPage() {
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
                         <SelectContent className="max-h-60 rounded-2xl">
                           <ScrollArea className="h-60">
-                            {Array.from({length: 24}).map((_, i) => (
-                              <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>
-                            ))}
+                            {Array.from({length: 24}).map((_, i) => {
+                              const val = i.toString().padStart(2,'0');
+                              return <SelectItem key={val} value={val}>{val}</SelectItem>;
+                            })}
                           </ScrollArea>
                         </SelectContent>
                       </Select>
@@ -405,9 +411,10 @@ export default function AdminExamsPage() {
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
                         <SelectContent className="max-h-60 rounded-2xl">
                           <ScrollArea className="h-60">
-                            {Array.from({length: 60}).map((_, i) => (
-                              <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>
-                            ))}
+                            {Array.from({length: 60}).map((_, i) => {
+                              const val = i.toString().padStart(2,'0');
+                              return <SelectItem key={val} value={val}>{val}</SelectItem>;
+                            })}
                           </ScrollArea>
                         </SelectContent>
                       </Select>
@@ -420,9 +427,10 @@ export default function AdminExamsPage() {
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
                         <SelectContent className="max-h-60 rounded-2xl">
                           <ScrollArea className="h-60">
-                            {Array.from({length: 24}).map((_, i) => (
-                              <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>
-                            ))}
+                            {Array.from({length: 24}).map((_, i) => {
+                              const val = i.toString().padStart(2,'0');
+                              return <SelectItem key={val} value={val}>{val}</SelectItem>;
+                            })}
                           </ScrollArea>
                         </SelectContent>
                       </Select>
@@ -430,9 +438,10 @@ export default function AdminExamsPage() {
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
                         <SelectContent className="max-h-60 rounded-2xl">
                           <ScrollArea className="h-60">
-                            {Array.from({length: 60}).map((_, i) => (
-                              <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>
-                            ))}
+                            {Array.from({length: 60}).map((_, i) => {
+                              const val = i.toString().padStart(2,'0');
+                              return <SelectItem key={val} value={val}>{val}</SelectItem>;
+                            })}
                           </ScrollArea>
                         </SelectContent>
                       </Select>
@@ -446,7 +455,7 @@ export default function AdminExamsPage() {
                 <CardFooter className="bg-muted/10 p-6 sm:p-10 flex flex-col sm:flex-row flex-wrap justify-center sm:justify-end gap-4 border-t border-muted min-h-[100px]">
                   <Button 
                     type="button"
-                    onClick={(e) => { e.preventDefault(); handleCancelExam(); }} 
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCancelExam(); }} 
                     disabled={isCancelling} 
                     variant="destructive" 
                     className="h-12 px-6 w-full sm:w-auto font-black uppercase tracking-widest rounded-xl border-2 hover:bg-red-700 text-[10px] sm:text-xs shadow-md"
@@ -456,7 +465,7 @@ export default function AdminExamsPage() {
                   </Button>
                   <Button 
                     type="button"
-                    onClick={(e) => { e.preventDefault(); handleUpdateOnly(); }} 
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUpdateOnly(); }} 
                     disabled={isUpdatingOnly || isSavingSchedule} 
                     variant="outline" 
                     className="h-12 px-6 w-full sm:w-auto font-black uppercase tracking-widest rounded-xl border-2 hover:bg-muted text-[10px] sm:text-xs shadow-sm bg-white"
@@ -466,7 +475,7 @@ export default function AdminExamsPage() {
                   </Button>
                   <Button 
                     type="button"
-                    onClick={(e) => { e.preventDefault(); handleSaveAndReset(); }} 
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSaveAndReset(); }} 
                     disabled={isSavingSchedule || isUpdatingOnly} 
                     className="h-12 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-xl shadow-xl bg-red-600 hover:bg-red-700 text-[10px] sm:text-xs"
                   >
