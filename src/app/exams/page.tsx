@@ -66,18 +66,29 @@ export default function ExamDashboardPage() {
       errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'stats/examSchedule', operation: 'get' }));
     });
     
-    const appQuery = query(collection(db, "examApplications"), where("userId", "==", user.uid));
-    const unsubscribeApp = onSnapshot(appQuery, 
+    // Listen directly to the student's application document by ID for perfect reliability
+    const appRef = doc(db, "examApplications", user.uid);
+    const unsubscribeApp = onSnapshot(appRef, 
       (snap) => {
-        if (!snap.empty) {
-          setApplication({ id: snap.docs[0].id, ...snap.docs[0].data() } as ExamApplication);
+        if (snap.exists()) {
+          const data = snap.data();
+          // Normalize mastery level/group fields for display
+          const rawGroup = data.group || data.masteryGroup || data.masteryLevel || '?';
+          const normalizedStatus = (data.status || 'pending').toLowerCase() as 'pending' | 'approved' | 'rejected';
+          
+          setApplication({ 
+            id: snap.id, 
+            ...data, 
+            group: String(rawGroup).toUpperCase() as ExamGroup,
+            status: normalizedStatus 
+          } as ExamApplication);
         } else {
           setApplication(null);
         }
         setLoading(false);
       },
       async (serverError) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examApplications', operation: 'list' }));
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${user.uid}`, operation: 'get' }));
       }
     );
 
@@ -132,8 +143,8 @@ export default function ExamDashboardPage() {
       });
   };
 
-  const isApproved = application?.status?.toLowerCase() === 'approved';
-  const isRejected = application?.status?.toLowerCase() === 'rejected';
+  const isApproved = useMemo(() => application?.status === 'approved', [application]);
+  const isRejected = useMemo(() => application?.status === 'rejected', [application]);
 
   const hasFinishedFinal = useMemo(() => {
     if (!application || results.length === 0) return false;
@@ -272,9 +283,9 @@ export default function ExamDashboardPage() {
                 <CardHeader className="text-center p-10">
                   <div className="mx-auto bg-orange-100 p-6 rounded-full w-fit mb-6"><Clock className="w-12 h-12 text-orange-600 animate-pulse" /></div>
                   <CardTitle className="text-3xl font-black text-orange-900 uppercase tracking-tight">Application Under Review</CardTitle>
-                  <CardDescription className="text-orange-700 font-bold text-lg mt-4 max-w-md mx-auto">
+                  <div className="text-orange-700 font-bold text-lg mt-4 max-w-md mx-auto">
                     You have applied for **Group {application.group}**. The administrator is currently verifying your details.
-                  </CardDescription>
+                  </div>
                 </CardHeader>
               </Card>
             )}
@@ -318,7 +329,7 @@ export default function ExamDashboardPage() {
                   {Array.from({ length: 20 }).map((_, i) => {
                     const paperId = `paper-${i + 1}`;
                     const isDone = results.some(r => r.paperId === paperId && !r.isFinal);
-                    const isLocked = hasFinishedFinal; // Allow practice even if schedule is null or expired
+                    const isLocked = hasFinishedFinal;
 
                     return (
                       <Button 
@@ -347,7 +358,7 @@ export default function ExamDashboardPage() {
                   <Card className={cn("rounded-[2.5rem] border-4 overflow-hidden shadow-2xl transition-all", examOpen && !hasFinishedFinal ? "border-orange-500" : "border-slate-200 grayscale opacity-60")}>
                     <CardHeader className="bg-slate-900 text-white p-8">
                       <div className="flex justify-between items-center">
-                        <div><CardTitle className="text-3xl font-black uppercase italic tracking-tighter">Grand Final 2026</CardTitle><CardDescription className="text-slate-400 font-bold">Group {application.group} Certification</CardDescription></div>
+                        <div><CardTitle className="text-3xl font-black uppercase italic tracking-tighter">Grand Final 2026</CardTitle><div className="text-slate-400 font-bold mt-1">Group {application.group} Certification</div></div>
                         {!examOpen && !hasFinishedFinal && <Lock className="w-8 h-8 text-slate-500" />}
                         {hasFinishedFinal && <CheckCircle2 className="w-10 h-10 text-green-400" />}
                       </div>
@@ -399,4 +410,3 @@ export default function ExamDashboardPage() {
     </div>
   );
 }
-

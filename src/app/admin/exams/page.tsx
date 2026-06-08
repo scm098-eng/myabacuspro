@@ -24,7 +24,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 
 export default function AdminExamsPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
@@ -230,6 +230,12 @@ export default function AdminExamsPage() {
     return grouped;
   }, [allResults, applications]);
 
+  const safeFormat = (dateStr: string, pattern: string) => {
+    if (!dateStr) return 'None';
+    const d = parseISO(dateStr);
+    return isValid(d) ? format(d, pattern) : 'None';
+  };
+
   if (loading || authLoading) return <div className="p-8 text-center font-bold uppercase tracking-widest animate-pulse">Loading Exam Center...</div>;
 
   return (
@@ -241,7 +247,7 @@ export default function AdminExamsPage() {
             <div className="space-y-1">
               <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tight">Records & Schedule</CardTitle>
               <div className="text-sm font-bold text-slate-500 flex items-center flex-wrap gap-2">
-                <span>Current: {examDate ? format(new Date(examDate), 'MMMM do') : 'None'} • Status:</span>
+                <span>Current: {safeFormat(examDate, 'MMMM do')} • Status:</span>
                 <Badge className={cn("px-3 border-none", isActive ? "bg-green-500" : "bg-red-500")}>
                   {isActive ? "ACTIVE" : "CANCELLED"}
                 </Badge>
@@ -294,7 +300,7 @@ export default function AdminExamsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right pr-6 py-4 relative isolate">
-                          <div className="flex justify-end gap-2 relative z-50">
+                          <div className="flex justify-end gap-2 relative z-50 isolate">
                             {app.status === 'pending' ? (
                               <>
                                 <Button 
@@ -403,7 +409,7 @@ export default function AdminExamsPage() {
                     <Calendar className="w-6 h-6 text-primary" />
                     <CardTitle className="text-2xl font-black uppercase tracking-tight">Cycle Configuration</CardTitle>
                   </div>
-                  <CardDescription className="font-medium">Define the testing window and application deadlines.</CardDescription>
+                  <div className="font-medium text-slate-600 mt-1">Define the testing window and application deadlines.</div>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 p-10">
                   <div className="space-y-3">
@@ -450,7 +456,7 @@ export default function AdminExamsPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="bg-muted/10 p-6 sm:p-10 border-t border-muted">
-                  <div className="flex flex-col sm:flex-row flex-wrap justify-end items-center gap-4 w-full">
+                  <div className="flex flex-col sm:flex-row flex-wrap justify-end items-center gap-4 w-full relative z-50">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="destructive" className="h-14 px-8 font-black uppercase tracking-widest rounded-2xl shadow-xl border-none">
@@ -475,7 +481,7 @@ export default function AdminExamsPage() {
 
                     <Button 
                       type="button"
-                      onClick={handleUpdateOnly} 
+                      onClick={(e) => { e.preventDefault(); handleUpdateOnly(); }} 
                       disabled={isUpdatingOnly || isSavingSchedule} 
                       variant="outline" 
                       className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 bg-white shadow-md"
@@ -524,7 +530,7 @@ export default function AdminExamsPage() {
             <div className="flex justify-between items-center">
               <div>
                 <DialogTitle className="text-2xl font-black uppercase tracking-tight">Audit Log: {selectedResult?.studentName}</DialogTitle>
-                <DialogDescription className="text-slate-400 font-bold">Group {selectedResult?.group} • Final Submission Audit</DialogDescription>
+                <div className="text-slate-400 font-bold mt-1">Group {selectedResult?.group} • Final Submission Audit</div>
               </div>
               <div className="text-right">
                 <p className="text-3xl font-black text-primary">{selectedResult?.score}/{selectedResult?.totalQuestions}</p>
@@ -550,4 +556,3 @@ export default function AdminExamsPage() {
     </div>
   );
 }
-

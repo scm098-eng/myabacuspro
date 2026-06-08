@@ -38,11 +38,11 @@ service cloud.firestore {
     
     // --- EXAM RULES ---
     match /examApplications/{appId} {
-      allow read, list: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
-      allow create: if request.auth != null && isNotSuspended() && request.resource.data.userId == request.auth.uid;
+      allow read, list: if request.auth != null && (appId == request.auth.uid || resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
+      allow create: if request.auth != null && isNotSuspended() && (appId == request.auth.uid || request.resource.data.userId == request.auth.uid);
       allow update: if isAdmin();
       // allow-reapply: Administrators can delete applications to trigger a dashboard reset
-      allow delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin() || (request.auth != null && (appId == request.auth.uid || resource.data.userId == request.auth.uid));
     }
 
     match /examResults/{resultId} {
@@ -91,6 +91,6 @@ service cloud.firestore {
       allow write: if false;
     }
     
-    // Deployment trigger nudge: 2026-06-16T10:30:00Z - Synchronizing exam cancellation and student reset permissions.
+    // Deployment trigger nudge: 2026-06-18T14:45:00Z - Synchronizing robust student ID listeners and admin cancellation permissions.
   }
 }
