@@ -34,7 +34,7 @@ export default function ExamDashboardPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   
-  const [schedule, setSchedule] = useState<{ date: string, start: Date, end: Date, lastApplyDate?: string } | null>(null);
+  const [schedule, setSchedule] = useState<{ date: string, start: Date, end: Date, lastApplyDate?: string, isActive?: boolean } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -59,7 +59,8 @@ export default function ExamDashboardPage() {
                date: dateString,
                start: new Date(`${dateString}T${data.startTime || '12:30'}:00`),
                end: new Date(`${dateString}T${data.endTime || '16:00'}:00`),
-               lastApplyDate: data.lastApplyDate
+               lastApplyDate: data.lastApplyDate,
+               isActive: data.isActive !== false // Default to true unless explicitly false
              });
           }
         }
@@ -148,11 +149,13 @@ export default function ExamDashboardPage() {
 
   const examEnded = useMemo(() => {
     if (!schedule || isNaN(schedule.end.getTime())) return false;
+    if (schedule.isActive === false) return true; // Administrator cancelled
     return new Date() > schedule.end;
   }, [schedule]);
 
   const examOpen = useMemo(() => {
     if (!schedule || isNaN(schedule.start.getTime()) || isNaN(schedule.end.getTime())) return false;
+    if (schedule.isActive === false) return false; // Administrator cancelled
     return isFinalExamAvailable(schedule.start, schedule.end);
   }, [schedule]);
 
@@ -167,7 +170,7 @@ export default function ExamDashboardPage() {
   }, [schedule]);
 
   const openingMessage = useMemo(() => {
-    if (!schedule) return 'EXAM CLOSED';
+    if (!schedule || schedule.isActive === false) return 'EXAM CLOSED';
     if (!startTimeStr) return 'OPENS TODAY';
     
     if (isTodayDate) {

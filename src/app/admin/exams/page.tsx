@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { errorEmitter } from '@/lib/error-emitter';
-import { FirestorePermissionError } from '@/lib/errors';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -77,7 +77,6 @@ export default function AdminExamsPage() {
       (snap) => {
         setApplications(snap.docs.map(doc => {
           const data = doc.data();
-          // Comprehensive fallback for group identifiers
           const rawGroup = data.group || data.masteryGroup || data.mastery_group || data.masteryLevel || data.mastery_level || '?';
           const group = String(rawGroup).toUpperCase();
           return { id: doc.id, ...data, group } as ExamApplication;
@@ -99,83 +98,112 @@ export default function AdminExamsPage() {
     return () => { unsubApps(); unsubResults(); };
   }, []);
 
-  const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected' | 'pending') => {
+  const handleUpdateStatus = (id: string, status: 'approved' | 'rejected' | 'pending') => {
     const db = getFirestore(firebaseApp);
-    updateDoc(doc(db, "examApplications", id), { status })
+    const docRef = doc(db, "examApplications", id);
+    const payload = { status, updatedAt: serverTimestamp() };
+
+    updateDoc(docRef, payload)
       .then(() => toast({ title: `Application ${status.toUpperCase()}` }))
-      .catch(async (e) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'update' })));
+      .catch(async (e) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: docRef.path, 
+          operation: 'update',
+          requestResourceData: payload
+        }));
+      });
   };
 
-  const handleAllowReapply = useCallback(async (id: string) => {
-    console.log("Triggering Allow Re-apply for:", id);
-    const isConfirmed = window.confirm("This will permanently clear the student's current application. They will be able to select a new group and re-apply from their dashboard. Continue?");
-    if (!isConfirmed) return;
+  const handleAllowReapply = (id: string) => {
+    if (!window.confirm("This will permanently clear the student's current application. They will be able to select a new group and re-apply from their dashboard. Continue?")) return;
     
     setIsClearingApp(id);
     const db = getFirestore(firebaseApp);
+    const docRef = doc(db, "examApplications", id);
     
-    try {
-      await deleteDoc(doc(db, "examApplications", id));
-      toast({ 
-        title: "Dashboard Reset", 
-        description: "The student record is cleared. They can now select a different group and re-apply." 
-      });
-    } catch (err: any) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ 
-        path: `examApplications/${id}`, 
-        operation: 'delete' 
-      }));
-    } finally {
-      setIsClearingApp(null);
-    }
-  }, [toast]);
+    deleteDoc(docRef)
+      .then(() => {
+        toast({ 
+          title: "Dashboard Reset", 
+          description: "The student record is cleared. They can now select a different group and re-apply." 
+        });
+      })
+      .catch(async (err: any) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: docRef.path, 
+          operation: 'delete' 
+        }));
+      })
+      .finally(() => setIsClearingApp(null));
+  };
 
-  const handleDeclareResult = async (id: string) => {
+  const handleDeclareResult = (id: string) => {
     const db = getFirestore(firebaseApp);
-    updateDoc(doc(db, "examResults", id), { resultDeclared: true })
+    const docRef = doc(db, "examResults", id);
+    const payload = { resultDeclared: true, updatedAt: serverTimestamp() };
+
+    updateDoc(docRef, payload)
       .then(() => {
         setDoc(doc(db, "stats", "examSchedule"), { lastResultDeclaredAt: serverTimestamp() }, { merge: true });
         toast({ title: "Result Declared" });
+      })
+      .catch(async (err: any) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: docRef.path, 
+          operation: 'update',
+          requestResourceData: payload
+        }));
       });
   };
 
-  const handleUpdateOnly = async () => {
+  const handleUpdateOnly = () => {
     if (!examDate) {
       toast({ title: "Configuration Missing", description: "Exam date is required.", variant: "destructive" });
       return;
     }
     setIsUpdatingOnly(true);
     const db = getFirestore(firebaseApp);
-    try {
-      await setDoc(doc(db, "stats", "examSchedule"), {
-        date: examDate,
-        startTime: `${startH}:${startM}`,
-        endTime: `${endH}:${endM}`,
-        lastApplyDate: lastApplyDate || "",
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-      toast({ title: "Schedule Updated" });
-    } catch (e: any) {
-      toast({ title: "Update Failed", description: e.message, variant: "destructive" });
-    } finally { setIsUpdatingOnly(false); }
+    const docRef = doc(db, "stats", "examSchedule");
+    const payload = {
+      date: examDate,
+      startTime: `${startH}:${startM}`,
+      endTime: `${endH}:${endM}`,
+      lastApplyDate: lastApplyDate || "",
+      updatedAt: serverTimestamp()
+    };
+
+    setDoc(docRef, payload, { merge: true })
+      .then(() => toast({ title: "Schedule Updated" }))
+      .catch(async (err: any) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: docRef.path, 
+          operation: 'update',
+          requestResourceData: payload
+        }));
+      })
+      .finally(() => setIsUpdatingOnly(false));
   };
 
-  const handleCancelExam = async () => {
-    console.log("Triggering Cancel Exam...");
+  const handleCancelExam = () => {
     if (!window.confirm("Are you sure you want to cancel the current exam cycle? This will lock the arena for all students. Continue?")) return;
     setIsCancelling(true);
     const db = getFirestore(firebaseApp);
-    try {
-      // Use setDoc with merge to ensure the document exists
-      await setDoc(doc(db, "stats", "examSchedule"), {
-        isActive: false,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-      toast({ title: "Exam Cancelled", description: "The exam cycle has been deactivated." });
-    } catch (e: any) {
-      console.error("Cancel Exam Failed:", e);
-      toast({ title: "Cancellation Failed", description: e.message, variant: "destructive" });
-    } finally { setIsCancelling(false); }
+    const docRef = doc(db, "stats", "examSchedule");
+    const payload = {
+      isActive: false,
+      updatedAt: serverTimestamp()
+    };
+
+    setDoc(docRef, payload, { merge: true })
+      .then(() => toast({ title: "Exam Cancelled", description: "The exam cycle has been deactivated." }))
+      .catch(async (err: any) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: docRef.path, 
+          operation: 'update',
+          requestResourceData: payload
+        }));
+      })
+      .finally(() => setIsCancelling(false));
   };
 
   const handleSaveAndReset = async () => {
@@ -193,7 +221,9 @@ export default function AdminExamsPage() {
       const batch = writeBatch(db);
       apps.forEach(d => batch.delete(d.ref));
       ress.forEach(d => batch.delete(d.ref));
-      batch.set(doc(db, "stats", "examSchedule"), {
+      
+      const scheduleRef = doc(db, "stats", "examSchedule");
+      const schedulePayload = {
         date: examDate,
         startTime: `${startH}:${startM}`,
         endTime: `${endH}:${endM}`,
@@ -201,7 +231,9 @@ export default function AdminExamsPage() {
         isActive: true,
         resultsDeclared: false,
         updatedAt: serverTimestamp()
-      }, { merge: true });
+      };
+      
+      batch.set(scheduleRef, schedulePayload, { merge: true });
       await batch.commit();
       toast({ title: "Cycle Reset & Published" });
     } catch (e: any) {
