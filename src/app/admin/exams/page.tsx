@@ -262,14 +262,14 @@ export default function AdminExamsPage() {
                             {app.status?.toUpperCase() || 'PENDING'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right pr-6 py-4 isolate">
-                          <div className="flex justify-end gap-2 isolate">
+                        <TableCell className="text-right pr-6 py-4 relative">
+                          <div className="flex justify-end gap-2 relative z-50">
                             {app.status === 'pending' ? (
                               <>
                                 <Button 
                                   type="button"
                                   size="sm" 
-                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md relative z-10 cursor-pointer" 
+                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
                                   onClick={(e) => { 
                                     e.preventDefault(); 
                                     e.stopPropagation(); 
@@ -282,7 +282,7 @@ export default function AdminExamsPage() {
                                   type="button"
                                   size="sm" 
                                   variant="destructive" 
-                                  className="font-bold h-10 px-4 rounded-xl shadow-md relative z-10 cursor-pointer" 
+                                  className="font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
                                   onClick={(e) => { 
                                     e.preventDefault(); 
                                     e.stopPropagation(); 
@@ -297,7 +297,7 @@ export default function AdminExamsPage() {
                                 type="button"
                                 size="sm" 
                                 variant="outline" 
-                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl relative z-20 cursor-pointer" 
+                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl cursor-pointer" 
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();

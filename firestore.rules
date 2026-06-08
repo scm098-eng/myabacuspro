@@ -90,6 +90,6 @@ service cloud.firestore {
       allow write: if false;
     }
     
-    // Deployment trigger: 2026-06-11T12:00:00Z - Interactivity Fix Applied
+    // Deployment trigger: 2026-06-11T14:30:00Z - Stacking Context Fix Applied
   }
 }
