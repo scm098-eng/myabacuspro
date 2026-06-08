@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -11,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
-import { CheckCircle2, Search, Trophy, Eye, ScrollText, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw, XCircle } from 'lucide-react';
+import { CheckCircle2, Search, Trophy, Eye, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw, XCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -76,7 +77,6 @@ export default function AdminExamsPage() {
       (snap) => {
         setApplications(snap.docs.map(doc => {
           const data = doc.data();
-          // Robust field check to resolve the "Question Mark" group issue
           const rawGroup = data.group || data.masteryGroup || data.mastery_group || data.masteryLevel || '?';
           const group = String(rawGroup).toUpperCase();
           return { id: doc.id, ...data, group } as ExamApplication;
@@ -119,7 +119,6 @@ export default function AdminExamsPage() {
         description: "The student record is cleared. They can now select a different group and re-apply." 
       });
     } catch (err: any) {
-      console.error("Critical Permission Error (Delete Application):", err);
       errorEmitter.emit('permission-error', new FirestorePermissionError({ 
         path: `examApplications/${id}`, 
         operation: 'delete' 
@@ -160,7 +159,7 @@ export default function AdminExamsPage() {
   };
 
   const handleCancelExam = async () => {
-    if (!window.confirm("Are you sure you want to cancel the current exam cycle? This will lock the arena and disable applications for all students. Continue?")) return;
+    if (!window.confirm("Are you sure you want to cancel the current exam cycle? This will lock the arena for all students. Continue?")) return;
     setIsCancelling(true);
     const db = getFirestore(firebaseApp);
     try {
@@ -277,14 +276,14 @@ export default function AdminExamsPage() {
                             {app.status?.toUpperCase() || 'PENDING'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right pr-6 py-4 relative">
-                          <div className="flex justify-end gap-2 relative z-50">
+                        <TableCell className="text-right pr-6 py-4 relative isolate">
+                          <div className="flex justify-end gap-2 relative z-50 pointer-events-auto">
                             {app.status === 'pending' ? (
                               <>
                                 <Button 
                                   type="button"
                                   size="sm" 
-                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
+                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md relative z-10 cursor-pointer" 
                                   onClick={(e) => { 
                                     e.preventDefault(); 
                                     e.stopPropagation(); 
@@ -297,7 +296,7 @@ export default function AdminExamsPage() {
                                   type="button"
                                   size="sm" 
                                   variant="destructive" 
-                                  className="font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
+                                  className="font-bold h-10 px-4 rounded-xl shadow-md relative z-10 cursor-pointer" 
                                   onClick={(e) => { 
                                     e.preventDefault(); 
                                     e.stopPropagation(); 
@@ -312,7 +311,7 @@ export default function AdminExamsPage() {
                                 type="button"
                                 size="sm" 
                                 variant="outline" 
-                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl cursor-pointer" 
+                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl relative z-20 cursor-pointer" 
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -332,11 +331,6 @@ export default function AdminExamsPage() {
                         </TableCell>
                       </TableRow>
                     ))}
-                    {filteredApps.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-12 text-slate-400 font-medium italic">No applications found.</TableCell>
-                      </TableRow>
-                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -449,13 +443,13 @@ export default function AdminExamsPage() {
                     <Input type="date" value={lastApplyDate} onChange={e => setLastApplyDate(e.target.value)} className="h-14 border-2 border-red-100 bg-red-50/20 rounded-2xl font-bold shadow-sm focus:border-red-400" />
                   </div>
                 </CardContent>
-                <CardFooter className="bg-muted/10 p-10 flex flex-col sm:flex-row justify-end gap-5 border-t border-muted">
+                <CardFooter className="bg-muted/10 p-6 sm:p-10 flex flex-wrap justify-center sm:justify-end gap-4 border-t border-muted">
                   <Button 
                     type="button"
                     onClick={handleCancelExam} 
                     disabled={isCancelling} 
                     variant="destructive" 
-                    className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-red-700 text-xs sm:text-sm shadow-md"
+                    className="h-12 px-6 w-full sm:w-auto font-black uppercase tracking-widest rounded-xl border-2 hover:bg-red-700 text-[10px] sm:text-xs shadow-md"
                   >
                     {isCancelling ? <Loader2 className="animate-spin mr-2" /> : <XCircle className="mr-2 w-5 h-5" />}
                     CANCEL CURRENT EXAM
@@ -465,7 +459,7 @@ export default function AdminExamsPage() {
                     onClick={handleUpdateOnly} 
                     disabled={isUpdatingOnly || isSavingSchedule} 
                     variant="outline" 
-                    className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted text-xs sm:text-sm shadow-sm"
+                    className="h-12 px-6 w-full sm:w-auto font-black uppercase tracking-widest rounded-xl border-2 hover:bg-muted text-[10px] sm:text-xs shadow-sm bg-white"
                   >
                     {isUpdatingOnly ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 w-5 h-5" />}
                     UPDATE SCHEDULE ONLY
@@ -474,7 +468,7 @@ export default function AdminExamsPage() {
                     type="button"
                     onClick={handleSaveAndReset} 
                     disabled={isSavingSchedule || isUpdatingOnly} 
-                    className="h-14 px-10 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 text-xs sm:text-sm"
+                    className="h-12 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-xl shadow-xl bg-red-600 hover:bg-red-700 text-[10px] sm:text-xs"
                   >
                     {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <RefreshCcw className="mr-2 w-5 h-5" />}
                     RESET & PUBLISH NEW CYCLE
