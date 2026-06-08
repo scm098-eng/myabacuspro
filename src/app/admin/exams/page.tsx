@@ -450,15 +450,32 @@ export default function AdminExamsPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="bg-muted/10 p-10 flex flex-col sm:flex-row justify-end gap-5 border-t border-muted">
-                  <Button onClick={handleCancelExam} disabled={isCancelling} variant="destructive" className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-red-700 text-xs sm:text-sm shadow-md">
+                  <Button 
+                    type="button"
+                    onClick={handleCancelExam} 
+                    disabled={isCancelling} 
+                    variant="destructive" 
+                    className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-red-700 text-xs sm:text-sm shadow-md"
+                  >
                     {isCancelling ? <Loader2 className="animate-spin mr-2" /> : <XCircle className="mr-2 w-5 h-5" />}
                     CANCEL CURRENT EXAM
                   </Button>
-                  <Button onClick={handleUpdateOnly} disabled={isUpdatingOnly || isSavingSchedule} variant="outline" className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted text-xs sm:text-sm shadow-sm">
+                  <Button 
+                    type="button"
+                    onClick={handleUpdateOnly} 
+                    disabled={isUpdatingOnly || isSavingSchedule} 
+                    variant="outline" 
+                    className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted text-xs sm:text-sm shadow-sm"
+                  >
                     {isUpdatingOnly ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 w-5 h-5" />}
                     UPDATE SCHEDULE ONLY
                   </Button>
-                  <Button onClick={handleSaveAndReset} disabled={isSavingSchedule || isUpdatingOnly} className="h-14 px-10 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 text-xs sm:text-sm">
+                  <Button 
+                    type="button"
+                    onClick={handleSaveAndReset} 
+                    disabled={isSavingSchedule || isUpdatingOnly} 
+                    className="h-14 px-10 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 text-xs sm:text-sm"
+                  >
                     {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <RefreshCcw className="mr-2 w-5 h-5" />}
                     RESET & PUBLISH NEW CYCLE
                   </Button>
