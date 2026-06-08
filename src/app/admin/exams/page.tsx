@@ -9,16 +9,15 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, getDoc, setDoc, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
-import { CheckCircle2, Search, Trophy, Eye, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw, XCircle, ShieldAlert, AlertTriangle, Clock } from 'lucide-react';
+import { CheckCircle2, Search, Trophy, Eye, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw, XCircle, ShieldAlert, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { errorEmitter } from '@/lib/error-emitter';
-import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { FirestorePermissionError } from '@/lib/errors';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -36,7 +35,6 @@ export default function AdminExamsPage() {
   const [allResults, setAllResults] = useState<ExamResult[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const [selectedResult, setSelectedResult] = useState<any>(null);
   
   const [isSavingSchedule, setIsSavingSchedule] = useState(false);
   const [isUpdatingOnly, setIsUpdatingOnly] = useState(false);
@@ -83,7 +81,6 @@ export default function AdminExamsPage() {
           const data = doc.data();
           const rawGroup = data.group || data.masteryGroup || data.mastery_group || data.masteryLevel || '?';
           const group = String(rawGroup).toUpperCase();
-          // Normalize status for logic checking
           const status = (data.status || 'pending').toLowerCase() as 'pending' | 'approved' | 'rejected';
           return { id: doc.id, ...data, group, status } as ExamApplication;
         }));
@@ -219,17 +216,6 @@ export default function AdminExamsPage() {
     return applications.filter(a => a.studentName?.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [applications, searchTerm]);
 
-  const groupedResults = useMemo(() => {
-    const official = allResults.filter(r => r.isFinal);
-    const grouped: Record<string, any[]> = {};
-    official.forEach(r => {
-      const g = r.group;
-      if (!grouped[g]) grouped[g] = [];
-      grouped[g].push({ ...r, studentName: applications.find(a => a.userId === r.userId)?.studentName || 'Student' });
-    });
-    return grouped;
-  }, [allResults, applications]);
-
   const safeFormat = (dateStr: string, pattern: string) => {
     if (!dateStr) return 'None';
     const d = parseISO(dateStr);
@@ -263,7 +249,6 @@ export default function AdminExamsPage() {
           <Tabs defaultValue="applications">
             <TabsList className="mb-8 w-full justify-start overflow-x-auto h-auto p-1 bg-muted/50 rounded-xl border">
               <TabsTrigger value="applications" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Applications ({applications.length})</TabsTrigger>
-              <TabsTrigger value="results" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Results</TabsTrigger>
               <TabsTrigger value="schedule" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Schedule Manager</TabsTrigger>
             </TabsList>
 
@@ -300,31 +285,21 @@ export default function AdminExamsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right pr-6 py-4 relative isolate">
-                          <div className="flex justify-end gap-2 relative z-50 isolate">
+                          <div className="flex justify-end gap-2 relative z-50">
                             {app.status === 'pending' ? (
                               <>
                                 <Button 
-                                  type="button"
                                   size="sm" 
-                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
-                                  onClick={(e) => { 
-                                    e.preventDefault(); 
-                                    e.stopPropagation(); 
-                                    handleUpdateStatus(app.id, 'approved'); 
-                                  }}
+                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md" 
+                                  onClick={(e) => { e.stopPropagation(); handleUpdateStatus(app.id, 'approved'); }}
                                 >
                                   <CheckCircle2 className="w-4 h-4 mr-2" /> Approve
                                 </Button>
                                 <Button 
-                                  type="button"
                                   size="sm" 
                                   variant="destructive" 
-                                  className="font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
-                                  onClick={(e) => { 
-                                    e.preventDefault(); 
-                                    e.stopPropagation(); 
-                                    handleUpdateStatus(app.id, 'rejected'); 
-                                  }}
+                                  className="font-bold h-10 px-4 rounded-xl shadow-md" 
+                                  onClick={(e) => { e.stopPropagation(); handleUpdateStatus(app.id, 'rejected'); }}
                                 >
                                   <Ban className="w-4 h-4 mr-2" /> Reject
                                 </Button>
@@ -333,10 +308,9 @@ export default function AdminExamsPage() {
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button 
-                                    type="button"
                                     size="sm" 
                                     variant="outline" 
-                                    className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl cursor-pointer" 
+                                    className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl" 
                                     disabled={isClearingApp === app.id}
                                     onClick={(e) => { e.stopPropagation(); }}
                                   >
@@ -367,39 +341,6 @@ export default function AdminExamsPage() {
                   </TableBody>
                 </Table>
               </div>
-            </TabsContent>
-
-            <TabsContent value="results" className="space-y-12">
-              {Object.keys(groupedResults).length > 0 ? Object.keys(groupedResults).map(group => (
-                <div key={group} className="space-y-6">
-                  <h2 className="text-xl font-black uppercase border-b-4 border-primary/20 pb-2 inline-block">Group {group} Results</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {groupedResults[group].map(r => (
-                      <Card key={r.id} className="border-2 border-slate-100 rounded-3xl overflow-hidden shadow-md group hover:border-primary/30 transition-all">
-                        <CardHeader className="bg-slate-900 text-white p-5">
-                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                              <span>Grand Final Attempt</span>
-                              {r.resultDeclared && <Badge className="bg-green-500 border-none px-3">DECLARED</Badge>}
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-6 text-center space-y-4">
-                            <p className="text-xl font-black text-slate-900">{r.studentName}</p>
-                            <div className="bg-muted/50 p-4 rounded-2xl border border-muted">
-                              <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Score</p>
-                              <p className="text-4xl font-black text-primary leading-none">{r.score}/{r.totalQuestions}</p>
-                            </div>
-                            <Button variant="outline" className="w-full font-bold h-11 rounded-xl" onClick={() => setSelectedResult(r)}><Eye className="w-4 h-4 mr-2" /> Audit</Button>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )) : (
-                <div className="text-center py-24 bg-muted/30 rounded-[3rem] border-2 border-dashed">
-                   <Trophy className="w-16 h-16 mx-auto text-muted-foreground opacity-10 mb-4" />
-                   <p className="text-muted-foreground font-bold uppercase tracking-widest text-sm">No official results found</p>
-                </div>
-              )}
             </TabsContent>
 
             <TabsContent value="schedule">
@@ -480,7 +421,6 @@ export default function AdminExamsPage() {
                     </AlertDialog>
 
                     <Button 
-                      type="button"
                       onClick={(e) => { e.preventDefault(); handleUpdateOnly(); }} 
                       disabled={isUpdatingOnly || isSavingSchedule} 
                       variant="outline" 
@@ -493,7 +433,6 @@ export default function AdminExamsPage() {
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button 
-                          type="button"
                           disabled={isSavingSchedule || isUpdatingOnly} 
                           className="h-14 px-10 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 border-none text-white"
                         >
@@ -523,36 +462,6 @@ export default function AdminExamsPage() {
           </Tabs>
         </CardContent>
       </Card>
-
-      <Dialog open={!!selectedResult} onOpenChange={() => setSelectedResult(null)}>
-        <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0 rounded-[2.5rem] overflow-hidden border-none shadow-2xl">
-          <DialogHeader className="p-8 bg-slate-900 text-white shrink-0">
-            <div className="flex justify-between items-center">
-              <div>
-                <DialogTitle className="text-2xl font-black uppercase tracking-tight">Audit Log: {selectedResult?.studentName}</DialogTitle>
-                <div className="text-slate-400 font-bold mt-1">Group {selectedResult?.group} • Final Submission Audit</div>
-              </div>
-              <div className="text-right">
-                <p className="text-3xl font-black text-primary">{selectedResult?.score}/{selectedResult?.totalQuestions}</p>
-              </div>
-            </div>
-          </DialogHeader>
-          <ScrollArea className="flex-1 p-8">
-            <div className="space-y-4 pb-20">
-              {selectedResult?.details?.map((item: any, i: number) => (
-                <div key={i} className="flex justify-between items-center p-5 bg-muted/40 rounded-2xl border border-muted group hover:bg-muted/60 transition-colors">
-                  <span className="font-bold text-slate-700">Question {i+1}</span>
-                  <div className="flex gap-10 items-center">
-                    <div className="text-center"><p className="text-[9px] uppercase font-black text-muted-foreground mb-1">Key</p><p className="font-black text-slate-900">{item.correct}</p></div>
-                    <div className="text-center"><p className="text-[9px] uppercase font-black text-muted-foreground mb-1">User</p><p className={cn("font-black px-3 py-1 rounded-lg", item.student === item.correct ? "text-green-700 bg-green-100" : "text-red-700 bg-red-100")}>{item.student ?? 'N/A'}</p></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <ScrollBar orientation="vertical" />
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

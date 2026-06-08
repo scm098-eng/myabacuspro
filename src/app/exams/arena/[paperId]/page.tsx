@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Timer, CheckCircle2 } from 'lucide-react';
 import { generateExamQuestions } from '@/lib/exam-utils';
 import type { ExamApplication, Question } from '@/types';
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
@@ -48,8 +48,10 @@ export default function ExamArenaPage() {
   useEffect(() => {
     if (!user) return;
     const db = getFirestore(firebaseApp);
-    const fetchApplication = async () => {
+    
+    const fetchArenaData = async () => {
       try {
+        // 1. Check Cycle Expiry
         const scheduleSnap = await getDoc(doc(db, "stats", "examSchedule"));
         if (scheduleSnap.exists()) {
           const data = scheduleSnap.data();
@@ -63,29 +65,52 @@ export default function ExamArenaPage() {
           }
         }
 
-        const q = query(collection(db, "examApplications"), where("userId", "==", user.uid), where("status", "==", "approved"), limit(1));
-        const snap = await getDocs(q);
-        if (snap.empty) {
+        // 2. Direct ID Fetch for Application (Reliable & Case-Insensitive logic)
+        const appRef = doc(db, "examApplications", user.uid);
+        const appSnap = await getDoc(appRef);
+        
+        if (!appSnap.exists()) {
           toast({ title: "Not Eligible", description: "Approved application required.", variant: "destructive" });
           router.push('/exams');
           return;
         }
-        const app = { id: snap.docs[0].id, ...snap.docs[0].data() } as ExamApplication;
 
+        const appData = appSnap.data();
+        const normalizedStatus = (appData.status || 'pending').toLowerCase();
+        
+        if (normalizedStatus !== 'approved') {
+          toast({ title: "Access Restricted", description: "Your application is still being processed.", variant: "destructive" });
+          router.push('/exams');
+          return;
+        }
+
+        // 3. Normalize Group & Questions
+        const rawGroup = appData.group || appData.masteryGroup || appData.masteryLevel || '?';
+        const group = String(rawGroup).toUpperCase() as any;
+        
+        const app = { id: appSnap.id, ...appData, group } as ExamApplication;
         setApplication(app);
-        const generated = generateExamQuestions(app.group);
+
+        const generated = generateExamQuestions(group);
         setQuestions(generated);
+        
         const initialAnswers = new Array(generated.length).fill(null);
         setAnswers(initialAnswers);
         answersRef.current = initialAnswers;
-        setTimeLeft(app.timeLimit || 600);
-        timeLeftRef.current = app.timeLimit || 600;
+        
+        const limit = app.timeLimit || 600;
+        setTimeLeft(limit);
+        timeLeftRef.current = limit;
+        
         setLoading(false);
       } catch (error) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examApplications', operation: 'list' }));
+        console.error("Arena Load Error:", error);
+        toast({ title: "Arena Error", description: "Failed to load exam data.", variant: "destructive" });
+        router.push('/exams');
       }
     };
-    fetchApplication();
+
+    fetchArenaData();
   }, [user, router, toast]);
 
   const finishExam = useCallback(async () => {
