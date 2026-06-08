@@ -60,10 +60,14 @@ export default function AdminExamsPage() {
       if (snap.exists()) {
         const data = snap.data();
         setExamDate(data.date || '');
-        const [sh, sm] = (data.startTime || '12:30').split(':');
-        const [eh, em] = (data.endTime || '16:00').split(':');
-        setStartH(sh || '12'); setStartM(sm || '30');
-        setEndH(eh || '16'); setEndM(em || '00');
+        const startTime = data.startTime || '12:30';
+        const endTime = data.endTime || '16:00';
+        const [sh, sm] = startTime.split(':');
+        const [eh, em] = endTime.split(':');
+        setStartH(sh || '12'); 
+        setStartM(sm || '30');
+        setEndH(eh || '16'); 
+        setEndM(em || '00');
         setLastApplyDate(data.lastApplyDate || '');
       }
     });
@@ -72,9 +76,8 @@ export default function AdminExamsPage() {
       (snap) => {
         setApplications(snap.docs.map(doc => {
           const data = doc.data();
-          // Robust mapping for Group ID
           const rawGroup = data.group || (data as any).masteryGroup || (data as any).mastery_group || (data as any).mastery_level || (data as any).masteryLevel;
-          const group = typeof rawGroup === 'string' ? rawGroup.toUpperCase() : '?';
+          const group = typeof rawGroup === 'string' ? rawGroup.toUpperCase() : (rawGroup ? rawGroup.toString() : '?');
           return { id: doc.id, ...data, group } as ExamApplication;
         }));
         setLoading(false);
@@ -104,8 +107,6 @@ export default function AdminExamsPage() {
   };
 
   const handleAllowReapply = useCallback(async (id: string) => {
-    console.log("Admin: Triggering Allow Re-apply for", id);
-    
     const isConfirmed = window.confirm("This will permanently clear the student's current application. They will be able to select a new group and re-apply from their dashboard. Continue?");
     if (!isConfirmed) return;
     
@@ -372,7 +373,8 @@ export default function AdminExamsPage() {
                       <Select value={startM} onValueChange={setStartM}>
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
                         <SelectContent className="max-h-60 rounded-2xl"><ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
-                      </div>
+                      </Select>
+                    </div>
                   </div>
                   <div className="space-y-3">
                     <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">End Time (24h)</Label>
@@ -384,7 +386,8 @@ export default function AdminExamsPage() {
                       <Select value={endM} onValueChange={setEndM}>
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
                         <SelectContent className="max-h-60 rounded-2xl"><ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => <SelectItem key={i} value={i.toString().padStart(2,'0')}>{i.toString().padStart(2,'0')}</SelectItem>)}</ScrollArea></SelectContent>
-                      </div>
+                      </Select>
+                    </div>
                   </div>
                   <div className="space-y-3">
                     <Label className="text-xs font-black uppercase tracking-widest text-red-600 ml-1">Apply Deadline</Label>
