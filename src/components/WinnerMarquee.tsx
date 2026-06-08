@@ -39,7 +39,7 @@ export default function WinnerMarquee() {
       }
     }
 
-    if (schedule?.lastResultDeclaredAt) {
+    if (schedule?.resultsDeclared && schedule?.lastResultDeclaredAt) {
       const declaredAt = schedule.lastResultDeclaredAt.toDate?.() || new Date(schedule.lastResultDeclaredAt);
       if (isAfter(now, declaredAt) && isBefore(now, new Date(declaredAt.getTime() + 86400000))) {
         msgs.push({ text: "OFFICIAL RESULTS DECLARED! CHECK YOUR PERFORMANCE TAB!", icon: <ScrollText className="w-5 h-5" /> });
