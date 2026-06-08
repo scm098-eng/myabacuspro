@@ -40,10 +40,22 @@ export default function ExamArenaPage() {
   const answersRef = useRef<(number | null)[]>([]);
   const timeLeftRef = useRef<number>(0);
   const isFinishedRef = useRef(false);
+  const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
     answersRef.current = answers;
   }, [answers]);
+
+  // Ensure the question number bar scrolls with the active question
+  useEffect(() => {
+    if (questionButtonRefs.current[currentIdx]) {
+      questionButtonRefs.current[currentIdx]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center'
+      });
+    }
+  }, [currentIdx]);
 
   useEffect(() => {
     if (!user) return;
@@ -65,7 +77,7 @@ export default function ExamArenaPage() {
           }
         }
 
-        // 2. Direct ID Fetch for Application (Reliable & Case-Insensitive logic)
+        // 2. Direct ID Fetch for Application
         const appRef = doc(db, "examApplications", user.uid);
         const appSnap = await getDoc(appRef);
         
@@ -198,8 +210,8 @@ export default function ExamArenaPage() {
     const len = text.length;
     if (len > 30) return "text-lg sm:text-2xl";
     if (len > 22) return "text-xl sm:text-3xl";
-    if (len > 14) return "text-3xl sm:text-5xl";
-    return "text-4xl sm:text-7xl";
+    // Keep single digit and double digit (standard mental problems) the same large size
+    return "text-3xl sm:text-5xl"; 
   };
 
   const dynamicRodCount = useMemo(() => {
@@ -231,7 +243,13 @@ export default function ExamArenaPage() {
           <ScrollArea className="w-full whitespace-nowrap mt-6 bg-white/5 p-2 rounded-xl border border-white/10">
             <div className="flex w-max space-x-2">
                 {questions.map((_, i) => (
-                    <Button key={i} onClick={() => setCurrentIdx(i)} variant={currentIdx === i ? 'default' : 'ghost'} className={cn("w-10 h-10 text-xs font-black", currentIdx === i ? "bg-primary" : "text-slate-400", answers[i] !== null && "text-green-400")}>
+                    <Button 
+                      key={i} 
+                      ref={(el) => { questionButtonRefs.current[i] = el; }}
+                      onClick={() => setCurrentIdx(i)} 
+                      variant={currentIdx === i ? 'default' : 'ghost'} 
+                      className={cn("w-10 h-10 text-xs font-black", currentIdx === i ? "bg-primary" : "text-slate-400", answers[i] !== null && "text-green-400")}
+                    >
                         {i + 1}
                     </Button>
                 ))}
@@ -255,7 +273,14 @@ export default function ExamArenaPage() {
             </div>
             <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
               {questions[currentIdx]?.options.map((opt, i) => (
-                <Button key={i} variant={answers[currentIdx] === opt ? 'default' : 'outline'} className="h-16 text-xl font-black rounded-2xl" onClick={() => handleSelectOption(opt)}>{opt}</Button>
+                <Button 
+                  key={i} 
+                  variant={answers[currentIdx] === opt ? 'default' : 'outline'} 
+                  className="h-16 text-2xl sm:text-4xl font-black rounded-2xl" 
+                  onClick={() => handleSelectOption(opt)}
+                >
+                  {opt}
+                </Button>
               ))}
             </div>
           </div>
