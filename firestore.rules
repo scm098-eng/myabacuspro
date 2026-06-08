@@ -41,7 +41,7 @@ service cloud.firestore {
       allow read, list: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin() || isTeacher());
       allow create: if request.auth != null && isNotSuspended() && request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin();
-      // Administrators can delete applications to reset student dashboard for re-application
+      // allow-reapply: Administrators can delete applications to trigger a dashboard reset
       allow delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
     }
 
@@ -89,5 +89,7 @@ service cloud.firestore {
       allow read: if request.auth != null && (isAdmin() || isTeacher());
       allow write: if false;
     }
+    
+    // Deployment trigger: 2026-06-07T14:15:00Z - Admin Delete Perm Sync
   }
 }

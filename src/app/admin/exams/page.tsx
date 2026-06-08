@@ -72,6 +72,7 @@ export default function AdminExamsPage() {
       (snap) => {
         setApplications(snap.docs.map(doc => {
           const data = doc.data();
+          // Robust mapping for Group ID
           const rawGroup = data.group || (data as any).masteryGroup || (data as any).mastery_group || (data as any).mastery_level || (data as any).masteryLevel;
           const group = typeof rawGroup === 'string' ? rawGroup.toUpperCase() : '?';
           return { id: doc.id, ...data, group } as ExamApplication;
@@ -102,11 +103,8 @@ export default function AdminExamsPage() {
       .catch(async (e) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${id}`, operation: 'update' })));
   };
 
-  const handleAllowReapply = useCallback(async (e: React.MouseEvent, id: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    console.log("Allow Re-apply triggered for application ID:", id);
+  const handleAllowReapply = useCallback(async (id: string) => {
+    console.log("Admin: Triggering Allow Re-apply for", id);
     
     const isConfirmed = window.confirm("This will permanently clear the student's current application. They will be able to select a new group and re-apply from their dashboard. Continue?");
     if (!isConfirmed) return;
@@ -118,7 +116,7 @@ export default function AdminExamsPage() {
       await deleteDoc(doc(db, "examApplications", id));
       toast({ 
         title: "Dashboard Reset", 
-        description: "The student can now select a different group and re-apply." 
+        description: "The student record is cleared. They can now select a different group and re-apply." 
       });
     } catch (err: any) {
       console.error("Critical Permission Error (Delete Application):", err);
@@ -292,7 +290,11 @@ export default function AdminExamsPage() {
                                 size="sm" 
                                 variant="outline" 
                                 className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl pointer-events-auto relative z-50 cursor-pointer" 
-                                onClick={(e) => handleAllowReapply(e, app.id)}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleAllowReapply(app.id);
+                                }}
                                 disabled={isClearingApp === app.id}
                               >
                                 {isClearingApp === app.id ? <Loader2 className="animate-spin mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}
@@ -390,11 +392,11 @@ export default function AdminExamsPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="bg-muted/10 p-10 flex flex-col sm:flex-row justify-end gap-5 border-t border-muted">
-                  <Button onClick={handleUpdateOnly} disabled={isUpdatingOnly || isSavingSchedule} variant="outline" className="h-14 px-8 font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted text-xs sm:text-sm w-full sm:w-auto shadow-sm">
+                  <Button onClick={handleUpdateOnly} disabled={isUpdatingOnly || isSavingSchedule} variant="outline" className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted text-xs sm:text-sm shadow-sm">
                     {isUpdatingOnly ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 w-5 h-5" />}
                     UPDATE SCHEDULE ONLY
                   </Button>
-                  <Button onClick={handleSaveAndReset} disabled={isSavingSchedule || isUpdatingOnly} className="h-14 px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 text-xs sm:text-sm w-full sm:w-auto">
+                  <Button onClick={handleSaveAndReset} disabled={isSavingSchedule || isUpdatingOnly} className="h-14 px-10 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 text-xs sm:text-sm">
                     {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <RefreshCcw className="mr-2 w-5 h-5" />}
                     RESET & PUBLISH NEW CYCLE
                   </Button>
