@@ -76,9 +76,9 @@ export default function AdminExamsPage() {
       (snap) => {
         setApplications(snap.docs.map(doc => {
           const data = doc.data();
-          // Comprehensive field check to avoid the Question Mark issue
-          const rawGroup = data.group || data.masteryGroup || data.mastery_group || data.mastery_level || (data as any).masteryLevel || '?';
-          const group = typeof rawGroup === 'string' ? rawGroup.toUpperCase() : rawGroup.toString().toUpperCase();
+          // Robust field check to resolve the "Question Mark" group issue
+          const rawGroup = data.group || data.masteryGroup || data.mastery_group || data.masteryLevel || '?';
+          const group = String(rawGroup).toUpperCase();
           return { id: doc.id, ...data, group } as ExamApplication;
         }));
         setLoading(false);
@@ -247,7 +247,7 @@ export default function AdminExamsPage() {
                         <TableCell className="font-bold pl-6 py-4">{app.studentName}</TableCell>
                         <TableCell>
                           <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 px-4 py-1 text-[10px] font-black tracking-widest uppercase rounded-lg">
-                            GROUP {app.group}
+                            GROUP {app.group || '?'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center">
@@ -262,15 +262,19 @@ export default function AdminExamsPage() {
                             {app.status?.toUpperCase() || 'PENDING'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right pr-6 py-4">
-                          <div className="flex justify-end gap-2">
+                        <TableCell className="text-right pr-6 py-4 isolate">
+                          <div className="flex justify-end gap-2 isolate">
                             {app.status === 'pending' ? (
                               <>
                                 <Button 
                                   type="button"
                                   size="sm" 
-                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md pointer-events-auto relative z-50 cursor-pointer" 
-                                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleUpdateStatus(app.id, 'approved'); }}
+                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md relative z-10 cursor-pointer" 
+                                  onClick={(e) => { 
+                                    e.preventDefault(); 
+                                    e.stopPropagation(); 
+                                    handleUpdateStatus(app.id, 'approved'); 
+                                  }}
                                 >
                                   <CheckCircle2 className="w-4 h-4 mr-2" /> Approve
                                 </Button>
@@ -278,8 +282,12 @@ export default function AdminExamsPage() {
                                   type="button"
                                   size="sm" 
                                   variant="destructive" 
-                                  className="font-bold h-10 px-4 rounded-xl shadow-md pointer-events-auto relative z-50 cursor-pointer" 
-                                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleUpdateStatus(app.id, 'rejected'); }}
+                                  className="font-bold h-10 px-4 rounded-xl shadow-md relative z-10 cursor-pointer" 
+                                  onClick={(e) => { 
+                                    e.preventDefault(); 
+                                    e.stopPropagation(); 
+                                    handleUpdateStatus(app.id, 'rejected'); 
+                                  }}
                                 >
                                   <Ban className="w-4 h-4 mr-2" /> Reject
                                 </Button>
@@ -289,15 +297,19 @@ export default function AdminExamsPage() {
                                 type="button"
                                 size="sm" 
                                 variant="outline" 
-                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl relative z-50 cursor-pointer pointer-events-auto" 
+                                className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl relative z-20 cursor-pointer" 
                                 onClick={(e) => {
-                                  e.stopPropagation();
                                   e.preventDefault();
+                                  e.stopPropagation();
                                   handleAllowReapply(app.id);
                                 }}
                                 disabled={isClearingApp === app.id}
                               >
-                                {isClearingApp === app.id ? <Loader2 className="animate-spin mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}
+                                {isClearingApp === app.id ? (
+                                  <Loader2 className="animate-spin mr-2 w-4 h-4" />
+                                ) : (
+                                  <RotateCcw className="w-4 h-4 mr-2" />
+                                )}
                                 Allow Re-apply
                               </Button>
                             )}
