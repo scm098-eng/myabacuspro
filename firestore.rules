@@ -90,6 +90,6 @@ service cloud.firestore {
       allow write: if false;
     }
     
-    // Deployment trigger: 2026-06-12T12:30:00Z - Restore Cancel Exam & Fix Layout Interactivity
+    // Trigger deployment: 2026-06-12T12:50:00Z - Ensure admin delete & schedule write permissions are live
   }
 }

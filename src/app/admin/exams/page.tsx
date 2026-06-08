@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, setDoc, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
 import { CheckCircle2, Search, Trophy, Eye, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw, XCircle } from 'lucide-react';
@@ -132,7 +132,7 @@ export default function AdminExamsPage() {
     const db = getFirestore(firebaseApp);
     updateDoc(doc(db, "examResults", id), { resultDeclared: true })
       .then(() => {
-        updateDoc(doc(db, "stats", "examSchedule"), { lastResultDeclaredAt: serverTimestamp() });
+        setDoc(doc(db, "stats", "examSchedule"), { lastResultDeclaredAt: serverTimestamp() }, { merge: true });
         toast({ title: "Result Declared" });
       });
   };
@@ -145,13 +145,13 @@ export default function AdminExamsPage() {
     setIsUpdatingOnly(true);
     const db = getFirestore(firebaseApp);
     try {
-      await updateDoc(doc(db, "stats", "examSchedule"), {
+      await setDoc(doc(db, "stats", "examSchedule"), {
         date: examDate,
         startTime: `${startH}:${startM}`,
         endTime: `${endH}:${endM}`,
         lastApplyDate: lastApplyDate || "",
         updatedAt: serverTimestamp()
-      });
+      }, { merge: true });
       toast({ title: "Schedule Updated" });
     } catch (e: any) {
       toast({ title: "Update Failed", description: e.message, variant: "destructive" });
@@ -163,10 +163,10 @@ export default function AdminExamsPage() {
     setIsCancelling(true);
     const db = getFirestore(firebaseApp);
     try {
-      await updateDoc(doc(db, "stats", "examSchedule"), {
+      await setDoc(doc(db, "stats", "examSchedule"), {
         isActive: false,
         updatedAt: serverTimestamp()
-      });
+      }, { merge: true });
       toast({ title: "Exam Cancelled", description: "The exam cycle has been deactivated." });
     } catch (e: any) {
       toast({ title: "Cancellation Failed", description: e.message, variant: "destructive" });
@@ -276,14 +276,14 @@ export default function AdminExamsPage() {
                             {app.status?.toUpperCase() || 'PENDING'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right pr-6 py-4 relative isolate">
-                          <div className="flex justify-end gap-2 relative z-50 pointer-events-auto">
+                        <TableCell className="text-right pr-6 py-4 isolate relative">
+                          <div className="flex justify-end gap-2 isolate relative z-50">
                             {app.status === 'pending' ? (
                               <>
                                 <Button 
                                   type="button"
                                   size="sm" 
-                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md relative z-10 cursor-pointer" 
+                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
                                   onClick={(e) => { 
                                     e.preventDefault(); 
                                     e.stopPropagation(); 
@@ -296,7 +296,7 @@ export default function AdminExamsPage() {
                                   type="button"
                                   size="sm" 
                                   variant="destructive" 
-                                  className="font-bold h-10 px-4 rounded-xl shadow-md relative z-10 cursor-pointer" 
+                                  className="font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
                                   onClick={(e) => { 
                                     e.preventDefault(); 
                                     e.stopPropagation(); 
@@ -443,34 +443,34 @@ export default function AdminExamsPage() {
                     <Input type="date" value={lastApplyDate} onChange={e => setLastApplyDate(e.target.value)} className="h-14 border-2 border-red-100 bg-red-50/20 rounded-2xl font-bold shadow-sm focus:border-red-400" />
                   </div>
                 </CardContent>
-                <CardFooter className="bg-muted/10 p-6 sm:p-10 flex flex-wrap justify-center sm:justify-end gap-4 border-t border-muted">
+                <CardFooter className="bg-muted/10 p-6 sm:p-10 flex flex-col sm:flex-row flex-wrap justify-center sm:justify-end gap-4 border-t border-muted min-h-[100px]">
                   <Button 
                     type="button"
-                    onClick={handleCancelExam} 
+                    onClick={(e) => { e.preventDefault(); handleCancelExam(); }} 
                     disabled={isCancelling} 
                     variant="destructive" 
                     className="h-12 px-6 w-full sm:w-auto font-black uppercase tracking-widest rounded-xl border-2 hover:bg-red-700 text-[10px] sm:text-xs shadow-md"
                   >
-                    {isCancelling ? <Loader2 className="animate-spin mr-2" /> : <XCircle className="mr-2 w-5 h-5" />}
+                    {isCancelling ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <XCircle className="mr-2 w-5 h-5" />}
                     CANCEL CURRENT EXAM
                   </Button>
                   <Button 
                     type="button"
-                    onClick={handleUpdateOnly} 
+                    onClick={(e) => { e.preventDefault(); handleUpdateOnly(); }} 
                     disabled={isUpdatingOnly || isSavingSchedule} 
                     variant="outline" 
                     className="h-12 px-6 w-full sm:w-auto font-black uppercase tracking-widest rounded-xl border-2 hover:bg-muted text-[10px] sm:text-xs shadow-sm bg-white"
                   >
-                    {isUpdatingOnly ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 w-5 h-5" />}
+                    {isUpdatingOnly ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Save className="mr-2 w-5 h-5" />}
                     UPDATE SCHEDULE ONLY
                   </Button>
                   <Button 
                     type="button"
-                    onClick={handleSaveAndReset} 
+                    onClick={(e) => { e.preventDefault(); handleSaveAndReset(); }} 
                     disabled={isSavingSchedule || isUpdatingOnly} 
                     className="h-12 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-xl shadow-xl bg-red-600 hover:bg-red-700 text-[10px] sm:text-xs"
                   >
-                    {isSavingSchedule ? <Loader2 className="animate-spin mr-2" /> : <RefreshCcw className="mr-2 w-5 h-5" />}
+                    {isSavingSchedule ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <RefreshCcw className="mr-2 w-5 h-5" />}
                     RESET & PUBLISH NEW CYCLE
                   </Button>
                 </CardFooter>
