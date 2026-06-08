@@ -24,6 +24,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format } from 'date-fns';
 
 export default function AdminExamsPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
@@ -151,7 +152,7 @@ export default function AdminExamsPage() {
       startTime: `${startH}:${startM}`,
       endTime: `${endH}:${endM}`,
       lastApplyDate: lastApplyDate || "",
-      isActive: true, // Auto-reactive on update
+      isActive: true,
       updatedAt: serverTimestamp()
     };
 
@@ -259,10 +260,10 @@ export default function AdminExamsPage() {
               </CardDescription>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto isolate">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="h-16 px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-red-900/40 border-2 border-red-500/50 hover:scale-[1.02] transition-transform">
+                  <Button variant="destructive" className="h-16 px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-red-900/40 border-2 border-red-500/50 hover:scale-[1.02] transition-transform relative z-10">
                     <XCircle className="mr-2 w-6 h-6" /> Cancel Current Exam
                   </Button>
                 </AlertDialogTrigger>
@@ -275,7 +276,7 @@ export default function AdminExamsPage() {
                   </AlertDialogHeader>
                   <AlertDialogFooter className="mt-6">
                     <AlertDialogCancel className="rounded-xl h-12 font-bold">Abort</AlertDialogCancel>
-                    <AlertDialogAction onClick={(e) => { e.preventDefault(); handleCancelExam(); }} className="rounded-xl h-12 font-black bg-red-600 hover:bg-red-700">
+                    <AlertDialogAction onClick={handleCancelExam} className="rounded-xl h-12 font-black bg-red-600 hover:bg-red-700">
                       Confirm Cancellation
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -339,14 +340,14 @@ export default function AdminExamsPage() {
                             {app.status?.toUpperCase() || 'PENDING'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right pr-6 py-4 relative isolate">
-                          <div className="flex justify-end gap-2 relative z-50">
+                        <TableCell className="text-right pr-6 py-4 isolate relative">
+                          <div className="flex justify-end gap-2 isolate relative z-50">
                             {app.status === 'pending' ? (
                               <>
                                 <Button 
                                   type="button"
                                   size="sm" 
-                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
+                                  className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer relative z-10" 
                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUpdateStatus(app.id, 'approved'); }}
                                 >
                                   <CheckCircle2 className="w-4 h-4 mr-2" /> Approve
@@ -355,7 +356,7 @@ export default function AdminExamsPage() {
                                   type="button"
                                   size="sm" 
                                   variant="destructive" 
-                                  className="font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer" 
+                                  className="font-bold h-10 px-4 rounded-xl shadow-md cursor-pointer relative z-10" 
                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUpdateStatus(app.id, 'rejected'); }}
                                 >
                                   <Ban className="w-4 h-4 mr-2" /> Reject
@@ -368,7 +369,8 @@ export default function AdminExamsPage() {
                                     type="button"
                                     size="sm" 
                                     variant="outline" 
-                                    className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl cursor-pointer" 
+                                    className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl cursor-pointer relative z-10" 
+                                    disabled={isClearingApp === app.id}
                                   >
                                     <RotateCcw className="w-4 h-4 mr-2" /> Allow Re-apply
                                   </Button>
@@ -382,7 +384,7 @@ export default function AdminExamsPage() {
                                   </AlertDialogHeader>
                                   <AlertDialogFooter className="mt-4">
                                     <AlertDialogCancel className="rounded-xl h-11">Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={(e) => { e.preventDefault(); handleAllowReapply(app.id); }} className="rounded-xl h-11 font-black bg-red-600 hover:bg-red-700">
+                                    <AlertDialogAction onClick={() => handleAllowReapply(app.id)} className="rounded-xl h-11 font-black bg-red-600 hover:bg-red-700">
                                       {isClearingApp === app.id ? <Loader2 className="animate-spin w-5 h-5" /> : "Confirm Reset"}
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
@@ -398,7 +400,6 @@ export default function AdminExamsPage() {
               </div>
             </TabsContent>
 
-            {/* Results Tab */}
             <TabsContent value="results" className="space-y-12">
               {Object.keys(groupedResults).length > 0 ? Object.keys(groupedResults).map(group => (
                 <div key={group} className="space-y-6">
@@ -432,7 +433,6 @@ export default function AdminExamsPage() {
               )}
             </TabsContent>
 
-            {/* Schedule Manager Tab */}
             <TabsContent value="schedule">
               <Card className="border-2 border-primary/20 rounded-[2.5rem] overflow-hidden shadow-2xl">
                 <CardHeader className="bg-muted/30 p-8 border-b">
@@ -489,7 +489,7 @@ export default function AdminExamsPage() {
                 <CardFooter className="bg-muted/10 p-6 sm:p-10 flex flex-col sm:flex-row flex-wrap justify-end gap-4 border-t border-muted">
                   <Button 
                     type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUpdateOnly(); }} 
+                    onClick={handleUpdateOnly} 
                     disabled={isUpdatingOnly || isSavingSchedule} 
                     variant="outline" 
                     className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 hover:bg-muted text-xs bg-white shadow-md"
@@ -517,7 +517,7 @@ export default function AdminExamsPage() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel className="rounded-xl">Abort</AlertDialogCancel>
-                        <AlertDialogAction onClick={(e) => { e.preventDefault(); handleSaveAndReset(); }} className="bg-red-600 hover:bg-red-700 rounded-xl">
+                        <AlertDialogAction onClick={handleSaveAndReset} className="bg-red-600 hover:bg-red-700 rounded-xl">
                           Confirm Full Reset
                         </AlertDialogAction>
                       </AlertDialogFooter>
