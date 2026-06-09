@@ -319,11 +319,6 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
             </Button>
           </div>
         </CardContent>
-        <CardFooter className="p-4 sm:p-8 flex justify-center bg-muted/10 border-t rounded-b-[2.5rem]">
-           <Button onClick={() => goToNextQuestion([...userAnswers])} variant="ghost" className="text-muted-foreground font-bold hover:text-foreground">
-             Skip Question <ChevronRight className="ml-2 w-4 h-4" />
-           </Button>
-        </CardFooter>
       </Card>
       <div className="mt-4 sm:mt-6 flex justify-end">
         <AlertDialog>
