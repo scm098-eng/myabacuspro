@@ -165,9 +165,18 @@ export default function ExamArenaPage() {
 
     addDoc(collection(getFirestore(firebaseApp), "examResults"), payload)
       .then(() => {
-        toast({ title: "Submission successful!", description: "Check your performance tab for details." });
-        // Redirect directly back to the exam dashboard as requested
-        router.push('/exams');
+        toast({ title: "Submission successful!" });
+        
+        // Save results to session storage for the results page
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          sessionStorage.setItem('testResults', JSON.stringify({
+            questions,
+            userAnswers: currentAnswers
+          }));
+        }
+
+        // Redirect to results page as it is previously
+        router.push(`/results?score=${finalScore}&total=${questions.length}&time=${finalTimeLeft}&points=0`);
       })
       .catch((e) => {
         setIsSubmitting(false);
@@ -214,7 +223,7 @@ export default function ExamArenaPage() {
 
   const getQuestionFontSize = (text: string) => {
     const len = text.length;
-    // Balanced size for equations - decreased for better fit
+    // Standard scale for single-line fit
     if (len > 30) return "text-base sm:text-xl";
     if (len > 20) return "text-xl sm:text-3xl";
     return "text-2xl sm:text-4xl"; 
