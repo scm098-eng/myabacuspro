@@ -12,8 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
-import type { ExamApplication, ExamResult } from '@/types';
-import { CheckCircle2, Search, Trophy, Eye, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw, XCircle, ShieldAlert, Clock, ScrollText, FileCheck } from 'lucide-react';
+import type { ExamApplication, ExamResult, ExamGroup } from '@/types';
+import { CheckCircle2, Search, Trophy, Eye, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw, XCircle, ShieldAlert, Clock, ScrollText, FileCheck, Crown, FileSearch } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, parseISO, isValid } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 export default function AdminExamsPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
@@ -50,6 +51,9 @@ export default function AdminExamsPage() {
   const [lastApplyDate, setLastApplyDate] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [resultsDeclared, setResultsDeclared] = useState(false);
+
+  // Detailed Result Audit State
+  const [auditResult, setAuditResult] = useState<ExamResult | null>(null);
 
   useEffect(() => {
     if (!authLoading && (!profile || profile.role !== 'admin')) {
@@ -233,12 +237,25 @@ export default function AdminExamsPage() {
     return applications.filter(a => a.studentName?.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [applications, searchTerm]);
 
-  const filteredResults = useMemo(() => {
-    return allResults.filter(r => 
-      r.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.userId?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [allResults, searchTerm]);
+  // OFFICIAL FINAL EXAM AUDIT LOGIC
+  const groupedResults = useMemo(() => {
+    const finals = allResults.filter(r => r.isFinal === true);
+    const groups: Record<ExamGroup, ExamResult[]> = { A: [], B: [], C: [], D: [] };
+    
+    finals.forEach(r => {
+      if (groups[r.group]) groups[r.group].push(r);
+    });
+
+    // Sort within each group: Highest Marks, then Highest TimeLeft (Fastest)
+    Object.keys(groups).forEach(g => {
+      groups[g as ExamGroup].sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return (b.timeLeft || 0) - (a.timeLeft || 0);
+      });
+    });
+
+    return groups;
+  }, [allResults]);
 
   const safeFormat = (dateStr: string, pattern: string) => {
     if (!dateStr) return 'None';
@@ -257,11 +274,13 @@ export default function AdminExamsPage() {
             <div className="space-y-1">
               <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tight">Exam Administration</CardTitle>
               <div className="text-sm font-bold text-slate-500 flex items-center flex-wrap gap-2">
-                <span>Cycle: {safeFormat(examDate, 'MMMM do')}</span>
-                <Badge className={cn("px-3 border-none", isActive ? "bg-green-500" : "bg-red-500")}>
-                  {isActive ? "ACTIVE" : "CANCELLED"}
-                </Badge>
-                {resultsDeclared && <Badge className="bg-indigo-600 border-none">RESULTS DECLARED</Badge>}
+                <div className="flex items-center gap-2">
+                  <span>Cycle: {safeFormat(examDate, 'MMMM do')}</span>
+                  <Badge className={cn("px-3 border-none", isActive ? "bg-green-500" : "bg-red-500")}>
+                    {isActive ? "ACTIVE" : "CANCELLED"}
+                  </Badge>
+                  {resultsDeclared && <Badge className="bg-indigo-600 border-none">RESULTS DECLARED</Badge>}
+                </div>
               </div>
             </div>
             <div className="relative w-full lg:w-80">
@@ -274,7 +293,7 @@ export default function AdminExamsPage() {
           <Tabs defaultValue="applications">
             <TabsList className="mb-8 w-full justify-start overflow-x-auto h-auto p-1 bg-muted/50 rounded-xl border">
               <TabsTrigger value="applications" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Applications ({applications.length})</TabsTrigger>
-              <TabsTrigger value="results" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Exam Results ({allResults.length})</TabsTrigger>
+              <TabsTrigger value="results" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Final Exam Audit</TabsTrigger>
               <TabsTrigger value="schedule" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Schedule Manager</TabsTrigger>
             </TabsList>
 
@@ -370,13 +389,13 @@ export default function AdminExamsPage() {
             </TabsContent>
 
             <TabsContent value="results">
-              <div className="space-y-6">
-                <div className="flex justify-between items-center bg-indigo-50 p-6 rounded-2xl border-2 border-indigo-100 shadow-sm">
-                   <div className="flex items-center gap-3">
+              <div className="space-y-12">
+                <div className="flex flex-col sm:flex-row justify-between items-center bg-indigo-50 p-6 rounded-2xl border-2 border-indigo-100 shadow-sm gap-4">
+                   <div className="flex items-center gap-3 text-center sm:text-left">
                       <Trophy className="text-indigo-600 w-8 h-8" />
                       <div>
-                        <h3 className="text-xl font-black uppercase tracking-tight text-indigo-900">Official Exam Audit</h3>
-                        <p className="text-sm font-bold text-indigo-700/60">Review performance and declare final results.</p>
+                        <h3 className="text-xl font-black uppercase tracking-tight text-indigo-900">Official Exam Leaderboard</h3>
+                        <p className="text-sm font-bold text-indigo-700/60">Filtered by Group • Top Ranked Students First</p>
                       </div>
                    </div>
                    <AlertDialog>
@@ -403,48 +422,67 @@ export default function AdminExamsPage() {
                    </AlertDialog>
                 </div>
 
-                <div className="rounded-2xl border overflow-hidden bg-white shadow-sm">
-                  <Table>
-                    <TableHeader className="bg-muted/30 border-b">
-                      <TableRow>
-                        <TableHead className="pl-6 h-14 text-[10px] font-black uppercase tracking-widest">Student</TableHead>
-                        <TableHead className="h-14 text-[10px] font-black uppercase tracking-widest">Paper</TableHead>
-                        <TableHead className="h-14 text-[10px] font-black uppercase tracking-widest">Group</TableHead>
-                        <TableHead className="h-14 text-[10px] font-black uppercase tracking-widest text-center">Accuracy</TableHead>
-                        <TableHead className="text-right pr-6 h-14 text-[10px] font-black uppercase tracking-widest">Score</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredResults.map(res => (
-                        <TableRow key={res.id} className="hover:bg-muted/10 transition-colors">
-                          <TableCell className="pl-6 py-4">
-                            <div className="font-bold">{res.studentName || 'Unknown Student'}</div>
-                            <div className="text-[10px] text-muted-foreground font-mono">{res.userId}</div>
-                          </TableCell>
-                          <TableCell>
-                             <div className="flex items-center gap-2">
-                               {res.isFinal ? <FileCheck className="w-4 h-4 text-orange-500" /> : <RefreshCcw className="w-4 h-4 text-slate-300" />}
-                               <span className="text-xs font-bold uppercase">{res.paperId === 'final' ? 'GRAND FINAL' : `PRACTICE ${res.paperId.split('-')[1]}`}</span>
-                             </div>
-                             <div className="text-[9px] text-muted-foreground mt-0.5">{format(res.submittedAt?.toDate ? res.submittedAt.toDate() : new Date(), 'MMM d, h:mm a')}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className="bg-indigo-600 text-[10px] font-black tracking-widest">GROUP {res.group}</Badge>
-                          </TableCell>
-                          <TableCell className="text-center font-black text-indigo-700">
-                            {res.accuracy.toFixed(1)}%
-                          </TableCell>
-                          <TableCell className="text-right pr-6 font-black text-slate-900">
-                             {res.score} <span className="text-[10px] text-muted-foreground">/ {res.totalQuestions}</span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {filteredResults.length === 0 && (
-                        <TableRow><TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic font-medium">No results found.</TableCell></TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                {(['A', 'B', 'C', 'D'] as ExamGroup[]).map(group => (
+                  <div key={group} className="space-y-4">
+                    <div className="flex items-center gap-3 ml-2">
+                       <Badge className="bg-slate-900 text-white h-10 w-10 flex items-center justify-center rounded-xl font-black text-lg">
+                         {group}
+                       </Badge>
+                       <h4 className="text-lg font-black uppercase tracking-widest text-slate-700">Group {group} Results</h4>
+                    </div>
+                    
+                    <div className="rounded-2xl border overflow-hidden bg-white shadow-sm">
+                      <Table>
+                        <TableHeader className="bg-muted/10 border-b">
+                          <TableRow>
+                            <TableHead className="pl-6 h-12 text-[9px] font-black uppercase tracking-widest">Rank</TableHead>
+                            <TableHead className="h-12 text-[9px] font-black uppercase tracking-widest">Student</TableHead>
+                            <TableHead className="h-12 text-[9px] font-black uppercase tracking-widest">Accuracy</TableHead>
+                            <TableHead className="h-12 text-[9px] font-black uppercase tracking-widest">Time Left</TableHead>
+                            <TableHead className="h-12 text-[9px] font-black uppercase tracking-widest text-center">Score</TableHead>
+                            <TableHead className="text-right pr-6 h-12 text-[9px] font-black uppercase tracking-widest">Action</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {groupedResults[group].map((res, idx) => (
+                            <TableRow key={res.id} className={cn("hover:bg-muted/5", idx === 0 && "bg-yellow-50/30")}>
+                              <TableCell className="pl-6 py-4">
+                                {idx === 0 ? (
+                                  <Badge className="bg-yellow-400 text-yellow-900 border-none font-black text-[10px] px-3 gap-1 shadow-sm">
+                                    <Crown className="w-3 h-3" /> RANK 1
+                                  </Badge>
+                                ) : (
+                                  <span className="text-sm font-black text-slate-400 ml-4">#{idx + 1}</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-bold">{res.studentName || 'Unknown Student'}</TableCell>
+                              <TableCell className="font-black text-indigo-600">{res.accuracy.toFixed(1)}%</TableCell>
+                              <TableCell className="font-bold text-slate-500 font-mono">
+                                {Math.floor((res.timeLeft || 0)/60)}:{(res.timeLeft || 0 % 60).toString().padStart(2,'0')}
+                              </TableCell>
+                              <TableCell className="text-center font-black text-lg">
+                                {res.score} <span className="text-[10px] text-muted-foreground">/ {res.totalQuestions}</span>
+                              </TableCell>
+                              <TableCell className="text-right pr-6 relative isolate">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-9 px-4 rounded-xl border-2 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 font-bold gap-2 relative z-50"
+                                  onClick={(e) => { e.stopPropagation(); setAuditResult(res); }}
+                                >
+                                  <FileSearch className="w-4 h-4" /> Audit
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {groupedResults[group].length === 0 && (
+                            <TableRow><TableCell colSpan={6} className="text-center py-10 text-muted-foreground italic text-xs">No final attempts recorded for Group {group}.</TableCell></TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                ))}
               </div>
             </TabsContent>
 
@@ -567,6 +605,61 @@ export default function AdminExamsPage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* --- QUESTION AUDIT DIALOG --- */}
+      <Dialog open={!!auditResult} onOpenChange={(val) => !val && setAuditResult(null)}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl flex flex-col h-[90vh]">
+          <DialogHeader className="p-8 bg-slate-900 text-white shrink-0">
+             <div className="flex justify-between items-start">
+                <div>
+                   <Badge className="bg-indigo-600 text-white border-none uppercase font-black text-[10px] mb-2 px-3 py-1">Official Final Audit</Badge>
+                   <DialogTitle className="text-3xl font-black uppercase tracking-tight">{auditResult?.studentName}</DialogTitle>
+                   <DialogDescription className="text-slate-400 font-bold mt-1">Group {auditResult?.group} • Score: {auditResult?.score}/{auditResult?.totalQuestions}</DialogDescription>
+                </div>
+                <div className="text-right">
+                   <p className="text-4xl font-black text-indigo-400 leading-none">{auditResult?.accuracy.toFixed(1)}%</p>
+                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-2">Overall Accuracy</p>
+                </div>
+             </div>
+          </DialogHeader>
+          <ScrollArea className="flex-1 p-8 bg-slate-50">
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
+                {auditResult?.details?.map((detail: any, i: number) => {
+                  const isCorrect = detail.student === detail.correct;
+                  const isSkipped = detail.student === null;
+
+                  return (
+                    <div key={i} className={cn(
+                      "p-5 rounded-2xl border-2 flex flex-col gap-3 shadow-sm",
+                      isSkipped ? "bg-amber-50 border-amber-100" : (isCorrect ? "bg-white border-green-100" : "bg-red-50 border-red-100")
+                    )}>
+                       <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Q{i + 1}</span>
+                          {isSkipped ? <Clock className="w-4 h-4 text-amber-500" /> : (isCorrect ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <XCircle className="w-4 h-4 text-red-500" />)}
+                       </div>
+                       <div className="flex justify-between items-end">
+                          <div>
+                             <p className="text-[9px] font-bold uppercase text-slate-400">Target</p>
+                             <p className="text-2xl font-black text-slate-900">{detail.correct}</p>
+                          </div>
+                          <div className="text-right">
+                             <p className="text-[9px] font-bold uppercase text-slate-400">Student</p>
+                             <p className={cn("text-2xl font-black", isSkipped ? "text-amber-600 italic" : (isCorrect ? "text-green-600" : "text-red-600"))}>
+                               {isSkipped ? 'Skipped' : detail.student}
+                             </p>
+                          </div>
+                       </div>
+                    </div>
+                  );
+                })}
+             </div>
+          </ScrollArea>
+          <CardFooter className="bg-white p-6 border-t flex justify-end shrink-0">
+             <Button onClick={() => setAuditResult(null)} className="rounded-xl font-bold h-11 px-8">Close Audit</Button>
+          </CardFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
