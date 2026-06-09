@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useEffect, useState, useMemo } from 'react';
@@ -115,7 +116,7 @@ function ResultsComponent() {
 
   const score = Number(searchParams.get('score') || 0);
   const total = Number(searchParams.get('total') || 0);
-  const time = Number(searchParams.get('time') || 0);
+  const time = Number(searchParams.get('time') || 0); // This represents remaining time for exams
   const earnedPoints = Number(searchParams.get('points') || 0);
   
   useEffect(() => {
@@ -309,7 +310,7 @@ function ResultsComponent() {
               <div className="p-4 bg-background/50 rounded-2xl border-2 border-blue-100 text-center">
                 <Clock className="h-6 w-6 text-secondary mx-auto mb-2" />
                 <p className="text-xl font-black leading-none">{timeDisplay}</p>
-                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-2">Time</p>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-2">Remaining</p>
               </div>
             </div>
           </CardContent>
@@ -427,7 +428,7 @@ function ResultsComponent() {
 
 function ResultsSkeleton() {
     return (
-        <div className="max-w-2xl mx-auto space-y-8">
+        <div className="max-w-2xl auto space-y-8">
             <Card className="shadow-xl">
                 <CardHeader className="text-center space-y-2">
                     <Skeleton className="h-8 w-48 mx-auto" />

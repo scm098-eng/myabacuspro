@@ -345,13 +345,13 @@ export default function AdminExamsPage() {
 
             <TabsContent value="schedule">
               <Card className="border-2 border-primary/20 rounded-[2.5rem] overflow-hidden shadow-2xl">
-                <CardHeader className="bg-muted/30 p-8 border-b">
+                <div className="bg-muted/30 p-8 border-b">
                   <div className="flex items-center gap-3">
                     <Calendar className="w-6 h-6 text-primary" />
                     <CardTitle className="text-2xl font-black uppercase tracking-tight">Cycle Configuration</CardTitle>
                   </div>
                   <div className="font-medium text-slate-600 mt-1">Define the testing window and application deadlines.</div>
-                </CardHeader>
+                </div>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 p-10">
                   <div className="space-y-3">
                     <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Exam Date</Label>

@@ -97,7 +97,7 @@ export default function ExamArenaPage() {
         }
 
         // 3. Normalize Group & Questions
-        const rawGroup = appData.group || appData.masteryGroup || appData.masteryLevel || '?';
+        const rawGroup = appData.group || appData.masteryGroup || appData.mastery_group || appData.masteryLevel || '?';
         const group = String(rawGroup).toUpperCase() as any;
         
         const app = { id: appSnap.id, ...appData, group } as ExamApplication;
@@ -105,6 +105,9 @@ export default function ExamArenaPage() {
 
         const generated = generateExamQuestions(group);
         setQuestions(generated);
+        
+        // Initialize refs array
+        questionButtonRefs.current = new Array(generated.length).fill(null);
         
         const initialAnswers = new Array(generated.length).fill(null);
         setAnswers(initialAnswers);
@@ -133,6 +136,7 @@ export default function ExamArenaPage() {
     setIsSubmitting(true);
 
     const currentAnswers = answersRef.current;
+    const finalTimeLeft = timeLeftRef.current; // Track remaining time
     const finalScore = currentAnswers.reduce((acc: number, ans, i) => {
         if (questions[i] && ans !== null && ans === questions[i].answer) {
             return acc + 1;
@@ -152,6 +156,7 @@ export default function ExamArenaPage() {
       isFinal: paperId === 'final',
       resultDeclared: paperId !== 'final',
       submittedAt: serverTimestamp(),
+      timeLeft: finalTimeLeft,
       details: questions.map((q, i) => ({
         correct: q.answer,
         student: currentAnswers[i]
@@ -161,7 +166,8 @@ export default function ExamArenaPage() {
     addDoc(collection(getFirestore(firebaseApp), "examResults"), payload)
       .then(() => {
         toast({ title: "Submission successful!" });
-        router.push('/exams');
+        // Include time in results redirect
+        router.push(`/results?score=${finalScore}&total=${questions.length}&time=${finalTimeLeft}&points=0`);
       })
       .catch((e) => {
         setIsSubmitting(false);
@@ -208,10 +214,10 @@ export default function ExamArenaPage() {
 
   const getQuestionFontSize = (text: string) => {
     const len = text.length;
+    // Standardize all standard math problems to a large uniform size
     if (len > 30) return "text-lg sm:text-2xl";
-    if (len > 22) return "text-xl sm:text-3xl";
-    // Keep single digit and double digit (standard mental problems) the same large size
-    return "text-3xl sm:text-5xl"; 
+    if (len > 20) return "text-2xl sm:text-4xl";
+    return "text-4xl sm:text-6xl"; 
   };
 
   const dynamicRodCount = useMemo(() => {
@@ -254,17 +260,18 @@ export default function ExamArenaPage() {
                     </Button>
                 ))}
             </div>
+            <ScrollBar orientation="horizontal" className="h-1 bg-white/10" />
           </ScrollArea>
         </CardHeader>
         <CardContent className="p-8 text-center flex-grow flex flex-col justify-center overflow-hidden">
           <div className="space-y-6">
-            <div className="py-4 bg-muted/30 rounded-[2rem] border-2 border-dashed flex flex-col items-center min-h-[140px] justify-center">
+            <div className="py-4 bg-muted/30 rounded-[2rem] border-2 border-dashed flex flex-col items-center min-h-[160px] justify-center">
                 {questions[currentIdx]?.questionType === 'identify' ? (
                   <div className="w-full max-w-md">
                     <BeadDisplay value={questions[currentIdx].answer} rodCount={dynamicRodCount} />
                   </div>
                 ) : (
-                  <div className="w-full overflow-hidden">
+                  <div className="w-full overflow-hidden px-4">
                     <p className={cn("font-black tracking-tight whitespace-nowrap", getQuestionFontSize(questions[currentIdx]?.text || ""))}>
                       {questions[currentIdx]?.text} = ?
                     </p>
@@ -276,7 +283,7 @@ export default function ExamArenaPage() {
                 <Button 
                   key={i} 
                   variant={answers[currentIdx] === opt ? 'default' : 'outline'} 
-                  className="h-16 text-2xl sm:text-4xl font-black rounded-2xl" 
+                  className="h-20 text-3xl sm:text-5xl font-black rounded-2xl transition-all hover:scale-105" 
                   onClick={() => handleSelectOption(opt)}
                 >
                   {opt}
