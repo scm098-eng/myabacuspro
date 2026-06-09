@@ -13,7 +13,7 @@ import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, s
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult, ExamGroup } from '@/types';
-import { CheckCircle2, Search, Trophy, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw, XCircle, ScrollText, FileSearch, Crown } from 'lucide-react';
+import { CheckCircle2, Search, Trophy, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw, XCircle, ScrollText, FileSearch, Crown, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -285,7 +285,7 @@ export default function AdminExamsPage() {
                    <div className="flex items-center gap-3 text-center sm:text-left"><Trophy className="text-indigo-600 w-8 h-8" /><div><h3 className="text-xl font-black uppercase tracking-tight text-indigo-900">Official Exam Leaderboard</h3><p className="text-sm font-bold text-indigo-700/60">Filtered by Group • Top Ranked Students First</p></div></div>
                    <AlertDialog><AlertDialogTrigger asChild><Button disabled={resultsDeclared || isSavingSchedule} className="h-12 px-8 font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg border-none">{isSavingSchedule ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <ScrollText className="mr-2 h-5 w-5" />}{resultsDeclared ? "Results Official" : "Declare Official Results"}</Button></AlertDialogTrigger>
                       <AlertDialogContent className="rounded-3xl"><AlertDialogHeader><AlertDialogTitle className="text-indigo-700 uppercase font-black">Publish Official Results?</AlertDialogTitle><AlertDialogDescription className="font-bold text-slate-600">This will mark the current cycle as finished and release scores for **Grand Final** attempts to all students.</AlertDialogDescription></AlertDialogHeader>
-                        <AlertDialogFooter><AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeclareResults} className="bg-indigo-600 hover:bg-indigo-700 text-white border-none rounded-xl">Publish Now</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+                        <AlertDialogFooter><AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeclareResults} className="bg-indigo-600 hover:bg-indigo-700 text-white border-none rounded-xl">Publish Now</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
                 </div>
 
                 {(['A', 'B', 'C', 'D'] as ExamGroup[]).map(group => (

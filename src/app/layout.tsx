@@ -30,16 +30,9 @@ export const metadata: Metadata = {
   creator: 'My Abacus Pro',
   publisher: 'My Abacus Pro',
   icons: {
-    icon: [
-      { url: LOGO_URL, sizes: '32x32', type: 'image/png' },
-      { url: LOGO_URL, sizes: '48x48', type: 'image/png' },
-      { url: LOGO_URL, sizes: '192x192', type: 'image/png' },
-      { url: LOGO_URL, sizes: '512x512', type: 'image/png' },
-    ],
-    shortcut: LOGO_URL,
-    apple: [
-      { url: LOGO_URL, sizes: '180x180', type: 'image/png' },
-    ],
+    icon: '/icon.png',
+    shortcut: '/icon.png',
+    apple: '/icon.png',
   },
   alternates: {
     canonical: '/', 

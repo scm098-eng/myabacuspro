@@ -116,6 +116,7 @@ export interface ExamApplication {
 export interface ExamResult {
   id: string;
   userId: string;
+  studentName?: string;
   paperId: string; // paper-1 to paper-20 or final
   group: ExamGroup;
   score: number;
@@ -126,6 +127,10 @@ export interface ExamResult {
   submittedAt: any;
   timeLeft?: number;
   answeredCount?: number;
+  details?: {
+    correct: number;
+    student: number | null;
+  }[];
 }
 
 export type GameLevel =
