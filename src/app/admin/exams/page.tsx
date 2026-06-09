@@ -286,6 +286,7 @@ export default function AdminExamsPage() {
                    <AlertDialog><AlertDialogTrigger asChild><Button disabled={resultsDeclared || isSavingSchedule} className="h-12 px-8 font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg border-none">{isSavingSchedule ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <ScrollText className="mr-2 h-5 w-5" />}{resultsDeclared ? "Results Official" : "Declare Official Results"}</Button></AlertDialogTrigger>
                       <AlertDialogContent className="rounded-3xl"><AlertDialogHeader><AlertDialogTitle className="text-indigo-700 uppercase font-black">Publish Official Results?</AlertDialogTitle><AlertDialogDescription className="font-bold text-slate-600">This will mark the current cycle as finished and release scores for **Grand Final** attempts to all students.</AlertDialogDescription></AlertDialogHeader>
                         <AlertDialogFooter><AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeclareResults} className="bg-indigo-600 hover:bg-indigo-700 text-white border-none rounded-xl">Publish Now</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                   </AlertDialog>
                 </div>
 
                 {(['A', 'B', 'C', 'D'] as ExamGroup[]).map(group => (
