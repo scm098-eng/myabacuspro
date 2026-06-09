@@ -214,10 +214,10 @@ export default function ExamArenaPage() {
 
   const getQuestionFontSize = (text: string) => {
     const len = text.length;
-    // Standardize all standard math problems to a large uniform size
-    if (len > 30) return "text-lg sm:text-2xl";
-    if (len > 20) return "text-2xl sm:text-4xl";
-    return "text-4xl sm:text-6xl"; 
+    // Balanced size for equations - decreased for better fit
+    if (len > 30) return "text-base sm:text-xl";
+    if (len > 20) return "text-xl sm:text-3xl";
+    return "text-2xl sm:text-4xl"; 
   };
 
   const dynamicRodCount = useMemo(() => {
@@ -283,7 +283,7 @@ export default function ExamArenaPage() {
                 <Button 
                   key={i} 
                   variant={answers[currentIdx] === opt ? 'default' : 'outline'} 
-                  className="h-20 text-3xl sm:text-5xl font-black rounded-2xl transition-all hover:scale-105" 
+                  className="h-20 text-xl sm:text-3xl font-black rounded-2xl transition-all hover:scale-105" 
                   onClick={() => handleSelectOption(opt)}
                 >
                   {opt}

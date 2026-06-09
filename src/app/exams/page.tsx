@@ -397,7 +397,19 @@ export default function ExamDashboardPage() {
                           <p className="text-[10px] text-muted-foreground font-bold">{format(r.submittedAt?.toDate ? r.submittedAt.toDate() : new Date(), 'MMM d, h:mm a')}</p>
                         </div>
                         <div className="text-right">
-                          {r.isFinal && !r.resultDeclared ? <Badge className="bg-orange-500 text-[10px] font-black py-1 px-3">AUDIT PENDING</Badge> : <div className="flex flex-col items-end"><p className="text-2xl font-black text-primary leading-none">{r.score}/{r.totalQuestions}</p><p className="text-[8px] font-black uppercase text-muted-foreground mt-1 tracking-widest">Accuracy: {r.accuracy.toFixed(1)}%</p></div>}
+                          {r.isFinal && !r.resultDeclared ? (
+                            <Badge className="bg-orange-500 text-[10px] font-black py-1 px-3">AUDIT PENDING</Badge>
+                          ) : (
+                            <div className="flex flex-col items-end">
+                              <p className="text-2xl font-black text-primary leading-none">{r.score}/{r.totalQuestions}</p>
+                              <p className="text-[8px] font-black uppercase text-muted-foreground mt-1 tracking-widest">Acc: {r.accuracy.toFixed(1)}%</p>
+                              {r.timeLeft !== undefined && (
+                                <p className="text-[8px] font-black uppercase text-indigo-600 mt-0.5 tracking-widest">
+                                  Remaining: {Math.floor(r.timeLeft/60)}:{(r.timeLeft%60).toString().padStart(2,'0')}
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
