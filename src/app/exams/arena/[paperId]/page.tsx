@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
@@ -106,7 +105,7 @@ export default function ExamArenaPage() {
         const generated = generateExamQuestions(group);
         setQuestions(generated);
         
-        // Initialize refs array
+        // Initialize refs array based on pool size
         questionButtonRefs.current = new Array(generated.length).fill(null);
         
         const initialAnswers = new Array(generated.length).fill(null);
@@ -175,7 +174,8 @@ export default function ExamArenaPage() {
           }));
         }
 
-        router.push(`/results?score=${finalScore}&total=${questions.length}&time=${finalTimeLeft}&points=0`);
+        // Redirect back to main exam dashboard instead of results page for practice papers
+        router.push('/exams');
       })
       .catch((e) => {
         setIsSubmitting(false);
@@ -222,8 +222,8 @@ export default function ExamArenaPage() {
 
   const getQuestionFontSize = (text: string) => {
     const len = text.length;
-    if (len > 30) return "text-base sm:text-xl";
-    if (len > 20) return "text-xl sm:text-3xl";
+    if (len > 30) return "text-lg sm:text-xl";
+    if (len > 22) return "text-xl sm:text-3xl";
     return "text-2xl sm:text-4xl"; 
   };
 
@@ -290,7 +290,7 @@ export default function ExamArenaPage() {
                 <Button 
                   key={i} 
                   variant={answers[currentIdx] === opt ? 'default' : 'outline'} 
-                  className="h-20 text-xl sm:text-3xl font-black rounded-2xl transition-all hover:scale-105" 
+                  className="h-16 text-xl sm:text-3xl font-black rounded-2xl transition-all hover:scale-105" 
                   onClick={() => handleSelectOption(opt)}
                 >
                   {opt}
