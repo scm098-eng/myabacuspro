@@ -165,9 +165,9 @@ export default function ExamArenaPage() {
 
     addDoc(collection(getFirestore(firebaseApp), "examResults"), payload)
       .then(() => {
-        toast({ title: "Submission successful!" });
-        // Include time in results redirect
-        router.push(`/results?score=${finalScore}&total=${questions.length}&time=${finalTimeLeft}&points=0`);
+        toast({ title: "Submission successful!", description: "Check your performance tab for details." });
+        // Redirect directly back to the exam dashboard as requested
+        router.push('/exams');
       })
       .catch((e) => {
         setIsSubmitting(false);
