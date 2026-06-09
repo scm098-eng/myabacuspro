@@ -10,9 +10,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult } from '@/types';
-import { CheckCircle2, Search, Trophy, Eye, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw, XCircle, ShieldAlert, Clock } from 'lucide-react';
+import { CheckCircle2, Search, Trophy, Eye, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw, XCircle, ShieldAlert, Clock, ScrollText, FileCheck } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,6 +49,7 @@ export default function AdminExamsPage() {
   const [endM, setEndM] = useState('00');
   const [lastApplyDate, setLastApplyDate] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [resultsDeclared, setResultsDeclared] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!profile || profile.role !== 'admin')) {
@@ -63,6 +65,7 @@ export default function AdminExamsPage() {
         const data = snap.data();
         setExamDate(data.date || '');
         setIsActive(data.isActive !== false);
+        setResultsDeclared(data.resultsDeclared || false);
         const startTime = data.startTime || '12:30';
         const endTime = data.endTime || '16:00';
         const [sh, sm] = startTime.split(':');
@@ -130,6 +133,20 @@ export default function AdminExamsPage() {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
       })
       .finally(() => setIsClearingApp(null));
+  };
+
+  const handleDeclareResults = async () => {
+    setIsSavingSchedule(true);
+    try {
+      const functions = getFunctions(firebaseApp);
+      const declareFn = httpsCallable(functions, 'declareOfficialResults');
+      await declareFn();
+      toast({ title: "Results Declared", description: "Official scores are now visible to students." });
+    } catch (e: any) {
+      toast({ title: "Operation Failed", description: e.message, variant: "destructive" });
+    } finally {
+      setIsSavingSchedule(false);
+    }
   };
 
   const handleUpdateOnly = () => {
@@ -216,6 +233,13 @@ export default function AdminExamsPage() {
     return applications.filter(a => a.studentName?.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [applications, searchTerm]);
 
+  const filteredResults = useMemo(() => {
+    return allResults.filter(r => 
+      r.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.userId?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [allResults, searchTerm]);
+
   const safeFormat = (dateStr: string, pattern: string) => {
     if (!dateStr) return 'None';
     const d = parseISO(dateStr);
@@ -231,17 +255,18 @@ export default function AdminExamsPage() {
         <CardHeader>
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div className="space-y-1">
-              <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tight">Records & Schedule</CardTitle>
+              <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tight">Exam Administration</CardTitle>
               <div className="text-sm font-bold text-slate-500 flex items-center flex-wrap gap-2">
-                <span>Current: {safeFormat(examDate, 'MMMM do')} • Status:</span>
+                <span>Cycle: {safeFormat(examDate, 'MMMM do')}</span>
                 <Badge className={cn("px-3 border-none", isActive ? "bg-green-500" : "bg-red-500")}>
                   {isActive ? "ACTIVE" : "CANCELLED"}
                 </Badge>
+                {resultsDeclared && <Badge className="bg-indigo-600 border-none">RESULTS DECLARED</Badge>}
               </div>
             </div>
             <div className="relative w-full lg:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search student..." className="pl-10 h-11 rounded-xl" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+              <Input placeholder="Search student name..." className="pl-10 h-11 rounded-xl" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
           </div>
         </CardHeader>
@@ -249,6 +274,7 @@ export default function AdminExamsPage() {
           <Tabs defaultValue="applications">
             <TabsList className="mb-8 w-full justify-start overflow-x-auto h-auto p-1 bg-muted/50 rounded-xl border">
               <TabsTrigger value="applications" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Applications ({applications.length})</TabsTrigger>
+              <TabsTrigger value="results" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Exam Results ({allResults.length})</TabsTrigger>
               <TabsTrigger value="schedule" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Schedule Manager</TabsTrigger>
             </TabsList>
 
@@ -343,6 +369,85 @@ export default function AdminExamsPage() {
               </div>
             </TabsContent>
 
+            <TabsContent value="results">
+              <div className="space-y-6">
+                <div className="flex justify-between items-center bg-indigo-50 p-6 rounded-2xl border-2 border-indigo-100 shadow-sm">
+                   <div className="flex items-center gap-3">
+                      <Trophy className="text-indigo-600 w-8 h-8" />
+                      <div>
+                        <h3 className="text-xl font-black uppercase tracking-tight text-indigo-900">Official Exam Audit</h3>
+                        <p className="text-sm font-bold text-indigo-700/60">Review performance and declare final results.</p>
+                      </div>
+                   </div>
+                   <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button disabled={resultsDeclared || isSavingSchedule} className="h-12 px-8 font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg border-none">
+                          {isSavingSchedule ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <ScrollText className="mr-2 h-5 w-5" />}
+                          {resultsDeclared ? "Results Official" : "Declare Official Results"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="rounded-3xl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-indigo-700 uppercase font-black">Publish Official Results?</AlertDialogTitle>
+                          <AlertDialogDescription className="font-bold text-slate-600">
+                            This will mark the current cycle as finished and release scores for **Grand Final** attempts to all students. This action is final.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDeclareResults} className="bg-indigo-600 hover:bg-indigo-700 text-white border-none rounded-xl">
+                            Publish Now
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                   </AlertDialog>
+                </div>
+
+                <div className="rounded-2xl border overflow-hidden bg-white shadow-sm">
+                  <Table>
+                    <TableHeader className="bg-muted/30 border-b">
+                      <TableRow>
+                        <TableHead className="pl-6 h-14 text-[10px] font-black uppercase tracking-widest">Student</TableHead>
+                        <TableHead className="h-14 text-[10px] font-black uppercase tracking-widest">Paper</TableHead>
+                        <TableHead className="h-14 text-[10px] font-black uppercase tracking-widest">Group</TableHead>
+                        <TableHead className="h-14 text-[10px] font-black uppercase tracking-widest text-center">Accuracy</TableHead>
+                        <TableHead className="text-right pr-6 h-14 text-[10px] font-black uppercase tracking-widest">Score</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredResults.map(res => (
+                        <TableRow key={res.id} className="hover:bg-muted/10 transition-colors">
+                          <TableCell className="pl-6 py-4">
+                            <div className="font-bold">{res.studentName || 'Unknown Student'}</div>
+                            <div className="text-[10px] text-muted-foreground font-mono">{res.userId}</div>
+                          </TableCell>
+                          <TableCell>
+                             <div className="flex items-center gap-2">
+                               {res.isFinal ? <FileCheck className="w-4 h-4 text-orange-500" /> : <RefreshCcw className="w-4 h-4 text-slate-300" />}
+                               <span className="text-xs font-bold uppercase">{res.paperId === 'final' ? 'GRAND FINAL' : `PRACTICE ${res.paperId.split('-')[1]}`}</span>
+                             </div>
+                             <div className="text-[9px] text-muted-foreground mt-0.5">{format(res.submittedAt?.toDate ? res.submittedAt.toDate() : new Date(), 'MMM d, h:mm a')}</div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className="bg-indigo-600 text-[10px] font-black tracking-widest">GROUP {res.group}</Badge>
+                          </TableCell>
+                          <TableCell className="text-center font-black text-indigo-700">
+                            {res.accuracy.toFixed(1)}%
+                          </TableCell>
+                          <TableCell className="text-right pr-6 font-black text-slate-900">
+                             {res.score} <span className="text-[10px] text-muted-foreground">/ {res.totalQuestions}</span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {filteredResults.length === 0 && (
+                        <TableRow><TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic font-medium">No results found.</TableCell></TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </TabsContent>
+
             <TabsContent value="schedule">
               <Card className="border-2 border-primary/20 rounded-[2.5rem] overflow-hidden shadow-2xl">
                 <div className="bg-muted/30 p-8 border-b">
@@ -383,7 +488,7 @@ export default function AdminExamsPage() {
                           <ScrollArea className="h-60">{Array.from({length: 24}).map((_, i) => { const v = i.toString().padStart(2,'0'); return <SelectItem key={v} value={v}>{v}</SelectItem>; })}</ScrollArea>
                         </SelectContent>
                       </Select>
-                      <Select value={endM} onValueChange={setEndM}>
+                      <Select value={startM} onValueChange={setEndM}>
                         <SelectTrigger className="w-full h-full border-2 rounded-2xl font-bold"><SelectValue /></SelectTrigger>
                         <SelectContent className="max-h-60 rounded-2xl">
                           <ScrollArea className="h-60">{Array.from({length: 60}).map((_, i) => { const v = i.toString().padStart(2,'0'); return <SelectItem key={v} value={v}>{v}</SelectItem>; })}</ScrollArea>

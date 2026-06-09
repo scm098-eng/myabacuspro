@@ -136,7 +136,7 @@ export default function ExamArenaPage() {
     setIsSubmitting(true);
 
     const currentAnswers = answersRef.current;
-    const finalTimeLeft = timeLeftRef.current; // Track remaining time
+    const finalTimeLeft = timeLeftRef.current;
     const finalScore = currentAnswers.reduce((acc: number, ans, i) => {
         if (questions[i] && ans !== null && ans === questions[i].answer) {
             return acc + 1;
@@ -148,6 +148,7 @@ export default function ExamArenaPage() {
 
     const payload = {
       userId: user.uid,
+      studentName: application.studentName,
       paperId,
       group: application.group,
       score: finalScore,
@@ -167,7 +168,6 @@ export default function ExamArenaPage() {
       .then(() => {
         toast({ title: "Submission successful!" });
         
-        // Save results to session storage for the results page
         if (typeof window !== 'undefined' && window.sessionStorage) {
           sessionStorage.setItem('testResults', JSON.stringify({
             questions,
@@ -175,7 +175,6 @@ export default function ExamArenaPage() {
           }));
         }
 
-        // Redirect to results page as it is previously
         router.push(`/results?score=${finalScore}&total=${questions.length}&time=${finalTimeLeft}&points=0`);
       })
       .catch((e) => {
@@ -223,7 +222,6 @@ export default function ExamArenaPage() {
 
   const getQuestionFontSize = (text: string) => {
     const len = text.length;
-    // Standard scale for single-line fit
     if (len > 30) return "text-base sm:text-xl";
     if (len > 20) return "text-xl sm:text-3xl";
     return "text-2xl sm:text-4xl"; 
