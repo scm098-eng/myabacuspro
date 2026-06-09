@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -163,8 +162,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     const len = text.length;
     if (len > 30) return "text-lg sm:text-2xl";
     if (len > 22) return "text-xl sm:text-3xl";
-    if (len > 14) return "text-3xl sm:text-5xl";
-    return "text-4xl sm:text-7xl";
+    return "text-2xl sm:text-4xl";
   };
 
   if (!hasStarted) {
@@ -218,7 +216,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
                     onChange={e => setInputValue(e.target.value)} 
                     disabled={isAnswered} 
                     className={cn(
-                      "h-20 text-5xl text-center font-black rounded-2xl border-4 transition-all duration-300",
+                      "h-20 text-2xl sm:text-4xl text-center font-black rounded-2xl border-4 transition-all duration-300",
                       isAnswered && parseInt(inputValue) === questions[currentIdx].answer && "border-green-500 bg-green-50 text-green-700",
                       isAnswered && parseInt(inputValue) !== questions[currentIdx].answer && "border-red-500 bg-red-50 text-red-700"
                     )} 
@@ -233,7 +231,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
                       onClick={() => handleAnswer(opt)} 
                       disabled={isAnswered} 
                       className={cn(
-                        "h-20 text-3xl font-black rounded-2xl transition-all duration-200",
+                        "h-20 text-2xl sm:text-4xl font-black rounded-2xl transition-all duration-200",
                         isAnswered && opt === questions[currentIdx].answer && "bg-green-600 hover:bg-green-600 border-green-700 text-white scale-105 shadow-lg shadow-green-200",
                         isAnswered && opt === selectedOption && opt !== questions[currentIdx].answer && "bg-red-600 hover:bg-red-600 border-red-700 text-white",
                         isAnswered && opt !== selectedOption && opt !== questions[currentIdx].answer && "opacity-50 grayscale scale-95"

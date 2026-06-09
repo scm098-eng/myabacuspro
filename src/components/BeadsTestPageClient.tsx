@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -307,7 +306,7 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
                         ref={setQuestionButtonRef(index)}
                         onClick={() => jumpToQuestion(index)}
                         variant={currentQuestionIndex === index ? 'default' : 'outline'}
-                        className={cn("w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm rounded-lg", userAnswers[index] !== null && "bg-green-200 border-green-400 text-green-800 hover:bg-green-300")}
+                        className={cn("w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm rounded-lg shrink-0 aspect-square", userAnswers[index] !== null && "bg-green-200 border-green-400 text-green-800 hover:bg-green-300")}
                     >
                         {index + 1}
                     </Button>

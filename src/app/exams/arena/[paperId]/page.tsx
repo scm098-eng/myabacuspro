@@ -174,8 +174,8 @@ export default function ExamArenaPage() {
           }));
         }
 
-        // Redirect back to main exam dashboard instead of results page for practice papers
-        router.push('/exams');
+        // Redirect to results page for practice and final exams
+        router.push(`/results?score=${finalScore}&total=${questions.length}&time=${finalTimeLeft}`);
       })
       .catch((e) => {
         setIsSubmitting(false);
@@ -196,7 +196,7 @@ export default function ExamArenaPage() {
 
         if (next <= 0) {
           clearInterval(interval);
-          finishExamRef.current();
+          finishTestRef.current();
           return 0;
         }
 
@@ -223,7 +223,7 @@ export default function ExamArenaPage() {
   const getQuestionFontSize = (text: string) => {
     const len = text.length;
     if (len > 30) return "text-lg sm:text-xl";
-    if (len > 22) return "text-xl sm:text-3xl";
+    if (len > 22) return "text-xl sm:text-2xl";
     return "text-2xl sm:text-4xl"; 
   };
 
@@ -261,7 +261,7 @@ export default function ExamArenaPage() {
                       ref={(el) => { questionButtonRefs.current[i] = el; }}
                       onClick={() => setCurrentIdx(i)} 
                       variant={currentIdx === i ? 'default' : 'ghost'} 
-                      className={cn("w-10 h-10 text-xs font-black", currentIdx === i ? "bg-primary" : "text-slate-400", answers[i] !== null && "text-green-400")}
+                      className={cn("w-10 h-10 text-xs font-black shrink-0 aspect-square", currentIdx === i ? "bg-primary" : "text-slate-400", answers[i] !== null && "text-green-400")}
                     >
                         {i + 1}
                     </Button>
@@ -290,7 +290,7 @@ export default function ExamArenaPage() {
                 <Button 
                   key={i} 
                   variant={answers[currentIdx] === opt ? 'default' : 'outline'} 
-                  className="h-16 text-xl sm:text-3xl font-black rounded-2xl transition-all hover:scale-105" 
+                  className="h-16 text-2xl sm:text-4xl font-black rounded-2xl transition-all hover:scale-105" 
                   onClick={() => handleSelectOption(opt)}
                 >
                   {opt}
