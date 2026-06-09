@@ -29,8 +29,6 @@ interface AuthContextType {
   profile: ProfileData | null;
   login: (email: string, pass: string) => Promise<ProfileData | null>;
   signup: (values: SignupData) => Promise<void>;
-  login: (email: string, pass: string) => Promise<ProfileData | null>;
-  signup: (values: SignupData) => Promise<void>;
   loginWithGoogle: () => Promise<ProfileData | null>;
   sendPasswordReset: (email: string) => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
