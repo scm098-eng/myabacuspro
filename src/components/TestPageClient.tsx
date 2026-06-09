@@ -7,7 +7,7 @@ import type { Question, Difficulty, TestType, TestSettings } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Timer, AlertTriangle, Loader2, PlayCircle, Check } from 'lucide-react';
+import { Timer, AlertTriangle, Loader2, PlayCircle, Check, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -65,13 +65,14 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     const initial = new Array(generated.length).fill(null);
     setUserAnswers(initial);
     answersRef.current = initial;
+    questionButtonRefs.current = new Array(generated.length).fill(null);
 
     if (localStorage.getItem('skip_rules_timed_test') === 'true') setHasStarted(true);
   }, [testId, difficulty]);
   
   useEffect(() => {
     if (questionButtonRefs.current[currentIdx]) {
-        questionButtonRefs.current[currentIdx]?.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+        questionButtonRefs.current[currentIdx]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
     if (hasStarted && isInputMode && inputRef.current) inputRef.current.focus();
   }, [currentIdx, hasStarted, isInputMode]);
@@ -112,7 +113,6 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   const finishTestRef = useRef(finishTest);
   useEffect(() => { finishTestRef.current = finishTest; }, [finishTest]);
 
-  // Persistent Timer Interval - independent of user clicks
   useEffect(() => {
     if (!hasStarted || isFinished || settings.timeLimit <= 0) return;
     
@@ -160,8 +160,8 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
 
   const getQuestionFontSize = (text: string) => {
     const len = text.length;
-    if (len > 30) return "text-lg sm:text-2xl";
-    if (len > 22) return "text-xl sm:text-3xl";
+    if (len > 30) return "text-xl sm:text-2xl";
+    if (len > 22) return "text-2xl sm:text-3xl";
     return "text-2xl sm:text-4xl";
   };
 
@@ -192,46 +192,64 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
 
   return (
     <div className="max-w-3xl mx-auto px-4 flex flex-col min-h-[600px]">
-      <Card className="shadow-2xl flex-1 flex flex-col">
-        <CardHeader>
+      <Card className="shadow-2xl flex-1 flex flex-col rounded-[2.5rem]">
+        <CardHeader className="bg-muted/10 pb-4">
           <div className="flex justify-between items-center mb-4">
-            <CardTitle>{settings.title}</CardTitle>
-            {settings.timeLimit > 0 && <div className={cn("flex items-center gap-2 font-black p-2 rounded-lg", timeLeft < 60 && "bg-destructive text-white animate-pulse")}><Timer className="w-6 h-6" /> {Math.floor(timeLeft/60)}:{(timeLeft%60).toString().padStart(2,'0')}</div>}
+            <CardTitle className="text-lg sm:text-xl font-headline">{settings.title}</CardTitle>
+            {settings.timeLimit > 0 && <div className={cn("flex items-center gap-2 font-black p-2 rounded-lg text-sm sm:text-base", timeLeft < 60 && "bg-destructive text-white animate-pulse")}><Timer className="w-5 h-5" /> {Math.floor(timeLeft/60)}:{(timeLeft%60).toString().padStart(2,'0')}</div>}
           </div>
-          <Progress value={(currentIdx/questions.length)*100} className="h-2" />
+          <ScrollArea className="w-full whitespace-nowrap bg-white/50 p-2 rounded-xl border border-muted-foreground/10 mb-4 shadow-inner">
+            <div className="flex w-max space-x-2">
+                {questions.map((_, i) => (
+                    <Button 
+                      key={i} 
+                      ref={el => { questionButtonRefs.current[i] = el; }}
+                      onClick={() => !isAnswered && setCurrentIdx(i)} 
+                      variant={currentIdx === i ? 'default' : 'ghost'} 
+                      className={cn("w-10 h-10 text-xs font-black shrink-0 aspect-square rounded-full", currentIdx === i ? "bg-primary shadow-md" : "text-muted-foreground", userAnswers[i] !== null && "text-green-600 bg-green-50")}
+                    >
+                        {i + 1}
+                    </Button>
+                ))}
+            </div>
+            <ScrollBar orientation="horizontal" className="h-1" />
+          </ScrollArea>
+          <Progress value={(currentIdx/questions.length)*100} className="h-2 rounded-full" />
+          <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-3 text-center">Progress: {currentIdx + 1} of {questions.length}</p>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center text-center p-8 overflow-hidden">
-            <div className="w-full overflow-hidden">
+            <div className="w-full overflow-hidden bg-muted/20 py-10 rounded-[2rem] border-2 border-dashed">
               <p className={cn("font-black tracking-tight whitespace-nowrap", getQuestionFontSize(questions[currentIdx].text))}>
                 {questions[currentIdx].text} = ?
               </p>
             </div>
             <div className="mt-12">
               {isInputMode ? (
-                <form onSubmit={e => { e.preventDefault(); handleAnswer(parseInt(inputValue)); }} className="flex flex-col items-center gap-6">
+                <form onSubmit={e => { e.preventDefault(); handleAnswer(parseInt(inputValue)); }} className="flex flex-col items-center gap-6 max-w-sm mx-auto">
                   <Input 
                     ref={inputRef} 
                     type="number" 
                     value={inputValue} 
                     onChange={e => setInputValue(e.target.value)} 
                     disabled={isAnswered} 
+                    placeholder="Result"
                     className={cn(
-                      "h-20 text-2xl sm:text-4xl text-center font-black rounded-2xl border-4 transition-all duration-300",
+                      "h-20 text-2xl sm:text-4xl text-center font-black rounded-2xl border-4 transition-all duration-300 shadow-inner",
                       isAnswered && parseInt(inputValue) === questions[currentIdx].answer && "border-green-500 bg-green-50 text-green-700",
                       isAnswered && parseInt(inputValue) !== questions[currentIdx].answer && "border-red-500 bg-red-50 text-red-700"
                     )} 
                   />
-                  <Button type="submit" disabled={isAnswered || !inputValue} className="h-16 w-64 text-xl font-black rounded-2xl">SUBMIT</Button>
+                  <Button type="submit" disabled={isAnswered || !inputValue} className="h-16 w-full text-xl font-black rounded-2xl shadow-lg">SUBMIT</Button>
                 </form>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
                   {questions[currentIdx].options.map(opt => (
                     <Button 
                       key={opt} 
                       onClick={() => handleAnswer(opt)} 
                       disabled={isAnswered} 
                       className={cn(
-                        "h-20 text-2xl sm:text-4xl font-black rounded-2xl transition-all duration-200",
+                        "h-20 text-2xl sm:text-4xl font-black rounded-2xl transition-all duration-200 shadow-sm",
                         isAnswered && opt === questions[currentIdx].answer && "bg-green-600 hover:bg-green-600 border-green-700 text-white scale-105 shadow-lg shadow-green-200",
                         isAnswered && opt === selectedOption && opt !== questions[currentIdx].answer && "bg-red-600 hover:bg-red-600 border-red-700 text-white",
                         isAnswered && opt !== selectedOption && opt !== questions[currentIdx].answer && "opacity-50 grayscale scale-95"
@@ -245,11 +263,16 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
               )}
             </div>
         </CardContent>
+        <CardFooter className="p-8 flex justify-center bg-muted/10 border-t rounded-b-[2.5rem]">
+           <Button onClick={() => handleAnswer(null)} disabled={isAnswered} variant="ghost" className="text-muted-foreground font-bold hover:text-foreground">
+             Skip Question <ChevronRight className="ml-2 w-4 h-4" />
+           </Button>
+        </CardFooter>
       </Card>
       <div className="mt-6 flex justify-end">
         <AlertDialog>
-          <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="font-bold rounded-xl">End Test</Button></AlertDialogTrigger>
-          <AlertDialogContent className="rounded-2xl"><AlertDialogHeader><AlertDialogTitle>End Session?</AlertDialogTitle></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel><AlertDialogAction onClick={() => finishTest()} className="rounded-xl">Yes, end test</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+          <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="font-bold rounded-xl shadow-md h-10 px-6">End Practice</Button></AlertDialogTrigger>
+          <AlertDialogContent className="rounded-3xl"><AlertDialogHeader><AlertDialogTitle className="font-black uppercase tracking-tight">End Session?</AlertDialogTitle><AlertDialogDescription className="font-medium text-slate-600">Your current progress will be recorded and you will be taken to the performance summary.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="mt-4"><AlertDialogCancel className="rounded-xl h-11">Cancel</AlertDialogCancel><AlertDialogAction onClick={() => finishTest()} className="rounded-xl h-11 bg-destructive hover:bg-destructive/90 text-white border-none shadow-lg">Yes, end test</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
         </AlertDialog>
       </div>
     </div>

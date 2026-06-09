@@ -7,7 +7,7 @@ import type { Question, Difficulty, TestType, TestSettings } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { AlertTriangle, Loader2, Check, PlayCircle, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Loader2, Check, PlayCircle, CheckCircle2, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -51,15 +51,11 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
   const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const setQuestionButtonRef = (index: number) => (el: HTMLButtonElement | null) => {
-    questionButtonRefs.current[index] = el;
-  };
-
   useEffect(() => {
     const generatedQuestions = generateTest(testId, difficulty);
     setQuestions(generatedQuestions);
     setUserAnswers(new Array(generatedQuestions.length).fill(null));
-    questionButtonRefs.current = new Array(generatedQuestions.length);
+    questionButtonRefs.current = new Array(generatedQuestions.length).fill(null);
 
     // Check skip preference
     const skip = localStorage.getItem('skip_rules_beads_test') === 'true';
@@ -265,8 +261,8 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Enter result..."
-                className="mt-6 w-full max-w-[200px] text-center text-xl h-14 sm:h-16 rounded-xl border-4 shadow-inner placeholder:text-sm"
+                placeholder="Result"
+                className="mt-6 w-full max-w-[200px] text-center text-xl h-14 sm:h-16 rounded-xl border-4 shadow-inner placeholder:text-sm font-black"
             />
         </div>
       );
@@ -287,34 +283,31 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
 
   return (
     <div className="flex flex-col max-w-3xl mx-auto h-full px-2 sm:px-4">
-      <Card className="shadow-2xl relative overflow-hidden flex flex-col flex-grow rounded-[2rem]">
-        <CardHeader className="p-4 sm:p-6">
+      <Card className="shadow-2xl relative overflow-hidden flex flex-col flex-grow rounded-[2.5rem]">
+        <CardHeader className="p-4 sm:p-6 bg-muted/10">
           <div className="flex justify-between items-center mb-2 sm:mb-4">
-            <div className="space-y-1">
-              <CardTitle className="text-base sm:text-2xl font-headline truncate pr-2">{settings.title}</CardTitle>
-            </div>
+            <CardTitle className="text-base sm:text-xl font-headline truncate pr-2">{settings.title}</CardTitle>
           </div>
-          <CardDescription className="text-xs sm:text-sm">Question {currentQuestionIndex + 1} of {questions.length}</CardDescription>
-          <Progress value={progress} className="w-full mt-2 h-1.5 sm:h-2" />
-        </CardHeader>
-        <CardContent className="flex flex-col flex-grow p-4 sm:p-6">
-          <ScrollArea className="w-full whitespace-nowrap rounded-md border my-2 sm:my-4">
-            <div className="flex w-max space-x-2 p-2">
-                {questions.map((_, index) => (
+          <ScrollArea className="w-full whitespace-nowrap bg-white/50 p-2 rounded-xl border border-muted-foreground/10 mb-4 shadow-inner">
+            <div className="flex w-max space-x-2">
+                {questions.map((_, i) => (
                     <Button
-                        key={index}
-                        ref={setQuestionButtonRef(index)}
-                        onClick={() => jumpToQuestion(index)}
-                        variant={currentQuestionIndex === index ? 'default' : 'outline'}
-                        className={cn("w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm rounded-lg shrink-0 aspect-square", userAnswers[index] !== null && "bg-green-200 border-green-400 text-green-800 hover:bg-green-300")}
+                        key={i}
+                        ref={el => { questionButtonRefs.current[i] = el; }}
+                        onClick={() => jumpToQuestion(i)}
+                        variant={currentQuestionIndex === i ? 'default' : 'outline'}
+                        className={cn("w-10 h-10 text-xs font-black rounded-full shrink-0 aspect-square", currentQuestionIndex === i ? "bg-primary shadow-md" : "text-muted-foreground", userAnswers[i] !== null && "bg-green-200 border-green-400 text-green-800 hover:bg-green-300")}
                     >
-                        {index + 1}
+                        {i + 1}
                     </Button>
                 ))}
             </div>
-            <ScrollBar orientation="horizontal" />
+            <ScrollBar orientation="horizontal" className="h-1" />
           </ScrollArea>
-        
+          <Progress value={progress} className="w-full h-1.5 sm:h-2 rounded-full" />
+          <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-3 text-center">Progress: {currentQuestionIndex + 1} of {questions.length}</p>
+        </CardHeader>
+        <CardContent className="flex flex-col flex-grow p-4 sm:p-6">
           <div className="text-center my-auto transition-opacity duration-300 grid grid-cols-1 gap-4 sm:gap-8 items-center py-4" key={currentQuestionIndex}>
             {renderQuestion()}
           </div>
@@ -326,11 +319,16 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
             </Button>
           </div>
         </CardContent>
+        <CardFooter className="p-4 sm:p-8 flex justify-center bg-muted/10 border-t rounded-b-[2.5rem]">
+           <Button onClick={() => goToNextQuestion([...userAnswers])} variant="ghost" className="text-muted-foreground font-bold hover:text-foreground">
+             Skip Question <ChevronRight className="ml-2 w-4 h-4" />
+           </Button>
+        </CardFooter>
       </Card>
       <div className="mt-4 sm:mt-6 flex justify-end">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="destructive" size="sm" className="font-bold rounded-xl h-10 px-6">
+            <Button variant="destructive" size="sm" className="font-bold rounded-xl h-10 px-6 shadow-md">
                 <AlertTriangle className="mr-2 h-4 w-4" />
                 End Practice
             </Button>
@@ -338,13 +336,13 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
           <AlertDialogContent className="rounded-3xl">
             <AlertDialogHeader>
               <AlertDialogTitle className="font-black uppercase tracking-tight">End Session?</AlertDialogTitle>
-              <AlertDialogDescription className="font-medium">
+              <AlertDialogDescription className="font-medium text-slate-600">
                 Your current progress will be recorded and you will be taken to the performance summary.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
+            <AlertDialogFooter className="mt-4">
               <AlertDialogCancel className="rounded-xl h-11">Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => finishTest(userAnswers)} className="rounded-xl h-11 bg-destructive hover:bg-destructive/90">End Practice</AlertDialogAction>
+              <AlertDialogAction onClick={() => finishTest(userAnswers)} className="rounded-xl h-11 bg-destructive hover:bg-destructive/90 text-white border-none shadow-lg">End Practice</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
