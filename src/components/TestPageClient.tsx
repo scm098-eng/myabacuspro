@@ -177,15 +177,15 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
           </CardHeader>
           <CardContent className="p-8 space-y-4">
             {guide.steps.map((s, i) => (
-              <div key={i} className="flex gap-4 p-4 rounded-2xl bg-muted/50 border">
-                <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-black">{i+1}</div>
-                <p className="font-medium text-slate-700">{s}</p>
+              <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-muted/50 border">
+                <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-black shrink-0 aspect-square shadow-sm">{i+1}</div>
+                <p className="font-medium text-slate-700 leading-tight pt-1">{s}</p>
               </div>
             ))}
           </CardContent>
           <CardFooter className="p-8 flex flex-col gap-4 border-t">
             <div className="flex items-center gap-2"><Checkbox id="skip" checked={dontShowAgain} onCheckedChange={v => { setDontShowAgain(!!v); if(!!v) localStorage.setItem('skip_rules_timed_test', 'true'); }} /><Label htmlFor="skip">Don't show rules again</Label></div>
-            <Button onClick={() => { setHasStarted(true); playSound('points'); }} className="w-full h-16 text-xl font-black">START PRACTICE</Button>
+            <Button onClick={() => { setHasStarted(true); playSound('points'); }} className="w-full h-16 text-xl font-black rounded-2xl shadow-xl transition-transform hover:scale-[1.01]">START PRACTICE</Button>
           </CardFooter>
         </Card>
       </div>
@@ -223,7 +223,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
                       isAnswered && parseInt(inputValue) !== questions[currentIdx].answer && "border-red-500 bg-red-50 text-red-700"
                     )} 
                   />
-                  <Button type="submit" disabled={isAnswered || !inputValue} className="h-16 w-64 text-xl font-black">SUBMIT</Button>
+                  <Button type="submit" disabled={isAnswered || !inputValue} className="h-16 w-64 text-xl font-black rounded-2xl">SUBMIT</Button>
                 </form>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
@@ -233,7 +233,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
                       onClick={() => handleAnswer(opt)} 
                       disabled={isAnswered} 
                       className={cn(
-                        "h-20 text-3xl font-black transition-all duration-200",
+                        "h-20 text-3xl font-black rounded-2xl transition-all duration-200",
                         isAnswered && opt === questions[currentIdx].answer && "bg-green-600 hover:bg-green-600 border-green-700 text-white scale-105 shadow-lg shadow-green-200",
                         isAnswered && opt === selectedOption && opt !== questions[currentIdx].answer && "bg-red-600 hover:bg-red-600 border-red-700 text-white",
                         isAnswered && opt !== selectedOption && opt !== questions[currentIdx].answer && "opacity-50 grayscale scale-95"
@@ -250,8 +250,8 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       </Card>
       <div className="mt-6 flex justify-end">
         <AlertDialog>
-          <AlertDialogTrigger asChild><Button variant="destructive" size="sm">End Test</Button></AlertDialogTrigger>
-          <AlertDialogContent className="rounded-2xl"><AlertDialogHeader><AlertDialogTitle>End Session?</AlertDialogTitle></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => finishTest()}>Yes, end test</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+          <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="font-bold rounded-xl">End Test</Button></AlertDialogTrigger>
+          <AlertDialogContent className="rounded-2xl"><AlertDialogHeader><AlertDialogTitle>End Session?</AlertDialogTitle></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel><AlertDialogAction onClick={() => finishTest()} className="rounded-xl">Yes, end test</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
         </AlertDialog>
       </div>
     </div>

@@ -226,7 +226,7 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
             <div className="space-y-3 sm:space-y-4">
               {PAGE_GUIDES.bead_test.steps.map((step, i) => (
                 <div key={i} className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-muted/50 border border-muted-foreground/5 animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${i * 100}ms` }}>
-                  <div className="flex h-6 w-6 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white text-[10px] sm:text-xs font-black shadow-md">
+                  <div className="flex h-6 w-6 sm:h-8 sm:w-8 shrink-0 aspect-square items-center justify-center rounded-full bg-indigo-600 text-white text-[10px] sm:text-xs font-black shadow-md">
                     {i + 1}
                   </div>
                   <p className="text-xs sm:text-base font-medium text-slate-700 leading-tight pt-1">{step}</p>
@@ -288,7 +288,7 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
 
   return (
     <div className="flex flex-col max-w-3xl mx-auto h-full px-2 sm:px-4">
-      <Card className="shadow-2xl relative overflow-hidden flex flex-col flex-grow">
+      <Card className="shadow-2xl relative overflow-hidden flex flex-col flex-grow rounded-[2rem]">
         <CardHeader className="p-4 sm:p-6">
           <div className="flex justify-between items-center mb-2 sm:mb-4">
             <div className="space-y-1">
@@ -307,7 +307,7 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
                         ref={setQuestionButtonRef(index)}
                         onClick={() => jumpToQuestion(index)}
                         variant={currentQuestionIndex === index ? 'default' : 'outline'}
-                        className={cn("w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm", userAnswers[index] !== null && "bg-green-200 border-green-400 text-green-800 hover:bg-green-300")}
+                        className={cn("w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm rounded-lg", userAnswers[index] !== null && "bg-green-200 border-green-400 text-green-800 hover:bg-green-300")}
                     >
                         {index + 1}
                     </Button>
@@ -331,21 +331,21 @@ export default function BeadsTestPageClient({ testId, difficulty, settings }: { 
       <div className="mt-4 sm:mt-6 flex justify-end">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="destructive" size="sm" className="font-bold">
+            <Button variant="destructive" size="sm" className="font-bold rounded-xl h-10 px-6">
                 <AlertTriangle className="mr-2 h-4 w-4" />
                 End Practice
             </Button>
           </AlertDialogTrigger>
-          <AlertDialogContent className="rounded-2xl">
+          <AlertDialogContent className="rounded-3xl">
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure you want to end the practice session?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Your progress will be saved and you will be taken to the results page.
+              <AlertDialogTitle className="font-black uppercase tracking-tight">End Session?</AlertDialogTitle>
+              <AlertDialogDescription className="font-medium">
+                Your current progress will be recorded and you will be taken to the performance summary.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => finishTest(userAnswers)} className="rounded-xl">Yes, end practice</AlertDialogAction>
+              <AlertDialogCancel className="rounded-xl h-11">Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => finishTest(userAnswers)} className="rounded-xl h-11 bg-destructive hover:bg-destructive/90">End Practice</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
@@ -56,7 +57,7 @@ const Fish = memo(({ className, duration, flip = false }: { className: string, d
   >
     <div className={cn(flip && "scale-x-[-1]")}>
       <Image 
-        src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media&token=870ea1d9-54e8-4b02-81ee-324662339f71"
+        src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/fish.png?alt=media"
         alt="Swimming fish"
         width={100}
         height={60}
@@ -452,7 +453,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                     <CardContent className="p-6 sm:p-8 space-y-4 overflow-y-auto flex-1 scrollbar-none">
                         {PAGE_GUIDES.bubble_game.steps.map((step, i) => (
                             <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-muted/50 border border-muted-foreground/5 animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${i * 100}ms` }}>
-                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pink-500 text-white text-xs font-black shadow-md">
+                                <div className="flex h-8 w-8 shrink-0 aspect-square items-center justify-center rounded-full bg-pink-500 text-white text-xs font-black shadow-md">
                                     {i + 1}
                                 </div>
                                 <p className="text-sm sm:text-base font-medium text-slate-700 leading-tight pt-1.5">{step}</p>

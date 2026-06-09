@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -226,10 +227,10 @@ export default function AdminExamsPage() {
               <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tight">Exam Administration</CardTitle>
               <div className="text-sm font-bold text-slate-500 flex items-center flex-wrap gap-2">
                 <span>Cycle: {safeFormat(examDate, 'MMMM do')}</span>
-                <Badge className={cn("px-3 border-none", isActive ? "bg-green-500" : "bg-red-500")}>
+                <Badge className={cn("px-3 border-none shrink-0", isActive ? "bg-green-500" : "bg-red-500")}>
                   {isActive ? "ACTIVE" : "CANCELLED"}
                 </Badge>
-                {resultsDeclared && <Badge className="bg-indigo-600 border-none">RESULTS DECLARED</Badge>}
+                {resultsDeclared && <Badge className="bg-indigo-600 border-none shrink-0">RESULTS DECLARED</Badge>}
               </div>
             </div>
             <div className="relative w-full lg:w-80">
@@ -241,9 +242,9 @@ export default function AdminExamsPage() {
         <CardContent>
           <Tabs defaultValue="applications">
             <TabsList className="mb-8 w-full justify-start overflow-x-auto h-auto p-1 bg-muted/50 rounded-xl border">
-              <TabsTrigger value="applications" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Applications ({applications.length})</TabsTrigger>
-              <TabsTrigger value="results" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Final Exam Audit</TabsTrigger>
-              <TabsTrigger value="schedule" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Schedule Manager</TabsTrigger>
+              <TabsTrigger value="applications" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm shrink-0">Applications ({applications.length})</TabsTrigger>
+              <TabsTrigger value="results" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm shrink-0">Final Exam Audit</TabsTrigger>
+              <TabsTrigger value="schedule" className="font-bold py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm shrink-0">Schedule Manager</TabsTrigger>
             </TabsList>
 
             <TabsContent value="applications">
@@ -289,7 +290,7 @@ export default function AdminExamsPage() {
 
                 {(['A', 'B', 'C', 'D'] as ExamGroup[]).map(group => (
                   <div key={group} className="space-y-4">
-                    <div className="flex items-center gap-3 ml-2"><Badge className="bg-slate-900 text-white h-10 w-10 flex items-center justify-center rounded-xl font-black text-lg">{group}</Badge><h4 className="text-lg font-black uppercase tracking-widest text-slate-700">Group {group} Results</h4></div>
+                    <div className="flex items-center gap-3 ml-2"><Badge className="bg-slate-900 text-white h-10 w-10 flex items-center justify-center rounded-xl font-black text-lg shrink-0 aspect-square">{group}</Badge><h4 className="text-lg font-black uppercase tracking-widest text-slate-700">Group {group} Results</h4></div>
                     <div className="rounded-2xl border overflow-hidden bg-white shadow-sm">
                       <Table><TableHeader className="bg-muted/10 border-b"><TableRow>
                             <TableHead className="pl-6 h-12 text-[9px] font-black uppercase tracking-widest">Rank</TableHead>
