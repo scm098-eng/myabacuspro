@@ -174,8 +174,8 @@ export default function ExamArenaPage() {
           }));
         }
 
-        // Redirect to results page for practice and final exams
-        router.push(`/results?score=${finalScore}&total=${questions.length}&time=${finalTimeLeft}`);
+        // Redirect back to dashboard where results are visible in history
+        router.push('/exams');
       })
       .catch((e) => {
         setIsSubmitting(false);
@@ -196,7 +196,7 @@ export default function ExamArenaPage() {
 
         if (next <= 0) {
           clearInterval(interval);
-          finishTestRef.current();
+          finishExamRef.current();
           return 0;
         }
 
@@ -222,8 +222,8 @@ export default function ExamArenaPage() {
 
   const getQuestionFontSize = (text: string) => {
     const len = text.length;
-    if (len > 30) return "text-lg sm:text-xl";
-    if (len > 22) return "text-xl sm:text-2xl";
+    if (len > 30) return "text-xl sm:text-2xl";
+    if (len > 22) return "text-2xl sm:text-3xl";
     return "text-2xl sm:text-4xl"; 
   };
 
