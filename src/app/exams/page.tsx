@@ -170,7 +170,7 @@ export default function ExamDashboardPage() {
       {showCertificate && certData && (
         <AchievementModal 
           type={certData.type}
-          studentName={`${profile?.firstName} ${profile?.surname}`}
+          studentName={`${profile?.firstName || ''} ${profile?.surname || ''}`}
           title={certData.title}
           score={certData.score}
           date={certData.date}
@@ -224,7 +224,7 @@ export default function ExamDashboardPage() {
               <div className="space-y-12">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2"><Trophy className="text-yellow-500 w-7 h-7" /> Practice Papers (Group {application.group})</h2>
-                  <Badge className="bg-green-500 py-1.5 px-4 font-black">APPROVED</Badge>
+                  <Badge className="bg-green-500 py-1.5 px-4 font-black border-none">APPROVED</Badge>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {Array.from({ length: 20 }).map((_, i) => (
@@ -275,7 +275,7 @@ export default function ExamDashboardPage() {
                         <Button 
                           onClick={() => handleGetCertificate(r)}
                           disabled={isCheckingCert}
-                          className="w-full h-10 bg-indigo-600 hover:bg-indigo-700 font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg mt-2"
+                          className="w-full h-10 bg-indigo-600 hover:bg-indigo-700 font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg mt-2 border-none"
                         >
                           {isCheckingCert ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Award className="w-4 h-4 mr-2" />} 
                           Get Official Certificate
