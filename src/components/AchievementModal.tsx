@@ -74,10 +74,11 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
   const handleShare = async () => {
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
+        const url = window.location.origin;
         await navigator.share({
           title: `My Abacus Pro - ${config.label}`,
           text: `Check out ${studentName}'s official achievement on My Abacus Pro!`,
-          url: window.location.origin
+          url: url
         });
       } catch (e) { console.warn("Share failed", e); }
     } else {
@@ -93,7 +94,6 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
           ref={cardRef}
           className="bg-white p-2 sm:p-4 w-full shadow-2xl relative aspect-[1.414/1] flex items-center justify-center border-[12px] border-slate-900 overflow-hidden"
         >
-          {/* Subtle Star Pattern Background */}
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none select-none">
             <div className="grid grid-cols-6 gap-4 p-8">
               {Array.from({length: 24}).map((_, i) => <Star key={i} className="w-12 h-12" />)}
@@ -126,7 +126,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
             </div>
 
             <div className="max-w-md mx-auto space-y-3">
-               <p className="text-sm sm:text-base font-bold text-slate-700 leading-relaxed">
+               <p className="text-sm sm:base font-bold text-slate-700 leading-relaxed">
                   Has successfully demonstrated exceptional dedication and mental arithmetic skill by achieving 
                   <span className="text-primary font-black mx-1.5 uppercase">{title}</span> 
                   {score && <span>with a performance score of <strong className="text-slate-900">{score}</strong></span>}.
@@ -173,7 +173,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
             variant="secondary"
             className="flex-1 h-14 bg-slate-100 text-slate-900 hover:bg-white font-bold rounded-2xl shadow-lg transition-all"
           >
-            {isDownloading ? <Loader2 className="animate-spin" /> : <Download className="mr-2 h-5 w-5" />} Download Certificate
+            {isDownloading ? <Loader2 className="animate-spin" /> : <Download className="mr-2 h-5 w-5" />} Download JPEG
           </Button>
           <Button 
             onClick={onClose}

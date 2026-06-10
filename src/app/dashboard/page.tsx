@@ -121,8 +121,9 @@ export default function StudentDashboardPage() {
   const currentPoints = profile.totalPoints || 0;
   const currentDays = profile.totalDaysPracticed || 0;
   const currentRank = getStudentTitle(currentDays, currentPoints);
-  const nextRank = RANK_CRITERIA[RANK_CRITERIA.findIndex(r => r.name === currentRank.name) - 1] || RANK_CRITERIA[0];
-  const progress = (((Math.min(1, currentPoints/nextRank.pointsReq)) + (Math.min(1, currentDays/nextRank.daysReq))) / 2) * 100;
+  const nextRankIdx = RANK_CRITERIA.findIndex(r => r.name === currentRank.name) - 1;
+  const nextRank = nextRankIdx >= 0 ? RANK_CRITERIA[nextRankIdx] : currentRank;
+  const progress = (((Math.min(1, currentPoints/(nextRank.pointsReq || 1))) + (Math.min(1, currentDays/(nextRank.daysReq || 1)))) / 2) * 100;
 
   const amIWeeklyWinner = lastWinner?.uid === user.uid;
   const amIMonthlyWinner = monthlyWinner?.uid === user.uid;
