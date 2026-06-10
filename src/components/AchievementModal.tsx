@@ -58,7 +58,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
           ))}
         </div>
 
-        {/* --- HEADER BLOCK (LIFTED UP) --- */}
+        {/* --- HEADER BLOCK --- */}
         <div className="relative z-10 w-full flex flex-col items-center mt-12">
           <div className="flex items-center gap-3 mb-1">
             <div className="bg-[#f97316] p-2 rounded-xl shadow-lg">
@@ -69,7 +69,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
           <p className="text-[#f97316] font-black text-[10px] tracking-[0.5em] uppercase">LEARN • PRACTICE • SUCCEED</p>
         </div>
 
-        {/* --- MASTERY AWARD BADGE (TIGHTER GAP) --- */}
+        {/* --- MASTERY AWARD BADGE --- */}
         <div className="relative z-10 mt-6">
            <div className="bg-[#0f172a] px-24 py-4 rounded-[2rem] shadow-xl border-b-4 border-black/20">
               <h2 className="text-2xl font-black italic text-white uppercase tracking-widest">MASTERY RANK AWARD</h2>
@@ -78,7 +78,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
 
         {/* --- CERTIFICATION BLOCK --- */}
         <div className="relative z-10 mt-8 text-center flex flex-col items-center gap-1">
-           <p className="text-[#94a3b8] font-black uppercase tracking-[0.4em] text-xs mb-1">OFFICIAL MASTERY CERTIFICATION</p>
+           <p className="text-xs font-black uppercase tracking-[0.4em] text-[#94a3b8] mb-1">OFFICIAL MASTERY CERTIFICATION</p>
            <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90 leading-none">This prestigious award is proudly presented to</p>
            
            {/* Student Name with Underline */}
@@ -89,7 +89,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              <div className="h-[1.5px] w-full bg-[#cbd5e1]" />
            </div>
 
-           {/* Achievement Description - Tight Line Spacing */}
+           {/* Achievement Description */}
            <div className="mt-5 text-center space-y-1.5 max-w-4xl">
              <p className="text-sm font-bold text-[#0f172a] uppercase tracking-wide leading-none opacity-70">
                WHO HAS DEMONSTRATED EXCEPTIONAL CALCULATION SPEED AND PRECISION BY ACHIEVING
@@ -98,13 +98,11 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
                <p className="text-sm font-bold text-[#0f172a] uppercase tracking-widest leading-none">
                  THE DISTINCTION OF <span className="text-[#f97316] font-black text-4xl ml-2">{title}</span>
                </p>
-               {/* Very Light Orange Underline */}
-               <div className="h-[1.5px] w-64 bg-[#f97316]/20 mt-1" />
              </div>
            </div>
 
            {/* Score Line */}
-           <div className="mt-4">
+           <div className="mt-1">
              <p className="text-lg font-bold text-[#0f172a] leading-none">
                With a certified performance score of <span className="font-black border-b-2 border-[#0f172a] pb-0.5 px-2 underline-offset-4">{score || '---'}</span>
              </p>
