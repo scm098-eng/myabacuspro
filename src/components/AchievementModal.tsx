@@ -49,7 +49,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className="absolute top-8 left-8 right-8 bottom-8 border-[0.5px] border-[#cbd5e1] pointer-events-none z-20" />
         <div className="absolute top-10 left-10 right-10 bottom-10 border-[0.5px] border-[#cbd5e1] pointer-events-none z-20" />
 
-        {/* --- WATERMARK BACKGROUND --- */}
+        {/* --- WATERMARK BACKGROUND (LOCKED SIZE) --- */}
         <div className="absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 opacity-[0.05] pointer-events-none p-10">
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
@@ -58,8 +58,8 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
           ))}
         </div>
 
-        {/* --- HEADER BLOCK --- */}
-        <div className="relative z-10 w-full flex flex-col items-center mt-16">
+        {/* --- HEADER BLOCK (LIFTED UP) --- */}
+        <div className="relative z-10 w-full flex flex-col items-center mt-12">
           <div className="flex items-center gap-3 mb-1">
             <div className="bg-[#f97316] p-2 rounded-xl shadow-lg">
               <Brain className="w-8 h-8 text-white" />
@@ -69,16 +69,16 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
           <p className="text-[#f97316] font-black text-[10px] tracking-[0.5em] uppercase">LEARN • PRACTICE • SUCCEED</p>
         </div>
 
-        {/* --- MASTERY AWARD BADGE --- */}
-        <div className="relative z-10 mt-8">
+        {/* --- MASTERY AWARD BADGE (TIGHTER GAP) --- */}
+        <div className="relative z-10 mt-6">
            <div className="bg-[#0f172a] px-24 py-4 rounded-[2rem] shadow-xl border-b-4 border-black/20">
               <h2 className="text-2xl font-black italic text-white uppercase tracking-widest">MASTERY RANK AWARD</h2>
            </div>
         </div>
 
         {/* --- CERTIFICATION BLOCK --- */}
-        <div className="relative z-10 mt-10 text-center flex flex-col items-center gap-1">
-           <p className="text-[#94a3b8] font-black uppercase tracking-[0.4em] text-[10px] mb-1">OFFICIAL MASTERY CERTIFICATION</p>
+        <div className="relative z-10 mt-8 text-center flex flex-col items-center gap-1">
+           <p className="text-[#94a3b8] font-black uppercase tracking-[0.4em] text-xs mb-1">OFFICIAL MASTERY CERTIFICATION</p>
            <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90 leading-none">This prestigious award is proudly presented to</p>
            
            {/* Student Name with Underline */}
@@ -249,7 +249,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
             Save JPEG
           </Button>
           <Button onClick={onClose} variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white h-14 w-14 rounded-2xl shrink-0">
-            <X className="h-6 w-6 stroke-[3px]" />
+            <X className="h-6 h-6 stroke-[3px]" />
           </Button>
         </div>
       </div>
