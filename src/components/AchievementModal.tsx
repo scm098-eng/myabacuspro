@@ -102,7 +102,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              </div>
            </div>
 
-           {/* Score Line - Shifted UP mt-1 */}
+           {/* Score Line */}
            <div className="mt-1">
              <p className="text-lg font-bold text-[#0f172a] leading-none">
                With a certified performance score of <span className="font-black border-b-2 border-[#0f172a] pb-0.5 px-2 underline-offset-4">{score || '---'}</span>
@@ -221,7 +221,6 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
       const dataUrl = await generateImage();
       if (!dataUrl) return;
 
-      // Convert data URL to Blob for sharing
       const response = await fetch(dataUrl);
       const blob = await response.blob();
       const file = new File([blob], 'achievement.jpg', { type: 'image/jpeg' });
@@ -233,7 +232,6 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
           text: `I just achieved the rank of ${title} on My Abacus Pro! 🧮✨`,
         });
       } else {
-        // Fallback: Copy link or notify
         await navigator.clipboard.writeText('https://myabacuspro.com');
         toast({
           title: "Link Copied",
@@ -251,12 +249,10 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-300">
       <div className="flex flex-col items-center w-full max-w-5xl gap-6">
         
-        {/* --- HIDDEN MASTER FOR CAPTURE --- */}
         <div className="fixed left-[-9999px] top-0 pointer-events-none">
           <CertificateContent ref={cardRef} studentName={studentName} title={title} score={score} date={date} />
         </div>
 
-        {/* --- VISUAL PREVIEW (SCALED) --- */}
         <div 
           className="shadow-2xl overflow-hidden rounded-xl bg-white border-2 border-white/20 origin-center transition-transform duration-500"
           style={{ 
@@ -270,7 +266,6 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
           <CertificateContent studentName={studentName} title={title} score={score} date={date} />
         </div>
 
-        {/* --- ACTIONS --- */}
         <div className="flex flex-wrap gap-4 w-full max-w-3xl px-4 relative z-[10002] animate-in slide-in-from-bottom-4 duration-500">
           <Button onClick={handleDownloadPDF} disabled={!!isDownloading} className="flex-1 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl border-none text-base">
             {isDownloading === 'pdf' ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <FileText className="h-5 w-5 mr-2" />} 
