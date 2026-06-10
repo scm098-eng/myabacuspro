@@ -52,13 +52,13 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className="absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 opacity-[0.05] pointer-events-none p-10">
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
-              <Brain className="w-24 h-24 text-[#0f172a]" />
+              <Brain className="w-20 h-20 text-[#0f172a]" />
             </div>
           ))}
         </div>
 
         {/* --- HEADER BLOCK --- */}
-        <div className="relative z-10 w-full flex flex-col items-center mt-20">
+        <div className="relative z-10 w-full flex flex-col items-center mt-16">
           <div className="flex items-center gap-3 mb-1">
             <div className="bg-[#f97316] p-2 rounded-xl shadow-lg">
               <Brain className="w-8 h-8 text-white" />
@@ -69,14 +69,14 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         </div>
 
         {/* --- MASTERY AWARD BADGE --- */}
-        <div className="relative z-10 mt-3">
+        <div className="relative z-10 mt-8">
            <div className="bg-[#0f172a] px-24 py-4 rounded-[2rem] shadow-xl border-b-4 border-black/20">
               <h2 className="text-2xl font-black italic text-white uppercase tracking-widest">MASTERY RANK AWARD</h2>
            </div>
         </div>
 
         {/* --- CERTIFICATION BLOCK --- */}
-        <div className="relative z-10 mt-4 text-center flex flex-col items-center gap-1">
+        <div className="relative z-10 mt-12 text-center flex flex-col items-center gap-1">
            <p className="text-[#94a3b8] font-black uppercase tracking-[0.4em] text-[10px] mb-1">OFFICIAL MASTERY CERTIFICATION</p>
            <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90 leading-none">This prestigious award is proudly presented to</p>
            
