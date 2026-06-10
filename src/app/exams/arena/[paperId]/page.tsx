@@ -7,7 +7,7 @@ import { usePageBackground } from '@/hooks/usePageBackground';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Timer, CheckCircle2 } from 'lucide-react';
-import { generateExamQuestions } from '@/lib/exam-utils';
+import { generateExamQuestions, getExamTimeLimit, calculateAge } from '@/lib/exam-utils';
 import type { ExamApplication, Question } from '@/types';
 import { getFirestore, collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
@@ -22,7 +22,7 @@ import BeadDisplay from '@/components/BeadDisplay';
 export default function ExamArenaPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/test_wrapper_bg.jpg?alt=media');
   const { paperId } = useParams() as { paperId: string };
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const { playSound } = useSound();
@@ -45,7 +45,6 @@ export default function ExamArenaPage() {
     answersRef.current = answers;
   }, [answers]);
 
-  // Ensure the question number bar scrolls with the active question
   useEffect(() => {
     if (questionButtonRefs.current[currentIdx]) {
       questionButtonRefs.current[currentIdx]?.scrollIntoView({
@@ -57,12 +56,11 @@ export default function ExamArenaPage() {
   }, [currentIdx]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !profile) return;
     const db = getFirestore(firebaseApp);
     
     const fetchArenaData = async () => {
       try {
-        // 1. Check Cycle Expiry
         const scheduleSnap = await getDoc(doc(db, "stats", "examSchedule"));
         if (scheduleSnap.exists()) {
           const data = scheduleSnap.data();
@@ -76,7 +74,6 @@ export default function ExamArenaPage() {
           }
         }
 
-        // 2. Direct ID Fetch for Application
         const appRef = doc(db, "examApplications", user.uid);
         const appSnap = await getDoc(appRef);
         
@@ -95,8 +92,7 @@ export default function ExamArenaPage() {
           return;
         }
 
-        // 3. Normalize Group & Questions
-        const rawGroup = appData.group || appData.masteryGroup || appData.mastery_group || appData.masteryLevel || '?';
+        const rawGroup = appData.group || appData.masteryGroup || appData.masteryLevel || '?';
         const group = String(rawGroup).toUpperCase() as any;
         
         const app = { id: appSnap.id, ...appData, group } as ExamApplication;
@@ -104,15 +100,15 @@ export default function ExamArenaPage() {
 
         const generated = generateExamQuestions(group);
         setQuestions(generated);
-        
-        // Initialize refs array based on pool size
         questionButtonRefs.current = new Array(generated.length).fill(null);
         
         const initialAnswers = new Array(generated.length).fill(null);
         setAnswers(initialAnswers);
         answersRef.current = initialAnswers;
         
-        const limit = app.timeLimit || 600;
+        // Ensure robust time limit calculation if not stored
+        const age = calculateAge(profile.dob);
+        const limit = app.timeLimit || getExamTimeLimit(age);
         setTimeLeft(limit);
         timeLeftRef.current = limit;
         
@@ -125,7 +121,7 @@ export default function ExamArenaPage() {
     };
 
     fetchArenaData();
-  }, [user, router, toast]);
+  }, [user, profile, router, toast]);
 
   const finishExam = useCallback(async () => {
     if (isFinishedRef.current || !user || !application || questions.length === 0) return;
@@ -166,15 +162,12 @@ export default function ExamArenaPage() {
     addDoc(collection(getFirestore(firebaseApp), "examResults"), payload)
       .then(() => {
         toast({ title: "Submission successful!" });
-        
         if (typeof window !== 'undefined' && window.sessionStorage) {
           sessionStorage.setItem('testResults', JSON.stringify({
             questions,
             userAnswers: currentAnswers
           }));
         }
-
-        // Redirect back to dashboard where results are visible in history
         router.push('/exams');
       })
       .catch((e) => {
@@ -267,7 +260,7 @@ export default function ExamArenaPage() {
                     </Button>
                 ))}
             </div>
-            <ScrollBar orientation="horizontal" className="h-1 bg-white/10" />
+            <ScrollBar orientation="horizontal" className="h-1" />
           </ScrollArea>
         </CardHeader>
         <CardContent className="p-8 text-center flex-grow flex flex-col justify-center overflow-hidden">

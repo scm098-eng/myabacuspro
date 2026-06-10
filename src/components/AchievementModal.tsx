@@ -97,22 +97,20 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
           className="bg-white shadow-2xl relative border-[24px] border-slate-900 overflow-hidden flex flex-col items-center justify-center"
           style={{ width: '1200px', height: '850px', minWidth: '1200px', minHeight: '850px', transform: 'scale(0.5)', transformOrigin: 'center center' }}
         >
-          {/* Guilloché Border Pattern */}
-          <div className="absolute inset-0 opacity-[0.05] pointer-events-none select-none">
+          {/* Ornate Background Pattern */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none select-none">
             <div className="grid grid-cols-10 gap-10 p-12">
               {Array.from({length: 60}).map((_, i) => <Brain key={i} className="w-20 h-20" />)}
             </div>
           </div>
 
-          {/* Ornate Corners */}
+          {/* Secure Frame */}
+          <div className="absolute inset-8 border-[3px] border-slate-200 pointer-events-none" />
+          <div className="absolute inset-10 border-[6px] border-double border-slate-100 pointer-events-none" />
           <div className="absolute top-0 left-0 w-40 h-40 border-t-[12px] border-l-[12px] border-primary m-6" />
           <div className="absolute top-0 right-0 w-40 h-40 border-t-[12px] border-r-[12px] border-primary m-6" />
           <div className="absolute bottom-0 left-0 w-40 h-40 border-b-[12px] border-l-[12px] border-primary m-6" />
           <div className="absolute bottom-0 right-0 w-40 h-40 border-b-[12px] border-r-[12px] border-primary m-6" />
-
-          {/* Secure Frame */}
-          <div className="absolute inset-8 border-[3px] border-slate-200 pointer-events-none" />
-          <div className="absolute inset-10 border-[6px] border-double border-slate-100 pointer-events-none" />
 
           {/* CERTIFICATE BODY */}
           <div className="relative w-full h-full p-28 flex flex-col items-center text-center justify-between z-10">
@@ -127,13 +125,9 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
                   My Abacus Pro
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="h-1 w-12 bg-primary/20 rounded-full" />
-                <p className="text-sm font-black tracking-[0.8em] text-primary uppercase">
-                  LEARN • PRACTICE • SUCCEED
-                </p>
-                <div className="h-1 w-12 bg-primary/20 rounded-full" />
-              </div>
+              <p className="text-sm font-black tracking-[0.8em] text-primary uppercase ml-4">
+                LEARN • PRACTICE • SUCCEED
+              </p>
             </div>
 
             {/* AWARD CATEGORY */}
@@ -147,18 +141,18 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
                <p className="text-slate-400 text-xl font-bold tracking-[0.2em] uppercase">Official Mastery Certification</p>
             </div>
 
-            {/* PRESENTATION TEXT */}
-            <div className="space-y-6 w-full">
+            {/* NAME CONTAINER - Robust alignment */}
+            <div className="w-full flex flex-col items-center space-y-4">
               <p className="text-slate-500 italic font-serif text-3xl">This prestigious award is proudly presented to</p>
-              <div className="mx-auto border-b-4 border-slate-200 w-fit px-20">
-                <h3 className="text-8xl font-black font-headline text-slate-900 pb-4 leading-tight uppercase tracking-tight">
+              <div className="max-w-[1000px] border-b-4 border-slate-200 px-10">
+                <h3 className="text-7xl font-black font-headline text-slate-900 pb-4 leading-tight uppercase tracking-tight break-words">
                   {studentName}
                 </h3>
               </div>
             </div>
 
             {/* CITATION */}
-            <div className="max-w-4xl mx-auto space-y-6">
+            <div className="max-w-4xl mx-auto space-y-4">
                <p className="text-2xl font-bold text-slate-700 leading-relaxed">
                   Who has demonstrated exceptional calculation speed and precision by achieving the distinction of
                   <span className="text-primary font-black mx-3 uppercase text-3xl underline decoration-primary/20 underline-offset-8">
@@ -172,30 +166,26 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
                </p>
             </div>
 
-            {/* VALIDATION FOOTER */}
-            <div className="w-full flex justify-between items-end mt-12">
-              {/* Issued Date */}
+            {/* FOOTER */}
+            <div className="w-full flex justify-between items-end mt-8">
               <div className="text-left space-y-2 w-1/3">
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Date of Issue</p>
                 <p className="text-2xl font-bold text-slate-900">{date || format(new Date(), 'MMMM do, yyyy')}</p>
               </div>
 
-              {/* Official Seal */}
               <div className="relative w-1/3 flex justify-center">
                 <div className="w-52 h-52 rounded-full border-[14px] border-yellow-400/20 flex items-center justify-center bg-yellow-50 shadow-2xl relative">
-                   <div className="absolute inset-0 bg-yellow-400/5 rounded-full border border-yellow-400/10" />
                    <div className={cn("text-yellow-600 drop-shadow-2xl", config.theme === 'gold' ? 'scale-150' : 'scale-125')}>
                       {config.icon}
                    </div>
                 </div>
-                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl whitespace-nowrap z-20 border-2 border-white/20">
+                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl whitespace-nowrap border-2 border-white/20">
                    {config.badge}
                 </div>
               </div>
 
-              {/* Signature */}
               <div className="text-right space-y-2 w-1/3">
-                <div className="font-serif italic text-6xl text-slate-900 mb-[-15px] tracking-tight pr-4 opacity-90">
+                <div className="font-serif italic text-6xl text-slate-900 mb-[-15px] tracking-tight pr-4">
                   Satish Mane
                 </div>
                 <div className="h-1 w-56 bg-slate-900 ml-auto" />
@@ -205,25 +195,25 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
           </div>
         </div>
 
-        {/* EXTERNAL ACTION BAR (Actual UI) */}
-        <div className="flex flex-wrap gap-4 w-full max-w-4xl -mt-56">
+        {/* CONTROLS */}
+        <div className="flex flex-wrap gap-4 w-full max-w-4xl -mt-56 relative z-[10000]">
           <Button 
             onClick={handleShare}
-            className="flex-1 h-20 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-3xl shadow-2xl transition-all hover:scale-[1.02] border-none text-lg"
+            className="flex-1 h-20 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-3xl shadow-2xl border-none text-lg"
           >
             <Share2 className="mr-3 h-8 w-8" /> Share Achievement
           </Button>
           <Button 
             onClick={handleDownload}
             disabled={isDownloading}
-            className="flex-1 h-20 bg-white text-slate-900 hover:bg-slate-50 font-black uppercase tracking-widest rounded-3xl shadow-xl transition-all hover:scale-[1.02] border-4 border-slate-200 text-lg"
+            className="flex-1 h-20 bg-white text-slate-900 hover:bg-slate-50 font-black uppercase tracking-widest rounded-3xl shadow-xl border-4 border-slate-200 text-lg"
           >
             {isDownloading ? <Loader2 className="animate-spin mr-3 h-8 w-8" /> : <Download className="mr-3 h-8 w-8" />} Save JPEG
           </Button>
           <Button 
             onClick={onClose}
             variant="outline"
-            className="bg-white/10 border-white/20 hover:bg-white/20 text-white h-20 w-20 rounded-3xl transition-all active:scale-90"
+            className="bg-white/10 border-white/20 hover:bg-white/20 text-white h-20 w-20 rounded-3xl"
           >
             <X className="h-10 w-10 stroke-[3px]" />
           </Button>

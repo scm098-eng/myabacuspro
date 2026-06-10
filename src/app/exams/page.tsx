@@ -14,7 +14,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult, ExamGroup } from '@/types';
 import { format, parseISO, isSameDay } from 'date-fns';
-import { isFinalExamAvailable, getExamTimeLimit } from '@/lib/exam-utils';
+import { isFinalExamAvailable, getExamTimeLimit, calculateAge } from '@/lib/exam-utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
@@ -164,11 +164,11 @@ export default function ExamDashboardPage() {
   }, [schedule]);
 
   const timeLimitDisplay = useMemo(() => {
-    if (!application || !profile) return "10 Minutes";
-    const age = profile.dob ? Math.floor((new Date().getTime() - new Date(profile.dob).getTime()) / 3.15576e+10) : 10;
+    if (!profile) return "10 Minutes";
+    const age = calculateAge(profile.dob);
     const seconds = getExamTimeLimit(age);
     return `${Math.floor(seconds / 60)} Minutes`;
-  }, [application, profile]);
+  }, [profile]);
 
   if (loading || authLoading) return <div className="p-8 max-w-6xl mx-auto"><Skeleton className="h-[600px] w-full rounded-3xl" /></div>;
 
@@ -274,31 +274,43 @@ export default function ExamDashboardPage() {
              <Card className="rounded-[2rem] shadow-lg border-none">
                 <CardHeader><CardTitle className="text-xl font-black uppercase tracking-tight">My Performance</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  {results.length > 0 ? results.map(r => (
-                    <div key={r.id} className="flex flex-col gap-3 p-4 bg-muted/50 rounded-2xl border border-muted group transition-all hover:bg-muted">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2"><FileEdit className="w-3 h-3 text-indigo-500" /><p className="text-xs font-black uppercase tracking-tight">{r.paperId === 'final' ? 'FINAL EXAM' : `Practice ${r.paperId.split('-')[1]}`}</p></div>
-                          <p className="text-[10px] text-muted-foreground font-bold">{format(r.submittedAt?.toDate ? r.submittedAt.toDate() : new Date(), 'MMM d, h:mm a')}</p>
+                  {results.length > 0 ? results.map(r => {
+                    const hideResult = r.isFinal && !schedule?.resultsDeclared;
+                    return (
+                      <div key={r.id} className="flex flex-col gap-3 p-4 bg-muted/50 rounded-2xl border border-muted group transition-all hover:bg-muted">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              {r.isFinal ? <ShieldAlert className="w-3 h-3 text-orange-500" /> : <FileEdit className="w-3 h-3 text-slate-400" />}
+                              <p className="text-xs font-black uppercase tracking-tight">{r.paperId === 'final' ? 'FINAL EXAM' : `Practice ${r.paperId.split('-')[1]}`}</p>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground font-bold">{format(r.submittedAt?.toDate ? r.submittedAt.toDate() : new Date(), 'MMM d, h:mm a')}</p>
+                          </div>
+                          <div className="text-right">
+                            {hideResult ? (
+                              <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-200 font-black text-[9px]">AWAITING RESULT</Badge>
+                            ) : (
+                              <>
+                                <p className="text-2xl font-black text-primary leading-none">{r.score}/{r.totalQuestions}</p>
+                                <p className="text-[8px] font-black uppercase text-muted-foreground mt-1 tracking-widest">Acc: {r.accuracy.toFixed(1)}%</p>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-black text-primary leading-none">{r.score}/{r.totalQuestions}</p>
-                          <p className="text-[8px] font-black uppercase text-muted-foreground mt-1 tracking-widest">Acc: {r.accuracy.toFixed(1)}%</p>
-                        </div>
+                        
+                        {r.isFinal && schedule?.resultsDeclared && (
+                          <Button 
+                            onClick={() => handleGetCertificate(r)}
+                            disabled={isCheckingCert}
+                            className="w-full h-10 bg-indigo-600 hover:bg-indigo-700 font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg mt-2 border-none"
+                          >
+                            {isCheckingCert ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Award className="w-4 h-4 mr-2" />} 
+                            Get Official Certificate
+                          </Button>
+                        )}
                       </div>
-                      
-                      {r.isFinal && schedule?.resultsDeclared && (
-                        <Button 
-                          onClick={() => handleGetCertificate(r)}
-                          disabled={isCheckingCert}
-                          className="w-full h-10 bg-indigo-600 hover:bg-indigo-700 font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg mt-2 border-none"
-                        >
-                          {isCheckingCert ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Award className="w-4 h-4 mr-2" />} 
-                          Get Official Certificate
-                        </Button>
-                      )}
-                    </div>
-                  )) : <div className="text-center py-10 opacity-30 italic font-bold uppercase text-xs">No attempts recorded</div>}
+                    );
+                  }) : <div className="text-center py-10 opacity-30 italic font-bold uppercase text-xs">No attempts recorded</div>}
                 </CardContent>
              </Card>
           </div>
