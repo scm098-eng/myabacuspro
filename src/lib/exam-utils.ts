@@ -9,9 +9,10 @@ export const DEFAULT_EXAM_DATE = new Date('2026-05-25T12:30:00');
 export const DEFAULT_EXAM_END_TIME = new Date('2026-05-25T16:00:00');
 
 export function getExamTimeLimit(age: number): number {
-  if (age >= 6 && age <= 8) return 9 * 60;
-  if (age >= 9 && age <= 11) return 8 * 60;
-  if (age >= 12 && age <= 14) return 7 * 60;
+  // Adjusted brackets: Younger students now get 10 minutes.
+  if (age >= 5 && age <= 10) return 10 * 60;
+  if (age >= 11 && age <= 13) return 8 * 60;
+  if (age >= 14) return 7 * 60;
   return 10 * 60; // Default fallback
 }
 
