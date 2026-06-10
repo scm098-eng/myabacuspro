@@ -101,20 +101,19 @@ export default function ExamDashboardPage() {
     const finalResults = results.filter(r => r.isFinal === true);
     if (finalResults.length === 0) return null;
 
-    // If results are declared, prioritize the result that has been assigned a rank
+    // Prioritize the result assigned as a winner in the schedule
+    const winnerKey = `group${application.group}WinnerId`;
+    const winnerResult = finalResults.find(r => r.id === schedule?.[winnerKey]);
+    if (winnerResult) return winnerResult;
+
+    // Otherwise prioritize the best rank assigned to any result
     if (schedule?.resultsDeclared) {
       const rankedResults = finalResults.filter(r => r.rank !== undefined).sort((a, b) => (a.rank || 999) - (b.rank || 999));
       return rankedResults[0] || finalResults[0];
     }
 
     return finalResults[0];
-  }, [application, results, schedule?.resultsDeclared]);
-
-  const isWinner = useMemo(() => {
-    if (!schedule || !finalAttempt) return false;
-    const winnerKey = `group${application?.group}WinnerId`;
-    return schedule[winnerKey] === finalAttempt.id;
-  }, [schedule, finalAttempt, application]);
+  }, [application, results, schedule]);
 
   const handleApply = async (group: ExamGroup) => {
     if (!user || !profile) return;
@@ -130,7 +129,11 @@ export default function ExamDashboardPage() {
   };
 
   const handleGetCertificate = (res: ExamResult, forWinner: boolean) => {
-    const effectiveRank = forWinner ? (res.rank || 1) : undefined;
+    // If they are explicitly marked as a winner in the schedule, force rank 1 if missing
+    const winnerKey = `group${res.group}WinnerId`;
+    const isExplicitWinner = schedule?.[winnerKey] === res.id;
+    const effectiveRank = forWinner ? (res.rank || (isExplicitWinner ? 1 : undefined)) : undefined;
+
     setCertData({
       type: forWinner ? 'exam_winner' : 'exam_participation',
       title: forWinner ? `GROUP ${res.group} ${getOrdinal(effectiveRank || 1)} RANK ACHIEVER` : `GROUP ${res.group} PARTICIPANT`,
@@ -200,7 +203,7 @@ export default function ExamDashboardPage() {
             </div>
             <div className="bg-white/10 p-6 rounded-3xl border border-white/20 backdrop-blur-md text-center">
               <p className="text-[10px] font-black uppercase tracking-widest text-orange-400">Next Final Exam</p>
-              <p className="text-2xl font-black">{(schedule && !schedule.resultsDeclared) ? format(parseISO(schedule.date), 'MMMM do, yyyy') : 'Stay Tuned'}</p>
+              <p className="text-2xl font-black">{(schedule && !schedule.resultsDeclared && schedule.isActive !== false) ? format(parseISO(schedule.date), 'MMMM do, yyyy') : 'Stay Tuned'}</p>
             </div>
           </div>
         </CardHeader>
@@ -214,28 +217,28 @@ export default function ExamDashboardPage() {
                 <div className="space-y-1 text-center md:text-left">
                   <h2 className="text-3xl font-black uppercase tracking-tighter italic leading-none">Official Certification Ready!</h2>
                   <p className="font-bold opacity-80 text-lg mt-2">
-                    { (finalAttempt.rank || isWinner) ? "Incredible performance! Your prestigious honors are ready." : "Your Group results are official. Claim your prestigious award now." }
+                    { (finalAttempt.rank !== undefined) ? "Incredible performance! Your prestigious honors are ready." : "Your Group results are official. Claim your professional award now." }
                   </p>
                 </div>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
-                {(finalAttempt.rank || isWinner) && (
+              <div className="flex flex-wrap gap-4 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
+                {finalAttempt.rank !== undefined && (
                   <Button 
                     onClick={() => handleGetCertificate(finalAttempt!, true)}
                     className={cn(
-                      "font-black h-14 px-8 rounded-2xl text-sm shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest w-full sm:w-auto",
-                      (finalAttempt.rank === 1 || isWinner) ? "bg-yellow-400 text-indigo-950 hover:bg-yellow-500" : "bg-indigo-400 text-white hover:bg-indigo-500"
+                      "font-black h-14 px-8 rounded-2xl text-sm shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest min-w-[200px]",
+                      (finalAttempt.rank === 1) ? "bg-yellow-400 text-indigo-950 hover:bg-yellow-500" : "bg-indigo-400 text-white hover:bg-indigo-500"
                     )}
                   >
                     <Medal className="w-5 h-5 mr-2" />
-                    Rank {finalAttempt.rank || 1} Cert
+                    Rank {finalAttempt.rank} Cert
                   </Button>
                 )}
                 <Button 
                   onClick={() => handleGetCertificate(finalAttempt!, false)}
                   variant="outline"
-                  className="bg-white/10 text-white hover:bg-white/20 font-black h-14 px-8 rounded-2xl text-sm shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest w-full sm:w-auto"
+                  className="bg-white/10 text-white hover:bg-white/20 font-black h-14 px-8 rounded-2xl text-sm shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest min-w-[200px]"
                 >
                   <Download className="w-5 h-5 mr-2" />
                   Participation
@@ -276,7 +279,7 @@ export default function ExamDashboardPage() {
               <div className="space-y-12">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2"><Trophy className="text-yellow-500 w-7 h-7" /> Practice Papers (Group {application.group})</h2>
-                  <Badge className="bg-green-500 py-1.5 px-4 font-black border-none">APPROVED</Badge>
+                  <Badge className="bg-green-500 py-1.5 px-4 font-black border-none text-white">APPROVED</Badge>
                 </div>
                 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
