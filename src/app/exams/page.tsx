@@ -32,7 +32,7 @@ export default function ExamDashboardPage() {
   const [results, setExamResults] = useState<ExamResult[]>([]);
   const [isApplying, setIsApplying] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isCheckingCert, setIsCheckingCert] = useState(false);
+  const [isCheckingCert, setIsCheckingCert] = useState<string | null>(null);
   
   const [schedule, setSchedule] = useState<{ date: string, start: Date, end: Date, lastApplyDate?: string, isActive?: boolean, resultsDeclared?: boolean } | null>(null);
 
@@ -108,7 +108,7 @@ export default function ExamDashboardPage() {
 
   const handleGetCertificate = async (res: ExamResult) => {
     if (!schedule?.resultsDeclared) return;
-    setIsCheckingCert(true);
+    setIsCheckingCert(res.id);
     
     try {
       const db = getFirestore(firebaseApp);
@@ -133,7 +133,7 @@ export default function ExamDashboardPage() {
     } catch (e) {
       toast({ title: "Error", description: "Failed to generate certificate.", variant: "destructive" });
     } finally {
-      setIsCheckingCert(false);
+      setIsCheckingCert(null);
     }
   };
 
@@ -298,13 +298,13 @@ export default function ExamDashboardPage() {
                           </div>
                         </div>
                         
-                        {r.isFinal && schedule?.resultsDeclared && (
+                        {(r.isFinal || schedule?.resultsDeclared) && (
                           <Button 
                             onClick={() => handleGetCertificate(r)}
-                            disabled={isCheckingCert}
+                            disabled={isCheckingCert === r.id}
                             className="w-full h-10 bg-indigo-600 hover:bg-indigo-700 font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg mt-2 border-none"
                           >
-                            {isCheckingCert ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Award className="w-4 h-4 mr-2" />} 
+                            {isCheckingCert === r.id ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Award className="w-4 h-4 mr-2" />} 
                             Get Official Certificate
                           </Button>
                         )}

@@ -60,7 +60,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
         backgroundColor: '#ffffff',
         pixelRatio: 2,
         width: 1200,
-        height: 850
+        height: 850 // Fixed A4 Aspect Ratio
       });
       const link = document.createElement('a');
       link.download = `MyAbacusPro-${type}-${studentName.replace(/\s+/g, '-')}.jpeg`;
@@ -91,11 +91,18 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-300 overflow-y-auto">
       <div className="flex flex-col items-center max-w-5xl w-full my-auto gap-8">
         
-        {/* CERTIFICATE AREA - Precise Coordinate Flexbox Layout */}
+        {/* CERTIFICATE AREA - A4 LANDSCAPE (1200x850) */}
         <div 
           ref={cardRef}
-          className="bg-white shadow-2xl relative border-[24px] border-slate-900 overflow-hidden flex flex-col items-center justify-center"
-          style={{ width: '1200px', height: '850px', minWidth: '1200px', minHeight: '850px', transform: 'scale(0.5)', transformOrigin: 'center center' }}
+          className="bg-white shadow-2xl relative border-[20px] border-slate-900 overflow-hidden flex flex-col items-center justify-center"
+          style={{ 
+            width: '1200px', 
+            height: '850px', 
+            minWidth: '1200px', 
+            minHeight: '850px', 
+            transform: 'scale(0.5)', 
+            transformOrigin: 'center center' 
+          }}
         >
           {/* Ornate Background Pattern */}
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none select-none">
@@ -104,92 +111,92 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
             </div>
           </div>
 
-          {/* Secure Frame */}
-          <div className="absolute inset-8 border-[3px] border-slate-200 pointer-events-none" />
-          <div className="absolute inset-10 border-[6px] border-double border-slate-100 pointer-events-none" />
-          <div className="absolute top-0 left-0 w-40 h-40 border-t-[12px] border-l-[12px] border-primary m-6" />
-          <div className="absolute top-0 right-0 w-40 h-40 border-t-[12px] border-r-[12px] border-primary m-6" />
-          <div className="absolute bottom-0 left-0 w-40 h-40 border-b-[12px] border-l-[12px] border-primary m-6" />
-          <div className="absolute bottom-0 right-0 w-40 h-40 border-b-[12px] border-r-[12px] border-primary m-6" />
+          {/* Secure Decorative Frames */}
+          <div className="absolute inset-6 border-[2px] border-slate-200 pointer-events-none" />
+          <div className="absolute inset-8 border-[4px] border-double border-slate-100 pointer-events-none" />
+          
+          {/* Corner Accents */}
+          <div className="absolute top-0 left-0 w-32 h-32 border-t-[8px] border-l-[8px] border-primary m-4" />
+          <div className="absolute top-0 right-0 w-32 h-32 border-t-[8px] border-r-[8px] border-primary m-4" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 border-b-[8px] border-l-[8px] border-primary m-4" />
+          <div className="absolute bottom-0 right-0 w-32 h-32 border-b-[8px] border-r-[8px] border-primary m-4" />
 
-          {/* CERTIFICATE BODY */}
-          <div className="relative w-full h-full p-28 flex flex-col items-center text-center justify-between z-10">
+          {/* CONTENT CONTAINER - Carefully padded to prevent text overflow */}
+          <div className="relative w-full h-full p-24 flex flex-col items-center text-center justify-between z-10">
             
-            {/* BRAND HEADER with Tagline */}
+            {/* BRAND HEADER */}
             <div className="flex flex-col items-center w-full">
-              <div className="flex items-center gap-6 mb-3">
-                <div className="p-3 bg-primary rounded-2xl shadow-xl">
-                  <Brain className="h-14 w-14 text-white" />
+              <div className="flex items-center gap-5 mb-2">
+                <div className="p-3 bg-primary rounded-2xl shadow-lg">
+                  <Brain className="h-12 w-12 text-white" />
                 </div>
-                <div className="text-6xl font-black font-headline uppercase tracking-tighter text-slate-900 border-b-8 border-slate-900 pb-2">
+                <div className="text-5xl font-black font-headline uppercase tracking-tighter text-slate-900 pb-1">
                   My Abacus Pro
                 </div>
               </div>
-              <p className="text-sm font-black tracking-[0.8em] text-primary uppercase ml-4">
+              <p className="text-[11px] font-black tracking-[0.7em] text-primary uppercase ml-4">
                 LEARN • PRACTICE • SUCCEED
               </p>
             </div>
 
             {/* AWARD CATEGORY */}
-            <div className="flex flex-col items-center gap-4">
+            <div className="flex flex-col items-center gap-3">
                <h2 className={cn(
-                 "text-5xl font-black uppercase italic tracking-tighter leading-none px-16 py-5 rounded-3xl shadow-xl",
+                 "text-4xl font-black uppercase italic tracking-tighter leading-none px-12 py-4 rounded-2xl shadow-lg",
                  config.theme === 'gold' ? "bg-yellow-400 text-yellow-950" : "bg-slate-900 text-white"
                )}>
                 {config.label}
                </h2>
-               <p className="text-slate-400 text-xl font-bold tracking-[0.2em] uppercase">Official Mastery Certification</p>
+               <p className="text-slate-400 text-lg font-bold tracking-[0.2em] uppercase">Official Mastery Certification</p>
             </div>
 
-            {/* NAME CONTAINER - Robust alignment */}
-            <div className="w-full flex flex-col items-center space-y-4">
-              <p className="text-slate-500 italic font-serif text-3xl">This prestigious award is proudly presented to</p>
-              <div className="max-w-[1000px] border-b-4 border-slate-200 px-10">
-                <h3 className="text-7xl font-black font-headline text-slate-900 pb-4 leading-tight uppercase tracking-tight break-words">
+            {/* RECIPIENT NAME - Fixed width container with text-wrap control */}
+            <div className="w-full flex flex-col items-center space-y-3 px-10">
+              <p className="text-slate-500 italic font-serif text-2xl">This prestigious award is proudly presented to</p>
+              <div className="w-full max-w-[900px] border-b-2 border-slate-200 pb-2">
+                <h3 className="text-6xl font-black font-headline text-slate-900 leading-tight uppercase tracking-tight break-words">
                   {studentName}
                 </h3>
               </div>
             </div>
 
             {/* CITATION */}
-            <div className="max-w-4xl mx-auto space-y-4">
-               <p className="text-2xl font-bold text-slate-700 leading-relaxed">
+            <div className="max-w-4xl mx-auto px-10">
+               <p className="text-xl font-bold text-slate-700 leading-relaxed">
                   Who has demonstrated exceptional calculation speed and precision by achieving the distinction of
-                  <span className="text-primary font-black mx-3 uppercase text-3xl underline decoration-primary/20 underline-offset-8">
+                  <span className="text-primary font-black mx-2 uppercase text-2xl underline decoration-primary/20 underline-offset-4">
                     {title}
                   </span> 
                   {score && (
-                    <span className="block mt-4 text-slate-500">
-                      With a certified performance score of <strong className="text-slate-900 text-3xl">{score}</strong>
+                    <span className="block mt-2 text-slate-500">
+                      With a certified performance score of <strong className="text-slate-900 text-2xl">{score}</strong>
                     </span>
                   )}
                </p>
             </div>
 
-            {/* FOOTER */}
-            <div className="w-full flex justify-between items-end mt-8">
-              <div className="text-left space-y-2 w-1/3">
-                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Date of Issue</p>
-                <p className="text-2xl font-bold text-slate-900">{date || format(new Date(), 'MMMM do, yyyy')}</p>
+            {/* FOOTER - Signature Removed as requested */}
+            <div className="w-full flex justify-between items-end mt-4 px-10">
+              <div className="text-left space-y-1 w-1/3">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date of Issue</p>
+                <p className="text-xl font-bold text-slate-900">{date || format(new Date(), 'MMMM do, yyyy')}</p>
               </div>
 
               <div className="relative w-1/3 flex justify-center">
-                <div className="w-52 h-52 rounded-full border-[14px] border-yellow-400/20 flex items-center justify-center bg-yellow-50 shadow-2xl relative">
-                   <div className={cn("text-yellow-600 drop-shadow-2xl", config.theme === 'gold' ? 'scale-150' : 'scale-125')}>
+                <div className="w-44 h-44 rounded-full border-[10px] border-yellow-400/20 flex items-center justify-center bg-yellow-50 shadow-xl relative">
+                   <div className={cn("text-yellow-600 drop-shadow-lg", config.theme === 'gold' ? 'scale-125' : 'scale-110')}>
                       {config.icon}
                    </div>
                 </div>
-                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl whitespace-nowrap border-2 border-white/20">
+                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] shadow-xl whitespace-nowrap border border-white/20">
                    {config.badge}
                 </div>
               </div>
 
-              <div className="text-right space-y-2 w-1/3">
-                <div className="font-serif italic text-6xl text-slate-900 mb-[-15px] tracking-tight pr-4">
-                  Satish Mane
-                </div>
-                <div className="h-1 w-56 bg-slate-900 ml-auto" />
-                <p className="text-xs font-black text-slate-400 uppercase tracking-widest pt-3 pr-4">Founder, My Abacus Pro</p>
+              <div className="text-right space-y-1 w-1/3">
+                <div className="h-0.5 w-48 bg-slate-900 ml-auto mb-2 opacity-20" />
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">My Abacus Pro</p>
+                <p className="text-[9px] font-bold text-slate-400 uppercase italic">Board of Certification</p>
               </div>
             </div>
           </div>
@@ -197,25 +204,29 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
 
         {/* CONTROLS */}
         <div className="flex flex-wrap gap-4 w-full max-w-4xl -mt-56 relative z-[10000]">
-          <Button 
+          <button 
             onClick={handleShare}
-            className="flex-1 h-20 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-3xl shadow-2xl border-none text-lg"
+            className="flex-1 h-16 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl border-none text-base transition-transform hover:scale-[1.02]"
           >
-            <Share2 className="mr-3 h-8 w-8" /> Share Achievement
-          </Button>
-          <Button 
+            <div className="flex items-center justify-center gap-3">
+              <Share2 className="h-6 w-6" /> Share Achievement
+            </div>
+          </button>
+          <button 
             onClick={handleDownload}
             disabled={isDownloading}
-            className="flex-1 h-20 bg-white text-slate-900 hover:bg-slate-50 font-black uppercase tracking-widest rounded-3xl shadow-xl border-4 border-slate-200 text-lg"
+            className="flex-1 h-16 bg-white text-slate-900 hover:bg-slate-50 font-black uppercase tracking-widest rounded-2xl shadow-lg border-2 border-slate-200 text-base transition-transform hover:scale-[1.02]"
           >
-            {isDownloading ? <Loader2 className="animate-spin mr-3 h-8 w-8" /> : <Download className="mr-3 h-8 w-8" />} Save JPEG
-          </Button>
+            <div className="flex items-center justify-center gap-3">
+              {isDownloading ? <Loader2 className="animate-spin h-6 w-6" /> : <Download className="h-6 w-6" />} Save JPEG
+            </div>
+          </button>
           <Button 
             onClick={onClose}
             variant="outline"
-            className="bg-white/10 border-white/20 hover:bg-white/20 text-white h-20 w-20 rounded-3xl"
+            className="bg-white/10 border-white/20 hover:bg-white/20 text-white h-16 w-16 rounded-2xl"
           >
-            <X className="h-10 w-10 stroke-[3px]" />
+            <X className="h-8 w-8 stroke-[3px]" />
           </Button>
         </div>
       </div>
