@@ -34,13 +34,13 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
       <div 
         ref={ref}
         style={{ width: `${A4_WIDTH}px`, height: `${A4_HEIGHT}px` }}
-        className="bg-white relative border-[20px] border-[#0f172a] flex flex-col items-center p-12 overflow-hidden font-sans select-none"
+        className="bg-white relative border-[16px] border-[#0f172a] flex flex-col items-center p-8 overflow-hidden font-sans select-none"
       >
         {/* --- ORANGE CORNER BRACKETS --- */}
-        <div className="absolute top-2 left-2 w-32 h-32 border-t-[8px] border-l-[8px] border-[#f97316] z-20" />
-        <div className="absolute top-2 right-2 w-32 h-32 border-t-[8px] border-r-[8px] border-[#f97316] z-20" />
-        <div className="absolute bottom-2 left-2 w-32 h-32 border-b-[8px] border-l-[8px] border-[#f97316] z-20" />
-        <div className="absolute bottom-2 right-2 w-32 h-32 border-b-[8px] border-r-[8px] border-[#f97316] z-20" />
+        <div className="absolute top-2 left-2 w-24 h-24 border-t-[6px] border-l-[6px] border-[#f97316] z-20" />
+        <div className="absolute top-2 right-2 w-24 h-24 border-t-[6px] border-r-[6px] border-[#f97316] z-20" />
+        <div className="absolute bottom-2 left-2 w-24 h-24 border-b-[6px] border-l-[6px] border-[#f97316] z-20" />
+        <div className="absolute bottom-2 right-2 w-24 h-24 border-b-[6px] border-r-[6px] border-[#f97316] z-20" />
 
         {/* --- WATERMARK BACKGROUND --- */}
         <div className="absolute inset-0 z-0 grid grid-cols-10 grid-rows-8 opacity-[0.04] pointer-events-none p-10">
@@ -53,67 +53,67 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
 
         {/* --- HEADER --- */}
         <div className="relative z-10 w-full flex flex-col items-center mt-2">
-          <div className="flex items-center gap-4 mb-1">
-            <div className="bg-[#f97316] p-3 rounded-2xl shadow-lg">
-              <Brain className="w-10 h-10 text-white" />
+          <div className="flex items-center gap-3 mb-1">
+            <div className="bg-[#f97316] p-2 rounded-xl shadow-lg">
+              <Brain className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-5xl font-black text-[#0f172a] tracking-tight">MY ABACUS PRO</h1>
+            <h1 className="text-4xl font-black text-[#0f172a] tracking-tight">MY ABACUS PRO</h1>
           </div>
-          <p className="text-[#f97316] font-black text-sm tracking-[0.6em] uppercase">LEARN • PRACTICE • SUCCEED</p>
+          <p className="text-[#f97316] font-black text-[10px] tracking-[0.5em] uppercase">LEARN • PRACTICE • SUCCEED</p>
         </div>
 
         {/* --- MASTERY AWARD BADGE --- */}
-        <div className="relative z-10 mt-10">
-           <div className="bg-[#0f172a] px-24 py-5 rounded-[2.5rem] shadow-2xl">
-              <h2 className="text-3xl font-black italic text-white uppercase tracking-widest">MASTERY RANK AWARD</h2>
+        <div className="relative z-10 mt-6">
+           <div className="bg-[#0f172a] px-20 py-4 rounded-[2rem] shadow-xl">
+              <h2 className="text-2xl font-black italic text-white uppercase tracking-widest">MASTERY RANK AWARD</h2>
            </div>
         </div>
 
         {/* --- CERTIFICATION TEXT --- */}
-        <div className="relative z-10 mt-8 text-center space-y-4">
-           <p className="text-[#94a3b8] font-black uppercase tracking-[0.4em] text-lg">OFFICIAL MASTERY CERTIFICATION</p>
-           <p className="text-3xl font-bold italic text-[#475569] font-serif opacity-90">This prestigious award is proudly presented to</p>
+        <div className="relative z-10 mt-6 text-center space-y-2">
+           <p className="text-[#94a3b8] font-black uppercase tracking-[0.4em] text-xs">OFFICIAL MASTERY CERTIFICATION</p>
+           <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90">This prestigious award is proudly presented to</p>
         </div>
 
         {/* --- STUDENT NAME --- */}
-        <div className="relative z-10 mt-6 w-full px-12">
-          <h3 className="text-[96px] font-black uppercase tracking-tighter text-[#0f172a] leading-none text-center">
+        <div className="relative z-10 mt-2 w-full px-12">
+          <h3 className="text-7xl font-black uppercase tracking-tighter text-[#0f172a] leading-none text-center">
             {studentName}
           </h3>
         </div>
 
         {/* --- ACHIEVEMENT DESCRIPTION --- */}
-        <div className="relative z-10 mt-10 text-center space-y-4 max-w-4xl">
-          <p className="text-xl font-bold text-[#0f172a] leading-relaxed uppercase tracking-tight">
-            Who has demonstrated exceptional calculation speed and precision by achieving
+        <div className="relative z-10 mt-6 text-center space-y-2 max-w-4xl">
+          <p className="text-sm font-bold text-[#0f172a] uppercase tracking-wide leading-tight">
+            WHO HAS DEMONSTRATED EXCEPTIONAL CALCULATION SPEED AND PRECISION BY ACHIEVING
           </p>
-          <p className="text-xl font-bold text-[#0f172a] leading-relaxed uppercase tracking-tight">
-            the distinction of <span className="text-[#f97316] font-black text-4xl ml-2">{title}</span>
+          <p className="text-sm font-bold text-[#0f172a] uppercase tracking-widest">
+            THE DISTINCTION OF <span className="text-[#f97316] font-black text-3xl ml-2">{title}</span>
           </p>
         </div>
 
         {/* --- SCORE --- */}
-        <div className="relative z-10 mt-8">
-          <p className="text-2xl font-bold text-[#0f172a]">
-            With a certified performance score of <span className="font-black border-b-4 border-[#0f172a] pb-1 px-1">{score || '---'}</span>
+        <div className="relative z-10 mt-6">
+          <p className="text-lg font-bold text-[#0f172a]">
+            With a certified performance score of <span className="font-black border-b-2 border-[#0f172a] pb-0.5 px-1">{score || '---'}</span>
           </p>
         </div>
 
         {/* --- FOOTER --- */}
-        <div className="relative z-10 w-full mt-auto flex justify-between items-end px-10 pb-4">
+        <div className="relative z-10 w-full mt-auto flex justify-between items-end px-12 pb-8">
            {/* Date Section */}
            <div className="text-left space-y-1 w-64">
              <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-[0.2em]">DATE OF ISSUE</p>
-             <p className="text-2xl font-bold text-[#0f172a]">{date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+             <p className="text-xl font-bold text-[#0f172a]">{date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
            </div>
 
            {/* Gold Seal */}
            <div className="flex flex-col items-center gap-2 mb-[-10px]">
-             <div className="bg-[#fef9c3] p-6 rounded-full border-[6px] border-[#fbbf24] shadow-xl relative">
-                <Award className="w-16 h-16 text-[#fbbf24] drop-shadow-sm" />
+             <div className="bg-[#fef9c3] p-5 rounded-full border-[5px] border-[#fbbf24] shadow-xl relative">
+                <Award className="w-14 h-14 text-[#fbbf24] drop-shadow-sm" />
              </div>
-             <div className="bg-[#0f172a] px-5 py-1.5 rounded-full shadow-md">
-               <p className="text-[9px] font-black text-white uppercase tracking-widest">LEVEL ACHIEVED</p>
+             <div className="bg-[#0f172a] px-4 py-1 rounded-full shadow-md">
+               <p className="text-[8px] font-black text-white uppercase tracking-widest">LEVEL ACHIEVED</p>
              </div>
            </div>
 
@@ -121,16 +121,16 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            <div className="text-right w-64">
              <div className="flex flex-col items-end relative">
                 <p 
-                  className="italic text-[52px] font-bold text-[#f97316] absolute bottom-[2px] right-4" 
+                  className="italic text-[38px] font-bold text-[#f97316] absolute bottom-[12px] right-6" 
                   style={{ fontFamily: "cursive" }}
                 >
-                  Satish Mane
+                  Satish
                 </p>
-                <div className="h-[2px] w-64 bg-[#cbd5e1] mt-12" />
+                <div className="h-[1.5px] w-56 bg-[#cbd5e1] mt-10" />
              </div>
              <div className="mt-2">
                 <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-[0.2em]">SATISH MANE</p>
-                <p className="text-[9px] font-black text-[#94a3b8] uppercase tracking-tighter opacity-70">FOUNDER & DIRECTOR, MY ABACUS PRO</p>
+                <p className="text-[8px] font-black text-[#94a3b8] uppercase tracking-tighter opacity-70">FOUNDER & DIRECTOR, MY ABACUS PRO</p>
              </div>
            </div>
         </div>
