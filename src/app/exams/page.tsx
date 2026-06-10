@@ -234,23 +234,23 @@ export default function ExamDashboardPage() {
                 </div>
               </div>
               
-              <div className="flex flex-col gap-3 shrink-0 w-full md:w-auto">
+              <div className="flex flex-wrap md:flex-nowrap gap-3 shrink-0 w-full md:w-auto justify-center md:justify-end">
                 {isWinner && (
                   <Button 
                     onClick={() => handleGetCertificate(finalAttempt, true)}
-                    className="bg-yellow-400 text-indigo-950 hover:bg-yellow-500 font-black h-16 px-10 rounded-2xl text-xl shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest"
+                    className="bg-yellow-400 text-indigo-950 hover:bg-yellow-500 font-black h-14 sm:h-16 px-6 sm:px-10 rounded-2xl text-base sm:text-xl shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest flex-1 md:flex-none"
                   >
-                    <Medal className="w-6 h-6 mr-3" />
-                    Rank 1 Certificate
+                    <Medal className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
+                    Rank 1 Cert
                   </Button>
                 )}
                 <Button 
                   onClick={() => handleGetCertificate(finalAttempt, false)}
                   variant="outline"
-                  className="bg-white/10 text-white hover:bg-white/20 font-black h-16 px-10 rounded-2xl text-xl shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest"
+                  className="bg-white/10 text-white hover:bg-white/20 font-black h-14 sm:h-16 px-6 sm:px-10 rounded-2xl text-base sm:text-xl shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest flex-1 md:flex-none"
                 >
-                  <Download className="w-6 h-6 mr-3" />
-                  Participation Cert
+                  <Download className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
+                  Participation
                 </Button>
               </div>
            </CardContent>
@@ -384,4 +384,3 @@ export default function ExamDashboardPage() {
     </div>
   );
 }
-
