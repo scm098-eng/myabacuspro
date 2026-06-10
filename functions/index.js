@@ -486,7 +486,7 @@ exports.resetExamCycle = onCall(async (request) => {
 
 /**
  * Marks the current cycle results as official.
- * Updated to calculate and store group winners to bypass security rules limitations.
+ * Updated to calculate and store ranks for all students.
  */
 exports.declareOfficialResults = onCall(async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
@@ -502,11 +502,24 @@ exports.declareOfficialResults = onCall(async (request) => {
             .where('isFinal', '==', true)
             .orderBy('score', 'desc')
             .orderBy('timeLeft', 'desc')
-            .limit(1)
             .get();
         
         if (!snap.empty) {
             winners[`group${group}WinnerId`] = snap.docs[0].id;
+            
+            // Assign ranks to all final attempts in this group
+            let batch = db.batch();
+            let count = 0;
+            snap.docs.forEach((doc, idx) => {
+              batch.update(doc.ref, { rank: idx + 1 });
+              count++;
+              // Committing in chunks if many students exist (Batch limit 500)
+              if (count % 400 === 0) {
+                batch.commit();
+                batch = db.batch();
+              }
+            });
+            await batch.commit();
         }
     }
 
@@ -517,7 +530,7 @@ exports.declareOfficialResults = onCall(async (request) => {
         ...winners
     });
 
-    return { status: "success", message: "Results are now official." };
+    return { status: "success", message: "Results are now official and ranks assigned." };
 });
 
 /**

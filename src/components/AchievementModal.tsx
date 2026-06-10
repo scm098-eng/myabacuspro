@@ -24,108 +24,140 @@ interface AchievementProps {
   title: string; 
   score?: string; 
   date?: string;
+  rank?: number;
   onClose: () => void;
 }
 
-// A4 Landscape Dimensions at 96 DPI
 const A4_WIDTH = 1123;
 const A4_HEIGHT = 794;
 
-const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: string; title: string; score?: string; date?: string; type: AchievementType }>(
-  ({ studentName, title, score, date, type }, ref) => {
+const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: string; title: string; score?: string; date?: string; type: AchievementType, rank?: number }>(
+  ({ studentName, title, score, date, type, rank }, ref) => {
     const formattedName = studentName.trim().replace(/\s+/g, ' ');
     const isWinnerDesign = type === 'exam_winner';
+
+    let themeClass = "bg-white border-[#0f172a]";
+    let accentColor = "#f97316";
+    let headerColor = "#0f172a";
+    let subHeaderColor = "#f97316";
+    let cornerBorder = "border-[#f97316]";
+    let innerBorder = "border-[#cbd5e1]";
+
+    if (isWinnerDesign) {
+      if (rank === 1) {
+        themeClass = "bg-[#fffcf0] border-[#b45309]";
+        accentColor = "#fbbf24";
+        headerColor = "#78350f";
+        subHeaderColor = "#b45309";
+        cornerBorder = "border-[#fbbf24]";
+        innerBorder = "border-[#92400e]/40";
+      } else if (rank === 2) {
+        themeClass = "bg-[#f8fafc] border-[#475569]";
+        accentColor = "#94a3b8";
+        headerColor = "#1e293b";
+        subHeaderColor = "#475569";
+        cornerBorder = "border-[#94a3b8]";
+        innerBorder = "border-[#475569]/40";
+      } else if (rank === 3) {
+        themeClass = "bg-[#fffaf3] border-[#78350f]";
+        accentColor = "#cd7f32";
+        headerColor = "#451a03";
+        subHeaderColor = "#78350f";
+        cornerBorder = "border-[#cd7f32]";
+        innerBorder = "border-[#78350f]/40";
+      } else {
+        themeClass = "bg-[#f0f9ff] border-[#1e40af]";
+        accentColor = "#3b82f6";
+        headerColor = "#1e3a8a";
+        subHeaderColor = "#2563eb";
+        cornerBorder = "border-[#3b82f6]";
+        innerBorder = "border-[#1e40af]/40";
+      }
+    }
 
     return (
       <div 
         ref={ref}
-        style={{ width: `${A4_WIDTH}px`, height: `${A4_HEIGHT}px` }}
+        style={{ width: `${A4_WIDTH}px`, height: `${A4_HEIGHT}px`, borderColor: 'transparent' }}
         className={cn(
           "relative border-[16px] flex flex-col items-center p-8 overflow-hidden font-sans select-none transition-colors duration-700",
-          isWinnerDesign ? "bg-[#fffcf0] border-[#b45309]" : "bg-white border-[#0f172a]"
+          themeClass
         )}
       >
-        {/* --- PRESTIGIOUS CORNER BRACKETS --- */}
-        <div className={cn("absolute top-2 left-2 w-24 h-24 border-t-[6px] border-l-[6px] z-20", isWinnerDesign ? "border-[#fbbf24]" : "border-[#f97316]")} />
-        <div className={cn("absolute top-2 right-2 w-24 h-24 border-t-[6px] border-r-[6px] z-20", isWinnerDesign ? "border-[#fbbf24]" : "border-[#f97316]")} />
-        <div className={cn("absolute bottom-2 left-2 w-24 h-24 border-b-[6px] border-l-[6px] z-20", isWinnerDesign ? "border-[#fbbf24]" : "border-[#f97316]")} />
-        <div className={cn("absolute bottom-2 right-2 w-24 h-24 border-b-[6px] border-r-[6px] z-20", isWinnerDesign ? "border-[#fbbf24]" : "border-[#f97316]")} />
+        <div className={cn("absolute top-2 left-2 w-24 h-24 border-t-[6px] border-l-[6px] z-20", cornerBorder)} />
+        <div className={cn("absolute top-2 right-2 w-24 h-24 border-t-[6px] border-r-[6px] z-20", cornerBorder)} />
+        <div className={cn("absolute bottom-2 left-2 w-24 h-24 border-b-[6px] border-l-[6px] z-20", cornerBorder)} />
+        <div className={cn("absolute bottom-2 right-2 w-24 h-24 border-b-[6px] border-r-[6px] z-20", cornerBorder)} />
 
-        {/* --- REFINED DOUBLE INNER BORDER --- */}
-        <div className={cn("absolute top-8 left-8 right-8 bottom-8 border-[0.5px] pointer-events-none z-20", isWinnerDesign ? "border-[#92400e]/40" : "border-[#cbd5e1]")} />
-        <div className={cn("absolute top-10 left-10 right-10 bottom-10 border-[0.5px] pointer-events-none z-20", isWinnerDesign ? "border-[#92400e]/40" : "border-[#cbd5e1]")} />
+        <div className={cn("absolute top-8 left-8 right-8 bottom-8 border-[0.5px] pointer-events-none z-20", innerBorder)} />
+        <div className={cn("absolute top-10 left-10 right-10 bottom-10 border-[0.5px] pointer-events-none z-20", innerBorder)} />
 
-        {/* --- WATERMARK GRID --- */}
         <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-10 transition-opacity", isWinnerDesign ? "opacity-[0.15]" : "opacity-[0.05]")}>
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
-              <Brain style={{ width: '20px', height: '20px' }} className={cn(isWinnerDesign ? "text-[#b45309]" : "text-[#0f172a]")} />
+              <Brain style={{ width: '20px', height: '20px', color: headerColor }} />
             </div>
           ))}
         </div>
 
-        {/* --- CONTENT LIFTED HEADER --- */}
         <div className="relative z-10 w-full flex flex-col items-center mt-12">
           <div className="flex items-center gap-3 mb-1">
-            <div className={cn("p-2 rounded-xl shadow-lg", isWinnerDesign ? "bg-[#92400e]" : "bg-[#f97316]")}>
+            <div className={cn("p-2 rounded-xl shadow-lg")} style={{ backgroundColor: subHeaderColor }}>
               <Brain className="w-8 h-8 text-white" />
             </div>
-            <h1 className={cn("text-4xl font-black tracking-tight uppercase", isWinnerDesign ? "text-[#78350f]" : "text-[#0f172a]")}>MY ABACUS PRO</h1>
+            <h1 className={cn("text-4xl font-black tracking-tight uppercase")} style={{ color: headerColor }}>MY ABACUS PRO</h1>
           </div>
-          <p className={cn("font-black text-[10px] tracking-[0.5em] uppercase", isWinnerDesign ? "text-[#b45309]" : "text-[#f97316]")}>LEARN • PRACTICE • SUCCEED</p>
+          <p className={cn("font-black text-[10px] tracking-[0.5em] uppercase")} style={{ color: subHeaderColor }}>LEARN • PRACTICE • SUCCEED</p>
         </div>
 
-        {/* --- MAIN HONOR BADGE --- */}
         <div className="relative z-10 mt-6">
-           <div className={cn("px-24 py-4 rounded-[2rem] shadow-xl border-b-4", isWinnerDesign ? "bg-[#92400e] border-[#451a03]" : "bg-[#0f172a] border-black/20")}>
+           <div className={cn("px-24 py-4 rounded-[2rem] shadow-xl border-b-4", isWinnerDesign ? "border-black/20" : "bg-[#0f172a] border-black/20")} style={isWinnerDesign ? { backgroundColor: headerColor } : {}}>
               <h2 className="text-2xl font-black italic text-white uppercase tracking-widest">
-                {isWinnerDesign ? "1st RANK CHAMPION AWARD" : "MASTERY RANK AWARD"}
+                {isWinnerDesign ? `${title}` : "MASTERY RANK AWARD"}
               </h2>
            </div>
         </div>
 
-        {/* --- CERTIFICATION TEXT BLOCK --- */}
         <div className="relative z-10 mt-8 text-center flex flex-col items-center gap-1">
-           <p className={cn("text-xs font-black uppercase tracking-[0.4em] mb-1", isWinnerDesign ? "text-[#b45309]" : "text-[#94a3b8]")}>OFFICIAL MASTERY CERTIFICATION</p>
+           <p className={cn("text-xs font-black uppercase tracking-[0.4em] mb-1")} style={{ color: subHeaderColor }}>OFFICIAL MASTERY CERTIFICATION</p>
            <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90 leading-none">This prestigious award is proudly presented to</p>
            
            <div className="mt-3 w-fit px-12 pb-1 flex flex-col items-center gap-2">
-             <h3 className={cn("text-7xl font-black uppercase tracking-normal leading-none text-center", isWinnerDesign ? "text-[#451a03]" : "text-[#0f172a]")}>
+             <h3 className={cn("text-7xl font-black uppercase tracking-normal leading-none text-center")} style={{ color: headerColor }}>
                {formattedName}
              </h3>
-             <div className={cn("h-[1.5px] w-full", isWinnerDesign ? "bg-[#92400e]/40" : "bg-[#cbd5e1]")} />
+             <div className={cn("h-[1.5px] w-full")} style={{ backgroundColor: innerBorder }} />
            </div>
 
            <div className="mt-5 text-center space-y-1.5 max-w-4xl">
-             <p className={cn("text-sm font-bold uppercase tracking-wide leading-none opacity-70", isWinnerDesign ? "text-[#451a03]" : "text-[#0f172a]")}>
+             <p className={cn("text-sm font-bold uppercase tracking-wide leading-none opacity-70")} style={{ color: headerColor }}>
                WHO HAS DEMONSTRATED EXCEPTIONAL CALCULATION SPEED AND PRECISION BY ACHIEVING
              </p>
              <div className="flex flex-col items-center gap-1">
-               <p className={cn("text-sm font-bold uppercase tracking-widest leading-none", isWinnerDesign ? "text-[#451a03]" : "text-[#0f172a]")}>
-                 THE DISTINCTION OF <span className={cn("font-black text-4xl ml-2", isWinnerDesign ? "text-[#92400e]" : "text-[#f97316]")}>{title}</span>
+               <p className={cn("text-sm font-bold uppercase tracking-widest leading-none")} style={{ color: headerColor }}>
+                 THE DISTINCTION OF <span className={cn("font-black text-4xl ml-2")} style={{ color: subHeaderColor }}>{isWinnerDesign ? 'ELITE ACHIEVER' : title}</span>
                </p>
              </div>
            </div>
 
            <div className="mt-1">
-             <p className={cn("text-lg font-bold leading-none", isWinnerDesign ? "text-[#451a03]" : "text-[#0f172a]")}>
-               With a certified performance score of <span className={cn("font-black border-b-2 pb-0.5 px-2 underline-offset-4", isWinnerDesign ? "border-[#92400e]" : "border-[#0f172a]")}>{score || '---'}</span>
+             <p className={cn("text-lg font-bold leading-none")} style={{ color: headerColor }}>
+               With a certified performance score of <span className={cn("font-black border-b-2 pb-0.5 px-2 underline-offset-4")} style={{ borderColor: headerColor }}>{score || '---'}</span>
              </p>
            </div>
         </div>
 
-        {/* --- SIGNATURE FOOTER --- */}
         <div className="relative z-10 w-full mt-auto flex justify-between items-end px-12 pb-10">
            <div className="text-left space-y-1 w-64">
-             <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isWinnerDesign ? "text-[#b45309]" : "text-[#94a3b8]")}>DATE OF ISSUE</p>
-             <p className={cn("text-xl font-bold", isWinnerDesign ? "text-[#451a03]" : "text-[#0f172a]")}>{date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+             <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]")} style={{ color: subHeaderColor }}>DATE OF ISSUE</p>
+             <p className={cn("text-xl font-bold")} style={{ color: headerColor }}>{date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
            </div>
 
            <div className="flex flex-col items-center gap-2 mb-[-5px]">
-             <div className={cn("p-5 rounded-full border-[5px] shadow-xl relative animate-in zoom-in-50 duration-700", isWinnerDesign ? "bg-[#fffbeb] border-[#fbbf24]" : "bg-[#fef9c3] border-[#fbbf24]")}>
-                {isWinnerDesign ? <Medal className="w-14 h-14 text-[#fbbf24] drop-shadow-sm" /> : <Award className="w-14 h-14 text-[#fbbf24] drop-shadow-sm" />}
+             <div className={cn("p-5 rounded-full border-[5px] shadow-xl relative animate-in zoom-in-50 duration-700 bg-[#fffbeb] border-[#fbbf24]")}>
+                <Medal className="w-14 h-14 text-[#fbbf24] drop-shadow-sm" />
              </div>
-             <div className={cn("px-5 py-1.5 rounded-full shadow-md", isWinnerDesign ? "bg-[#92400e]" : "bg-[#0f172a]")}>
+             <div className={cn("px-5 py-1.5 rounded-full shadow-md")} style={{ backgroundColor: headerColor }}>
                <p className="text-[8px] font-black text-white uppercase tracking-widest">LEVEL ACHIEVED</p>
              </div>
            </div>
@@ -133,16 +165,16 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            <div className="text-right w-64">
              <div className="flex flex-col items-end relative">
                 <p 
-                  className={cn("absolute bottom-[4px] right-8 font-sacramento text-[36px] font-bold", isWinnerDesign ? "text-[#92400e]" : "text-[#f97316]")}
-                  style={{ fontFamily: 'var(--font-sacramento), cursive' }}
+                  className={cn("absolute bottom-[4px] right-8 font-sacramento text-[36px] font-bold")}
+                  style={{ fontFamily: 'var(--font-sacramento), cursive', color: subHeaderColor }}
                 >
                   Satish Mane
                 </p>
-                <div className={cn("h-[1.5px] w-60 mt-10", isWinnerDesign ? "bg-[#92400e]/40" : "bg-[#cbd5e1]")} />
+                <div className={cn("h-[1.5px] w-60 mt-10")} style={{ backgroundColor: innerBorder }} />
              </div>
              <div className="mt-2">
-                <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isWinnerDesign ? "text-[#b45309]" : "text-[#94a3b8]")}>SATISH MANE</p>
-                <p className={cn("text-[8px] font-black uppercase tracking-tighter opacity-70", isWinnerDesign ? "text-[#b45309]" : "text-[#94a3b8]")}>FOUNDER & DIRECTOR, MY ABACUS PRO</p>
+                <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]")} style={{ color: subHeaderColor }}>SATISH MANE</p>
+                <p className={cn("text-[8px] font-black uppercase tracking-tighter opacity-70")} style={{ color: subHeaderColor }}>FOUNDER & DIRECTOR, MY ABACUS PRO</p>
              </div>
            </div>
         </div>
@@ -152,7 +184,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
 );
 CertificateContent.displayName = 'CertificateContent';
 
-const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title, score, date, onClose }) => {
+const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title, score, date, rank, onClose }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState<'jpeg' | 'pdf' | 'share' | null>(null);
   const [modalScale, setModalScale] = useState(0.5);
@@ -252,7 +284,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
       <div className="flex flex-col items-center w-full max-w-5xl gap-6">
         
         <div className="fixed left-[-9999px] top-0 pointer-events-none">
-          <CertificateContent ref={cardRef} studentName={studentName} title={title} score={score} date={date} type={type} />
+          <CertificateContent ref={cardRef} studentName={studentName} title={title} score={score} date={date} type={type} rank={rank} />
         </div>
 
         <div 
@@ -265,7 +297,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
             marginBottom: `-${(A4_HEIGHT * (1 - modalScale)) / 2}px`
           }}
         >
-          <CertificateContent studentName={studentName} title={title} score={score} date={date} type={type} />
+          <CertificateContent studentName={studentName} title={title} score={score} date={date} type={type} rank={rank} />
         </div>
 
         <div className="flex flex-wrap gap-4 w-full max-w-3xl px-4 relative z-[10002] animate-in slide-in-from-bottom-4 duration-500">

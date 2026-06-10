@@ -23,6 +23,12 @@ import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import AchievementModal, { AchievementType } from '@/components/AchievementModal';
 
+const getOrdinal = (n: number) => {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+};
+
 export default function ExamDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
   const { profile, isLoading: authLoading, user } = useAuth();
@@ -37,7 +43,7 @@ export default function ExamDashboardPage() {
   const [schedule, setSchedule] = useState<any | null>(null);
 
   const [showCertificate, setShowCertificate] = useState(false);
-  const [certData, setCertData] = useState<{ type: AchievementType, title: string, score: string, date: string } | null>(null);
+  const [certData, setCertData] = useState<{ type: AchievementType, title: string, score: string, date: string, rank?: number } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -90,24 +96,11 @@ export default function ExamDashboardPage() {
     return () => { unsubSchedule(); unsubscribeApp(); unsubscribeResults(); };
   }, [user]);
 
-  // Robust Winner Detection Logic
-  const winningResult = useMemo(() => {
-    if (!schedule?.resultsDeclared || !schedule || results.length === 0) return null;
-    // Check if any of the student's final results match a winner ID in the schedule
-    return results.find(r => {
-        if (!r.isFinal) return false;
-        const winnerKey = `group${r.group}WinnerId`;
-        return schedule[winnerKey] === r.id;
-    }) || null;
-  }, [schedule, results]);
-
-  const isWinner = !!winningResult;
-
   const finalAttempt = useMemo(() => {
     if (!application || results.length === 0) return null;
-    // Prefer the winning result if they have one, otherwise most recent final
-    return winningResult || results.find(r => r.isFinal === true) || null;
-  }, [application, results, winningResult]);
+    // Find the most recent final result which now includes the 'rank' calculated by the function
+    return results.find(r => r.isFinal === true) || null;
+  }, [application, results]);
 
   const handleApply = async (group: ExamGroup) => {
     if (!user || !profile) return;
@@ -125,9 +118,10 @@ export default function ExamDashboardPage() {
   const handleGetCertificate = (res: ExamResult, forWinner: boolean) => {
     setCertData({
       type: forWinner ? 'exam_winner' : 'exam_participation',
-      title: forWinner ? `GROUP ${res.group} 1st RANK ACHIEVER` : `GROUP ${res.group} PARTICIPANT`,
+      title: forWinner ? `GROUP ${res.group} ${getOrdinal(res.rank || 1)} RANK ACHIEVER` : `GROUP ${res.group} PARTICIPANT`,
       score: `${res.score}/${res.totalQuestions} (${res.accuracy.toFixed(1)}%)`,
-      date: format(res.submittedAt?.toDate ? res.submittedAt.toDate() : new Date(), 'MMMM do, yyyy')
+      date: format(res.submittedAt?.toDate ? res.submittedAt.toDate() : new Date(), 'MMMM do, yyyy'),
+      rank: res.rank
     });
     setShowCertificate(true);
   };
@@ -177,6 +171,7 @@ export default function ExamDashboardPage() {
           title={certData.title}
           score={certData.score}
           date={certData.date}
+          rank={certData.rank}
           onClose={() => setShowCertificate(false)}
         />
       )}
@@ -198,25 +193,28 @@ export default function ExamDashboardPage() {
 
       {schedule?.resultsDeclared && finalAttempt && (
         <Card className="bg-indigo-600 border-none shadow-2xl rounded-[2rem] overflow-hidden animate-in zoom-in-95 duration-700">
-           <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between gap-8 text-white">
+           <CardContent className="p-8 flex flex-col lg:flex-row items-center justify-between gap-8 text-white">
               <div className="flex items-center gap-6">
                 <div className="bg-white/20 p-5 rounded-full shadow-lg"><Award className="w-12 h-12 text-yellow-300 drop-shadow-sm" /></div>
                 <div className="space-y-1 text-center md:text-left">
                   <h2 className="text-3xl font-black uppercase tracking-tighter italic leading-none">Official Certification Ready!</h2>
                   <p className="font-bold opacity-80 text-lg mt-2">
-                    {isWinner ? "Incredible! You secured the 1st Rank. Claim your honors below." : "Your Group results are official. Claim your prestigious award now."}
+                    {finalAttempt.rank && finalAttempt.rank <= 3 ? "Incredible performance! Your prestigious honors are ready." : "Your Group results are official. Claim your prestigious award now."}
                   </p>
                 </div>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full md:w-auto justify-center md:justify-end">
-                {isWinner && (
+              <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full sm:max-w-md lg:max-w-none justify-center lg:justify-end">
+                {finalAttempt.rank && (
                   <Button 
-                    onClick={() => handleGetCertificate(winningResult!, true)}
-                    className="bg-yellow-400 text-indigo-950 hover:bg-yellow-500 font-black h-12 sm:h-14 px-6 sm:px-8 rounded-2xl text-xs sm:text-base shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest w-full sm:w-auto"
+                    onClick={() => handleGetCertificate(finalAttempt!, true)}
+                    className={cn(
+                      "font-black h-12 sm:h-14 px-6 sm:px-8 rounded-2xl text-xs sm:text-base shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest w-full sm:w-auto",
+                      finalAttempt.rank === 1 ? "bg-yellow-400 text-indigo-950 hover:bg-yellow-500" : "bg-indigo-400 text-white hover:bg-indigo-500"
+                    )}
                   >
                     <Medal className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                    Rank 1 Cert
+                    Rank {finalAttempt.rank} Cert
                   </Button>
                 )}
                 <Button 
