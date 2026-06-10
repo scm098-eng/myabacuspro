@@ -42,87 +42,87 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         style={{ width: `${A4_WIDTH}px`, height: `${A4_HEIGHT}px` }}
         className={cn(
           "relative border-[16px] flex flex-col items-center p-8 overflow-hidden font-sans select-none transition-colors duration-700",
-          isWinnerDesign ? "bg-[#fffdf0] border-[#92400e]" : "bg-white border-[#0f172a]"
+          isWinnerDesign ? "bg-[#fffcf0] border-[#b45309]" : "bg-white border-[#0f172a]"
         )}
       >
-        {/* --- ORANGE CORNER BRACKETS --- */}
-        <div className="absolute top-2 left-2 w-24 h-24 border-t-[6px] border-l-[6px] border-[#f97316] z-20" />
-        <div className="absolute top-2 right-2 w-24 h-24 border-t-[6px] border-r-[6px] border-[#f97316] z-20" />
-        <div className="absolute bottom-2 left-2 w-24 h-24 border-b-[6px] border-l-[6px] border-[#f97316] z-20" />
-        <div className="absolute bottom-2 right-2 w-24 h-24 border-b-[6px] border-r-[6px] border-[#f97316] z-20" />
+        {/* --- PRESTIGIOUS CORNER BRACKETS --- */}
+        <div className={cn("absolute top-2 left-2 w-24 h-24 border-t-[6px] border-l-[6px] z-20", isWinnerDesign ? "border-[#fbbf24]" : "border-[#f97316]")} />
+        <div className={cn("absolute top-2 right-2 w-24 h-24 border-t-[6px] border-r-[6px] z-20", isWinnerDesign ? "border-[#fbbf24]" : "border-[#f97316]")} />
+        <div className={cn("absolute bottom-2 left-2 w-24 h-24 border-b-[6px] border-l-[6px] z-20", isWinnerDesign ? "border-[#fbbf24]" : "border-[#f97316]")} />
+        <div className={cn("absolute bottom-2 right-2 w-24 h-24 border-b-[6px] border-r-[6px] z-20", isWinnerDesign ? "border-[#fbbf24]" : "border-[#f97316]")} />
 
-        {/* --- REFINED INNER LIGHT-GREY 2 LINE BORDER --- */}
-        <div className={cn("absolute top-8 left-8 right-8 bottom-8 border-[0.5px] pointer-events-none z-20", isWinnerDesign ? "border-[#92400e]/30" : "border-[#cbd5e1]")} />
-        <div className={cn("absolute top-10 left-10 right-10 bottom-10 border-[0.5px] pointer-events-none z-20", isWinnerDesign ? "border-[#92400e]/30" : "border-[#cbd5e1]")} />
+        {/* --- REFINED DOUBLE INNER BORDER --- */}
+        <div className={cn("absolute top-8 left-8 right-8 bottom-8 border-[0.5px] pointer-events-none z-20", isWinnerDesign ? "border-[#92400e]/40" : "border-[#cbd5e1]")} />
+        <div className={cn("absolute top-10 left-10 right-10 bottom-10 border-[0.5px] pointer-events-none z-20", isWinnerDesign ? "border-[#92400e]/40" : "border-[#cbd5e1]")} />
 
-        {/* --- WATERMARK BACKGROUND --- */}
-        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-10 transition-opacity", isWinnerDesign ? "opacity-[0.12]" : "opacity-[0.05]")}>
+        {/* --- WATERMARK GRID --- */}
+        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-10 transition-opacity", isWinnerDesign ? "opacity-[0.15]" : "opacity-[0.05]")}>
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
-              <Brain style={{ width: '80px', height: '80px' }} className={cn(isWinnerDesign ? "text-[#92400e]" : "text-[#0f172a]")} />
+              <Brain style={{ width: '80px', height: '80px' }} className={cn(isWinnerDesign ? "text-[#b45309]" : "text-[#0f172a]")} />
             </div>
           ))}
         </div>
 
-        {/* --- HEADER BLOCK --- */}
+        {/* --- CONTENT LIFTED HEADER --- */}
         <div className="relative z-10 w-full flex flex-col items-center mt-12">
           <div className="flex items-center gap-3 mb-1">
-            <div className="bg-[#f97316] p-2 rounded-xl shadow-lg">
+            <div className={cn("p-2 rounded-xl shadow-lg", isWinnerDesign ? "bg-[#92400e]" : "bg-[#f97316]")}>
               <Brain className="w-8 h-8 text-white" />
             </div>
-            <h1 className={cn("text-4xl font-black tracking-tight uppercase", isWinnerDesign ? "text-[#92400e]" : "text-[#0f172a]")}>MY ABACUS PRO</h1>
+            <h1 className={cn("text-4xl font-black tracking-tight uppercase", isWinnerDesign ? "text-[#78350f]" : "text-[#0f172a]")}>MY ABACUS PRO</h1>
           </div>
-          <p className="text-[#f97316] font-black text-[10px] tracking-[0.5em] uppercase">LEARN • PRACTICE • SUCCEED</p>
+          <p className={cn("font-black text-[10px] tracking-[0.5em] uppercase", isWinnerDesign ? "text-[#b45309]" : "text-[#f97316]")}>LEARN • PRACTICE • SUCCEED</p>
         </div>
 
-        {/* --- MASTERY AWARD BADGE --- */}
+        {/* --- MAIN HONOR BADGE --- */}
         <div className="relative z-10 mt-6">
-           <div className={cn("px-24 py-4 rounded-[2rem] shadow-xl border-b-4", isWinnerDesign ? "bg-[#92400e] border-[#78350f]" : "bg-[#0f172a] border-black/20")}>
+           <div className={cn("px-24 py-4 rounded-[2rem] shadow-xl border-b-4", isWinnerDesign ? "bg-[#92400e] border-[#451a03]" : "bg-[#0f172a] border-black/20")}>
               <h2 className="text-2xl font-black italic text-white uppercase tracking-widest">
                 {isWinnerDesign ? "1st RANK CHAMPION AWARD" : "MASTERY RANK AWARD"}
               </h2>
            </div>
         </div>
 
-        {/* --- CERTIFICATION BLOCK --- */}
+        {/* --- CERTIFICATION TEXT BLOCK --- */}
         <div className="relative z-10 mt-8 text-center flex flex-col items-center gap-1">
            <p className={cn("text-xs font-black uppercase tracking-[0.4em] mb-1", isWinnerDesign ? "text-[#b45309]" : "text-[#94a3b8]")}>OFFICIAL MASTERY CERTIFICATION</p>
            <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90 leading-none">This prestigious award is proudly presented to</p>
            
            <div className="mt-3 w-fit px-12 pb-1 flex flex-col items-center gap-2">
-             <h3 className={cn("text-7xl font-black uppercase tracking-normal leading-none text-center", isWinnerDesign ? "text-[#92400e]" : "text-[#0f172a]")}>
+             <h3 className={cn("text-7xl font-black uppercase tracking-normal leading-none text-center", isWinnerDesign ? "text-[#451a03]" : "text-[#0f172a]")}>
                {formattedName}
              </h3>
-             <div className={cn("h-[1.5px] w-full", isWinnerDesign ? "bg-[#92400e]/30" : "bg-[#cbd5e1]")} />
+             <div className={cn("h-[1.5px] w-full", isWinnerDesign ? "bg-[#92400e]/40" : "bg-[#cbd5e1]")} />
            </div>
 
            <div className="mt-5 text-center space-y-1.5 max-w-4xl">
-             <p className={cn("text-sm font-bold uppercase tracking-wide leading-none opacity-70", isWinnerDesign ? "text-[#92400e]" : "text-[#0f172a]")}>
+             <p className={cn("text-sm font-bold uppercase tracking-wide leading-none opacity-70", isWinnerDesign ? "text-[#451a03]" : "text-[#0f172a]")}>
                WHO HAS DEMONSTRATED EXCEPTIONAL CALCULATION SPEED AND PRECISION BY ACHIEVING
              </p>
              <div className="flex flex-col items-center gap-1">
-               <p className={cn("text-sm font-bold uppercase tracking-widest leading-none", isWinnerDesign ? "text-[#92400e]" : "text-[#0f172a]")}>
-                 THE DISTINCTION OF <span className="text-[#f97316] font-black text-4xl ml-2">{title}</span>
+               <p className={cn("text-sm font-bold uppercase tracking-widest leading-none", isWinnerDesign ? "text-[#451a03]" : "text-[#0f172a]")}>
+                 THE DISTINCTION OF <span className={cn("font-black text-4xl ml-2", isWinnerDesign ? "text-[#92400e]" : "text-[#f97316]")}>{title}</span>
                </p>
              </div>
            </div>
 
            <div className="mt-1">
-             <p className={cn("text-lg font-bold leading-none", isWinnerDesign ? "text-[#92400e]" : "text-[#0f172a]")}>
+             <p className={cn("text-lg font-bold leading-none", isWinnerDesign ? "text-[#451a03]" : "text-[#0f172a]")}>
                With a certified performance score of <span className={cn("font-black border-b-2 pb-0.5 px-2 underline-offset-4", isWinnerDesign ? "border-[#92400e]" : "border-[#0f172a]")}>{score || '---'}</span>
              </p>
            </div>
         </div>
 
-        {/* --- FOOTER AREA --- */}
+        {/* --- SIGNATURE FOOTER --- */}
         <div className="relative z-10 w-full mt-auto flex justify-between items-end px-12 pb-10">
            <div className="text-left space-y-1 w-64">
              <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isWinnerDesign ? "text-[#b45309]" : "text-[#94a3b8]")}>DATE OF ISSUE</p>
-             <p className={cn("text-xl font-bold", isWinnerDesign ? "text-[#92400e]" : "text-[#0f172a]")}>{date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+             <p className={cn("text-xl font-bold", isWinnerDesign ? "text-[#451a03]" : "text-[#0f172a]")}>{date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
            </div>
 
            <div className="flex flex-col items-center gap-2 mb-[-5px]">
-             <div className={cn("p-5 rounded-full border-[5px] shadow-xl relative animate-in zoom-in-50 duration-700", isWinnerDesign ? "bg-[#fefce8] border-[#fbbf24]" : "bg-[#fef9c3] border-[#fbbf24]")}>
+             <div className={cn("p-5 rounded-full border-[5px] shadow-xl relative animate-in zoom-in-50 duration-700", isWinnerDesign ? "bg-[#fffbeb] border-[#fbbf24]" : "bg-[#fef9c3] border-[#fbbf24]")}>
                 {isWinnerDesign ? <Medal className="w-14 h-14 text-[#fbbf24] drop-shadow-sm" /> : <Award className="w-14 h-14 text-[#fbbf24] drop-shadow-sm" />}
              </div>
              <div className={cn("px-5 py-1.5 rounded-full shadow-md", isWinnerDesign ? "bg-[#92400e]" : "bg-[#0f172a]")}>
@@ -133,12 +133,12 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            <div className="text-right w-64">
              <div className="flex flex-col items-end relative">
                 <p 
-                  className="text-[#f97316] absolute bottom-[4px] right-8 font-sacramento text-[36px] font-bold"
+                  className={cn("absolute bottom-[4px] right-8 font-sacramento text-[36px] font-bold", isWinnerDesign ? "text-[#92400e]" : "text-[#f97316]")}
                   style={{ fontFamily: 'var(--font-sacramento), cursive' }}
                 >
                   Satish Mane
                 </p>
-                <div className={cn("h-[1.5px] w-60 mt-10", isWinnerDesign ? "bg-[#92400e]/30" : "bg-[#cbd5e1]")} />
+                <div className={cn("h-[1.5px] w-60 mt-10", isWinnerDesign ? "bg-[#92400e]/40" : "bg-[#cbd5e1]")} />
              </div>
              <div className="mt-2">
                 <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isWinnerDesign ? "text-[#b45309]" : "text-[#94a3b8]")}>SATISH MANE</p>

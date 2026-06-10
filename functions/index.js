@@ -486,16 +486,35 @@ exports.resetExamCycle = onCall(async (request) => {
 
 /**
  * Marks the current cycle results as official.
+ * Updated to calculate and store group winners to bypass security rules limitations.
  */
 exports.declareOfficialResults = onCall(async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
     const adminDoc = await db.collection('users').doc(request.auth.uid).get();
     if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
 
+    const groups = ['A', 'B', 'C', 'D'];
+    const winners = {};
+
+    for (const group of groups) {
+        const snap = await db.collection('examResults')
+            .where('group', '==', group)
+            .where('isFinal', '==', true)
+            .orderBy('score', 'desc')
+            .orderBy('timeLeft', 'desc')
+            .limit(1)
+            .get();
+        
+        if (!snap.empty) {
+            winners[`group${group}WinnerId`] = snap.docs[0].id;
+        }
+    }
+
     await db.collection('stats').doc('examSchedule').update({
         resultsDeclared: true,
         isActive: false, 
-        lastResultDeclaredAt: admin.firestore.FieldValue.serverTimestamp()
+        lastResultDeclaredAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...winners
     });
 
     return { status: "success", message: "Results are now official." };

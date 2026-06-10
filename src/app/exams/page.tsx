@@ -33,9 +33,8 @@ export default function ExamDashboardPage() {
   const [results, setExamResults] = useState<ExamResult[]>([]);
   const [isApplying, setIsApplying] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isWinner, setIsWinner] = useState(false);
   
-  const [schedule, setSchedule] = useState<{ date: string, start: Date, end: Date, lastApplyDate?: string, isActive?: boolean, resultsDeclared?: boolean } | null>(null);
+  const [schedule, setSchedule] = useState<any | null>(null);
 
   const [showCertificate, setShowCertificate] = useState(false);
   const [certData, setCertData] = useState<{ type: AchievementType, title: string, score: string, date: string } | null>(null);
@@ -58,12 +57,9 @@ export default function ExamDashboardPage() {
         if (data.date) {
            const dateString = data.date;
            setSchedule({
-             date: dateString,
+             ...data,
              start: new Date(`${dateString}T${data.startTime || '12:30'}:00`),
              end: new Date(`${dateString}T${data.endTime || '16:00'}:00`),
-             lastApplyDate: data.lastApplyDate,
-             isActive: data.isActive !== false,
-             resultsDeclared: data.resultsDeclared === true
            });
         }
       }
@@ -99,34 +95,11 @@ export default function ExamDashboardPage() {
     return results.find(r => r.isFinal === true);
   }, [application, results]);
 
-  useEffect(() => {
-    if (schedule?.resultsDeclared && finalAttempt) {
-      const checkWinnerStatus = async () => {
-        const db = getFirestore(firebaseApp);
-        const q = query(
-          collection(db, "examResults"),
-          where("group", "==", finalAttempt.group),
-          where("isFinal", "==", true),
-          orderBy("score", "desc"),
-          orderBy("timeLeft", "desc"),
-          limit(1)
-        );
-        try {
-          const snap = await getDocs(q);
-          if (!snap.empty && snap.docs[0].id === finalAttempt.id) {
-            setIsWinner(true);
-          } else {
-            setIsWinner(false);
-          }
-        } catch (e) {
-          console.warn("Winner check failed:", e);
-        }
-      };
-      checkWinnerStatus();
-    } else {
-      setIsWinner(false);
-    }
-  }, [schedule?.resultsDeclared, finalAttempt]);
+  const isWinner = useMemo(() => {
+    if (!schedule?.resultsDeclared || !finalAttempt || !schedule) return false;
+    const winnerKey = `group${finalAttempt.group}WinnerId`;
+    return schedule[winnerKey] === finalAttempt.id;
+  }, [schedule, finalAttempt]);
 
   const handleApply = async (group: ExamGroup) => {
     if (!user || !profile) return;
@@ -161,13 +134,13 @@ export default function ExamDashboardPage() {
   }, [results, schedule?.resultsDeclared]);
 
   const examEnded = useMemo(() => {
-    if (!schedule || isNaN(schedule.end.getTime())) return false;
+    if (!schedule || isNaN(schedule.end?.getTime())) return false;
     if (schedule.isActive === false) return true;
     return new Date() > schedule.end;
   }, [schedule]);
 
   const examOpen = useMemo(() => {
-    if (!schedule || isNaN(schedule.start.getTime()) || isNaN(schedule.end.getTime())) return false;
+    if (!schedule || isNaN(schedule.start?.getTime()) || isNaN(schedule.end?.getTime())) return false;
     if (schedule.isActive === false) return false;
     return isFinalExamAvailable(schedule.start, schedule.end);
   }, [schedule]);
@@ -221,18 +194,18 @@ export default function ExamDashboardPage() {
               <div className="flex items-center gap-6">
                 <div className="bg-white/20 p-5 rounded-full shadow-lg"><Award className="w-12 h-12 text-yellow-300 drop-shadow-sm" /></div>
                 <div className="space-y-1 text-center md:text-left">
-                  <h2 className="text-3xl font-black uppercase tracking-tighter italic">Official Certification Ready!</h2>
-                  <p className="font-bold opacity-80 text-lg">
+                  <h2 className="text-3xl font-black uppercase tracking-tighter italic leading-none">Official Certification Ready!</h2>
+                  <p className="font-bold opacity-80 text-lg mt-2">
                     {isWinner ? "Incredible! You secured the 1st Rank. Claim your honors below." : "Your Group results are official. Claim your prestigious award now."}
                   </p>
                 </div>
               </div>
               
-              <div className="flex flex-wrap md:flex-nowrap gap-3 shrink-0 w-full md:w-auto justify-center md:justify-end p-2">
+              <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full md:w-auto justify-center md:justify-end">
                 {isWinner && (
                   <Button 
                     onClick={() => handleGetCertificate(finalAttempt, true)}
-                    className="bg-yellow-400 text-indigo-950 hover:bg-yellow-500 font-black h-12 sm:h-14 px-5 sm:px-8 rounded-2xl text-xs sm:text-base shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest flex-1 md:flex-none"
+                    className="bg-yellow-400 text-indigo-950 hover:bg-yellow-500 font-black h-12 sm:h-14 px-6 sm:px-8 rounded-2xl text-xs sm:text-base shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest w-full sm:w-auto"
                   >
                     <Medal className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                     Rank 1 Cert
@@ -241,7 +214,7 @@ export default function ExamDashboardPage() {
                 <Button 
                   onClick={() => handleGetCertificate(finalAttempt, false)}
                   variant="outline"
-                  className="bg-white/10 text-white hover:bg-white/20 font-black h-12 sm:h-14 px-5 sm:px-8 rounded-2xl text-xs sm:text-base shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest flex-1 md:flex-none"
+                  className="bg-white/10 text-white hover:bg-white/20 font-black h-12 sm:h-14 px-6 sm:px-8 rounded-2xl text-xs sm:text-base shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest w-full sm:w-auto"
                 >
                   <Download className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   Participation
