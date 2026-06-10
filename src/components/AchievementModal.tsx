@@ -4,8 +4,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { toJpeg } from 'html-to-image';
 import { jsPDF } from 'jspdf';
-import { X, Download, Award, Brain, FileText, Loader2 } from 'lucide-react';
+import { X, Download, Award, Brain, FileText, Loader2, Share2, Copy } from 'lucide-react';
 import { Button } from './ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 export type AchievementType = 
   | 'exam_participation' 
@@ -53,7 +54,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className="absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 opacity-[0.05] pointer-events-none p-10">
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
-              <Brain className="w-20 h-20 text-[#0f172a]" />
+              <Brain style={{ width: '80px', height: '80px' }} className="text-[#0f172a]" />
             </div>
           ))}
         </div>
@@ -101,7 +102,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              </div>
            </div>
 
-           {/* Score Line */}
+           {/* Score Line - Shifted UP mt-1 */}
            <div className="mt-1">
              <p className="text-lg font-bold text-[#0f172a] leading-none">
                With a certified performance score of <span className="font-black border-b-2 border-[#0f172a] pb-0.5 px-2 underline-offset-4">{score || '---'}</span>
@@ -152,8 +153,9 @@ CertificateContent.displayName = 'CertificateContent';
 
 const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title, score, date, onClose }) => {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [isDownloading, setIsDownloading] = useState<'jpeg' | 'pdf' | null>(null);
+  const [isDownloading, setIsDownloading] = useState<'jpeg' | 'pdf' | 'share' | null>(null);
   const [modalScale, setModalScale] = useState(0.5);
+  const { toast } = useToast();
 
   useEffect(() => {
     confetti({
@@ -213,6 +215,38 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
     }
   };
 
+  const handleShare = async () => {
+    setIsDownloading('share');
+    try {
+      const dataUrl = await generateImage();
+      if (!dataUrl) return;
+
+      // Convert data URL to Blob for sharing
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], 'achievement.jpg', { type: 'image/jpeg' });
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'My Abacus Pro Achievement',
+          text: `I just achieved the rank of ${title} on My Abacus Pro! 🧮✨`,
+        });
+      } else {
+        // Fallback: Copy link or notify
+        await navigator.clipboard.writeText('https://myabacuspro.com');
+        toast({
+          title: "Link Copied",
+          description: "Sharing image is not supported on this browser. Website link copied to clipboard!",
+        });
+      }
+    } catch (error) {
+      console.error("Sharing failed:", error);
+    } finally {
+      setIsDownloading(null);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-300">
       <div className="flex flex-col items-center w-full max-w-5xl gap-6">
@@ -245,6 +279,10 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
           <Button onClick={handleDownloadJPEG} disabled={!!isDownloading} className="flex-1 h-14 bg-white text-[#0f172a] hover:bg-slate-50 font-black uppercase tracking-widest rounded-2xl shadow-lg border-2 border-slate-200 text-base">
             {isDownloading === 'jpeg' ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <Download className="h-5 w-5 mr-2" />} 
             Save JPEG
+          </Button>
+          <Button onClick={handleShare} disabled={!!isDownloading} className="flex-1 h-14 bg-orange-500 hover:bg-orange-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl border-none text-base">
+            {isDownloading === 'share' ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <Share2 className="h-5 w-5 mr-2" />} 
+            Share
           </Button>
           <Button onClick={onClose} variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white h-14 w-14 rounded-2xl shrink-0">
             <X className="h-6 h-6 stroke-[3px]" />
