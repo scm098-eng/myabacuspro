@@ -57,7 +57,7 @@ const Fish = memo(({ className, duration, flip = false }: { className: string, d
   >
     <div className={cn(flip && "scale-x-[-1]")}>
       <Image 
-        src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/fish.png?alt=media"
+        src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media&token=870ea1d9-54e8-4b02-81ee-324662339f71"
         alt="Swimming fish"
         width={100}
         height={60}
