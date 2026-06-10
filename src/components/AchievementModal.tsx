@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { toJpeg } from 'html-to-image';
-import { jsPDF } from 'jsPDF';
+import { jsPDF } from 'jspdf';
 import { X, Download, Award, Brain, FileText, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 
@@ -57,7 +57,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
           ))}
         </div>
 
-        {/* --- HEADER BLOCK (SHIFTED DOWN TO CLEAR BORDER & NEAR BADGE) --- */}
+        {/* --- HEADER BLOCK --- */}
         <div className="relative z-10 w-full flex flex-col items-center mt-20">
           <div className="flex items-center gap-3 mb-1">
             <div className="bg-[#f97316] p-2 rounded-xl shadow-lg">
@@ -68,14 +68,14 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
           <p className="text-[#f97316] font-black text-[10px] tracking-[0.5em] uppercase">LEARN • PRACTICE • SUCCEED</p>
         </div>
 
-        {/* --- MASTERY AWARD BADGE (THE ANCHOR) --- */}
+        {/* --- MASTERY AWARD BADGE --- */}
         <div className="relative z-10 mt-3">
            <div className="bg-[#0f172a] px-24 py-4 rounded-[2rem] shadow-xl border-b-4 border-black/20">
               <h2 className="text-2xl font-black italic text-white uppercase tracking-widest">MASTERY RANK AWARD</h2>
            </div>
         </div>
 
-        {/* --- CERTIFICATION BLOCK (SHIFTED UP TOWARDS BADGE) --- */}
+        {/* --- CERTIFICATION BLOCK --- */}
         <div className="relative z-10 mt-4 text-center flex flex-col items-center gap-1">
            <p className="text-[#94a3b8] font-black uppercase tracking-[0.4em] text-[10px] mb-1">OFFICIAL MASTERY CERTIFICATION</p>
            <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90 leading-none">This prestigious award is proudly presented to</p>
