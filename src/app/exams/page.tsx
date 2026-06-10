@@ -106,18 +106,6 @@ export default function ExamDashboardPage() {
       });
   };
 
-  const handleReapply = async () => {
-    if (!application || !user) return;
-    setIsDeleting(true);
-    deleteDoc(doc(getFirestore(firebaseApp), "examApplications", application.id)).then(() => {
-        toast({ title: "Ready to re-apply" });
-        setIsDeleting(false);
-      }).catch(async (serverError) => {
-        setIsDeleting(false);
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${application.id}`, operation: 'delete' }));
-      });
-  };
-
   const handleGetCertificate = async (res: ExamResult) => {
     if (!schedule?.resultsDeclared) return;
     
@@ -144,7 +132,6 @@ export default function ExamDashboardPage() {
   };
 
   const isApproved = useMemo(() => application?.status === 'approved', [application]);
-  const isRejected = useMemo(() => application?.status === 'rejected', [application]);
 
   const hasFinishedFinal = useMemo(() => {
     if (!application || results.length === 0) return false;
