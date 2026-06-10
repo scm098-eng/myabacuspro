@@ -7,9 +7,9 @@ import { usePageBackground } from '@/hooks/usePageBackground';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Lock, ShieldAlert, Trophy, AlertTriangle, Brain, Calculator, Zap, Target, RefreshCcw, XCircle, FileEdit, CheckCircle2, Loader2, Award, Download } from 'lucide-react';
+import { Lock, ShieldAlert, Trophy, FileEdit, Award, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getFirestore, collection, query, where, onSnapshot, doc, deleteDoc, orderBy, getDocs, limit } from 'firebase/firestore';
+import { getFirestore, collection, query, where, onSnapshot, doc, orderBy, getDocs, limit } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult, ExamGroup } from '@/types';
@@ -31,8 +31,8 @@ export default function ExamDashboardPage() {
   const [application, setApplication] = useState<ExamApplication | null>(null);
   const [results, setExamResults] = useState<ExamResult[]>([]);
   const [isApplying, setIsApplying] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isCheckingCert, setIsCheckingCert] = useState(false);
   
   const [schedule, setSchedule] = useState<{ date: string, start: Date, end: Date, lastApplyDate?: string, isActive?: boolean, resultsDeclared?: boolean } | null>(null);
 
@@ -108,27 +108,33 @@ export default function ExamDashboardPage() {
 
   const handleGetCertificate = async (res: ExamResult) => {
     if (!schedule?.resultsDeclared) return;
+    setIsCheckingCert(true);
     
-    // Check if rank 1 in group
-    const db = getFirestore(firebaseApp);
-    const groupResultsQ = query(
-      collection(db, "examResults"), 
-      where("group", "==", res.group), 
-      where("isFinal", "==", true),
-      orderBy("score", "desc"),
-      orderBy("timeLeft", "desc"),
-      limit(1)
-    );
-    const topSnap = await getDocs(groupResultsQ);
-    const isWinner = !topSnap.empty && topSnap.docs[0].id === res.id;
+    try {
+      const db = getFirestore(firebaseApp);
+      const groupResultsQ = query(
+        collection(db, "examResults"), 
+        where("group", "==", res.group), 
+        where("isFinal", "==", true),
+        orderBy("score", "desc"),
+        orderBy("timeLeft", "desc"),
+        limit(1)
+      );
+      const topSnap = await getDocs(groupResultsQ);
+      const isWinner = !topSnap.empty && topSnap.docs[0].id === res.id;
 
-    setCertData({
-      type: isWinner ? 'exam_winner' : 'exam_participation',
-      title: isWinner ? `Group ${res.group} CHAMPION` : `Group ${res.group} Participant`,
-      score: `${res.score}/${res.totalQuestions} (${res.accuracy.toFixed(1)}%)`,
-      date: format(res.submittedAt?.toDate ? res.submittedAt.toDate() : new Date(), 'MMMM do, yyyy')
-    });
-    setShowCertificate(true);
+      setCertData({
+        type: isWinner ? 'exam_winner' : 'exam_participation',
+        title: isWinner ? `Group ${res.group} CHAMPION` : `Group ${res.group} Participant`,
+        score: `${res.score}/${res.totalQuestions} (${res.accuracy.toFixed(1)}%)`,
+        date: format(res.submittedAt?.toDate ? res.submittedAt.toDate() : new Date(), 'MMMM do, yyyy')
+      });
+      setShowCertificate(true);
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to generate certificate.", variant: "destructive" });
+    } finally {
+      setIsCheckingCert(false);
+    }
   };
 
   const isApproved = useMemo(() => application?.status === 'approved', [application]);
@@ -194,7 +200,7 @@ export default function ExamDashboardPage() {
              <p className="text-muted-foreground font-medium mt-2">Select the level that matches your current training progress.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {[{id:'A',t:'Direct Mastery',i:<Brain/>},{id:'B',t:'Formula Champion',i:<Calculator/>},{id:'C',t:'Anzan Expert',i:<Zap/>},{id:'D',t:'Elite Grandmaster',i:<Trophy/>}].map((g) => (
+            {[{id:'A',t:'Direct Mastery',i:<ShieldAlert/>},{id:'B',t:'Formula Champion',i:<ShieldAlert/>},{id:'C',t:'Anzan Expert',i:<ShieldAlert/>},{id:'D',t:'Elite Grandmaster',i:<Trophy/>}].map((g) => (
               <Card key={g.id} className="relative group overflow-hidden border-2 hover:border-primary transition-all rounded-[2rem] shadow-lg bg-white/50">
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-4">
@@ -268,9 +274,11 @@ export default function ExamDashboardPage() {
                       {r.isFinal && schedule?.resultsDeclared && (
                         <Button 
                           onClick={() => handleGetCertificate(r)}
+                          disabled={isCheckingCert}
                           className="w-full h-10 bg-indigo-600 hover:bg-indigo-700 font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg mt-2"
                         >
-                          <Award className="w-4 h-4 mr-2" /> Get Official Certificate
+                          {isCheckingCert ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Award className="w-4 h-4 mr-2" />} 
+                          Get Official Certificate
                         </Button>
                       )}
                     </div>

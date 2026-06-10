@@ -4,7 +4,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { toJpeg } from 'html-to-image';
-import { X, Download, Share2, Award, Trophy, Crown, Star, CheckCircle2, ShieldCheck, Medal } from 'lucide-react';
+import { X, Download, Share2, Award, Trophy, Crown, Star, CheckCircle2, ShieldCheck, Medal, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -20,8 +20,8 @@ export type AchievementType =
 interface AchievementProps {
   type: AchievementType;
   studentName: string;
-  title: string; // "Math Ninja", "Group A Champion", etc.
-  score?: string; // "145/150", "98.5%", etc.
+  title: string; 
+  score?: string; 
   date?: string;
   onClose: () => void;
 }
@@ -31,12 +31,12 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
   const [isDownloading, setIsDownloading] = useState(false);
 
   const config = {
-    exam_participation: { label: 'Certificate of Participation', theme: 'indigo', icon: <Medal />, badge: 'PARTICIPANT' },
-    exam_winner: { label: 'Certificate of Excellence', theme: 'gold', icon: <Crown />, badge: 'WINNER' },
-    rank: { label: 'Mastery Rank Advancement', theme: 'primary', icon: <Award />, badge: 'RANK UP' },
-    weekly_winner: { label: 'Weekly Hall of Fame', theme: 'gold', icon: <Trophy />, badge: 'CHAMPION' },
-    monthly_winner: { label: 'Monthly Elite Master', theme: 'gold', icon: <Trophy />, badge: 'CHAMPION' },
-    global_winner: { label: 'Global Grandmaster', theme: 'gold', icon: <Crown />, badge: 'LEGEND' },
+    exam_participation: { label: 'Certificate of Participation', theme: 'indigo', icon: <Medal className="w-12 h-12" />, badge: 'PARTICIPANT' },
+    exam_winner: { label: 'Certificate of Excellence', theme: 'gold', icon: <Crown className="w-12 h-12" />, badge: 'WINNER' },
+    rank: { label: 'Mastery Rank Advancement', theme: 'primary', icon: <Award className="w-12 h-12" />, badge: 'RANK UP' },
+    weekly_winner: { label: 'Weekly Hall of Fame', theme: 'gold', icon: <Trophy className="w-12 h-12" />, badge: 'CHAMPION' },
+    monthly_winner: { label: 'Monthly Elite Master', theme: 'gold', icon: <Trophy className="w-12 h-12" />, badge: 'CHAMPION' },
+    global_winner: { label: 'Global Grandmaster', theme: 'gold', icon: <Crown className="w-12 h-12" />, badge: 'LEGEND' },
   }[type];
 
   const themeColor = config.theme === 'gold' ? '#fbbf24' : (config.theme === 'indigo' ? '#4f46e5' : '#f97316');
@@ -89,12 +89,10 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-300 overflow-y-auto">
       <div className="flex flex-col items-center max-w-2xl w-full my-auto">
         
-        {/* --- THE CERTIFICATE --- */}
         <div 
           ref={cardRef}
           className="bg-white p-2 sm:p-4 w-full shadow-2xl relative aspect-[1.414/1] flex items-center justify-center border-[12px] border-slate-900 overflow-hidden"
         >
-          {/* Ornamental Background */}
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none select-none">
             <div className="grid grid-cols-6 gap-4 p-8">
               {Array.from({length: 24}).map((_, i) => <Star key={i} className="w-12 h-12" />)}
@@ -102,8 +100,6 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
           </div>
 
           <div className="relative w-full h-full border-4 border-slate-200 p-8 sm:p-12 flex flex-col items-center text-center justify-between bg-white/80">
-            
-            {/* Header Area */}
             <div className="space-y-4 w-full">
               <div className="flex justify-center items-center gap-2 mb-2">
                 <ShieldCheck className="w-6 h-6 text-slate-400" />
@@ -116,13 +112,11 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
               <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">The Ultimate Training Ground for Mental Arithmetic</p>
             </div>
 
-            {/* Achievement Label */}
             <div className="my-6">
                <h2 className="text-xl sm:text-3xl font-black text-slate-800 uppercase italic tracking-tight">{config.label}</h2>
                <div className="h-1 w-24 bg-primary/20 mx-auto mt-2 rounded-full" />
             </div>
 
-            {/* Student Identity */}
             <div className="space-y-4">
               <p className="text-slate-500 italic font-medium">This is to certify that</p>
               <h3 className="text-3xl sm:text-5xl font-black font-headline text-slate-900 border-b-2 border-slate-100 pb-2 px-8 min-w-[250px] inline-block">
@@ -130,7 +124,6 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
               </h3>
             </div>
 
-            {/* Contextual Logic */}
             <div className="max-w-md mx-auto space-y-3">
                <p className="text-sm sm:text-base font-bold text-slate-700 leading-relaxed">
                   Has successfully demonstrated exceptional dedication and mental arithmetic skill by achieving 
@@ -139,14 +132,12 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
                </p>
             </div>
 
-            {/* Footer Signature & Seal */}
             <div className="w-full flex justify-between items-end mt-8">
               <div className="text-left space-y-1">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date of Award</p>
                 <p className="text-sm font-bold text-slate-900">{date || format(new Date(), 'MMMM do, yyyy')}</p>
               </div>
 
-              {/* Official Seal */}
               <div className="relative">
                 <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-yellow-400/50 flex items-center justify-center bg-yellow-50/50 shadow-inner group">
                    <div className="absolute inset-0 bg-yellow-400/10 animate-pulse rounded-full" />
@@ -168,7 +159,6 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
           </div>
         </div>
 
-        {/* --- CONTROLS --- */}
         <div className="mt-8 flex gap-4 w-full">
           <Button 
             onClick={handleShare}

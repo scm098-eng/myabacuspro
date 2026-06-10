@@ -5,24 +5,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, ChevronRight, Bell, Loader2, Star, Flame, CalendarDays, TrendingUp, Clock, Zap, Crown, Cake, Sparkles, Download, Award } from 'lucide-react';
+import { Check, Trophy, ChevronRight, Loader2, Star, Flame, CalendarDays, Download, Award, Crown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, doc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ProfileData } from '@/types';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getMessaging, getToken } from 'firebase/messaging';
-import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RANK_CRITERIA, ADMIN_EMAILS } from '@/lib/constants';
-import confetti from 'canvas-confetti';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
-import { isToday, parseISO } from 'date-fns';
 import MilestoneCelebration from '@/components/MilestoneCelebration';
 import AchievementModal, { AchievementType } from '@/components/AchievementModal';
 
@@ -43,9 +39,8 @@ function getUTCMonthKey() {
 
 export default function StudentDashboardPage() {
   usePageBackground('');
-  const { profile, user, isLoading, getStudentTitle, isTrialActive, trialDaysRemaining } = useAuth();
+  const { profile, user, isLoading, getStudentTitle } = useAuth();
   const router = useRouter();
-  const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
