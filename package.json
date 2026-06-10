@@ -1,3 +1,4 @@
+
 {
   "name": "nextn",
   "version": "0.1.0",
@@ -42,19 +43,20 @@
     "date-fns": "^3.6.0",
     "dotenv": "^16.5.0",
     "embla-carousel-react": "^8.6.0",
-    "firebase": "^11.9.1",
-    "firebase-admin": "^13.10.0",
-    "firebase-functions": "^7.2.5",
+    "firebase": "11.1.0",
+    "firebase-admin": "13.0.1",
+    "firebase-functions": "7.1.0",
     "genkit": "^1.14.1",
     "html-to-image": "^1.11.11",
+    "jspdf": "^2.5.1",
     "lucide-react": "^0.475.0",
-    "next": "^16.2.6",
+    "next": "15.1.0",
     "nodemailer": "^8.0.2",
     "patch-package": "^8.0.0",
     "razorpay": "^2.9.4",
-    "react": "^19.2.6",
+    "react": "19.0.0",
     "react-day-picker": "^8.10.1",
-    "react-dom": "^19.2.6",
+    "react-dom": "19.0.0",
     "react-hook-form": "^7.54.2",
     "react-image-crop": "^11.0.6",
     "recharts": "^2.15.1",
@@ -73,10 +75,10 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   },
-"overrides": {
-  "react-day-picker": {
-    "react": "$react",
-    "react-dom": "$react-dom"
+  "overrides": {
+    "react-day-picker": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
   }
-}
 }

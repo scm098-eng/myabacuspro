@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -29,6 +30,7 @@ interface AuthContextType {
   profile: ProfileData | null;
   login: (email: string, pass: string) => Promise<ProfileData | null>;
   signup: (values: SignupData) => Promise<void>;
+  login: (email: string, pass: string) => Promise<ProfileData | null>;
   loginWithGoogle: () => Promise<ProfileData | null>;
   sendPasswordReset: (email: string) => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
@@ -63,6 +65,10 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+const auth = getAuth(firebaseApp);
+const firestore = getFirestore(firebaseApp);
+const storage = getStorage(firebaseApp);
 
 const sanitizeForFirestore = (data: any) => {
   const clean: any = {};
@@ -103,9 +109,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const auth = getAuth(firebaseApp);
-  const firestore = getFirestore(firebaseApp);
-  const storage = getStorage(firebaseApp);
   const router = useRouter();
   const pathname = usePathname();
   
@@ -127,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return null;
     }
-  }, [firestore]);
+  }, []);
 
   useEffect(() => {
     let profileUnsub: (() => void) | undefined;
@@ -204,7 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsubscribe();
       if (profileUnsub) profileUnsub();
     };
-  }, [auth, firestore]);
+  }, []);
 
   useEffect(() => {
     if (!isLoading && profile) {
@@ -241,7 +244,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, pass: string): Promise<ProfileData | null> => {
     const userCredential = await signInWithEmailAndPassword(auth, email, pass);
     return await fetchProfile(userCredential.user);
-  }, [auth, fetchProfile]);
+  }, [fetchProfile]);
   
   const signup = useCallback(async (values: SignupData) => {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
@@ -290,7 +293,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       await setDoc(userDocRef, sanitizeForFirestore(rawData));
       triggerAutoEmail('welcome', user.email!, values.firstName);
-  }, [auth, firestore, storage]);
+  }, []);
 
   const loginWithGoogle = useCallback(async (): Promise<ProfileData | null> => {
     const result = await signInWithPopup(auth, googleProvider);
@@ -332,11 +335,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       triggerAutoEmail('welcome', user.email!, firstName || 'Student');
     }
     return await fetchProfile(user);
-  }, [auth, firestore, fetchProfile]);
+  }, [fetchProfile]);
   
   const sendPasswordReset = useCallback(async (email: string) => {
     await sendPasswordResetEmail(auth, email);
-  }, [auth]);
+  }, []);
 
   const sendVerificationEmail = useCallback(async () => {
     if (user) await sendEmailVerification(user);
@@ -353,38 +356,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         payload.profilePhoto = await getDownloadURL(storageRef);
     }
     await updateDoc(userDocRef, payload);
-  }, [firestore, storage]);
+  }, []);
 
   const toggleUserSuspension = useCallback(async (uid: string, isSuspended: boolean) => {
     const userDocRef = doc(firestore, 'users', uid);
     await updateDoc(userDocRef, { isSuspended, updatedAt: serverTimestamp() });
-  }, [firestore]);
+  }, []);
 
   const deleteUserAccount = useCallback(async (uid: string) => {
     const userDocRef = doc(firestore, 'users', uid);
     await deleteDoc(userDocRef);
-  }, [firestore]);
+  }, []);
 
   const markUserAsRead = useCallback(async (uid: string) => {
     const userDocRef = doc(firestore, 'users', uid);
     await updateDoc(userDocRef, { isAdminRead: true, updatedAt: serverTimestamp() });
-  }, [firestore]);
+  }, []);
 
   const upgradeToPro = useCallback(async () => {
     if (!user) return;
     await updateDoc(doc(firestore, 'users', user.uid), { subscriptionStatus: 'pro' });
-  }, [user, firestore]);
+  }, [user]);
 
   const logout = useCallback(async () => {
     await signOut(auth);
-  }, [auth]);
+  }, []);
   
   const getAllUsers = useCallback(async (role?: UserRole): Promise<ProfileData[]> => {
     const usersCol = collection(firestore, 'users');
     const q = role ? query(usersCol, where("role", "==", role)) : query(usersCol);
     const snap = await getDocs(q);
     return snap.docs.map(doc => ({ ...doc.data(), uid: doc.id } as ProfileData));
-  }, [firestore]);
+  }, []);
 
   const getApprovedTeachers = useCallback(async (): Promise<ProfileData[]> => {
     const usersCol = collection(firestore, 'users');
@@ -394,28 +397,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .map(doc => ({ ...doc.data(), uid: doc.id } as ProfileData))
         .filter(u => !EXCLUDED_FROM_TEACHER_LIST.includes(u.email?.toLowerCase()))
         .filter(u => u.role === 'admin' || u.status === 'approved');
-  }, [firestore]);
+  }, []);
 
   const getUserTestHistoryBySession = useCallback(async (userId: string): Promise<TestResult[]> => {
     const testCol = collection(firestore, 'testResults');
     const q = query(testCol, where("userId", "==", userId), orderBy('createdAt', 'desc'), limit(50));
     const snap = await getDocs(q); 
     return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
-  }, [firestore]);
+  }, []);
 
   const getUserTestHistory = useCallback(async (userId: string): Promise<TestResult[]> => {
     const testCol = collection(firestore, 'testResults');
     const q = query(testCol, where("userId", "==", userId), orderBy('createdAt', 'desc'));
     const snap = await getDocs(q); 
     return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
-  }, [firestore]);
+  }, []);
 
   const getUserTestHistoryByPaper = useCallback(async (userId: string, paperId: string): Promise<TestResult[]> => {
     const testCol = collection(firestore, 'testResults');
     const q = query(testCol, where("userId", "==", userId), where("testId", "==", paperId), orderBy('createdAt', 'desc'));
     const snap = await getDocs(q); 
     return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
-  }, [firestore]);
+  }, []);
 
   const getUserTestHistoryByPeriod = useCallback(async (userId: string, type: 'weekly' | 'monthly'): Promise<TestResult[]> => {
     const testCol = collection(firestore, 'testResults');
@@ -433,41 +436,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const q = query(testCol, where("userId", "==", userId), where("createdAt", ">=", startDate), orderBy('createdAt', 'desc'));
     const snap = await getDocs(q);
     return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
-  }, [firestore]);
+  }, []);
 
   const getUserTestHistoryByDateRange = useCallback(async (userId: string, start: Date, end: Date): Promise<TestResult[]> => {
     const testCol = collection(firestore, 'testResults');
     const q = query(testCol, where("userId", "==", userId), where("createdAt", ">=", start), where("createdAt", "<=", end));
     const snap = await getDocs(q); 
     return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt.toDate() } as TestResult));
-  }, [firestore]);
+  }, []);
 
   const getUserProfile = useCallback(async (userId: string): Promise<ProfileData | null> => {
     const userDocRef = doc(firestore, 'users', userId);
     const snap = await getDoc(userDocRef);
     return snap.exists() ? { ...snap.data(), uid: snap.id } as ProfileData : null;
-  }, [firestore]);
+  }, []);
   
   const approveTeacher = useCallback(async (teacherId: string, callback?: () => void) => {
     await updateDoc(doc(firestore, 'users', teacherId), { status: 'approved', updatedAt: serverTimestamp() });
     if(callback) callback();
-  }, [firestore]);
+  }, []);
 
   const getCompletedGameLevels = useCallback(async (): Promise<number[]> => {
     if (!user) return [];
     const snap = await getDoc(doc(firestore, "gameProgress", user.uid));
     return snap.exists() ? snap.data().completedLevels || [] : [];
-  }, [user, firestore]);
+  }, [user]);
 
   const saveCompletedGameLevel = useCallback(async (levelId: number) => {
     if (!user) return;
     await setDoc(doc(firestore, "gameProgress", user.uid), { completedLevels: arrayUnion(levelId) }, { merge: true });
-  }, [user, firestore]);
+  }, [user]);
 
   const setLastLevelAttended = useCallback(async (levelId: number) => {
     if (!user) return;
     await updateDoc(doc(firestore, "users", user.uid), { lastLevelAttended: levelId, updatedAt: serverTimestamp() });
-  }, [user, firestore]);
+  }, [user]);
 
   const getStudentTitle = useCallback((totalDays: number, totalPoints: number) => {
     return RANK_CRITERIA.find(t => totalDays >= t.daysReq && totalPoints >= t.pointsReq) || RANK_CRITERIA[RANK_CRITERIA.length - 1];
@@ -505,7 +508,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data.lastMonthlyReset !== currentMonthKey) { updateData.monthlyPoints = earnedPoints; updateData.lastMonthlyReset = currentMonthKey; } else { updateData.monthlyPoints = increment(earnedPoints); }
     
     await updateDoc(userRef, updateData);
-  }, [firestore, getStudentTitle]);
+  }, [getStudentTitle]);
 
   const recordDailyPractice = useCallback(async (userId: string) => {
     const userRef = doc(firestore, "users", userId);
@@ -527,17 +530,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     await updateDoc(userRef, { lastPracticeDate: today, currentStreak: newStreak, totalDaysPracticed: increment(1 + bonusDays), updatedAt: serverTimestamp() });
     await addPoints(userId, 25);
-  }, [firestore, addPoints]);
+  }, [addPoints]);
 
   const contextValue = useMemo(() => ({ 
     user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
     sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, markUserAsRead, getAllUsers, getApprovedTeachers, 
     getUserTestHistory, getUserTestHistoryByDateRange, getUserTestHistoryByPeriod, getUserTestHistoryBySession, getUserTestHistoryByPaper, getUserProfile, approveTeacher, getCompletedGameLevels, 
     saveCompletedGameLevel, setLastLevelAttended, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining
-  }), [user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
-    sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, markUserAsRead, getAllUsers, getApprovedTeachers, 
-    getUserTestHistory, getUserTestHistoryByDateRange, getUserTestHistoryByPeriod, getUserTestHistoryBySession, getUserTestHistoryByPaper, getUserProfile, approveTeacher, getCompletedGameLevels, 
-    saveCompletedGameLevel, setLastLevelAttended, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining]);
+  }), [user, profile, isLoading, isTrialActive, trialDaysRemaining]);
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }
