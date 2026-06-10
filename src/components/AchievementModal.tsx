@@ -30,6 +30,7 @@ const A4_HEIGHT = 794;
 
 const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: string; title: string; score?: string; date?: string }>(
   ({ studentName, title, score, date }, ref) => {
+    // Ensure 1 space between names
     const formattedName = studentName.trim().replace(/\s+/g, ' ');
 
     return (
@@ -76,11 +77,11 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         </div>
 
         {/* --- CERTIFICATION BLOCK --- */}
-        <div className="relative z-10 mt-12 text-center flex flex-col items-center gap-1">
+        <div className="relative z-10 mt-10 text-center flex flex-col items-center gap-1">
            <p className="text-[#94a3b8] font-black uppercase tracking-[0.4em] text-[10px] mb-1">OFFICIAL MASTERY CERTIFICATION</p>
            <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90 leading-none">This prestigious award is proudly presented to</p>
            
-           {/* Student Name */}
+           {/* Student Name with Underline */}
            <div className="mt-3 w-fit px-12 pb-1 flex flex-col items-center gap-2">
              <h3 className="text-7xl font-black uppercase tracking-normal text-[#0f172a] leading-none text-center">
                {formattedName}
@@ -88,22 +89,23 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              <div className="h-[1.5px] w-full bg-[#cbd5e1]" />
            </div>
 
-           {/* Achievement Description */}
-           <div className="mt-5 text-center space-y-2 max-w-4xl">
-             <p className="text-sm font-bold text-[#0f172a] uppercase tracking-wide leading-tight opacity-70">
+           {/* Achievement Description - Tight Line Spacing */}
+           <div className="mt-5 text-center space-y-1.5 max-w-4xl">
+             <p className="text-sm font-bold text-[#0f172a] uppercase tracking-wide leading-none opacity-70">
                WHO HAS DEMONSTRATED EXCEPTIONAL CALCULATION SPEED AND PRECISION BY ACHIEVING
              </p>
-             <div className="flex flex-col items-center gap-2">
-               <p className="text-sm font-bold text-[#0f172a] uppercase tracking-widest">
+             <div className="flex flex-col items-center gap-1">
+               <p className="text-sm font-bold text-[#0f172a] uppercase tracking-widest leading-none">
                  THE DISTINCTION OF <span className="text-[#f97316] font-black text-4xl ml-2">{title}</span>
                </p>
-               <div className="h-[1px] w-56 bg-[#f97316]/30" />
+               {/* Very Light Orange Underline */}
+               <div className="h-[1.5px] w-64 bg-[#f97316]/20 mt-1" />
              </div>
            </div>
 
            {/* Score Line */}
-           <div className="mt-5">
-             <p className="text-lg font-bold text-[#0f172a]">
+           <div className="mt-4">
+             <p className="text-lg font-bold text-[#0f172a] leading-none">
                With a certified performance score of <span className="font-black border-b-2 border-[#0f172a] pb-0.5 px-2 underline-offset-4">{score || '---'}</span>
              </p>
            </div>
