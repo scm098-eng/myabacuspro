@@ -45,6 +45,10 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className="absolute bottom-2 left-2 w-24 h-24 border-b-[6px] border-l-[6px] border-[#f97316] z-20" />
         <div className="absolute bottom-2 right-2 w-24 h-24 border-b-[6px] border-r-[6px] border-[#f97316] z-20" />
 
+        {/* --- REFINED INNER LIGHT-GREY 2 LINE BORDER --- */}
+        <div className="absolute top-8 left-8 right-8 bottom-8 border-[0.5px] border-[#cbd5e1] pointer-events-none z-20" />
+        <div className="absolute top-10 left-10 right-10 bottom-10 border-[0.5px] border-[#cbd5e1] pointer-events-none z-20" />
+
         {/* --- WATERMARK BACKGROUND --- */}
         <div className="absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 opacity-[0.04] pointer-events-none p-10">
           {Array.from({ length: 36 }).map((_, i) => (
@@ -55,7 +59,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         </div>
 
         {/* --- HEADER --- */}
-        <div className="relative z-10 w-full flex flex-col items-center mt-2">
+        <div className="relative z-10 w-full flex flex-col items-center mt-1">
           <div className="flex items-center gap-3 mb-1">
             <div className="bg-[#f97316] p-2 rounded-xl shadow-lg">
               <Brain className="w-8 h-8 text-white" />
@@ -66,37 +70,41 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         </div>
 
         {/* --- MASTERY AWARD BADGE --- */}
-        <div className="relative z-10 mt-4">
+        <div className="relative z-10 mt-2">
            <div className="bg-[#0f172a] px-20 py-4 rounded-[2rem] shadow-xl">
               <h2 className="text-2xl font-black italic text-white uppercase tracking-widest">MASTERY RANK AWARD</h2>
            </div>
         </div>
 
         {/* --- CERTIFICATION TEXT --- */}
-        <div className="relative z-10 mt-6 text-center space-y-1">
-           <p className="text-[#94a3b8] font-black uppercase tracking-[0.4em] text-xs">OFFICIAL MASTERY CERTIFICATION</p>
-           <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90">This prestigious award is proudly presented to</p>
+        <div className="relative z-10 mt-3 text-center space-y-1">
+           <p className="text-[#94a3b8] font-black uppercase tracking-[0.4em] text-[10px]">OFFICIAL MASTERY CERTIFICATION</p>
+           <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90 leading-tight">This prestigious award is proudly presented to</p>
         </div>
 
         {/* --- STUDENT NAME --- */}
-        <div className="relative z-10 mt-2 w-fit px-12 border-b-2 border-slate-200 pb-1">
-          <h3 className="text-7xl font-black uppercase tracking-tighter text-[#0f172a] leading-none text-center">
+        <div className="relative z-10 mt-1 w-fit px-12 pb-1 flex flex-col items-center gap-1">
+          <h3 className="text-7xl font-black uppercase tracking-normal text-[#0f172a] leading-none text-center">
             {formattedName}
           </h3>
+          <div className="h-[1px] w-full bg-[#cbd5e1]" />
         </div>
 
         {/* --- ACHIEVEMENT DESCRIPTION --- */}
-        <div className="relative z-10 mt-8 text-center space-y-2 max-w-4xl">
+        <div className="relative z-10 mt-4 text-center space-y-2 max-w-4xl">
           <p className="text-sm font-bold text-[#0f172a] uppercase tracking-wide leading-tight">
             WHO HAS DEMONSTRATED EXCEPTIONAL CALCULATION SPEED AND PRECISION BY ACHIEVING
           </p>
-          <p className="text-sm font-bold text-[#0f172a] uppercase tracking-widest">
-            THE DISTINCTION OF <span className="text-[#f97316] font-black text-3xl ml-2">{title}</span>
-          </p>
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-sm font-bold text-[#0f172a] uppercase tracking-widest">
+              THE DISTINCTION OF <span className="text-[#f97316] font-black text-3xl ml-2">{title}</span>
+            </p>
+            <div className="h-px w-48 bg-[#f97316]/20" />
+          </div>
         </div>
 
         {/* --- SCORE --- */}
-        <div className="relative z-10 mt-6">
+        <div className="relative z-10 mt-4">
           <p className="text-lg font-bold text-[#0f172a]">
             With a certified performance score of <span className="font-black border-b-2 border-[#0f172a] pb-0.5 px-1">{score || '---'}</span>
           </p>
@@ -124,7 +132,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            <div className="text-right w-64">
              <div className="flex flex-col items-end relative">
                 <p 
-                  className="text-[#f97316] absolute bottom-[18px] right-6 font-sacramento text-[34px] font-bold"
+                  className="text-[#f97316] absolute bottom-[4px] right-6 font-sacramento text-[34px] font-bold"
                   style={{ fontFamily: 'var(--font-sacramento), cursive' }}
                 >
                   Satish Mane
