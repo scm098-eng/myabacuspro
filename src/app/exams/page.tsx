@@ -90,16 +90,24 @@ export default function ExamDashboardPage() {
     return () => { unsubSchedule(); unsubscribeApp(); unsubscribeResults(); };
   }, [user]);
 
+  // Robust Winner Detection Logic
+  const winningResult = useMemo(() => {
+    if (!schedule?.resultsDeclared || !schedule || results.length === 0) return null;
+    // Check if any of the student's final results match a winner ID in the schedule
+    return results.find(r => {
+        if (!r.isFinal) return false;
+        const winnerKey = `group${r.group}WinnerId`;
+        return schedule[winnerKey] === r.id;
+    }) || null;
+  }, [schedule, results]);
+
+  const isWinner = !!winningResult;
+
   const finalAttempt = useMemo(() => {
     if (!application || results.length === 0) return null;
-    return results.find(r => r.isFinal === true);
-  }, [application, results]);
-
-  const isWinner = useMemo(() => {
-    if (!schedule?.resultsDeclared || !finalAttempt || !schedule) return false;
-    const winnerKey = `group${finalAttempt.group}WinnerId`;
-    return schedule[winnerKey] === finalAttempt.id;
-  }, [schedule, finalAttempt]);
+    // Prefer the winning result if they have one, otherwise most recent final
+    return winningResult || results.find(r => r.isFinal === true) || null;
+  }, [application, results, winningResult]);
 
   const handleApply = async (group: ExamGroup) => {
     if (!user || !profile) return;
@@ -204,7 +212,7 @@ export default function ExamDashboardPage() {
               <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full md:w-auto justify-center md:justify-end">
                 {isWinner && (
                   <Button 
-                    onClick={() => handleGetCertificate(finalAttempt, true)}
+                    onClick={() => handleGetCertificate(winningResult!, true)}
                     className="bg-yellow-400 text-indigo-950 hover:bg-yellow-500 font-black h-12 sm:h-14 px-6 sm:px-8 rounded-2xl text-xs sm:text-base shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest w-full sm:w-auto"
                   >
                     <Medal className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
@@ -212,7 +220,7 @@ export default function ExamDashboardPage() {
                   </Button>
                 )}
                 <Button 
-                  onClick={() => handleGetCertificate(finalAttempt, false)}
+                  onClick={() => handleGetCertificate(finalAttempt!, false)}
                   variant="outline"
                   className="bg-white/10 text-white hover:bg-white/20 font-black h-12 sm:h-14 px-6 sm:px-8 rounded-2xl text-xs sm:text-base shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest w-full sm:w-auto"
                 >

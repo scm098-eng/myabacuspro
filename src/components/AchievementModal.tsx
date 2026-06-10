@@ -59,7 +59,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-10 transition-opacity", isWinnerDesign ? "opacity-[0.15]" : "opacity-[0.05]")}>
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
-              <Brain style={{ width: '80px', height: '80px' }} className={cn(isWinnerDesign ? "text-[#b45309]" : "text-[#0f172a]")} />
+              <Brain style={{ width: '20px', height: '20px' }} className={cn(isWinnerDesign ? "text-[#b45309]" : "text-[#0f172a]")} />
             </div>
           ))}
         </div>
