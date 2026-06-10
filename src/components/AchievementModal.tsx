@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { toJpeg } from 'html-to-image';
 import { jsPDF } from 'jspdf';
-import { X, Download, Award, Brain, FileText, Loader2, Share2, Copy } from 'lucide-react';
+import { X, Download, Award, Brain, FileText, Loader2, Share2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,7 +32,6 @@ const A4_HEIGHT = 794;
 
 const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: string; title: string; score?: string; date?: string }>(
   ({ studentName, title, score, date }, ref) => {
-    // Ensure 1 space between names
     const formattedName = studentName.trim().replace(/\s+/g, ' ');
 
     return (
@@ -229,7 +229,8 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
         await navigator.share({
           files: [file],
           title: 'My Abacus Pro Achievement',
-          text: `I just achieved the rank of ${title} on My Abacus Pro! 🧮✨`,
+          text: `I just achieved the distinction of ${title} on My Abacus Pro! 🧮✨`,
+          url: 'https://myabacuspro.com',
         });
       } else {
         await navigator.clipboard.writeText('https://myabacuspro.com');

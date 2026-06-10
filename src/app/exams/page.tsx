@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -7,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Lock, ShieldAlert, Trophy, FileEdit, Award, Loader2, Timer, HelpCircle, CheckCircle2, ChevronRight, Download } from 'lucide-react';
+import { Lock, ShieldAlert, Trophy, FileEdit, Award, Loader2, Timer, HelpCircle, CheckCircle2, ChevronRight, Download, Medal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getFirestore, collection, query, where, onSnapshot, doc, orderBy, getDocs, limit } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -33,6 +34,7 @@ export default function ExamDashboardPage() {
   const [isApplying, setIsApplying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isCheckingCert, setIsCheckingCert] = useState<string | null>(null);
+  const [isWinner, setIsWinner] = useState(false);
   
   const [schedule, setSchedule] = useState<{ date: string, start: Date, end: Date, lastApplyDate?: string, isActive?: boolean, resultsDeclared?: boolean } | null>(null);
 
@@ -93,6 +95,42 @@ export default function ExamDashboardPage() {
     return () => { unsubSchedule(); unsubscribeApp(); unsubscribeResults(); };
   }, [user]);
 
+  const finalAttempt = useMemo(() => {
+    if (!application || results.length === 0) return null;
+    const appliedTime = application.appliedAt?.seconds || 0;
+    return results.find(r => r.isFinal && (r.submittedAt?.seconds || 0) > appliedTime);
+  }, [application, results]);
+
+  // Check if current user is the group winner once results are declared
+  useEffect(() => {
+    if (schedule?.resultsDeclared && finalAttempt) {
+      const checkWinnerStatus = async () => {
+        const db = getFirestore(firebaseApp);
+        const q = query(
+          collection(db, "examResults"),
+          where("group", "==", finalAttempt.group),
+          where("isFinal", "==", true),
+          orderBy("score", "desc"),
+          orderBy("timeLeft", "desc"),
+          limit(1)
+        );
+        try {
+          const snap = await getDocs(q);
+          if (!snap.empty && snap.docs[0].id === finalAttempt.id) {
+            setIsWinner(true);
+          } else {
+            setIsWinner(false);
+          }
+        } catch (e) {
+          console.warn("Winner check failed:", e);
+        }
+      };
+      checkWinnerStatus();
+    } else {
+      setIsWinner(false);
+    }
+  }, [schedule?.resultsDeclared, finalAttempt]);
+
   const handleApply = async (group: ExamGroup) => {
     if (!user || !profile) return;
     setIsApplying(true);
@@ -106,53 +144,23 @@ export default function ExamDashboardPage() {
       });
   };
 
-  const handleGetCertificate = async (res: ExamResult) => {
-    setIsCheckingCert(res.id);
+  const handleGetCertificate = (res: ExamResult, forWinner: boolean) => {
+    setIsCheckingCert(res.id + (forWinner ? '-win' : '-part'));
     
-    try {
-      const db = getFirestore(firebaseApp);
-      const groupResultsQ = query(
-        collection(db, "examResults"), 
-        where("group", "==", res.group), 
-        where("isFinal", "==", true),
-        orderBy("score", "desc"),
-        orderBy("timeLeft", "desc"),
-        limit(1)
-      );
-      
-      let isWinner = false;
-      try {
-        const topSnap = await getDocs(groupResultsQ);
-        isWinner = !topSnap.empty && topSnap.docs[0].id === res.id;
-      } catch (e) {
-        console.warn("Champion check failed (missing index?), defaulting to participation.");
-      }
-
-      setCertData({
-        type: isWinner ? 'exam_winner' : 'exam_participation',
-        title: isWinner ? `Group ${res.group} CHAMPION` : `Group ${res.group} Participant`,
-        score: `${res.score}/${res.totalQuestions} (${res.accuracy.toFixed(1)}%)`,
-        date: format(res.submittedAt?.toDate ? res.submittedAt.toDate() : new Date(), 'MMMM do, yyyy')
-      });
-      setShowCertificate(true);
-    } catch (e) {
-      toast({ title: "Error", description: "Failed to generate certificate components.", variant: "destructive" });
-    } finally {
-      setIsCheckingCert(null);
-    }
+    setCertData({
+      type: forWinner ? 'exam_winner' : 'exam_participation',
+      title: forWinner ? `GROUP ${res.group} 1st RANK ACHIEVER` : `GROUP ${res.group} PARTICIPANT`,
+      score: `${res.score}/${res.totalQuestions} (${res.accuracy.toFixed(1)}%)`,
+      date: format(res.submittedAt?.toDate ? res.submittedAt.toDate() : new Date(), 'MMMM do, yyyy')
+    });
+    setShowCertificate(true);
+    setIsCheckingCert(null);
   };
 
   const isApproved = useMemo(() => application?.status === 'approved', [application]);
 
-  const finalAttempt = useMemo(() => {
-    if (!application || results.length === 0) return null;
-    const appliedTime = application.appliedAt?.seconds || 0;
-    return results.find(r => r.isFinal && (r.submittedAt?.seconds || 0) > appliedTime);
-  }, [application, results]);
-
   const displayedResults = useMemo(() => {
     if (schedule?.resultsDeclared) {
-        // Only keep Final Exam results once declared
         return results.filter(r => r.isFinal);
     }
     return results;
@@ -207,13 +215,12 @@ export default function ExamDashboardPage() {
             </div>
             <div className="bg-white/10 p-6 rounded-3xl border border-white/20 backdrop-blur-md text-center">
               <p className="text-[10px] font-black uppercase tracking-widest text-orange-400">Next Final Exam</p>
-              <p className="text-2xl font-black">{schedule ? format(parseISO(schedule.date), 'MMMM do, yyyy') : 'Stay Tuned'}</p>
+              <p className="text-2xl font-black">{(schedule && !schedule.resultsDeclared) ? format(parseISO(schedule.date), 'MMMM do, yyyy') : 'Stay Tuned'}</p>
             </div>
           </div>
         </CardHeader>
       </Card>
 
-      {/* --- RELOCATED CERTIFICATE SECTION --- */}
       {schedule?.resultsDeclared && finalAttempt && (
         <Card className="bg-indigo-600 border-none shadow-2xl rounded-[2rem] overflow-hidden animate-in zoom-in-95 duration-700">
            <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between gap-8 text-white">
@@ -221,17 +228,31 @@ export default function ExamDashboardPage() {
                 <div className="bg-white/20 p-5 rounded-full shadow-lg"><Award className="w-12 h-12 text-yellow-300 drop-shadow-sm" /></div>
                 <div className="space-y-1 text-center md:text-left">
                   <h2 className="text-3xl font-black uppercase tracking-tighter italic">Official Certification Ready!</h2>
-                  <p className="font-bold opacity-80 text-lg">Your Group {application?.group} results are official. Claim your prestigious award now.</p>
+                  <p className="font-bold opacity-80 text-lg">
+                    {isWinner ? "Incredible! You secured the 1st Rank. Claim your honors below." : "Your Group results are official. Claim your prestigious award now."}
+                  </p>
                 </div>
               </div>
-              <Button 
-                onClick={() => handleGetCertificate(finalAttempt)}
-                disabled={!!isCheckingCert}
-                className="bg-yellow-400 text-indigo-950 hover:bg-yellow-500 font-black h-16 px-12 rounded-2xl text-xl shadow-xl transition-transform hover:scale-105 shrink-0 border-none uppercase tracking-widest"
-              >
-                {isCheckingCert === finalAttempt.id ? <Loader2 className="animate-spin w-6 h-6 mr-3" /> : <Download className="w-6 h-6 mr-3" />}
-                Download Certificate
-              </Button>
+              
+              <div className="flex flex-col gap-3 shrink-0 w-full md:w-auto">
+                {isWinner && (
+                  <Button 
+                    onClick={() => handleGetCertificate(finalAttempt, true)}
+                    className="bg-yellow-400 text-indigo-950 hover:bg-yellow-500 font-black h-16 px-10 rounded-2xl text-xl shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest"
+                  >
+                    <Medal className="w-6 h-6 mr-3" />
+                    Rank 1 Certificate
+                  </Button>
+                )}
+                <Button 
+                  onClick={() => handleGetCertificate(finalAttempt, false)}
+                  variant="outline"
+                  className="bg-white/10 text-white hover:bg-white/20 font-black h-16 px-10 rounded-2xl text-xl shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest"
+                >
+                  <Download className="w-6 h-6 mr-3" />
+                  Participation Cert
+                </Button>
+              </div>
            </CardContent>
         </Card>
       )}
@@ -270,20 +291,20 @@ export default function ExamDashboardPage() {
                   <Badge className="bg-green-500 py-1.5 px-4 font-black border-none">APPROVED</Badge>
                 </div>
                 
-                {/* --- PRACTICE LOCK LOGIC --- */}
+                {/* --- PRACTICE LOCK LOGIC: Locked if Exam is Open OR Results Declared --- */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {Array.from({ length: 20 }).map((_, i) => (
                     <Button 
                       key={i} 
                       variant="outline" 
-                      disabled={!!schedule?.resultsDeclared}
+                      disabled={examOpen || !!schedule?.resultsDeclared}
                       className={cn(
                         "h-24 rounded-2xl flex flex-col gap-2 font-black transition-all",
-                        !schedule?.resultsDeclared ? "hover:scale-105" : "opacity-50 cursor-not-allowed grayscale bg-muted/50"
+                        (!examOpen && !schedule?.resultsDeclared) ? "hover:scale-105" : "opacity-50 cursor-not-allowed grayscale bg-muted/50"
                       )} 
                       onClick={() => router.push(`/exams/arena/paper-${i + 1}`)}
                     >
-                      {schedule?.resultsDeclared ? (
+                      {(examOpen || schedule?.resultsDeclared) ? (
                         <Lock className="w-5 h-5 text-muted-foreground" />
                       ) : (
                         <>
@@ -325,7 +346,6 @@ export default function ExamDashboardPage() {
             {application.status === 'pending' && <Card className="bg-orange-50 border-orange-200 p-10 rounded-[2.5rem] text-center shadow-lg"><CardTitle className="text-2xl font-black uppercase text-orange-900">Application Pending</CardTitle><p className="text-orange-700 font-bold mt-4">We are reviewing your Group {application.group} application.</p></Card>}
           </div>
 
-          {/* --- PERFORMANCE LOG (FILTERED) --- */}
           <div className="space-y-8">
              <Card className="rounded-[2rem] shadow-lg border-none">
                 <CardHeader><CardTitle className="text-xl font-black uppercase tracking-tight">My Performance</CardTitle></CardHeader>
@@ -364,3 +384,4 @@ export default function ExamDashboardPage() {
     </div>
   );
 }
+

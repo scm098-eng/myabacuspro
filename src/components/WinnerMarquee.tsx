@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -26,7 +27,7 @@ export default function WinnerMarquee() {
     const now = new Date();
     const { winners, schedule } = data;
 
-    // 1. Exam Cancelled Message (Check updated time within last 24 hours)
+    // 1. Exam Cancelled Message
     if (schedule?.isActive === false && schedule?.updatedAt) {
       const updatedAt = schedule.updatedAt.toDate?.() || new Date(schedule.updatedAt);
       const oneDayAfter = new Date(updatedAt.getTime() + 86400000);
@@ -45,7 +46,8 @@ export default function WinnerMarquee() {
       }
     }
 
-    if (schedule?.isActive !== false && schedule?.date) {
+    // Only show "Next Final Exam" announcement if results are NOT currently declared
+    if (schedule?.isActive !== false && schedule?.date && !schedule?.resultsDeclared) {
       if (isSameDay(now, parseISO(schedule.date))) {
         msgs.push({ text: `EXAM DAY IS HERE! ARENA OPEN UNTIL ${schedule.endTime}!`, icon: <Megaphone className="w-5 h-5 text-yellow-300 animate-pulse" /> });
       } else if (schedule.lastApplyDate && isBefore(now, parseISO(schedule.lastApplyDate))) {
