@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { toJpeg } from 'html-to-image';
-import { jsPDF } from 'jspdf';
+import { jsPDF } from 'jsPDF';
 import { X, Download, Award, Brain, FileText, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 
@@ -30,7 +30,6 @@ const A4_HEIGHT = 794;
 
 const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: string; title: string; score?: string; date?: string }>(
   ({ studentName, title, score, date }, ref) => {
-    // Ensure name has at least one space if it contains multiple words
     const formattedName = studentName.trim().replace(/\s+/g, ' ');
 
     return (
@@ -50,68 +49,68 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className="absolute top-10 left-10 right-10 bottom-10 border-[0.5px] border-[#cbd5e1] pointer-events-none z-20" />
 
         {/* --- WATERMARK BACKGROUND --- */}
-        <div className="absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 opacity-[0.04] pointer-events-none p-10">
+        <div className="absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 opacity-[0.05] pointer-events-none p-10">
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
-              <Brain className="w-20 h-20 text-[#0f172a]" />
+              <Brain className="w-24 h-24 text-[#0f172a]" />
             </div>
           ))}
         </div>
 
-        {/* --- HEADER --- */}
-        <div className="relative z-10 w-full flex flex-col items-center mt-1">
+        {/* --- HEADER BLOCK (SHIFTED DOWN TO CLEAR BORDER & NEAR BADGE) --- */}
+        <div className="relative z-10 w-full flex flex-col items-center mt-20">
           <div className="flex items-center gap-3 mb-1">
             <div className="bg-[#f97316] p-2 rounded-xl shadow-lg">
               <Brain className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-4xl font-black text-[#0f172a] tracking-tight">MY ABACUS PRO</h1>
+            <h1 className="text-4xl font-black text-[#0f172a] tracking-tight uppercase">MY ABACUS PRO</h1>
           </div>
           <p className="text-[#f97316] font-black text-[10px] tracking-[0.5em] uppercase">LEARN • PRACTICE • SUCCEED</p>
         </div>
 
-        {/* --- MASTERY AWARD BADGE --- */}
-        <div className="relative z-10 mt-2">
-           <div className="bg-[#0f172a] px-20 py-4 rounded-[2rem] shadow-xl">
+        {/* --- MASTERY AWARD BADGE (THE ANCHOR) --- */}
+        <div className="relative z-10 mt-3">
+           <div className="bg-[#0f172a] px-24 py-4 rounded-[2rem] shadow-xl border-b-4 border-black/20">
               <h2 className="text-2xl font-black italic text-white uppercase tracking-widest">MASTERY RANK AWARD</h2>
            </div>
         </div>
 
-        {/* --- CERTIFICATION TEXT --- */}
-        <div className="relative z-10 mt-3 text-center space-y-1">
-           <p className="text-[#94a3b8] font-black uppercase tracking-[0.4em] text-[10px]">OFFICIAL MASTERY CERTIFICATION</p>
-           <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90 leading-tight">This prestigious award is proudly presented to</p>
+        {/* --- CERTIFICATION BLOCK (SHIFTED UP TOWARDS BADGE) --- */}
+        <div className="relative z-10 mt-4 text-center flex flex-col items-center gap-1">
+           <p className="text-[#94a3b8] font-black uppercase tracking-[0.4em] text-[10px] mb-1">OFFICIAL MASTERY CERTIFICATION</p>
+           <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90 leading-none">This prestigious award is proudly presented to</p>
+           
+           {/* Student Name */}
+           <div className="mt-3 w-fit px-12 pb-1 flex flex-col items-center gap-2">
+             <h3 className="text-7xl font-black uppercase tracking-normal text-[#0f172a] leading-none text-center">
+               {formattedName}
+             </h3>
+             <div className="h-[1.5px] w-full bg-[#cbd5e1]" />
+           </div>
+
+           {/* Achievement Description */}
+           <div className="mt-5 text-center space-y-2 max-w-4xl">
+             <p className="text-sm font-bold text-[#0f172a] uppercase tracking-wide leading-tight opacity-70">
+               WHO HAS DEMONSTRATED EXCEPTIONAL CALCULATION SPEED AND PRECISION BY ACHIEVING
+             </p>
+             <div className="flex flex-col items-center gap-2">
+               <p className="text-sm font-bold text-[#0f172a] uppercase tracking-widest">
+                 THE DISTINCTION OF <span className="text-[#f97316] font-black text-4xl ml-2">{title}</span>
+               </p>
+               <div className="h-[1px] w-56 bg-[#f97316]/30" />
+             </div>
+           </div>
+
+           {/* Score Line */}
+           <div className="mt-5">
+             <p className="text-lg font-bold text-[#0f172a]">
+               With a certified performance score of <span className="font-black border-b-2 border-[#0f172a] pb-0.5 px-2 underline-offset-4">{score || '---'}</span>
+             </p>
+           </div>
         </div>
 
-        {/* --- STUDENT NAME --- */}
-        <div className="relative z-10 mt-1 w-fit px-12 pb-1 flex flex-col items-center gap-1">
-          <h3 className="text-7xl font-black uppercase tracking-normal text-[#0f172a] leading-none text-center">
-            {formattedName}
-          </h3>
-          <div className="h-[1px] w-full bg-[#cbd5e1]" />
-        </div>
-
-        {/* --- ACHIEVEMENT DESCRIPTION --- */}
-        <div className="relative z-10 mt-4 text-center space-y-2 max-w-4xl">
-          <p className="text-sm font-bold text-[#0f172a] uppercase tracking-wide leading-tight">
-            WHO HAS DEMONSTRATED EXCEPTIONAL CALCULATION SPEED AND PRECISION BY ACHIEVING
-          </p>
-          <div className="flex flex-col items-center gap-1">
-            <p className="text-sm font-bold text-[#0f172a] uppercase tracking-widest">
-              THE DISTINCTION OF <span className="text-[#f97316] font-black text-3xl ml-2">{title}</span>
-            </p>
-            <div className="h-px w-48 bg-[#f97316]/20" />
-          </div>
-        </div>
-
-        {/* --- SCORE --- */}
-        <div className="relative z-10 mt-4">
-          <p className="text-lg font-bold text-[#0f172a]">
-            With a certified performance score of <span className="font-black border-b-2 border-[#0f172a] pb-0.5 px-1">{score || '---'}</span>
-          </p>
-        </div>
-
-        {/* --- FOOTER --- */}
-        <div className="relative z-10 w-full mt-auto flex justify-between items-end px-12 pb-8">
+        {/* --- FOOTER AREA --- */}
+        <div className="relative z-10 w-full mt-auto flex justify-between items-end px-12 pb-10">
            {/* Date Section */}
            <div className="text-left space-y-1 w-64">
              <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-[0.2em]">DATE OF ISSUE</p>
@@ -119,11 +118,11 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            </div>
 
            {/* Gold Seal */}
-           <div className="flex flex-col items-center gap-2 mb-[-10px]">
-             <div className="bg-[#fef9c3] p-5 rounded-full border-[5px] border-[#fbbf24] shadow-xl relative">
+           <div className="flex flex-col items-center gap-2 mb-[-5px]">
+             <div className="bg-[#fef9c3] p-5 rounded-full border-[5px] border-[#fbbf24] shadow-xl relative animate-in zoom-in-50 duration-700">
                 <Award className="w-14 h-14 text-[#fbbf24] drop-shadow-sm" />
              </div>
-             <div className="bg-[#0f172a] px-4 py-1 rounded-full shadow-md">
+             <div className="bg-[#0f172a] px-5 py-1.5 rounded-full shadow-md">
                <p className="text-[8px] font-black text-white uppercase tracking-widest">LEVEL ACHIEVED</p>
              </div>
            </div>
@@ -132,12 +131,12 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            <div className="text-right w-64">
              <div className="flex flex-col items-end relative">
                 <p 
-                  className="text-[#f97316] absolute bottom-[4px] right-6 font-sacramento text-[34px] font-bold"
+                  className="text-[#f97316] absolute bottom-[4px] right-8 font-sacramento text-[36px] font-bold"
                   style={{ fontFamily: 'var(--font-sacramento), cursive' }}
                 >
                   Satish Mane
                 </p>
-                <div className="h-[1.5px] w-56 bg-[#cbd5e1] mt-10" />
+                <div className="h-[1.5px] w-60 bg-[#cbd5e1] mt-10" />
              </div>
              <div className="mt-2">
                 <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-[0.2em]">SATISH MANE</p>
@@ -157,7 +156,6 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
   const [modalScale, setModalScale] = useState(0.5);
 
   useEffect(() => {
-    // Confetti celebration
     confetti({
       particleCount: 150,
       spread: 70,
@@ -166,14 +164,13 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
       zIndex: 10001
     });
 
-    // Dynamic scaling for responsive preview
     const updateScale = () => {
       const padding = 40;
       const maxWidth = window.innerWidth - padding;
       const maxHeight = window.innerHeight - 250;
       const scaleW = maxWidth / A4_WIDTH;
       const scaleH = maxHeight / A4_HEIGHT;
-      setModalScale(Math.min(scaleW, scaleH, 0.7));
+      setModalScale(Math.min(scaleW, scaleH, 0.75));
     };
 
     updateScale();
