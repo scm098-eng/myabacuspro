@@ -180,7 +180,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
             variant="outline"
             className="bg-white/5 border-white/20 hover:bg-white/10 text-white h-14 w-14 rounded-2xl transition-all"
           >
-            <X className="h-6 w-6" />
+            <X className="h-6 x-6" />
           </Button>
         </div>
       </div>

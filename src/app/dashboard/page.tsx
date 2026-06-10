@@ -5,12 +5,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, ChevronRight, Loader2, Star, Flame, CalendarDays, Download, Award, Crown } from 'lucide-react';
+import { Check, Trophy, ChevronRight, Star, Flame, CalendarDays, Download, Award, Crown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, doc } from 'firebase/firestore';
+import { getFirestore, onSnapshot, doc, collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ProfileData } from '@/types';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -19,7 +19,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RANK_CRITERIA, ADMIN_EMAILS } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
-import MilestoneCelebration from '@/components/MilestoneCelebration';
 import AchievementModal, { AchievementType } from '@/components/AchievementModal';
 
 function getUTCMondayKey() {
@@ -48,9 +47,6 @@ export default function StudentDashboardPage() {
   const [monthlyWinner, setMonthlyWinner] = useState<any>(null);
   const [globalWinner, setGlobalWinner] = useState<any>(null);
   
-  const [showMilestone, setShowMilestone] = useState(false);
-  const [milestoneDays, setMilestoneDays] = useState(0);
-
   const [showCertificate, setShowCertificate] = useState(false);
   const [certData, setCertData] = useState<{ type: AchievementType, title: string, score?: string } | null>(null);
 
@@ -140,8 +136,6 @@ export default function StudentDashboardPage() {
           onClose={() => setShowCertificate(false)}
         />
       )}
-
-      {showMilestone && <MilestoneCelebration days={milestoneDays} onClose={() => setShowMilestone(false)} />}
 
       <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 text-white min-h-[220px] rounded-3xl flex items-center">
         <div className="absolute inset-0 opacity-20 bg-cover bg-center" style={{ backgroundImage: "url('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/abacus_hero.webp?alt=media')" }} />
