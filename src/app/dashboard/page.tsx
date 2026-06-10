@@ -102,7 +102,7 @@ export default function StudentDashboardPage() {
     setShowCertificate(true);
   };
 
-  const handleDownloadWinnerCert = (type: 'weekly_winner' | 'monthly_winner' | 'global_winner', points: number) => {
+  const handleDownloadWinnerCert = (type: AchievementType, points: number) => {
     setCertData({
       type,
       title: type === 'weekly_winner' ? 'Weekly Champion' : (type === 'monthly_winner' ? 'Monthly Master' : 'Global Legend'),
@@ -212,7 +212,7 @@ export default function StudentDashboardPage() {
             <CardContent className="p-0">
               <div className="divide-y divide-border/50">
                 {leaderboard.map((s, i) => (
-                  <div key={s.uid} className={cn("flex items-center justify-between p-4", s.uid === profile.uid ? "bg-primary/5" : "hover:bg-muted/30")}>
+                  <div key={s.uid} className={cn("flex items-center justify-between p-4", s.uid === user.uid ? "bg-primary/5" : "hover:bg-muted/30")}>
                     <div className="flex items-center gap-4 min-w-0">
                       <span className={cn("w-6 text-sm font-black shrink-0", i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground")}>#{i + 1}</span>
                       <Avatar className="h-10 w-10 border-2 border-white shrink-0"><AvatarImage src={s.photo}/></Avatar><div className="min-w-0 overflow-hidden"><p className="text-sm font-bold truncate">{s.name}</p><span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase truncate inline-block max-w-full" style={{ backgroundColor: (s.title?.color || "#94a3b8") + "20", color: (s.title?.color || "#94a3b8") }}>{s.title?.name || "Math Beginner"}</span></div></div>
