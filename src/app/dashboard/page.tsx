@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, ChevronRight, Star, Flame, CalendarDays, Download, Award, Crown } from 'lucide-react';
+import { Check, Trophy, ChevronRight, Star, Flame, CalendarDays, Download, Award, Crown, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -83,7 +83,8 @@ export default function StudentDashboardPage() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const data = snapshot.docs.map(doc => {
             const ud = doc.data() as ProfileData;
-            return { uid: doc.id, email: ud.email?.toLowerCase(), name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: (ud as any)[leaderboardTab] || 0, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
+            const pts = (ud as any)[leaderboardTab] || 0;
+            return { uid: doc.id, email: ud.email?.toLowerCase(), name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: pts, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
           }).filter(s => s.points > 0 && !ADMIN_EMAILS.includes(s.email)).slice(0, 10);
         setLeaderboard(data);
       }, async (err) => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' })); }
@@ -136,11 +137,11 @@ export default function StudentDashboardPage() {
         />
       )}
 
-      <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 text-white min-h-[220px] rounded-3xl flex items-center">
+      <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 text-white min-h-[220px] rounded-[2.5rem] flex items-center">
         <div className="absolute inset-0 opacity-20 bg-cover bg-center" style={{ backgroundImage: "url('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/abacus_hero.webp?alt=media')" }} />
         <CardContent className="relative z-10 p-8 w-full flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="space-y-4 text-center md:text-left">
-            <h1 className="text-4xl md:text-5xl font-black font-headline uppercase leading-none">Road to Mastery</h1>
+            <h1 className="text-4xl md:text-5xl font-black font-headline uppercase leading-none italic tracking-tighter">My Math Journey</h1>
             <div className="flex flex-wrap gap-2 justify-center md:justify-start">
               <Badge className="bg-yellow-400 text-slate-900 font-bold px-4 py-1.5 rounded-full border-none shadow-md">RANK: {currentRank.name}</Badge>
               <Button onClick={handleDownloadRankCert} variant="ghost" size="sm" className="text-white hover:bg-white/10 font-black uppercase text-[10px] gap-2 rounded-full border border-white/20">

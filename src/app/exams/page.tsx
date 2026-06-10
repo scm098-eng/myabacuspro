@@ -6,14 +6,14 @@ import { usePageBackground } from '@/hooks/usePageBackground';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Lock, ShieldAlert, Trophy, FileEdit, Award, Loader2 } from 'lucide-react';
+import { Lock, ShieldAlert, Trophy, FileEdit, Award, Loader2, Timer, HelpCircle, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getFirestore, collection, query, where, onSnapshot, doc, orderBy, getDocs, limit } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult, ExamGroup } from '@/types';
 import { format, parseISO, isSameDay } from 'date-fns';
-import { isFinalExamAvailable } from '@/lib/exam-utils';
+import { isFinalExamAvailable, getExamTimeLimit } from '@/lib/exam-utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
@@ -162,6 +162,13 @@ export default function ExamDashboardPage() {
     return `OPENS ON ${format(parseISO(schedule.date), 'MMMM do')} AT ${format(schedule.start, 'p')}`;
   }, [schedule]);
 
+  const timeLimitDisplay = useMemo(() => {
+    if (!application || !profile) return "10 Minutes";
+    const age = profile.dob ? Math.floor((new Date().getTime() - new Date(profile.dob).getTime()) / 3.15576e+10) : 10;
+    const seconds = getExamTimeLimit(age);
+    return `${Math.floor(seconds / 60)} Minutes`;
+  }, [application, profile]);
+
   if (loading || authLoading) return <div className="p-8 max-w-6xl mx-auto"><Skeleton className="h-[600px] w-full rounded-3xl" /></div>;
 
   return (
@@ -236,13 +243,22 @@ export default function ExamDashboardPage() {
                    <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2 mb-6"><ShieldAlert className="text-red-500 w-7 h-7" /> Final Official Exam</h2>
                    <Card className={cn("rounded-[2.5rem] border-4 overflow-hidden shadow-2xl transition-all", examOpen && !hasFinishedFinal ? "border-orange-500" : "border-slate-200 grayscale opacity-60")}>
                     <CardHeader className="bg-slate-900 text-white p-8">
-                      <div className="flex justify-between items-center">
-                        <div><CardTitle className="text-3xl font-black uppercase italic tracking-tighter">Grand Final 2026</CardTitle><div className="text-slate-400 font-bold mt-1">Group {application.group} Certification</div></div>
-                        <Lock className="w-8 h-8 text-slate-500" />
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-3xl font-black uppercase italic tracking-tighter">Grand Final 2026</CardTitle>
+                          <div className="text-slate-400 font-bold mt-1 flex items-center gap-2">
+                             Group {application.group} Certification
+                             <Separator orientation="vertical" className="h-3 bg-white/20" />
+                             <span className="flex items-center gap-1 text-orange-400"><HelpCircle className="w-3 h-3" /> 150 Questions</span>
+                             <Separator orientation="vertical" className="h-3 bg-white/20" />
+                             <span className="flex items-center gap-1 text-sky-400"><Timer className="w-3 h-3" /> {timeLimitDisplay}</span>
+                          </div>
+                        </div>
+                        <Lock className="w-10 h-10 text-slate-500" />
                       </div>
                     </CardHeader>
-                    <CardFooter className="p-8">
-                      <Button size="lg" className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl" disabled={!examOpen || hasFinishedFinal} onClick={() => router.push('/exams/arena/final')}>
+                    <CardFooter className="p-10 bg-slate-50 border-t">
+                      <Button size="lg" className="w-full h-20 text-2xl font-black uppercase tracking-widest rounded-[1.5rem] shadow-2xl transition-transform hover:scale-[1.02] active:scale-95" disabled={!examOpen || hasFinishedFinal} onClick={() => router.push('/exams/arena/final')}>
                         {hasFinishedFinal ? 'ATTEMPTED' : examOpen ? 'START FINAL EXAM' : examEnded ? 'EXAM CLOSED' : openingMessage}
                       </Button>
                     </CardFooter>

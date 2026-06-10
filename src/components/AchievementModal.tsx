@@ -3,10 +3,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { toJpeg } from 'html-to-image';
-import { X, Download, Share2, Award, Trophy, Crown, Star, ShieldCheck, Medal, Loader2 } from 'lucide-react';
+import { X, Download, Share2, Award, Trophy, Crown, Star, ShieldCheck, Medal, Loader2, Brain } from 'lucide-react';
 import { Button } from './ui/button';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Logo } from './shared/Logo';
 
 export type AchievementType = 
   | 'exam_participation' 
@@ -30,12 +31,12 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
   const [isDownloading, setIsDownloading] = useState(false);
 
   const config = {
-    exam_participation: { label: 'Certificate of Participation', theme: 'indigo', icon: <Medal className="w-12 h-12" />, badge: 'PARTICIPANT' },
-    exam_winner: { label: 'Certificate of Excellence', theme: 'gold', icon: <Crown className="w-12 h-12" />, badge: 'WINNER' },
-    rank: { label: 'Mastery Rank Advancement', theme: 'primary', icon: <Award className="w-12 h-12" />, badge: 'RANK UP' },
-    weekly_winner: { label: 'Weekly Hall of Fame', theme: 'gold', icon: <Trophy className="w-12 h-12" />, badge: 'CHAMPION' },
-    monthly_winner: { label: 'Monthly Elite Master', theme: 'gold', icon: <Trophy className="w-12 h-12" />, badge: 'CHAMPION' },
-    global_winner: { label: 'Global Grandmaster', theme: 'gold', icon: <Crown className="w-12 h-12" />, badge: 'LEGEND' },
+    exam_participation: { label: 'Certificate of Participation', theme: 'indigo', icon: <Medal className="w-16 h-16" />, badge: 'PARTICIPANT' },
+    exam_winner: { label: 'Certificate of Excellence', theme: 'gold', icon: <Crown className="w-16 h-16" />, badge: '1st RANK WINNER' },
+    rank: { label: 'Mastery Rank Advancement', theme: 'primary', icon: <Award className="w-16 h-16" />, badge: 'RANK UP ACHIEVED' },
+    weekly_winner: { label: 'Weekly Hall of Fame', theme: 'gold', icon: <Trophy className="w-16 h-16" />, badge: 'WEEKLY CHAMPION' },
+    monthly_winner: { label: 'Monthly Elite Master', theme: 'gold', icon: <Trophy className="w-16 h-16" />, badge: 'MONTHLY CHAMPION' },
+    global_winner: { label: 'Global Grandmaster', theme: 'gold', icon: <Crown className="w-16 h-16" />, badge: 'GLOBAL LEGEND' },
   }[type];
 
   const themeColor = config.theme === 'gold' ? '#fbbf24' : (config.theme === 'indigo' ? '#4f46e5' : '#f97316');
@@ -57,7 +58,8 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
       const dataUrl = await toJpeg(cardRef.current, { 
         quality: 0.95, 
         cacheBust: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        pixelRatio: 2
       });
       const link = document.createElement('a');
       link.download = `MyAbacusPro-${type}-${studentName.replace(/\s+/g, '-')}.jpeg`;
@@ -87,99 +89,128 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-300 overflow-y-auto">
-      <div className="flex flex-col items-center max-w-2xl w-full my-auto">
+      <div className="flex flex-col items-center max-w-4xl w-full my-auto">
         
+        {/* CERTIFICATE CONTAINER */}
         <div 
           ref={cardRef}
-          className="bg-white p-2 sm:p-4 w-full shadow-2xl relative aspect-[1.414/1] flex items-center justify-center border-[12px] border-slate-900 overflow-hidden"
+          className="bg-white w-full shadow-2xl relative aspect-[1.414/1] flex items-center justify-center border-[20px] border-slate-900 overflow-hidden"
+          style={{ boxSizing: 'border-box' }}
         >
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none select-none">
-            <div className="grid grid-cols-6 gap-4 p-8">
-              {Array.from({length: 24}).map((_, i) => <Star key={i} className="w-12 h-12" />)}
+          {/* Subtle Background Pattern */}
+          <div className="absolute inset-0 opacity-[0.04] pointer-events-none select-none">
+            <div className="grid grid-cols-8 gap-8 p-12">
+              {Array.from({length: 48}).map((_, i) => <Brain key={i} className="w-16 h-16" />)}
             </div>
           </div>
 
-          <div className="relative w-full h-full border-4 border-slate-200 p-8 sm:p-12 flex flex-col items-center text-center justify-between bg-white/80">
-            <div className="space-y-4 w-full">
-              <div className="flex justify-center items-center gap-2 mb-2">
-                <ShieldCheck className="w-6 h-6 text-slate-400" />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Official Certification</span>
-                <ShieldCheck className="w-6 h-6 text-slate-400" />
+          {/* Inner Decorative Border */}
+          <div className="absolute inset-4 border-2 border-slate-200 pointer-events-none" />
+          <div className="absolute inset-6 border-4 border-double border-slate-100 pointer-events-none" />
+
+          {/* Main Certificate Content Area */}
+          <div className="relative w-full h-full p-10 sm:p-16 flex flex-col items-center text-center justify-between z-10">
+            
+            {/* Header: Logo + Tagline */}
+            <div className="space-y-2 w-full flex flex-col items-center">
+              <div className="flex items-center gap-4 mb-2">
+                <Brain className="h-12 w-12 text-primary drop-shadow-sm" />
+                <div className="text-4xl font-black font-headline uppercase tracking-tighter text-slate-900 border-b-4 border-slate-900 pb-1">
+                  My Abacus Pro
+                </div>
               </div>
-              <h1 className="text-4xl sm:text-5xl font-black font-headline uppercase tracking-tighter text-slate-900 border-b-4 border-slate-900 pb-2 inline-block">
-                My Abacus Pro
-              </h1>
-              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">The Ultimate Training Ground for Mental Arithmetic</p>
+              <p className="text-[10px] sm:text-xs font-black tracking-[0.6em] text-primary uppercase animate-pulse">
+                LEARN • PRACTICE • SUCCEED
+              </p>
             </div>
 
-            <div className="my-6">
-               <h2 className="text-xl sm:text-3xl font-black text-slate-800 uppercase italic tracking-tight">{config.label}</h2>
-               <div className="h-1 w-24 bg-primary/20 mx-auto mt-2 rounded-full" />
+            {/* Achievement Label */}
+            <div className="my-4">
+               <h2 className="text-2xl sm:text-4xl font-black text-slate-800 uppercase italic tracking-tighter leading-none">
+                {config.label}
+               </h2>
+               <div className="h-1.5 w-32 bg-primary/30 mx-auto mt-4 rounded-full" />
             </div>
 
-            <div className="space-y-4">
-              <p className="text-slate-500 italic font-medium">This is to certify that</p>
-              <h3 className="text-3xl sm:text-5xl font-black font-headline text-slate-900 border-b-2 border-slate-100 pb-2 px-8 min-w-[250px] inline-block">
-                {studentName}
-              </h3>
+            {/* Student Name */}
+            <div className="space-y-4 w-full">
+              <p className="text-slate-500 italic font-serif text-lg">This is to certify that</p>
+              <div className="max-w-[90%] mx-auto overflow-hidden">
+                <h3 className="text-4xl sm:text-6xl font-black font-headline text-slate-900 border-b-2 border-slate-200 pb-4 px-12 inline-block leading-tight">
+                  {studentName}
+                </h3>
+              </div>
             </div>
 
-            <div className="max-w-md mx-auto space-y-3">
-               <p className="text-sm sm:base font-bold text-slate-700 leading-relaxed">
-                  Has successfully demonstrated exceptional dedication and mental arithmetic skill by achieving 
-                  <span className="text-primary font-black mx-1.5 uppercase">{title}</span> 
-                  {score && <span>with a performance score of <strong className="text-slate-900">{score}</strong></span>}.
+            {/* Citation Text */}
+            <div className="max-w-xl mx-auto space-y-4">
+               <p className="text-sm sm:text-lg font-bold text-slate-700 leading-relaxed">
+                  Has demonstrated exceptional mental calculation speed and dedication by achieving the distinction of
+                  <span className="text-primary font-black mx-2 uppercase text-lg sm:text-xl underline decoration-primary/20 underline-offset-8">
+                    {title}
+                  </span> 
+                  {score && (
+                    <span className="block mt-2">
+                      With a certified performance score of <strong className="text-slate-900 text-lg">{score}</strong>
+                    </span>
+                  )}
                </p>
             </div>
 
-            <div className="w-full flex justify-between items-end mt-8">
-              <div className="text-left space-y-1">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date of Award</p>
-                <p className="text-sm font-bold text-slate-900">{date || format(new Date(), 'MMMM do, yyyy')}</p>
+            {/* Footer: Signatures, Date, and Seal */}
+            <div className="w-full flex justify-between items-end mt-4">
+              {/* Date */}
+              <div className="text-left space-y-1 w-1/3">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dated</p>
+                <p className="text-sm sm:text-base font-bold text-slate-900">{date || format(new Date(), 'MMMM do, yyyy')}</p>
               </div>
 
-              <div className="relative">
-                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-yellow-400/50 flex items-center justify-center bg-yellow-50/50 shadow-inner group">
-                   <div className="absolute inset-0 bg-yellow-400/10 animate-pulse rounded-full" />
-                   <div className={cn("text-yellow-600 drop-shadow-md transition-transform group-hover:scale-110", type === 'exam_winner' ? 'scale-125' : 'scale-100')}>
+              {/* Center Seal */}
+              <div className="relative w-1/3 flex justify-center">
+                <div className="w-28 h-28 sm:w-40 sm:h-40 rounded-full border-8 border-yellow-400/30 flex items-center justify-center bg-yellow-50/50 shadow-2xl relative">
+                   <div className="absolute inset-0 bg-yellow-400/5 rounded-full border border-yellow-400/10" />
+                   <div className={cn("text-yellow-600 drop-shadow-xl transition-transform", config.theme === 'gold' ? 'scale-125' : 'scale-100')}>
                       {config.icon}
                    </div>
                 </div>
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-950 px-3 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-md whitespace-nowrap">
+                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl whitespace-nowrap z-20">
                    {config.badge}
                 </div>
               </div>
 
-              <div className="text-right space-y-1">
-                <div className="font-serif italic text-xl sm:text-2xl text-slate-900 mb-[-10px] opacity-80">Satish Mane</div>
-                <div className="h-0.5 w-24 bg-slate-900 ml-auto" />
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Founder, My Abacus Pro</p>
+              {/* Signature */}
+              <div className="text-right space-y-1 w-1/3">
+                <div className="font-serif italic text-2xl sm:text-4xl text-slate-900 mb-[-15px] opacity-90 tracking-tight">
+                  Satish Mane
+                </div>
+                <div className="h-0.5 w-32 bg-slate-900 ml-auto" />
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pt-1">Founder, My Abacus Pro</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-8 flex gap-4 w-full">
+        {/* Modal Controls */}
+        <div className="mt-10 flex flex-wrap gap-4 w-full">
           <Button 
             onClick={handleShare}
-            className="flex-1 h-14 bg-green-600 hover:bg-green-500 text-white font-bold rounded-2xl shadow-xl shadow-green-900/20 transition-all hover:scale-[1.01]"
+            className="flex-1 h-16 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-2xl shadow-2xl transition-all hover:scale-[1.02] border-none"
           >
-            <Share2 className="mr-2 h-5 w-5" /> Share with Parents
+            <Share2 className="mr-3 h-6 w-6" /> Share with Parents
           </Button>
           <Button 
             onClick={handleDownload}
             disabled={isDownloading}
-            variant="secondary"
-            className="flex-1 h-14 bg-slate-100 text-slate-900 hover:bg-white font-bold rounded-2xl shadow-lg transition-all"
+            className="flex-1 h-16 bg-white text-slate-900 hover:bg-slate-50 font-black uppercase tracking-widest rounded-2xl shadow-xl transition-all hover:scale-[1.02] border-2 border-slate-200"
           >
-            {isDownloading ? <Loader2 className="animate-spin" /> : <Download className="mr-2 h-5 w-5" />} Download JPEG
+            {isDownloading ? <Loader2 className="animate-spin mr-3 h-6 w-6" /> : <Download className="mr-3 h-6 w-6" />} Download JPEG
           </Button>
           <Button 
             onClick={onClose}
             variant="outline"
-            className="bg-white/5 border-white/20 hover:bg-white/10 text-white h-14 w-14 rounded-2xl transition-all"
+            className="bg-white/10 border-white/20 hover:bg-white/20 text-white h-16 w-16 rounded-2xl transition-all active:scale-90"
           >
-            <X className="h-6 x-6" />
+            <X className="h-8 w-8" />
           </Button>
         </div>
       </div>
