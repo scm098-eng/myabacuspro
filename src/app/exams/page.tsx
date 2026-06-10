@@ -98,9 +98,23 @@ export default function ExamDashboardPage() {
 
   const finalAttempt = useMemo(() => {
     if (!application || results.length === 0) return null;
-    // Find the most recent final result which now includes the 'rank' calculated by the function
-    return results.find(r => r.isFinal === true) || null;
-  }, [application, results]);
+    const finalResults = results.filter(r => r.isFinal === true);
+    if (finalResults.length === 0) return null;
+
+    // If results are declared, prioritize the result that has been assigned a rank
+    if (schedule?.resultsDeclared) {
+      const rankedResults = finalResults.filter(r => r.rank !== undefined).sort((a, b) => (a.rank || 999) - (b.rank || 999));
+      return rankedResults[0] || finalResults[0];
+    }
+
+    return finalResults[0];
+  }, [application, results, schedule?.resultsDeclared]);
+
+  const isWinner = useMemo(() => {
+    if (!schedule || !finalAttempt) return false;
+    const winnerKey = `group${application?.group}WinnerId`;
+    return schedule[winnerKey] === finalAttempt.id;
+  }, [schedule, finalAttempt, application]);
 
   const handleApply = async (group: ExamGroup) => {
     if (!user || !profile) return;
@@ -116,12 +130,13 @@ export default function ExamDashboardPage() {
   };
 
   const handleGetCertificate = (res: ExamResult, forWinner: boolean) => {
+    const effectiveRank = forWinner ? (res.rank || 1) : undefined;
     setCertData({
       type: forWinner ? 'exam_winner' : 'exam_participation',
-      title: forWinner ? `GROUP ${res.group} ${getOrdinal(res.rank || 1)} RANK ACHIEVER` : `GROUP ${res.group} PARTICIPANT`,
+      title: forWinner ? `GROUP ${res.group} ${getOrdinal(effectiveRank || 1)} RANK ACHIEVER` : `GROUP ${res.group} PARTICIPANT`,
       score: `${res.score}/${res.totalQuestions} (${res.accuracy.toFixed(1)}%)`,
       date: format(res.submittedAt?.toDate ? res.submittedAt.toDate() : new Date(), 'MMMM do, yyyy'),
-      rank: res.rank
+      rank: effectiveRank
     });
     setShowCertificate(true);
   };
@@ -199,30 +214,30 @@ export default function ExamDashboardPage() {
                 <div className="space-y-1 text-center md:text-left">
                   <h2 className="text-3xl font-black uppercase tracking-tighter italic leading-none">Official Certification Ready!</h2>
                   <p className="font-bold opacity-80 text-lg mt-2">
-                    {finalAttempt.rank && finalAttempt.rank <= 3 ? "Incredible performance! Your prestigious honors are ready." : "Your Group results are official. Claim your prestigious award now."}
+                    { (finalAttempt.rank || isWinner) ? "Incredible performance! Your prestigious honors are ready." : "Your Group results are official. Claim your prestigious award now." }
                   </p>
                 </div>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full sm:max-w-md lg:max-w-none justify-center lg:justify-end">
-                {finalAttempt.rank && (
+              <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
+                {(finalAttempt.rank || isWinner) && (
                   <Button 
                     onClick={() => handleGetCertificate(finalAttempt!, true)}
                     className={cn(
-                      "font-black h-12 sm:h-14 px-6 sm:px-8 rounded-2xl text-xs sm:text-base shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest w-full sm:w-auto",
-                      finalAttempt.rank === 1 ? "bg-yellow-400 text-indigo-950 hover:bg-yellow-500" : "bg-indigo-400 text-white hover:bg-indigo-500"
+                      "font-black h-14 px-8 rounded-2xl text-sm shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest w-full sm:w-auto",
+                      (finalAttempt.rank === 1 || isWinner) ? "bg-yellow-400 text-indigo-950 hover:bg-yellow-500" : "bg-indigo-400 text-white hover:bg-indigo-500"
                     )}
                   >
-                    <Medal className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                    Rank {finalAttempt.rank} Cert
+                    <Medal className="w-5 h-5 mr-2" />
+                    Rank {finalAttempt.rank || 1} Cert
                   </Button>
                 )}
                 <Button 
                   onClick={() => handleGetCertificate(finalAttempt!, false)}
                   variant="outline"
-                  className="bg-white/10 text-white hover:bg-white/20 font-black h-12 sm:h-14 px-6 sm:px-8 rounded-2xl text-xs sm:text-base shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest w-full sm:w-auto"
+                  className="bg-white/10 text-white hover:bg-white/20 font-black h-14 px-8 rounded-2xl text-sm shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest w-full sm:w-auto"
                 >
-                  <Download className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                  <Download className="w-5 h-5 mr-2" />
                   Participation
                 </Button>
               </div>
