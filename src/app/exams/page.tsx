@@ -95,13 +95,13 @@ export default function ExamDashboardPage() {
     return () => { unsubSchedule(); unsubscribeApp(); unsubscribeResults(); };
   }, [user]);
 
+  // Refined finalAttempt detection to pick up current cycle Grand Final
   const finalAttempt = useMemo(() => {
     if (!application || results.length === 0) return null;
-    const appliedTime = application.appliedAt?.seconds || 0;
-    return results.find(r => r.isFinal && (r.submittedAt?.seconds || 0) > appliedTime);
+    return results.find(r => r.isFinal);
   }, [application, results]);
 
-  // Check if current user is the group winner once results are declared
+  // Robust winner status check
   useEffect(() => {
     if (schedule?.resultsDeclared && finalAttempt) {
       const checkWinnerStatus = async () => {
@@ -238,18 +238,18 @@ export default function ExamDashboardPage() {
                 {isWinner && (
                   <Button 
                     onClick={() => handleGetCertificate(finalAttempt, true)}
-                    className="bg-yellow-400 text-indigo-950 hover:bg-yellow-500 font-black h-14 sm:h-16 px-6 sm:px-10 rounded-2xl text-base sm:text-xl shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest flex-1 md:flex-none"
+                    className="bg-yellow-400 text-indigo-950 hover:bg-yellow-500 font-black h-12 sm:h-14 px-5 sm:px-8 rounded-2xl text-xs sm:text-base shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest flex-1 md:flex-none"
                   >
-                    <Medal className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
+                    <Medal className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                     Rank 1 Cert
                   </Button>
                 )}
                 <Button 
                   onClick={() => handleGetCertificate(finalAttempt, false)}
                   variant="outline"
-                  className="bg-white/10 text-white hover:bg-white/20 font-black h-14 sm:h-16 px-6 sm:px-10 rounded-2xl text-base sm:text-xl shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest flex-1 md:flex-none"
+                  className="bg-white/10 text-white hover:bg-white/20 font-black h-12 sm:h-14 px-5 sm:px-8 rounded-2xl text-xs sm:text-base shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest flex-1 md:flex-none"
                 >
-                  <Download className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
+                  <Download className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   Participation
                 </Button>
               </div>
@@ -291,7 +291,6 @@ export default function ExamDashboardPage() {
                   <Badge className="bg-green-500 py-1.5 px-4 font-black border-none">APPROVED</Badge>
                 </div>
                 
-                {/* --- PRACTICE LOCK LOGIC: Locked if Exam is Open OR Results Declared --- */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {Array.from({ length: 20 }).map((_, i) => (
                     <Button 

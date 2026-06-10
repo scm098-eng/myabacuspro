@@ -8,6 +8,7 @@ import { jsPDF } from 'jspdf';
 import { X, Download, Award, Brain, FileText, Loader2, Share2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 export type AchievementType = 
   | 'exam_participation' 
@@ -30,15 +31,19 @@ interface AchievementProps {
 const A4_WIDTH = 1123;
 const A4_HEIGHT = 794;
 
-const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: string; title: string; score?: string; date?: string }>(
-  ({ studentName, title, score, date }, ref) => {
+const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: string; title: string; score?: string; date?: string; type: AchievementType }>(
+  ({ studentName, title, score, date, type }, ref) => {
     const formattedName = studentName.trim().replace(/\s+/g, ' ');
+    const isWinnerDesign = type === 'exam_winner';
 
     return (
       <div 
         ref={ref}
         style={{ width: `${A4_WIDTH}px`, height: `${A4_HEIGHT}px` }}
-        className="bg-white relative border-[16px] border-[#0f172a] flex flex-col items-center p-8 overflow-hidden font-sans select-none"
+        className={cn(
+          "relative border-[16px] flex flex-col items-center p-8 overflow-hidden font-sans select-none transition-colors duration-700",
+          isWinnerDesign ? "bg-[#fffdf0] border-[#92400e]" : "bg-white border-[#0f172a]"
+        )}
       >
         {/* --- ORANGE CORNER BRACKETS --- */}
         <div className="absolute top-2 left-2 w-24 h-24 border-t-[6px] border-l-[6px] border-[#f97316] z-20" />
@@ -47,14 +52,14 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className="absolute bottom-2 right-2 w-24 h-24 border-b-[6px] border-r-[6px] border-[#f97316] z-20" />
 
         {/* --- REFINED INNER LIGHT-GREY 2 LINE BORDER --- */}
-        <div className="absolute top-8 left-8 right-8 bottom-8 border-[0.5px] border-[#cbd5e1] pointer-events-none z-20" />
-        <div className="absolute top-10 left-10 right-10 bottom-10 border-[0.5px] border-[#cbd5e1] pointer-events-none z-20" />
+        <div className={cn("absolute top-8 left-8 right-8 bottom-8 border-[0.5px] pointer-events-none z-20", isWinnerDesign ? "border-[#92400e]/30" : "border-[#cbd5e1]")} />
+        <div className={cn("absolute top-10 left-10 right-10 bottom-10 border-[0.5px] pointer-events-none z-20", isWinnerDesign ? "border-[#92400e]/30" : "border-[#cbd5e1]")} />
 
         {/* --- WATERMARK BACKGROUND (LOCKED SIZE) --- */}
-        <div className="absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 opacity-[0.05] pointer-events-none p-10">
+        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-10 transition-opacity", isWinnerDesign ? "opacity-[0.08]" : "opacity-[0.05]")}>
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
-              <Brain style={{ width: '80px', height: '80px' }} className="text-[#0f172a]" />
+              <Brain style={{ width: '80px', height: '80px' }} className={cn(isWinnerDesign ? "text-[#92400e]" : "text-[#0f172a]")} />
             </div>
           ))}
         </div>
@@ -65,38 +70,40 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
             <div className="bg-[#f97316] p-2 rounded-xl shadow-lg">
               <Brain className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-4xl font-black text-[#0f172a] tracking-tight uppercase">MY ABACUS PRO</h1>
+            <h1 className={cn("text-4xl font-black tracking-tight uppercase", isWinnerDesign ? "text-[#92400e]" : "text-[#0f172a]")}>MY ABACUS PRO</h1>
           </div>
           <p className="text-[#f97316] font-black text-[10px] tracking-[0.5em] uppercase">LEARN • PRACTICE • SUCCEED</p>
         </div>
 
         {/* --- MASTERY AWARD BADGE --- */}
         <div className="relative z-10 mt-6">
-           <div className="bg-[#0f172a] px-24 py-4 rounded-[2rem] shadow-xl border-b-4 border-black/20">
-              <h2 className="text-2xl font-black italic text-white uppercase tracking-widest">MASTERY RANK AWARD</h2>
+           <div className={cn("px-24 py-4 rounded-[2rem] shadow-xl border-b-4", isWinnerDesign ? "bg-[#92400e] border-[#78350f]" : "bg-[#0f172a] border-black/20")}>
+              <h2 className="text-2xl font-black italic text-white uppercase tracking-widest">
+                {isWinnerDesign ? "1st RANK CHAMPION AWARD" : "MASTERY RANK AWARD"}
+              </h2>
            </div>
         </div>
 
         {/* --- CERTIFICATION BLOCK --- */}
         <div className="relative z-10 mt-8 text-center flex flex-col items-center gap-1">
-           <p className="text-xs font-black uppercase tracking-[0.4em] text-[#94a3b8] mb-1">OFFICIAL MASTERY CERTIFICATION</p>
+           <p className={cn("text-xs font-black uppercase tracking-[0.4em] mb-1", isWinnerDesign ? "text-[#b45309]" : "text-[#94a3b8]")}>OFFICIAL MASTERY CERTIFICATION</p>
            <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90 leading-none">This prestigious award is proudly presented to</p>
            
            {/* Student Name with Underline */}
            <div className="mt-3 w-fit px-12 pb-1 flex flex-col items-center gap-2">
-             <h3 className="text-7xl font-black uppercase tracking-normal text-[#0f172a] leading-none text-center">
+             <h3 className={cn("text-7xl font-black uppercase tracking-normal leading-none text-center", isWinnerDesign ? "text-[#92400e]" : "text-[#0f172a]")}>
                {formattedName}
              </h3>
-             <div className="h-[1.5px] w-full bg-[#cbd5e1]" />
+             <div className={cn("h-[1.5px] w-full", isWinnerDesign ? "bg-[#92400e]/30" : "bg-[#cbd5e1]")} />
            </div>
 
            {/* Achievement Description */}
            <div className="mt-5 text-center space-y-1.5 max-w-4xl">
-             <p className="text-sm font-bold text-[#0f172a] uppercase tracking-wide leading-none opacity-70">
+             <p className={cn("text-sm font-bold uppercase tracking-wide leading-none opacity-70", isWinnerDesign ? "text-[#92400e]" : "text-[#0f172a]")}>
                WHO HAS DEMONSTRATED EXCEPTIONAL CALCULATION SPEED AND PRECISION BY ACHIEVING
              </p>
              <div className="flex flex-col items-center gap-1">
-               <p className="text-sm font-bold text-[#0f172a] uppercase tracking-widest leading-none">
+               <p className={cn("text-sm font-bold uppercase tracking-widest leading-none", isWinnerDesign ? "text-[#92400e]" : "text-[#0f172a]")}>
                  THE DISTINCTION OF <span className="text-[#f97316] font-black text-4xl ml-2">{title}</span>
                </p>
              </div>
@@ -104,8 +111,8 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
 
            {/* Score Line */}
            <div className="mt-1">
-             <p className="text-lg font-bold text-[#0f172a] leading-none">
-               With a certified performance score of <span className="font-black border-b-2 border-[#0f172a] pb-0.5 px-2 underline-offset-4">{score || '---'}</span>
+             <p className={cn("text-lg font-bold leading-none", isWinnerDesign ? "text-[#92400e]" : "text-[#0f172a]")}>
+               With a certified performance score of <span className={cn("font-black border-b-2 pb-0.5 px-2 underline-offset-4", isWinnerDesign ? "border-[#92400e]" : "border-[#0f172a]")}>{score || '---'}</span>
              </p>
            </div>
         </div>
@@ -114,16 +121,16 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className="relative z-10 w-full mt-auto flex justify-between items-end px-12 pb-10">
            {/* Date Section */}
            <div className="text-left space-y-1 w-64">
-             <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-[0.2em]">DATE OF ISSUE</p>
-             <p className="text-xl font-bold text-[#0f172a]">{date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+             <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isWinnerDesign ? "text-[#b45309]" : "text-[#94a3b8]")}>DATE OF ISSUE</p>
+             <p className={cn("text-xl font-bold", isWinnerDesign ? "text-[#92400e]" : "text-[#0f172a]")}>{date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
            </div>
 
            {/* Gold Seal */}
            <div className="flex flex-col items-center gap-2 mb-[-5px]">
-             <div className="bg-[#fef9c3] p-5 rounded-full border-[5px] border-[#fbbf24] shadow-xl relative animate-in zoom-in-50 duration-700">
-                <Award className="w-14 h-14 text-[#fbbf24] drop-shadow-sm" />
+             <div className={cn("p-5 rounded-full border-[5px] shadow-xl relative animate-in zoom-in-50 duration-700", isWinnerDesign ? "bg-[#fefce8] border-[#fbbf24]" : "bg-[#fef9c3] border-[#fbbf24]")}>
+                <Award className={cn("w-14 h-14 drop-shadow-sm", isWinnerDesign ? "text-[#fbbf24]" : "text-[#fbbf24]")} />
              </div>
-             <div className="bg-[#0f172a] px-5 py-1.5 rounded-full shadow-md">
+             <div className={cn("px-5 py-1.5 rounded-full shadow-md", isWinnerDesign ? "bg-[#92400e]" : "bg-[#0f172a]")}>
                <p className="text-[8px] font-black text-white uppercase tracking-widest">LEVEL ACHIEVED</p>
              </div>
            </div>
@@ -137,11 +144,11 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
                 >
                   Satish Mane
                 </p>
-                <div className="h-[1.5px] w-60 bg-[#cbd5e1] mt-10" />
+                <div className={cn("h-[1.5px] w-60 mt-10", isWinnerDesign ? "bg-[#92400e]/30" : "bg-[#cbd5e1]")} />
              </div>
              <div className="mt-2">
-                <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-[0.2em]">SATISH MANE</p>
-                <p className="text-[8px] font-black text-[#94a3b8] uppercase tracking-tighter opacity-70">FOUNDER & DIRECTOR, MY ABACUS PRO</p>
+                <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isWinnerDesign ? "text-[#b45309]" : "text-[#94a3b8]")}>SATISH MANE</p>
+                <p className={cn("text-[8px] font-black uppercase tracking-tighter opacity-70", isWinnerDesign ? "text-[#b45309]" : "text-[#94a3b8]")}>FOUNDER & DIRECTOR, MY ABACUS PRO</p>
              </div>
            </div>
         </div>
@@ -251,7 +258,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
       <div className="flex flex-col items-center w-full max-w-5xl gap-6">
         
         <div className="fixed left-[-9999px] top-0 pointer-events-none">
-          <CertificateContent ref={cardRef} studentName={studentName} title={title} score={score} date={date} />
+          <CertificateContent ref={cardRef} studentName={studentName} title={title} score={score} date={date} type={type} />
         </div>
 
         <div 
@@ -264,7 +271,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
             marginBottom: `-${(A4_HEIGHT * (1 - modalScale)) / 2}px`
           }}
         >
-          <CertificateContent studentName={studentName} title={title} score={score} date={date} />
+          <CertificateContent studentName={studentName} title={title} score={score} date={date} type={type} />
         </div>
 
         <div className="flex flex-wrap gap-4 w-full max-w-3xl px-4 relative z-[10002] animate-in slide-in-from-bottom-4 duration-500">
