@@ -4,7 +4,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { toJpeg } from 'html-to-image';
-import { X, Download, Share2, Award, Trophy, Crown, Star, CheckCircle2, ShieldCheck, Medal, Loader2 } from 'lucide-react';
+import { X, Download, Share2, Award, Trophy, Crown, Star, ShieldCheck, Medal, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -93,6 +93,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
           ref={cardRef}
           className="bg-white p-2 sm:p-4 w-full shadow-2xl relative aspect-[1.414/1] flex items-center justify-center border-[12px] border-slate-900 overflow-hidden"
         >
+          {/* Subtle Star Pattern Background */}
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none select-none">
             <div className="grid grid-cols-6 gap-4 p-8">
               {Array.from({length: 24}).map((_, i) => <Star key={i} className="w-12 h-12" />)}
