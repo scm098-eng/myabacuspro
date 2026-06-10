@@ -1,11 +1,10 @@
-
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { toJpeg } from 'html-to-image';
 import { jsPDF } from 'jspdf';
-import { X, Download, Award, Trophy, Crown, Medal, Loader2, Brain, FileText } from 'lucide-react';
+import { X, Download, Award, Trophy, Crown, Medal, Loader2, Brain, FileText, Star } from 'lucide-react';
 import { Button } from './ui/button';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -35,26 +34,17 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
   const A4_WIDTH = 1123;
   const A4_HEIGHT = 794;
 
-  const config = {
-    exam_participation: { label: 'EXAM PARTICIPATION', theme: 'orange', icon: <Medal className="w-16 h-16" /> },
-    exam_winner: { label: 'CERTIFICATE OF EXCELLENCE', theme: 'gold', icon: <Crown className="w-16 h-16" /> },
-    rank: { label: 'MASTERY RANK AWARD', theme: 'orange', icon: <Award className="w-16 h-16" /> },
-    weekly_winner: { label: 'WEEKLY CHAMPION', theme: 'gold', icon: <Trophy className="w-16 h-16" /> },
-    monthly_winner: { label: 'MONTHLY MASTER', theme: 'gold', icon: <Trophy className="w-16 h-16" /> },
-    global_winner: { label: 'GLOBAL LEGEND', theme: 'gold', icon: <Crown className="w-16 h-16" /> },
-  }[type];
-
-  const themeColor = config.theme === 'gold' ? '#fbbf24' : '#f97316';
+  const themeColor = '#f97316'; // Brand Orange
 
   useEffect(() => {
     confetti({
       particleCount: 150,
       spread: 70,
       origin: { y: 0.6 },
-      colors: [themeColor, '#ffffff', '#fbbf24'],
+      colors: [themeColor, '#ffffff', '#fbbf24', '#0f172a'],
       zIndex: 10001
     });
-  }, [themeColor]);
+  }, []);
 
   const generateImage = async () => {
     if (cardRef.current === null) return null;
@@ -80,7 +70,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
       const dataUrl = await generateImage();
       if (!dataUrl) throw new Error("Failed to generate image");
       const link = document.createElement('a');
-      link.download = `MyAbacusPro-${type}-${studentName.replace(/\s+/g, '-')}.jpeg`;
+      link.download = `MyAbacusPro-${studentName.replace(/\s+/g, '-')}.jpeg`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -103,7 +93,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
       });
 
       pdf.addImage(dataUrl, 'JPEG', 0, 0, A4_WIDTH, A4_HEIGHT);
-      pdf.save(`MyAbacusPro-${type}-${studentName.replace(/\s+/g, '-')}.pdf`);
+      pdf.save(`MyAbacusPro-${studentName.replace(/\s+/g, '-')}.pdf`);
     } catch (err) {
       console.error('PDF download failed', err);
     } finally {
@@ -120,56 +110,103 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
           <div 
             ref={cardRef}
             style={{ width: `${A4_WIDTH}px`, height: `${A4_HEIGHT}px` }}
-            className="bg-white relative border-[32px] border-[#0f172a] flex flex-col items-center justify-between p-16"
+            className="bg-white relative border-[24px] border-[#0f172a] flex flex-col items-center p-12 overflow-hidden"
           >
-            {/* Header Content */}
-            <div className="w-full flex flex-col items-center">
-               <p className="text-[#64748b] font-black uppercase tracking-[0.4em] text-lg mb-10">THIS IS TO CERTIFY THAT</p>
-               <h2 className="text-[100px] font-black uppercase tracking-tighter text-[#0f172a] leading-none text-center px-12">
-                 {studentName}
-               </h2>
+            {/* Orange Corner Accents */}
+            <div className="absolute top-4 left-4 w-32 h-32 border-t-[6px] border-l-[6px] border-[#f97316]" />
+            <div className="absolute top-4 right-4 w-32 h-32 border-t-[6px] border-r-[6px] border-[#f97316]" />
+            <div className="absolute bottom-4 left-4 w-32 h-32 border-b-[6px] border-l-[6px] border-[#f97316]" />
+            <div className="absolute bottom-4 right-4 w-32 h-32 border-b-[6px] border-r-[6px] border-[#f97316]" />
+
+            {/* Brain Pattern Watermark */}
+            <div className="absolute inset-0 z-0 grid grid-cols-10 grid-rows-10 opacity-[0.03] pointer-events-none">
+              {Array.from({ length: 100 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-center p-8">
+                  <Brain className="w-16 h-16 text-[#0f172a]" />
+                </div>
+              ))}
             </div>
 
-            {/* Achievement Text */}
-            <div className="flex flex-col items-center text-center space-y-6">
-              <p className="text-2xl font-bold italic text-[#64748b] leading-relaxed max-w-3xl">
-                has demonstrated exceptional skill and dedication in mental arithmetic, 
-                achieving the prestigious status of
-              </p>
-              <h3 className="text-6xl font-black uppercase tracking-widest text-[#f97316]">
-                {title}
+            {/* Header / Brand */}
+            <div className="relative z-10 w-full flex flex-col items-center mt-4">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="bg-[#f97316] p-3 rounded-2xl shadow-lg shadow-orange-200">
+                  <Brain className="w-10 h-10 text-white" />
+                </div>
+                <h1 className="text-5xl font-black text-[#0f172a] tracking-tighter">MY ABACUS PRO</h1>
+              </div>
+              <p className="text-[#f97316] font-black text-sm tracking-[0.6em] uppercase">LEARN • PRACTICE • SUCCEED</p>
+            </div>
+
+            {/* Main Award Title */}
+            <div className="relative z-10 mt-10">
+               <div className="bg-[#0f172a] px-20 py-4 rounded-[2rem] shadow-xl">
+                  <h2 className="text-4xl font-black italic text-white uppercase tracking-wider">MASTERY RANK AWARD</h2>
+               </div>
+            </div>
+
+            {/* Certification Type */}
+            <div className="relative z-10 mt-6 text-center space-y-4">
+               <p className="text-[#94a3b8] font-black uppercase tracking-[0.4em] text-lg">OFFICIAL MASTERY CERTIFICATION</p>
+               <p className="text-3xl font-bold italic text-[#64748b] font-serif">This prestigious award is proudly presented to</p>
+            </div>
+
+            {/* Student Name */}
+            <div className="relative z-10 mt-6">
+              <h3 className="text-[90px] font-black uppercase tracking-tighter text-[#0f172a] leading-none text-center px-12">
+                {studentName}
               </h3>
             </div>
 
-            {/* Footer with Adjusted Signature */}
-            <div className="w-full flex justify-between items-end px-10 pb-8">
-               <div className="text-left space-y-2">
+            {/* Award Description */}
+            <div className="relative z-10 mt-8 text-center space-y-2 max-w-4xl">
+              <p className="text-xl font-bold text-[#475569] leading-relaxed">
+                Who has demonstrated exceptional calculation speed and precision by achieving
+              </p>
+              <p className="text-xl font-bold text-[#475569] leading-relaxed">
+                the distinction of <span className="text-[#f97316] font-black uppercase text-3xl ml-1">{title}</span>
+              </p>
+            </div>
+
+            {/* Performance Score */}
+            <div className="relative z-10 mt-6">
+              <p className="text-2xl font-bold text-[#64748b]">
+                With a certified performance score of <span className="text-[#0f172a] font-black underline underline-offset-4">{score || '---'}</span>
+              </p>
+            </div>
+
+            {/* Footer Section */}
+            <div className="relative z-10 w-full mt-auto flex justify-between items-end px-6 pb-4">
+               {/* Left: Date */}
+               <div className="text-left space-y-1">
                  <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-[0.2em]">DATE OF ISSUE</p>
                  <p className="text-2xl font-bold text-[#0f172a]">{date || format(new Date(), 'MMMM do, yyyy')}</p>
                </div>
 
-               {/* Center Seal */}
-               <div className="flex items-center justify-center p-6 rounded-full border-[6px] border-[#f1f5f9] bg-[#f8fafc]/50">
-                  <div className="text-[#cbd5e1] opacity-60">
-                    {config.icon}
-                  </div>
+               {/* Center: Gold Seal */}
+               <div className="flex flex-col items-center gap-2">
+                 <div className="bg-[#fef9c3] p-6 rounded-full border-[6px] border-[#fbbf24] shadow-lg relative">
+                    <Award className="w-16 h-16 text-[#fbbf24] drop-shadow-sm" />
+                 </div>
+                 <div className="bg-[#0f172a] px-4 py-1.5 rounded-full shadow-md">
+                   <p className="text-[8px] font-black text-white uppercase tracking-widest">LEVEL ACHIEVED</p>
+                 </div>
                </div>
 
-               {/* Signature Column */}
+               {/* Right: Signature */}
                <div className="text-right">
                  <div className="flex flex-col items-end">
-                    {/* Stylish Red Cursive Signature shifted slightly up away from line */}
                     <p 
-                      className="italic text-3xl font-bold text-[#dc2626] mb-[-4px] pr-4 translate-y-[-8px]" 
+                      className="italic text-[45px] font-bold text-[#f97316] mb-[-4px] pr-4 translate-y-[-12px]" 
                       style={{ fontFamily: "'Brush Script MT', 'Dancing Script', cursive" }}
                     >
                       Satish Mane
                     </p>
-                    <div className="h-0.5 w-56 bg-[#cbd5e1]" />
+                    <div className="h-[2px] w-56 bg-[#cbd5e1]" />
                  </div>
                  <div className="mt-3">
                     <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-[0.2em] mb-1">SATISH MANE</p>
-                    <p className="text-[9px] font-black text-[#94a3b8] uppercase tracking-tighter opacity-70">FOUNDER, MY ABACUS PRO</p>
+                    <p className="text-[9px] font-black text-[#94a3b8] uppercase tracking-tighter opacity-70">FOUNDER & DIRECTOR, MY ABACUS PRO</p>
                  </div>
                </div>
             </div>
@@ -177,27 +214,37 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
         </div>
 
         {/* --- MODAL PREVIEW (SCALED FOR UI) --- */}
-        <div className="bg-white shadow-2xl relative border-[12px] border-[#0f172a] overflow-hidden flex flex-col items-center justify-center aspect-[1.41] w-full sm:max-w-2xl rounded-xl">
-           <div className="p-8 flex flex-col items-center text-center justify-between w-full h-full">
-              <p className="text-[8px] font-black uppercase tracking-[0.4em] text-slate-400">THIS IS TO CERTIFY THAT</p>
-              <h2 className="text-2xl sm:text-5xl font-black uppercase tracking-tighter text-[#0f172a] leading-none px-4">{studentName}</h2>
-              <div className="space-y-2">
-                <p className="text-[10px] sm:text-xs font-bold text-slate-500 italic">has achieved the prestigious status of</p>
-                <h3 className="text-xl sm:text-3xl font-black uppercase tracking-widest text-[#f97316]">{title}</h3>
+        <div className="bg-white shadow-2xl relative border-[8px] border-[#0f172a] overflow-hidden flex flex-col items-center justify-center aspect-[1.41] w-full sm:max-w-2xl rounded-xl">
+           <div className="absolute inset-0 opacity-[0.02] pointer-events-none grid grid-cols-6 grid-rows-6">
+              {Array.from({length: 36}).map((_, i) => <div key={i} className="flex items-center justify-center"><Brain className="w-8 h-8" /></div>)}
+           </div>
+           <div className="p-4 sm:p-8 flex flex-col items-center text-center justify-between w-full h-full relative z-10">
+              <div className="flex items-center gap-2">
+                <div className="bg-[#f97316] p-1.5 rounded-lg"><Brain className="w-4 h-4 text-white" /></div>
+                <span className="text-xs font-black text-[#0f172a]">MY ABACUS PRO</span>
               </div>
-              <div className="flex justify-between w-full items-end pt-4">
-                <div className="text-left"><p className="text-[6px] font-bold text-slate-400 uppercase">DATE</p><p className="text-xs font-bold">{date || 'June 10th, 2026'}</p></div>
+              <div className="bg-[#0f172a] px-6 py-1.5 rounded-2xl text-[8px] font-bold text-white italic uppercase tracking-wider">MASTERY RANK AWARD</div>
+              <h2 className="text-xl sm:text-4xl font-black uppercase tracking-tighter text-[#0f172a] leading-none px-4">{studentName}</h2>
+              <div className="space-y-1">
+                <p className="text-[8px] sm:text-xs font-bold text-slate-500 italic">has achieved the distinction of</p>
+                <h3 className="text-sm sm:text-xl font-black uppercase tracking-widest text-[#f97316]">{title}</h3>
+              </div>
+              <div className="flex justify-between w-full items-end pt-2">
+                <div className="text-left"><p className="text-[6px] font-bold text-slate-400 uppercase">DATE</p><p className="text-[10px] font-bold">{date || 'June 10th, 2026'}</p></div>
+                <div className="flex flex-col items-center">
+                  <div className="bg-yellow-50 p-2 rounded-full border-2 border-yellow-400"><Award className="w-4 h-4 text-yellow-500" /></div>
+                </div>
                 <div className="text-right flex flex-col items-end">
-                   <p className="italic text-lg text-red-600 font-bold translate-y-[-4px]" style={{ fontFamily: "cursive" }}>Satish Mane</p>
-                   <div className="h-[1px] w-20 bg-slate-300" />
-                   <p className="text-[6px] font-black text-slate-400 mt-1 uppercase">Satish Mane</p>
+                   <p className="italic text-base text-[#f97316] font-bold translate-y-[-4px]" style={{ fontFamily: "cursive" }}>Satish Mane</p>
+                   <div className="h-[1px] w-16 bg-slate-300" />
+                   <p className="text-[6px] font-black text-slate-400 mt-1 uppercase">Founder, My Abacus Pro</p>
                 </div>
               </div>
            </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3 w-full max-w-2xl px-4">
+        <div className="flex flex-wrap gap-3 w-full max-w-2xl px-4 relative z-[10002]">
           <Button onClick={handleDownloadPDF} disabled={!!isDownloading} className="flex-1 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl border-none">
             {isDownloading === 'pdf' ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <FileText className="h-5 w-5 mr-2" />} 
             Save PDF (A4)
