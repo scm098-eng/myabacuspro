@@ -2,7 +2,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { createContext, useState, useEffect, useCallback, useMemo, useContext } from 'react';
+import { createContext, useState, useEffect, useCallback, useMemo, useContext, useRef } from 'react';
 import {
   getAuth,
   onAuthStateChanged,
@@ -25,12 +25,18 @@ import { RANK_CRITERIA, ADMIN_EMAILS, EXCLUDED_FROM_TEACHER_LIST } from '@/lib/c
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 
+// Initialize services once outside the component to prevent re-initialization loops
+const auth = getAuth(firebaseApp);
+const firestore = getFirestore(firebaseApp);
+const storage = getStorage(firebaseApp);
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
 interface AuthContextType {
   user: User | null;
   profile: ProfileData | null;
   login: (email: string, pass: string) => Promise<ProfileData | null>;
   signup: (values: SignupData) => Promise<void>;
-  login: (email: string, pass: string) => Promise<ProfileData | null>;
   loginWithGoogle: () => Promise<ProfileData | null>;
   sendPasswordReset: (email: string) => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
@@ -62,13 +68,6 @@ interface AuthContextType {
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({ prompt: 'select_account' });
-
-const auth = getAuth(firebaseApp);
-const firestore = getFirestore(firebaseApp);
-const storage = getStorage(firebaseApp);
 
 const sanitizeForFirestore = (data: any) => {
   const clean: any = {};
@@ -109,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const syncPerformed = useRef(false);
   const router = useRouter();
   const pathname = usePathname();
   
@@ -137,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       setUser(authUser);
+      syncPerformed.current = false;
       
       if (profileUnsub) {
         profileUnsub();
@@ -144,51 +145,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (authUser) {
-        setIsLoading(true);
         const userDocRef = doc(firestore, 'users', authUser.uid);
         
+        // Listen to profile changes in real-time
         profileUnsub = onSnapshot(userDocRef, (snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.data() as ProfileData;
             const profileData = { ...data, uid: authUser.uid };
             
-            const currentWeekKey = getUTCMondayKey();
-            const currentMonthKey = getUTCMonthKey();
-            const updatePayload: any = {};
-            let needsSync = false;
-
-            if (data.lastWeeklyReset !== currentWeekKey) {
-                updatePayload.weeklyPoints = 0;
-                updatePayload.lastWeeklyReset = currentWeekKey;
-                needsSync = true;
-            }
-            if (data.lastMonthlyReset !== currentMonthKey) {
-                updatePayload.monthlyPoints = 0;
-                updatePayload.lastMonthlyReset = currentMonthKey;
-                needsSync = true;
-            }
-            if (data.emailVerified !== authUser.emailVerified) {
-              updatePayload.emailVerified = authUser.emailVerified;
-              needsSync = true;
-            }
-            const userEmail = authUser.email?.toLowerCase() || '';
-            if (ADMIN_EMAILS.includes(userEmail) && data.role !== 'admin') {
-                updatePayload.role = 'admin';
-                updatePayload.subscriptionStatus = 'pro';
-                updatePayload.status = 'approved';
-                needsSync = true;
-            }
-
-            if (needsSync) {
-              updateDoc(userDocRef, updatePayload).catch(e => console.warn("Background sync deferred", e));
-            }
-
             setProfile(profileData);
+            
+            // Perform background sync logic only once per login session
+            if (!syncPerformed.current) {
+              syncPerformed.current = true;
+              const currentWeekKey = getUTCMondayKey();
+              const currentMonthKey = getUTCMonthKey();
+              const updatePayload: any = {};
+              let needsSync = false;
+
+              if (data.lastWeeklyReset !== currentWeekKey) {
+                  updatePayload.weeklyPoints = 0;
+                  updatePayload.lastWeeklyReset = currentWeekKey;
+                  needsSync = true;
+              }
+              if (data.lastMonthlyReset !== currentMonthKey) {
+                  updatePayload.monthlyPoints = 0;
+                  updatePayload.lastMonthlyReset = currentMonthKey;
+                  needsSync = true;
+              }
+              if (data.emailVerified !== authUser.emailVerified) {
+                updatePayload.emailVerified = authUser.emailVerified;
+                needsSync = true;
+              }
+              
+              if (needsSync) {
+                updateDoc(userDocRef, updatePayload).catch(e => console.warn("Background sync deferred", e));
+              }
+            }
           } else {
             setProfile(null);
           }
           setIsLoading(false);
-        }, async (error) => {
+        }, (error) => {
           setIsLoading(false);
           if (error.code === 'permission-denied') {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
