@@ -30,6 +30,9 @@ const A4_HEIGHT = 794;
 
 const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: string; title: string; score?: string; date?: string }>(
   ({ studentName, title, score, date }, ref) => {
+    // Ensure name has at least one space if it contains multiple words
+    const formattedName = studentName.trim().replace(/\s+/g, ' ');
+
     return (
       <div 
         ref={ref}
@@ -43,10 +46,10 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className="absolute bottom-2 right-2 w-24 h-24 border-b-[6px] border-r-[6px] border-[#f97316] z-20" />
 
         {/* --- WATERMARK BACKGROUND --- */}
-        <div className="absolute inset-0 z-0 grid grid-cols-10 grid-rows-8 opacity-[0.04] pointer-events-none p-10">
-          {Array.from({ length: 80 }).map((_, i) => (
+        <div className="absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 opacity-[0.04] pointer-events-none p-10">
+          {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
-              <Brain className="w-12 h-12 text-[#0f172a]" />
+              <Brain className="w-20 h-20 text-[#0f172a]" />
             </div>
           ))}
         </div>
@@ -63,27 +66,27 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         </div>
 
         {/* --- MASTERY AWARD BADGE --- */}
-        <div className="relative z-10 mt-6">
+        <div className="relative z-10 mt-4">
            <div className="bg-[#0f172a] px-20 py-4 rounded-[2rem] shadow-xl">
               <h2 className="text-2xl font-black italic text-white uppercase tracking-widest">MASTERY RANK AWARD</h2>
            </div>
         </div>
 
         {/* --- CERTIFICATION TEXT --- */}
-        <div className="relative z-10 mt-6 text-center space-y-2">
+        <div className="relative z-10 mt-6 text-center space-y-1">
            <p className="text-[#94a3b8] font-black uppercase tracking-[0.4em] text-xs">OFFICIAL MASTERY CERTIFICATION</p>
            <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90">This prestigious award is proudly presented to</p>
         </div>
 
         {/* --- STUDENT NAME --- */}
-        <div className="relative z-10 mt-2 w-full px-12">
+        <div className="relative z-10 mt-2 w-fit px-12 border-b-2 border-slate-200 pb-1">
           <h3 className="text-7xl font-black uppercase tracking-tighter text-[#0f172a] leading-none text-center">
-            {studentName}
+            {formattedName}
           </h3>
         </div>
 
         {/* --- ACHIEVEMENT DESCRIPTION --- */}
-        <div className="relative z-10 mt-6 text-center space-y-2 max-w-4xl">
+        <div className="relative z-10 mt-8 text-center space-y-2 max-w-4xl">
           <p className="text-sm font-bold text-[#0f172a] uppercase tracking-wide leading-tight">
             WHO HAS DEMONSTRATED EXCEPTIONAL CALCULATION SPEED AND PRECISION BY ACHIEVING
           </p>
@@ -121,10 +124,10 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            <div className="text-right w-64">
              <div className="flex flex-col items-end relative">
                 <p 
-                  className="italic text-[38px] font-bold text-[#f97316] absolute bottom-[12px] right-6" 
-                  style={{ fontFamily: "cursive" }}
+                  className="text-[#f97316] absolute bottom-[18px] right-6 font-sacramento text-[34px] font-bold"
+                  style={{ fontFamily: 'var(--font-sacramento), cursive' }}
                 >
-                  Satish
+                  Satish Mane
                 </p>
                 <div className="h-[1.5px] w-56 bg-[#cbd5e1] mt-10" />
              </div>
