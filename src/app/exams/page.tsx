@@ -33,7 +33,6 @@ export default function ExamDashboardPage() {
   const [results, setExamResults] = useState<ExamResult[]>([]);
   const [isApplying, setIsApplying] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isCheckingCert, setIsCheckingCert] = useState<string | null>(null);
   const [isWinner, setIsWinner] = useState(false);
   
   const [schedule, setSchedule] = useState<{ date: string, start: Date, end: Date, lastApplyDate?: string, isActive?: boolean, resultsDeclared?: boolean } | null>(null);
@@ -95,13 +94,11 @@ export default function ExamDashboardPage() {
     return () => { unsubSchedule(); unsubscribeApp(); unsubscribeResults(); };
   }, [user]);
 
-  // Refined finalAttempt detection to pick up current cycle Grand Final
   const finalAttempt = useMemo(() => {
     if (!application || results.length === 0) return null;
-    return results.find(r => r.isFinal);
+    return results.find(r => r.isFinal === true);
   }, [application, results]);
 
-  // Robust winner status check
   useEffect(() => {
     if (schedule?.resultsDeclared && finalAttempt) {
       const checkWinnerStatus = async () => {
@@ -145,8 +142,6 @@ export default function ExamDashboardPage() {
   };
 
   const handleGetCertificate = (res: ExamResult, forWinner: boolean) => {
-    setIsCheckingCert(res.id + (forWinner ? '-win' : '-part'));
-    
     setCertData({
       type: forWinner ? 'exam_winner' : 'exam_participation',
       title: forWinner ? `GROUP ${res.group} 1st RANK ACHIEVER` : `GROUP ${res.group} PARTICIPANT`,
@@ -154,7 +149,6 @@ export default function ExamDashboardPage() {
       date: format(res.submittedAt?.toDate ? res.submittedAt.toDate() : new Date(), 'MMMM do, yyyy')
     });
     setShowCertificate(true);
-    setIsCheckingCert(null);
   };
 
   const isApproved = useMemo(() => application?.status === 'approved', [application]);
@@ -234,7 +228,7 @@ export default function ExamDashboardPage() {
                 </div>
               </div>
               
-              <div className="flex flex-wrap md:flex-nowrap gap-3 shrink-0 w-full md:w-auto justify-center md:justify-end">
+              <div className="flex flex-wrap md:flex-nowrap gap-3 shrink-0 w-full md:w-auto justify-center md:justify-end p-2">
                 {isWinner && (
                   <Button 
                     onClick={() => handleGetCertificate(finalAttempt, true)}
