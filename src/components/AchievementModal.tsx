@@ -33,7 +33,7 @@ const A4_WIDTH = 1123;
 const A4_HEIGHT = 794;
 
 const AbacusToolIcon = ({ color }: { color: string }) => (
-  <svg width="100" height="50" viewBox="0 0 100 50" fill="none" stroke={color} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="80" height="40" viewBox="0 0 100 50" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="2" width="96" height="46" rx="4" strokeWidth="2" />
     <line x1="2" y1="16" x2="98" y2="16" strokeWidth="2" />
     {/* 13 Rods Soroban Layout */}
@@ -44,11 +44,11 @@ const AbacusToolIcon = ({ color }: { color: string }) => (
           <line x1={x} y1="2" x2={x} y2="48" opacity="0.5" />
           {/* Heavenly bead */}
           <circle cx={x} cy="9" r="2.2" fill={color} stroke="none" />
-          {/* Earthly beads - varied positions for realism */}
-          <circle cx={x} cy={i % 3 === 0 ? 21 : 23} r="2.2" fill={color} stroke="none" />
-          <circle cx={x} cy={i % 3 === 0 ? 27 : 29} r="2.2" fill={color} stroke="none" />
-          <circle cx={x} cy={i % 3 === 0 ? 33 : 35} r="2.2" fill={color} stroke="none" />
-          <circle cx={x} cy={i % 3 === 0 ? 39 : 41} r="2.2" fill={color} stroke="none" />
+          {/* Earthly beads */}
+          <circle cx={x} cy="23" r="2.2" fill={color} stroke="none" />
+          <circle cx={x} cy="29" r="2.2" fill={color} stroke="none" />
+          <circle cx={x} cy="35" r="2.2" fill={color} stroke="none" />
+          <circle cx={x} cy="41" r="2.2" fill={color} stroke="none" />
         </React.Fragment>
       );
     })}
@@ -120,7 +120,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className={cn("absolute top-10 left-10 right-10 bottom-10 border-[0.5px] pointer-events-none z-20", innerBorder)} />
 
         {/* Watermark Grid - 6x6 Layout, Professional Texture */}
-        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.04]" : "opacity-[0.015]")}>
+        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.06]" : "opacity-[0.02]")}>
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
               <Brain style={{ width: '80px', height: '80px', color: headerColor }} />
@@ -150,18 +150,18 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
 
         {/* Main Distinction Content */}
         <div className="relative z-10 mt-8 text-center flex flex-col items-center gap-1">
-           <p className={cn("text-xs font-black uppercase tracking-[0.4em] mb-1")} style={{ color: subHeaderColor }}>OFFICIAL MASTERY CERTIFICATION</p>
+           <p className={cn("text-[10px] font-black uppercase tracking-[0.4em] mb-1")} style={{ color: subHeaderColor }}>OFFICIAL MASTERY CERTIFICATION</p>
            <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90 leading-none">This prestigious award is proudly presented to</p>
            
            <div className="mt-3 w-fit px-12 pb-1 flex flex-col items-center gap-2">
              <h3 className={cn("text-7xl font-black uppercase tracking-normal leading-none text-center")} style={{ color: headerColor }}>
                {formattedName}
              </h3>
-             <div className="h-[1.5px] w-full mt-2" style={{ backgroundColor: subHeaderColor, opacity: 0.3 }} />
+             <div className="h-[2px] w-full mt-2" style={{ backgroundColor: subHeaderColor, opacity: 0.15 }} />
            </div>
 
-           <div className="mt-5 text-center space-y-1.5 max-w-4xl">
-             <p className={cn("text-sm font-bold uppercase tracking-wide leading-none opacity-70")} style={{ color: headerColor }}>
+           <div className="mt-6 text-center space-y-1.5 max-w-4xl">
+             <p className={cn("text-[11px] font-bold uppercase tracking-wide leading-none opacity-60")} style={{ color: headerColor }}>
                WHO HAS DEMONSTRATED EXCEPTIONAL CALCULATION SPEED AND PRECISION BY ACHIEVING
              </p>
              <div className="flex flex-col items-center gap-1">
@@ -171,7 +171,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              </div>
            </div>
 
-           <div className="mt-1">
+           <div className="mt-2">
              <p className={cn("text-lg font-bold leading-none")} style={{ color: headerColor }}>
                With a certified performance score of <span className={cn("font-black border-b-2 pb-0.5 px-2 underline-offset-4")} style={{ borderColor: headerColor }}>{score || '---'}</span>
              </p>
@@ -186,15 +186,12 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            </div>
 
            <div className="flex flex-col items-center gap-3 mb-[-10px] relative">
-             <div className={cn("p-6 rounded-[2rem] border-[4px] shadow-2xl relative animate-in zoom-in-50 duration-700 bg-white border-slate-200")}>
+             <div className={cn("p-6 rounded-[2rem] border-[3px] shadow-2xl relative animate-in zoom-in-50 duration-700 bg-white border-slate-100")}>
                 <AbacusToolIcon color={headerColor} />
-                {rank && (
-                  <div className="absolute -bottom-4 -right-4 w-12 h-12 rounded-full border-4 border-white shadow-lg flex items-center justify-center font-black text-white text-xl" style={{ backgroundColor: subHeaderColor }}>
-                    {rank}
-                  </div>
-                )}
              </div>
-             <p className={cn("text-[10px] font-black uppercase tracking-widest")} style={{ color: headerColor }}>Congratulations</p>
+             <div className="px-6 py-1 rounded-full shadow-sm border border-black/5" style={{ backgroundColor: subHeaderColor }}>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white">Congratulations</p>
+             </div>
            </div>
 
            {/* Executive Signature Block - Right Aligned */}
