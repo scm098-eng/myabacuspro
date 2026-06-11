@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { toJpeg } from 'html-to-image';
 import { jsPDF } from 'jspdf';
-import { X, Download, Award, Brain, FileText, Loader2, Share2, Medal } from 'lucide-react';
+import { X, Download, Brain, FileText, Loader2, Share2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -32,15 +32,26 @@ interface AchievementProps {
 const A4_WIDTH = 1123;
 const A4_HEIGHT = 794;
 
-const AbacusIcon = ({ color }: { color: string }) => (
-  <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="3" width="20" height="18" rx="2" />
-    <path d="M2 9h20M2 15h20M7 3v18M12 3v18M17 3v18" />
-    <circle cx="7" cy="6" r="1" fill={color} />
-    <circle cx="12" cy="12" r="1" fill={color} />
-    <circle cx="17" cy="18" r="1" fill={color} />
-    <circle cx="7" cy="18" r="1" fill={color} />
-    <circle cx="12" cy="6" r="1" fill={color} />
+const AbacusToolIcon = ({ color }: { color: string }) => (
+  <svg width="100" height="50" viewBox="0 0 100 50" fill="none" stroke={color} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="96" height="46" rx="4" strokeWidth="2" />
+    <line x1="2" y1="16" x2="98" y2="16" strokeWidth="2" />
+    {/* 13 Rods Soroban Layout */}
+    {Array.from({ length: 13 }).map((_, i) => {
+      const x = 8 + i * 7;
+      return (
+        <React.Fragment key={i}>
+          <line x1={x} y1="2" x2={x} y2="48" opacity="0.5" />
+          {/* Heavenly bead */}
+          <circle cx={x} cy="9" r="2.2" fill={color} stroke="none" />
+          {/* Earthly beads - varied positions for realism */}
+          <circle cx={x} cy={i % 3 === 0 ? 21 : 23} r="2.2" fill={color} stroke="none" />
+          <circle cx={x} cy={i % 3 === 0 ? 27 : 29} r="2.2" fill={color} stroke="none" />
+          <circle cx={x} cy={i % 3 === 0 ? 33 : 35} r="2.2" fill={color} stroke="none" />
+          <circle cx={x} cy={i % 3 === 0 ? 39 : 41} r="2.2" fill={color} stroke="none" />
+        </React.Fragment>
+      );
+    })}
   </svg>
 );
 
@@ -109,7 +120,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className={cn("absolute top-10 left-10 right-10 bottom-10 border-[0.5px] pointer-events-none z-20", innerBorder)} />
 
         {/* Watermark Grid - 6x6 Layout, Professional Texture */}
-        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.06]" : "opacity-[0.02]")}>
+        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.04]" : "opacity-[0.015]")}>
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
               <Brain style={{ width: '80px', height: '80px', color: headerColor }} />
@@ -146,7 +157,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              <h3 className={cn("text-7xl font-black uppercase tracking-normal leading-none text-center")} style={{ color: headerColor }}>
                {formattedName}
              </h3>
-             <div className="h-[2px] w-full bg-slate-200 mt-1" /> {/* Light Line Under Name */}
+             <div className="h-[1.5px] w-full mt-2" style={{ backgroundColor: subHeaderColor, opacity: 0.3 }} />
            </div>
 
            <div className="mt-5 text-center space-y-1.5 max-w-4xl">
@@ -174,18 +185,21 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              <p className={cn("text-xl font-bold")} style={{ color: headerColor }}>{date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
            </div>
 
-           <div className="flex flex-col items-center gap-2 mb-[-5px]">
-             <div className={cn("p-5 rounded-full border-[5px] shadow-xl relative animate-in zoom-in-50 duration-700", rank === 1 ? "bg-[#fffbeb] border-[#fbbf24]" : "bg-white border-slate-200")}>
-                <AbacusIcon color={rank === 1 ? "#fbbf24" : rank === 2 ? "#94a3b8" : rank === 3 ? "#cd7f32" : "#3b82f6"} />
+           <div className="flex flex-col items-center gap-3 mb-[-10px] relative">
+             <div className={cn("p-6 rounded-[2rem] border-[4px] shadow-2xl relative animate-in zoom-in-50 duration-700 bg-white border-slate-200")}>
+                <AbacusToolIcon color={headerColor} />
+                {rank && (
+                  <div className="absolute -bottom-4 -right-4 w-12 h-12 rounded-full border-4 border-white shadow-lg flex items-center justify-center font-black text-white text-xl" style={{ backgroundColor: subHeaderColor }}>
+                    {rank}
+                  </div>
+                )}
              </div>
-             <div className={cn("px-8 py-1.5 rounded-full shadow-md")} style={{ backgroundColor: headerColor }}>
-               <p className="text-[8px] font-black text-white uppercase tracking-widest">Congratulations</p>
-             </div>
+             <p className={cn("text-[10px] font-black uppercase tracking-widest")} style={{ color: headerColor }}>Congratulations</p>
            </div>
 
            {/* Executive Signature Block - Right Aligned */}
-           <div className="text-right w-64 flex flex-col items-end pr-4">
-             <div className="flex flex-col items-center relative">
+           <div className="text-right w-64 flex flex-col items-end">
+             <div className="flex flex-col items-center relative pr-4">
                 <p 
                   className={cn("font-sacramento text-[36px] font-bold mb-[-12px]")}
                   style={{ fontFamily: 'var(--font-sacramento), cursive', color: subHeaderColor }}
