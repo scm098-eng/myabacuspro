@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Lock, ShieldAlert, Trophy, FileEdit, Award, Loader2, Timer, HelpCircle, CheckCircle2, ChevronRight, Download, Medal } from 'lucide-react';
+import { Lock, ShieldAlert, Trophy, FileEdit, Award, Loader2, Timer, HelpCircle, CheckCircle2, ChevronRight, Download, Medal, ScrollText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getFirestore, collection, query, where, onSnapshot, doc, orderBy, getDocs, limit } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -107,25 +107,9 @@ export default function ExamDashboardPage() {
     
     if (rankedResults.length > 0) return rankedResults[0];
 
-    // 2. Check if student is the winner from schedule
-    if (schedule?.resultsDeclared) {
-        const myGroupKey = `group${application.group}WinnerId`;
-        const winnerResultId = schedule[myGroupKey];
-        const winningResult = results.find(r => r.id === winnerResultId);
-        if (winningResult) {
-            return { ...winningResult, rank: 1 };
-        }
-    }
-
-    // 3. Fallback: Use best score final attempt for participation if results declared
-    if (schedule?.resultsDeclared) {
-        const finalResults = results.filter(r => r.isFinal === true).sort((a, b) => b.score - a.score);
-        return finalResults.length > 0 ? finalResults[0] : null;
-    }
-
-    // 4. Pre-declaration visibility
+    // 2. Fallback: Pre-declaration visibility (the student's most recent final attempt)
     return results.find(r => r.isFinal === true) || null;
-  }, [application, results, schedule]);
+  }, [results, application]);
 
   const handleApply = async (group: ExamGroup) => {
     if (!user || !profile) return;

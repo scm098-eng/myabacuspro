@@ -32,6 +32,18 @@ interface AchievementProps {
 const A4_WIDTH = 1123;
 const A4_HEIGHT = 794;
 
+const AbacusIcon = ({ color }: { color: string }) => (
+  <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="3" width="20" height="18" rx="2" />
+    <path d="M2 9h20M2 15h20M7 3v18M12 3v18M17 3v18" />
+    <circle cx="7" cy="6" r="1" fill={color} />
+    <circle cx="12" cy="12" r="1" fill={color} />
+    <circle cx="17" cy="18" r="1" fill={color} />
+    <circle cx="7" cy="18" r="1" fill={color} />
+    <circle cx="12" cy="6" r="1" fill={color} />
+  </svg>
+);
+
 const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: string; title: string; score?: string; date?: string; type: AchievementType, rank?: number, groupName?: string }>(
   ({ studentName, title, score, date, type, rank, groupName }, ref) => {
     const formattedName = studentName.trim().replace(/\s+/g, ' ');
@@ -96,8 +108,8 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className={cn("absolute top-8 left-8 right-8 bottom-8 border-[0.5px] pointer-events-none z-20", innerBorder)} />
         <div className={cn("absolute top-10 left-10 right-10 bottom-10 border-[0.5px] pointer-events-none z-20", innerBorder)} />
 
-        {/* Watermark Grid - 6x6 Layout, Slightly Lighter Opacity */}
-        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.08]" : "opacity-[0.03]")}>
+        {/* Watermark Grid - 6x6 Layout, Professional Texture */}
+        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.06]" : "opacity-[0.02]")}>
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
               <Brain style={{ width: '80px', height: '80px', color: headerColor }} />
@@ -134,7 +146,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              <h3 className={cn("text-7xl font-black uppercase tracking-normal leading-none text-center")} style={{ color: headerColor }}>
                {formattedName}
              </h3>
-             <div className={cn("h-[1.5px] w-full")} style={{ backgroundColor: innerBorder }} />
+             <div className="h-[2px] w-full bg-slate-200 mt-1" /> {/* Light Line Under Name */}
            </div>
 
            <div className="mt-5 text-center space-y-1.5 max-w-4xl">
@@ -164,14 +176,14 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
 
            <div className="flex flex-col items-center gap-2 mb-[-5px]">
              <div className={cn("p-5 rounded-full border-[5px] shadow-xl relative animate-in zoom-in-50 duration-700", rank === 1 ? "bg-[#fffbeb] border-[#fbbf24]" : "bg-white border-slate-200")}>
-                <Medal className={cn("w-14 h-14 drop-shadow-sm", rank === 1 ? "text-[#fbbf24]" : "text-slate-400")} />
+                <AbacusIcon color={rank === 1 ? "#fbbf24" : rank === 2 ? "#94a3b8" : rank === 3 ? "#cd7f32" : "#3b82f6"} />
              </div>
-             <div className={cn("px-5 py-1.5 rounded-full shadow-md")} style={{ backgroundColor: headerColor }}>
-               <p className="text-[8px] font-black text-white uppercase tracking-widest">LEVEL ACHIEVED</p>
+             <div className={cn("px-8 py-1.5 rounded-full shadow-md")} style={{ backgroundColor: headerColor }}>
+               <p className="text-[8px] font-black text-white uppercase tracking-widest">Congratulations</p>
              </div>
            </div>
 
-           {/* Executive Signature Block - Perfectly Right Aligned */}
+           {/* Executive Signature Block - Right Aligned */}
            <div className="text-right w-64 flex flex-col items-end pr-4">
              <div className="flex flex-col items-center relative">
                 <p 
