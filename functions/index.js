@@ -486,19 +486,61 @@ exports.resetExamCycle = onCall(async (request) => {
 
 /**
  * Marks the current cycle results as official.
+ * Assigns sequential ranks using Triple-Tie-Breaker: Score > Accuracy > TimeLeft.
  */
 exports.declareOfficialResults = onCall(async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
     const adminDoc = await db.collection('users').doc(request.auth.uid).get();
     if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
 
+    const groups = ['A', 'B', 'C', 'D'];
+    const winners = {};
+
+    for (const group of groups) {
+        const snap = await db.collection('examResults')
+            .where('group', '==', group)
+            .where('isFinal', '==', true)
+            .get();
+        
+        if (!snap.empty) {
+            // Sort in memory for complex tie-breakers
+            const groupResults = snap.docs.map(doc => ({ id: doc.id, ref: doc.ref, ...doc.data() }));
+            
+            // Triple-Tie-Breaker Sort Logic
+            groupResults.sort((a, b) => {
+                // 1. Score
+                if (b.score !== a.score) return b.score - a.score;
+                // 2. Accuracy
+                if ((b.accuracy || 0) !== (a.accuracy || 0)) return (b.accuracy || 0) - (a.accuracy || 0);
+                // 3. Time Left (Higher is faster)
+                return (b.timeLeft || 0) - (a.timeLeft || 0);
+            });
+
+            winners[`group${group}WinnerId`] = groupResults[0].id;
+            
+            // Assign ranks to all final attempts in this group
+            let batch = db.batch();
+            let count = 0;
+            groupResults.forEach((doc, idx) => {
+              batch.update(doc.ref, { rank: idx + 1 });
+              count++;
+              if (count % 400 === 0) {
+                batch.commit();
+                batch = db.batch();
+              }
+            });
+            await batch.commit();
+        }
+    }
+
     await db.collection('stats').doc('examSchedule').update({
         resultsDeclared: true,
         isActive: false, 
-        lastResultDeclaredAt: admin.firestore.FieldValue.serverTimestamp()
+        lastResultDeclaredAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...winners
     });
 
-    return { status: "success", message: "Results are now official." };
+    return { status: "success", message: "Results official and sequential ranks assigned." };
 });
 
 /**

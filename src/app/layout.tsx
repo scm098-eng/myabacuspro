@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Sacramento } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/shared/Header';
@@ -9,6 +9,11 @@ import WinnerMarquee from '@/components/WinnerMarquee';
 import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const sacramento = Sacramento({ 
+  weight: '400', 
+  subsets: ['latin'], 
+  variable: '--font-sacramento' 
+});
 
 export const viewport: Viewport = {
   themeColor: '#f97316',
@@ -87,7 +92,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className={`${inter.variable} h-full`}>
+    <html lang="en" className={`${inter.variable} ${sacramento.variable} h-full`}>
       <body className="font-body antialiased h-full">
         {/* Google AdSense - strategy="afterInteractive" ensures script runs after hydration */}
         <Script 
