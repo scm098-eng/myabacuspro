@@ -103,21 +103,22 @@ export default function ExamDashboardPage() {
     return () => { unsubSchedule(); unsubscribeApp(); unsubscribeResults(); };
   }, [user]);
 
+  // Robust Rank Selection Logic
   const finalAttempt = useMemo(() => {
     if (!application || results.length === 0) return null;
-    const finalResults = results.filter(r => r.isFinal === true);
-    if (finalResults.length === 0) return null;
+    
+    // Find the attempt that has an official rank assigned
+    const rankedResults = results.filter(r => r.rank !== undefined).sort((a, b) => (a.rank || 999) - (b.rank || 999));
+    
+    if (rankedResults.length > 0) return rankedResults[0];
 
-    const winnerKey = `group${application.group}WinnerId`;
-    const winnerResult = finalResults.find(r => r.id === schedule?.[winnerKey]);
-    if (winnerResult) return { ...winnerResult, rank: 1 };
-
+    // Fallback: Use the best score final attempt for participation if results declared
     if (schedule?.resultsDeclared) {
-      const rankedResults = finalResults.filter(r => r.rank !== undefined).sort((a, b) => (a.rank || 999) - (b.rank || 999));
-      if (rankedResults.length > 0) return rankedResults[0];
+        const finalResults = results.filter(r => r.isFinal === true).sort((a, b) => b.score - a.score);
+        return finalResults.length > 0 ? finalResults[0] : null;
     }
 
-    return finalResults[0];
+    return results.find(r => r.isFinal === true) || null;
   }, [application, results, schedule]);
 
   const handleApply = async (group: ExamGroup) => {
@@ -133,15 +134,13 @@ export default function ExamDashboardPage() {
       });
   };
 
-  const handleGetCertificate = (res: ExamResult, forWinner: boolean) => {
-    const effectiveRank = forWinner ? (res.rank || 1) : undefined;
-    
+  const handleGetCertificate = (res: ExamResult, isRankCert: boolean) => {
     setCertData({
-      type: forWinner ? 'exam_winner' : 'exam_participation',
-      title: forWinner ? `RANK ${effectiveRank} ACHIEVER` : `GROUP ${res.group} PARTICIPANT`,
+      type: isRankCert ? 'exam_winner' : 'exam_participation',
+      title: isRankCert ? `RANK ${res.rank} ACHIEVER` : `GROUP ${res.group} PARTICIPANT`,
       score: `${res.score}/${res.totalQuestions} (${res.accuracy.toFixed(1)}%)`,
       date: format(res.submittedAt?.toDate ? res.submittedAt.toDate() : new Date(), 'MMMM do, yyyy'),
-      rank: effectiveRank,
+      rank: isRankCert ? res.rank : undefined,
       groupName: `GROUP ${res.group}`
     });
     setShowCertificate(true);
@@ -226,8 +225,8 @@ export default function ExamDashboardPage() {
                 </div>
               </div>
               
-              <div className="flex flex-wrap gap-4 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
-                {(finalAttempt.rank !== undefined || schedule?.resultsDeclared) && (
+              <div className="flex flex-col sm:flex-row gap-4 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
+                {finalAttempt.rank !== undefined && (
                   <Button 
                     onClick={() => handleGetCertificate(finalAttempt!, true)}
                     className={cn(
@@ -236,7 +235,7 @@ export default function ExamDashboardPage() {
                     )}
                   >
                     <Medal className="w-5 h-5 mr-2 text-indigo-600" />
-                    Rank {finalAttempt.rank || 'Achiever'} Certificate
+                    Rank {finalAttempt.rank} Certificate
                   </Button>
                 )}
                 <Button 

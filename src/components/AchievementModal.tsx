@@ -95,11 +95,11 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className={cn("absolute top-8 left-8 right-8 bottom-8 border-[0.5px] pointer-events-none z-20", innerBorder)} />
         <div className={cn("absolute top-10 left-10 right-10 bottom-10 border-[0.5px] pointer-events-none z-20", innerBorder)} />
 
-        {/* Watermark Grid - Increased Size to 48px */}
-        <div className={cn("absolute inset-0 z-0 grid grid-cols-5 grid-rows-5 pointer-events-none p-20 transition-opacity", isWinnerDesign ? "opacity-[0.20]" : "opacity-[0.08]")}>
-          {Array.from({ length: 25 }).map((_, i) => (
+        {/* Watermark Grid - 6x6 Layout, w-20 h-20 size */}
+        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.12]" : "opacity-[0.05]")}>
+          {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
-              <Brain style={{ width: '48px', height: '48px', color: headerColor }} />
+              <Brain style={{ width: '80px', height: '80px', color: headerColor }} />
             </div>
           ))}
         </div>
@@ -119,7 +119,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className="relative z-10 mt-6">
            <div className={cn("px-24 py-4 rounded-[2rem] shadow-xl border-b-4", isWinnerDesign ? "border-black/20" : "bg-[#0f172a] border-black/20")} style={isWinnerDesign ? { backgroundColor: headerColor } : {}}>
               <h2 className="text-2xl font-black italic text-white uppercase tracking-widest text-center">
-                {isWinnerDesign ? `${groupName} RANK ACHIEVER` : "MASTERY RANK AWARD"}
+                {groupName} RANK ACHIEVER
               </h2>
            </div>
         </div>
@@ -142,12 +142,12 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              </p>
              <div className="flex flex-col items-center gap-1">
                <p className={cn("text-sm font-bold uppercase tracking-widest leading-none")} style={{ color: headerColor }}>
-                 THE DISTINCTION OF <span className={cn("font-black text-4xl ml-2")} style={{ color: subHeaderColor }}>{title}</span>
+                 THE DISTINCTION OF <span className={cn("font-black text-4xl ml-2")} style={{ color: subHeaderColor }}>{rank ? `RANK ${rank} ACHIEVER` : title}</span>
                </p>
              </div>
            </div>
 
-           {/* Score Line - High Position (No separator) */}
+           {/* Score Line */}
            <div className="mt-1">
              <p className={cn("text-lg font-bold leading-none")} style={{ color: headerColor }}>
                With a certified performance score of <span className={cn("font-black border-b-2 pb-0.5 px-2 underline-offset-4")} style={{ borderColor: headerColor }}>{score || '---'}</span>
@@ -171,7 +171,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              </div>
            </div>
 
-           {/* Executive Signature Block */}
+           {/* Executive Signature Block - Right Aligned with Signature Line */}
            <div className="text-right w-64 flex flex-col items-end pr-4">
              <div className="flex flex-col items-center relative">
                 <p 
@@ -180,6 +180,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
                 >
                   Satish Mane
                 </p>
+                {/* Signature Line */}
                 <div className={cn("h-[1.5px] w-56")} style={{ backgroundColor: innerBorder }} />
                 <div className="mt-2 text-center">
                    <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]")} style={{ color: subHeaderColor }}>SATISH MANE</p>
