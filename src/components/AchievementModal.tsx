@@ -85,22 +85,26 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
           themeClass
         )}
       >
+        {/* Decorative Corner Brackets */}
         <div className={cn("absolute top-2 left-2 w-24 h-24 border-t-[6px] border-l-[6px] z-20", cornerBorder)} />
         <div className={cn("absolute top-2 right-2 w-24 h-24 border-t-[6px] border-r-[6px] z-20", cornerBorder)} />
         <div className={cn("absolute bottom-2 left-2 w-24 h-24 border-b-[6px] border-l-[6px] z-20", cornerBorder)} />
         <div className={cn("absolute bottom-2 right-2 w-24 h-24 border-b-[6px] border-r-[6px] z-20", cornerBorder)} />
 
+        {/* Double Inner Frame */}
         <div className={cn("absolute top-8 left-8 right-8 bottom-8 border-[0.5px] pointer-events-none z-20", innerBorder)} />
         <div className={cn("absolute top-10 left-10 right-10 bottom-10 border-[0.5px] pointer-events-none z-20", innerBorder)} />
 
-        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-10 transition-opacity", isWinnerDesign ? "opacity-[0.15]" : "opacity-[0.05]")}>
-          {Array.from({ length: 36 }).map((_, i) => (
+        {/* Watermark Grid - Increased Size to 48px */}
+        <div className={cn("absolute inset-0 z-0 grid grid-cols-5 grid-rows-5 pointer-events-none p-20 transition-opacity", isWinnerDesign ? "opacity-[0.20]" : "opacity-[0.08]")}>
+          {Array.from({ length: 25 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
-              <Brain style={{ width: '20px', height: '20px', color: headerColor }} />
+              <Brain style={{ width: '48px', height: '48px', color: headerColor }} />
             </div>
           ))}
         </div>
 
+        {/* Brand Header */}
         <div className="relative z-10 w-full flex flex-col items-center mt-12">
           <div className="flex items-center gap-3 mb-1">
             <div className={cn("p-2 rounded-xl shadow-lg")} style={{ backgroundColor: subHeaderColor }}>
@@ -111,6 +115,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
           <p className={cn("font-black text-[10px] tracking-[0.5em] uppercase")} style={{ color: subHeaderColor }}>LEARN • PRACTICE • SUCCEED</p>
         </div>
 
+        {/* Prestigious Group Badge */}
         <div className="relative z-10 mt-6">
            <div className={cn("px-24 py-4 rounded-[2rem] shadow-xl border-b-4", isWinnerDesign ? "border-black/20" : "bg-[#0f172a] border-black/20")} style={isWinnerDesign ? { backgroundColor: headerColor } : {}}>
               <h2 className="text-2xl font-black italic text-white uppercase tracking-widest text-center">
@@ -119,6 +124,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            </div>
         </div>
 
+        {/* Main Distinction Content */}
         <div className="relative z-10 mt-8 text-center flex flex-col items-center gap-1">
            <p className={cn("text-xs font-black uppercase tracking-[0.4em] mb-1")} style={{ color: subHeaderColor }}>OFFICIAL MASTERY CERTIFICATION</p>
            <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90 leading-none">This prestigious award is proudly presented to</p>
@@ -141,6 +147,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              </div>
            </div>
 
+           {/* Score Line - High Position (No separator) */}
            <div className="mt-1">
              <p className={cn("text-lg font-bold leading-none")} style={{ color: headerColor }}>
                With a certified performance score of <span className={cn("font-black border-b-2 pb-0.5 px-2 underline-offset-4")} style={{ borderColor: headerColor }}>{score || '---'}</span>
@@ -148,6 +155,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            </div>
         </div>
 
+        {/* Footer Section: Date & Signature */}
         <div className="relative z-10 w-full mt-auto flex justify-between items-end px-12 pb-10">
            <div className="text-left space-y-1 w-64">
              <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]")} style={{ color: subHeaderColor }}>DATE OF ISSUE</p>
@@ -163,6 +171,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              </div>
            </div>
 
+           {/* Executive Signature Block */}
            <div className="text-right w-64 flex flex-col items-end pr-4">
              <div className="flex flex-col items-center relative">
                 <p 
@@ -284,10 +293,12 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-300">
       <div className="flex flex-col items-center w-full max-w-5xl gap-6">
         
+        {/* Hidden high-res capture target */}
         <div className="fixed left-[-9999px] top-0 pointer-events-none">
           <CertificateContent ref={cardRef} studentName={studentName} title={title} score={score} date={date} type={type} rank={rank} groupName={groupName} />
         </div>
 
+        {/* Modal Viewport */}
         <div 
           className="shadow-2xl overflow-hidden rounded-xl bg-white border-2 border-white/20 origin-center transition-transform duration-500"
           style={{ 
@@ -301,6 +312,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
           <CertificateContent studentName={studentName} title={title} score={score} date={date} type={type} rank={rank} groupName={groupName} />
         </div>
 
+        {/* Action Controls */}
         <div className="flex flex-wrap gap-4 w-full max-w-3xl px-4 relative z-[10002] animate-in slide-in-from-bottom-4 duration-500">
           <Button onClick={handleDownloadPDF} disabled={!!isDownloading} className="flex-1 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl border-none text-base">
             {isDownloading === 'pdf' ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <FileText className="h-5 w-5 mr-2" />} 
