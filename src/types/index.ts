@@ -124,6 +124,7 @@ export interface ExamResult {
   accuracy: number;
   isFinal: boolean;
   resultDeclared?: boolean;
+  rank?: number;
   submittedAt: any;
   timeLeft?: number;
   answeredCount?: number;
