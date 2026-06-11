@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -33,22 +32,22 @@ const A4_WIDTH = 1123;
 const A4_HEIGHT = 794;
 
 const AbacusToolIcon = ({ color }: { color: string }) => (
-  <svg width="80" height="40" viewBox="0 0 100 50" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="100" height="50" viewBox="0 0 100 50" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="2" width="96" height="46" rx="4" strokeWidth="2" />
     <line x1="2" y1="16" x2="98" y2="16" strokeWidth="2" />
-    {/* 13 Rods Soroban Layout */}
-    {Array.from({ length: 13 }).map((_, i) => {
-      const x = 8 + i * 7;
+    {/* Professional Soroban Layout */}
+    {Array.from({ length: 9 }).map((_, i) => {
+      const x = 10 + i * 10;
       return (
         <React.Fragment key={i}>
-          <line x1={x} y1="2" x2={x} y2="48" opacity="0.5" />
+          <line x1={x} y1="2" x2={x} y2="48" opacity="0.3" />
           {/* Heavenly bead */}
-          <circle cx={x} cy="9" r="2.2" fill={color} stroke="none" />
+          <circle cx={x} cy="9" r="3" fill={color} stroke="none" />
           {/* Earthly beads */}
-          <circle cx={x} cy="23" r="2.2" fill={color} stroke="none" />
-          <circle cx={x} cy="29" r="2.2" fill={color} stroke="none" />
-          <circle cx={x} cy="35" r="2.2" fill={color} stroke="none" />
-          <circle cx={x} cy="41" r="2.2" fill={color} stroke="none" />
+          <circle cx={x} cy="23" r="3" fill={color} stroke="none" />
+          <circle cx={x} cy="30" r="3" fill={color} stroke="none" />
+          <circle cx={x} cy="37" r="3" fill={color} stroke="none" />
+          <circle cx={x} cy="44" r="3" fill={color} stroke="none" />
         </React.Fragment>
       );
     })}
@@ -67,31 +66,30 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
     let cornerBorder = "border-[#f97316]";
     let innerBorder = "border-[#cbd5e1]";
 
-    // Tiered Visual Themes based on Rank
     if (isWinnerDesign) {
       if (rank === 1) {
-        themeClass = "bg-[#fffcf0] border-[#b45309]"; // Exclusive Gold
+        themeClass = "bg-[#fffcf0] border-[#b45309]"; 
         accentColor = "#fbbf24";
         headerColor = "#78350f";
         subHeaderColor = "#b45309";
         cornerBorder = "border-[#fbbf24]";
         innerBorder = "border-[#92400e]/40";
       } else if (rank === 2) {
-        themeClass = "bg-[#f8fafc] border-[#475569]"; // Prestigious Silver
+        themeClass = "bg-[#f8fafc] border-[#475569]"; 
         accentColor = "#94a3b8";
         headerColor = "#1e293b";
         subHeaderColor = "#475569";
         cornerBorder = "border-[#94a3b8]";
         innerBorder = "border-[#475569]/40";
       } else if (rank === 3) {
-        themeClass = "bg-[#fffaf3] border-[#78350f]"; // Noble Bronze
+        themeClass = "bg-[#fffaf3] border-[#78350f]"; 
         accentColor = "#cd7f32";
         headerColor = "#451a03";
         subHeaderColor = "#78350f";
         cornerBorder = "border-[#cd7f32]";
         innerBorder = "border-[#78350f]/40";
       } else {
-        themeClass = "bg-[#f0f9ff] border-[#1e40af]"; // Professional Blue Elite
+        themeClass = "bg-[#f0f9ff] border-[#1e40af]"; 
         accentColor = "#3b82f6";
         headerColor = "#1e3a8a";
         subHeaderColor = "#2563eb";
@@ -120,7 +118,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className={cn("absolute top-10 left-10 right-10 bottom-10 border-[0.5px] pointer-events-none z-20", innerBorder)} />
 
         {/* Watermark Grid - 6x6 Layout, Professional Texture */}
-        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.06]" : "opacity-[0.02]")}>
+        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.10]" : "opacity-[0.03]")}>
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
               <Brain style={{ width: '80px', height: '80px', color: headerColor }} />
@@ -142,8 +140,8 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         {/* Prestigious Group Badge */}
         <div className="relative z-10 mt-6">
            <div className={cn("px-24 py-4 rounded-[2rem] shadow-xl border-b-4", isWinnerDesign ? "border-black/20" : "bg-[#0f172a] border-black/20")} style={isWinnerDesign ? { backgroundColor: headerColor } : {}}>
-              <h2 className="text-2xl font-black italic text-white uppercase tracking-widest text-center">
-                {groupName || 'MASTERY GROUP'} RANK ACHIEVER
+              <h2 className="text-2xl font-black italic text-white tracking-widest text-center">
+                Group &quot;{groupName || 'X'}&quot; Rank Achiever
               </h2>
            </div>
         </div>
@@ -157,7 +155,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              <h3 className={cn("text-7xl font-black uppercase tracking-normal leading-none text-center")} style={{ color: headerColor }}>
                {formattedName}
              </h3>
-             <div className="h-[2px] w-full mt-2" style={{ backgroundColor: subHeaderColor, opacity: 0.15 }} />
+             <div className="h-[2px] w-full mt-2" style={{ backgroundColor: subHeaderColor, opacity: 0.25 }} />
            </div>
 
            <div className="mt-6 text-center space-y-1.5 max-w-4xl">
@@ -173,7 +171,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
 
            <div className="mt-2">
              <p className={cn("text-lg font-bold leading-none")} style={{ color: headerColor }}>
-               With a certified performance score of <span className={cn("font-black border-b-2 pb-0.5 px-2 underline-offset-4")} style={{ borderColor: headerColor }}>{score || '---'}</span>
+               With a certified performance score of <span className={cn("font-black border-b-2 pb-0.5 px-2")} style={{ borderColor: headerColor }}>{score || '---'}</span>
              </p>
            </div>
         </div>

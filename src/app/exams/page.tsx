@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -100,14 +99,12 @@ export default function ExamDashboardPage() {
   const finalAttempt = useMemo(() => {
     if (!application || results.length === 0) return null;
     
-    // 1. Find attempt with official rank field (from backend declaration)
+    // Prioritize official ranked results
     const rankedResults = results
       .filter(r => r.rank !== undefined)
       .sort((a, b) => (a.rank || 999) - (b.rank || 999));
     
     if (rankedResults.length > 0) return rankedResults[0];
-
-    // 2. Fallback: Pre-declaration visibility (the student's most recent final attempt)
     return results.find(r => r.isFinal === true) || null;
   }, [results, application]);
 
@@ -127,11 +124,11 @@ export default function ExamDashboardPage() {
   const handleGetCertificate = (res: ExamResult, isRankCert: boolean) => {
     setCertData({
       type: isRankCert ? 'exam_winner' : 'exam_participation',
-      title: isRankCert ? `RANK ${res.rank} ACHIEVER` : `GROUP ${res.group} PARTICIPANT`,
+      title: isRankCert ? `RANK ${res.rank} ACHIEVER` : `Group "${res.group}" Participant`,
       score: `${res.score}/${res.totalQuestions} (${res.accuracy.toFixed(1)}%)`,
       date: format(res.submittedAt?.toDate ? res.submittedAt.toDate() : new Date(), 'MMMM do, yyyy'),
       rank: isRankCert ? res.rank : undefined,
-      groupName: `GROUP ${res.group}`
+      groupName: res.group
     });
     setShowCertificate(true);
   };
