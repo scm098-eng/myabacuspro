@@ -117,11 +117,11 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className={cn("absolute top-8 left-8 right-8 bottom-8 border-[0.5px] pointer-events-none z-20", innerBorder)} />
         <div className={cn("absolute top-10 left-10 right-10 bottom-10 border-[0.5px] pointer-events-none z-20", innerBorder)} />
 
-        {/* Watermark Grid - 6x6 Layout, Professional Texture */}
-        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.10]" : "opacity-[0.03]")}>
+        {/* Watermark Grid - 6x6 Layout, Professional Texture - Lighter & 60px Scale */}
+        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.07]" : "opacity-[0.02]")}>
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
-              <Brain style={{ width: '80px', height: '80px', color: headerColor }} />
+              <Brain style={{ width: '60px', height: '60px', color: headerColor }} />
             </div>
           ))}
         </div>
@@ -176,7 +176,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            </div>
         </div>
 
-        {/* Footer Section: Date & Signature */}
+        {/* Footer Section: Abacus Badge & Signature */}
         <div className="relative z-10 w-full mt-auto flex justify-between items-end px-12 pb-10">
            <div className="text-left space-y-1 w-64">
              <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]")} style={{ color: subHeaderColor }}>DATE OF ISSUE</p>
