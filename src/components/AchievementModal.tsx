@@ -35,7 +35,7 @@ const A4_HEIGHT = 794;
 const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: string; title: string; score?: string; date?: string; type: AchievementType, rank?: number, groupName?: string }>(
   ({ studentName, title, score, date, type, rank, groupName }, ref) => {
     const formattedName = studentName.trim().replace(/\s+/g, ' ');
-    const isWinnerDesign = type === 'exam_winner';
+    const isWinnerDesign = type === 'exam_winner' || (type === 'rank' && rank !== undefined);
 
     let themeClass = "bg-white border-[#0f172a]";
     let accentColor = "#f97316";
@@ -44,30 +44,31 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
     let cornerBorder = "border-[#f97316]";
     let innerBorder = "border-[#cbd5e1]";
 
+    // Tiered Visual Themes
     if (isWinnerDesign) {
       if (rank === 1) {
-        themeClass = "bg-[#fffcf0] border-[#b45309]";
+        themeClass = "bg-[#fffcf0] border-[#b45309]"; // Gold Theme
         accentColor = "#fbbf24";
         headerColor = "#78350f";
         subHeaderColor = "#b45309";
         cornerBorder = "border-[#fbbf24]";
         innerBorder = "border-[#92400e]/40";
       } else if (rank === 2) {
-        themeClass = "bg-[#f8fafc] border-[#475569]";
+        themeClass = "bg-[#f8fafc] border-[#475569]"; // Silver Theme
         accentColor = "#94a3b8";
         headerColor = "#1e293b";
         subHeaderColor = "#475569";
         cornerBorder = "border-[#94a3b8]";
         innerBorder = "border-[#475569]/40";
       } else if (rank === 3) {
-        themeClass = "bg-[#fffaf3] border-[#78350f]";
+        themeClass = "bg-[#fffaf3] border-[#78350f]"; // Bronze Theme
         accentColor = "#cd7f32";
         headerColor = "#451a03";
         subHeaderColor = "#78350f";
         cornerBorder = "border-[#cd7f32]";
         innerBorder = "border-[#78350f]/40";
       } else {
-        themeClass = "bg-[#f0f9ff] border-[#1e40af]";
+        themeClass = "bg-[#f0f9ff] border-[#1e40af]"; // Blue Elite Theme
         accentColor = "#3b82f6";
         headerColor = "#1e3a8a";
         subHeaderColor = "#2563eb";
@@ -95,8 +96,8 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className={cn("absolute top-8 left-8 right-8 bottom-8 border-[0.5px] pointer-events-none z-20", innerBorder)} />
         <div className={cn("absolute top-10 left-10 right-10 bottom-10 border-[0.5px] pointer-events-none z-20", innerBorder)} />
 
-        {/* Watermark Grid - 6x6 Layout, w-20 h-20 size */}
-        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.12]" : "opacity-[0.05]")}>
+        {/* Watermark Grid - 6x6 Layout, w-20 h-20 size, Slightly Lighter */}
+        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.10]" : "opacity-[0.03]")}>
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
               <Brain style={{ width: '80px', height: '80px', color: headerColor }} />
@@ -171,7 +172,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              </div>
            </div>
 
-           {/* Executive Signature Block - Right Aligned with Signature Line */}
+           {/* Executive Signature Block - Perfectly Right Aligned */}
            <div className="text-right w-64 flex flex-col items-end pr-4">
              <div className="flex flex-col items-center relative">
                 <p 
