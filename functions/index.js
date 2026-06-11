@@ -486,7 +486,7 @@ exports.resetExamCycle = onCall(async (request) => {
 
 /**
  * Marks the current cycle results as official.
- * Updated to calculate and store ranks for all students using triple-tie-breaker.
+ * Assigns sequential ranks using Triple-Tie-Breaker: Score > Accuracy > TimeLeft.
  */
 exports.declareOfficialResults = onCall(async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
@@ -506,9 +506,13 @@ exports.declareOfficialResults = onCall(async (request) => {
             // Sort in memory for complex tie-breakers
             const groupResults = snap.docs.map(doc => ({ id: doc.id, ref: doc.ref, ...doc.data() }));
             
+            // Triple-Tie-Breaker Sort Logic
             groupResults.sort((a, b) => {
+                // 1. Score
                 if (b.score !== a.score) return b.score - a.score;
+                // 2. Accuracy
                 if ((b.accuracy || 0) !== (a.accuracy || 0)) return (b.accuracy || 0) - (a.accuracy || 0);
+                // 3. Time Left (Higher is faster)
                 return (b.timeLeft || 0) - (a.timeLeft || 0);
             });
 
@@ -520,7 +524,6 @@ exports.declareOfficialResults = onCall(async (request) => {
             groupResults.forEach((doc, idx) => {
               batch.update(doc.ref, { rank: idx + 1 });
               count++;
-              // Committing in chunks if many students exist (Batch limit 500)
               if (count % 400 === 0) {
                 batch.commit();
                 batch = db.batch();
@@ -537,7 +540,7 @@ exports.declareOfficialResults = onCall(async (request) => {
         ...winners
     });
 
-    return { status: "success", message: "Results are now official and ranks assigned using triple-tie-breaker." };
+    return { status: "success", message: "Results official and sequential ranks assigned." };
 });
 
 /**

@@ -35,7 +35,7 @@ const A4_HEIGHT = 794;
 const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: string; title: string; score?: string; date?: string; type: AchievementType, rank?: number, groupName?: string }>(
   ({ studentName, title, score, date, type, rank, groupName }, ref) => {
     const formattedName = studentName.trim().replace(/\s+/g, ' ');
-    const isWinnerDesign = type === 'exam_winner' || (type === 'rank' && rank !== undefined);
+    const isWinnerDesign = type === 'exam_winner' || rank !== undefined;
 
     let themeClass = "bg-white border-[#0f172a]";
     let accentColor = "#f97316";
@@ -44,31 +44,31 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
     let cornerBorder = "border-[#f97316]";
     let innerBorder = "border-[#cbd5e1]";
 
-    // Tiered Visual Themes
+    // Tiered Visual Themes based on Rank
     if (isWinnerDesign) {
       if (rank === 1) {
-        themeClass = "bg-[#fffcf0] border-[#b45309]"; // Gold Theme
+        themeClass = "bg-[#fffcf0] border-[#b45309]"; // Exclusive Gold
         accentColor = "#fbbf24";
         headerColor = "#78350f";
         subHeaderColor = "#b45309";
         cornerBorder = "border-[#fbbf24]";
         innerBorder = "border-[#92400e]/40";
       } else if (rank === 2) {
-        themeClass = "bg-[#f8fafc] border-[#475569]"; // Silver Theme
+        themeClass = "bg-[#f8fafc] border-[#475569]"; // Prestigious Silver
         accentColor = "#94a3b8";
         headerColor = "#1e293b";
         subHeaderColor = "#475569";
         cornerBorder = "border-[#94a3b8]";
         innerBorder = "border-[#475569]/40";
       } else if (rank === 3) {
-        themeClass = "bg-[#fffaf3] border-[#78350f]"; // Bronze Theme
+        themeClass = "bg-[#fffaf3] border-[#78350f]"; // Noble Bronze
         accentColor = "#cd7f32";
         headerColor = "#451a03";
         subHeaderColor = "#78350f";
         cornerBorder = "border-[#cd7f32]";
         innerBorder = "border-[#78350f]/40";
       } else {
-        themeClass = "bg-[#f0f9ff] border-[#1e40af]"; // Blue Elite Theme
+        themeClass = "bg-[#f0f9ff] border-[#1e40af]"; // Professional Blue Elite
         accentColor = "#3b82f6";
         headerColor = "#1e3a8a";
         subHeaderColor = "#2563eb";
@@ -96,8 +96,8 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className={cn("absolute top-8 left-8 right-8 bottom-8 border-[0.5px] pointer-events-none z-20", innerBorder)} />
         <div className={cn("absolute top-10 left-10 right-10 bottom-10 border-[0.5px] pointer-events-none z-20", innerBorder)} />
 
-        {/* Watermark Grid - 6x6 Layout, w-20 h-20 size, Slightly Lighter */}
-        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.10]" : "opacity-[0.03]")}>
+        {/* Watermark Grid - 6x6 Layout, Slightly Lighter Opacity */}
+        <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.08]" : "opacity-[0.03]")}>
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
               <Brain style={{ width: '80px', height: '80px', color: headerColor }} />
@@ -120,7 +120,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         <div className="relative z-10 mt-6">
            <div className={cn("px-24 py-4 rounded-[2rem] shadow-xl border-b-4", isWinnerDesign ? "border-black/20" : "bg-[#0f172a] border-black/20")} style={isWinnerDesign ? { backgroundColor: headerColor } : {}}>
               <h2 className="text-2xl font-black italic text-white uppercase tracking-widest text-center">
-                {groupName} RANK ACHIEVER
+                {groupName || 'MASTERY GROUP'} RANK ACHIEVER
               </h2>
            </div>
         </div>
@@ -148,7 +148,6 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              </div>
            </div>
 
-           {/* Score Line */}
            <div className="mt-1">
              <p className={cn("text-lg font-bold leading-none")} style={{ color: headerColor }}>
                With a certified performance score of <span className={cn("font-black border-b-2 pb-0.5 px-2 underline-offset-4")} style={{ borderColor: headerColor }}>{score || '---'}</span>
@@ -164,8 +163,8 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            </div>
 
            <div className="flex flex-col items-center gap-2 mb-[-5px]">
-             <div className={cn("p-5 rounded-full border-[5px] shadow-xl relative animate-in zoom-in-50 duration-700 bg-[#fffbeb] border-[#fbbf24]")}>
-                <Medal className="w-14 h-14 text-[#fbbf24] drop-shadow-sm" />
+             <div className={cn("p-5 rounded-full border-[5px] shadow-xl relative animate-in zoom-in-50 duration-700", rank === 1 ? "bg-[#fffbeb] border-[#fbbf24]" : "bg-white border-slate-200")}>
+                <Medal className={cn("w-14 h-14 drop-shadow-sm", rank === 1 ? "text-[#fbbf24]" : "text-slate-400")} />
              </div>
              <div className={cn("px-5 py-1.5 rounded-full shadow-md")} style={{ backgroundColor: headerColor }}>
                <p className="text-[8px] font-black text-white uppercase tracking-widest">LEVEL ACHIEVED</p>
@@ -181,7 +180,6 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
                 >
                   Satish Mane
                 </p>
-                {/* Signature Line */}
                 <div className={cn("h-[1.5px] w-56")} style={{ backgroundColor: innerBorder }} />
                 <div className="mt-2 text-center">
                    <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]")} style={{ color: subHeaderColor }}>SATISH MANE</p>
@@ -274,7 +272,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
         await navigator.share({
           files: [file],
           title: 'My Abacus Pro Achievement',
-          text: `I just achieved the distinction of ${title} on My Abacus Pro! 🧮✨`,
+          text: `I just achieved the distinction of ${rank ? `Rank ${rank}` : title} on My Abacus Pro! 🧮✨`,
           url: 'https://myabacuspro.com',
         });
       } else {
@@ -295,12 +293,10 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-300">
       <div className="flex flex-col items-center w-full max-w-5xl gap-6">
         
-        {/* Hidden high-res capture target */}
         <div className="fixed left-[-9999px] top-0 pointer-events-none">
           <CertificateContent ref={cardRef} studentName={studentName} title={title} score={score} date={date} type={type} rank={rank} groupName={groupName} />
         </div>
 
-        {/* Modal Viewport */}
         <div 
           className="shadow-2xl overflow-hidden rounded-xl bg-white border-2 border-white/20 origin-center transition-transform duration-500"
           style={{ 
@@ -314,7 +310,6 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
           <CertificateContent studentName={studentName} title={title} score={score} date={date} type={type} rank={rank} groupName={groupName} />
         </div>
 
-        {/* Action Controls */}
         <div className="flex flex-wrap gap-4 w-full max-w-3xl px-4 relative z-[10002] animate-in slide-in-from-bottom-4 duration-500">
           <Button onClick={handleDownloadPDF} disabled={!!isDownloading} className="flex-1 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl border-none text-base">
             {isDownloading === 'pdf' ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <FileText className="h-5 w-5 mr-2" />} 

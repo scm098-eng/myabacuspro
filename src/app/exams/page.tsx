@@ -23,12 +23,6 @@ import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import AchievementModal, { AchievementType } from '@/components/AchievementModal';
 
-const getOrdinal = (n: number) => {
-  const s = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
-};
-
 export default function ExamDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
   const { profile, isLoading: authLoading, user } = useAuth();
@@ -103,7 +97,6 @@ export default function ExamDashboardPage() {
     return () => { unsubSchedule(); unsubscribeApp(); unsubscribeResults(); };
   }, [user]);
 
-  // Robust Rank Selection Logic
   const finalAttempt = useMemo(() => {
     if (!application || results.length === 0) return null;
     
@@ -233,7 +226,7 @@ export default function ExamDashboardPage() {
                 <div className="space-y-1 text-center md:text-left">
                   <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter italic leading-none">Official Certification Ready!</h2>
                   <p className="font-bold opacity-80 text-lg mt-2">
-                    { (finalAttempt.rank !== undefined) ? "Outstanding achievement! Your prestigious honors are ready." : "Your results are official. Claim your professional award now." }
+                    { (finalAttempt.rank !== undefined) ? `Outstanding achievement! You secured Rank ${finalAttempt.rank}.` : "Your results are official. Claim your professional award now." }
                   </p>
                 </div>
               </div>
