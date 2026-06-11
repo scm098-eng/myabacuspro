@@ -486,7 +486,7 @@ exports.resetExamCycle = onCall(async (request) => {
 
 /**
  * Marks the current cycle results as official.
- * Updated to calculate and store ranks for all students.
+ * Updated to calculate and store ranks for all students using triple-tie-breaker.
  */
 exports.declareOfficialResults = onCall(async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
@@ -500,17 +500,24 @@ exports.declareOfficialResults = onCall(async (request) => {
         const snap = await db.collection('examResults')
             .where('group', '==', group)
             .where('isFinal', '==', true)
-            .orderBy('score', 'desc')
-            .orderBy('timeLeft', 'desc')
             .get();
         
         if (!snap.empty) {
-            winners[`group${group}WinnerId`] = snap.docs[0].id;
+            // Sort in memory for complex tie-breakers
+            const groupResults = snap.docs.map(doc => ({ id: doc.id, ref: doc.ref, ...doc.data() }));
+            
+            groupResults.sort((a, b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                if ((b.accuracy || 0) !== (a.accuracy || 0)) return (b.accuracy || 0) - (a.accuracy || 0);
+                return (b.timeLeft || 0) - (a.timeLeft || 0);
+            });
+
+            winners[`group${group}WinnerId`] = groupResults[0].id;
             
             // Assign ranks to all final attempts in this group
             let batch = db.batch();
             let count = 0;
-            snap.docs.forEach((doc, idx) => {
+            groupResults.forEach((doc, idx) => {
               batch.update(doc.ref, { rank: idx + 1 });
               count++;
               // Committing in chunks if many students exist (Batch limit 500)
@@ -530,7 +537,7 @@ exports.declareOfficialResults = onCall(async (request) => {
         ...winners
     });
 
-    return { status: "success", message: "Results are now official and ranks assigned." };
+    return { status: "success", message: "Results are now official and ranks assigned using triple-tie-breaker." };
 });
 
 /**
