@@ -25,14 +25,15 @@ interface AchievementProps {
   score?: string; 
   date?: string;
   rank?: number;
+  groupName?: string;
   onClose: () => void;
 }
 
 const A4_WIDTH = 1123;
 const A4_HEIGHT = 794;
 
-const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: string; title: string; score?: string; date?: string; type: AchievementType, rank?: number }>(
-  ({ studentName, title, score, date, type, rank }, ref) => {
+const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: string; title: string; score?: string; date?: string; type: AchievementType, rank?: number, groupName?: string }>(
+  ({ studentName, title, score, date, type, rank, groupName }, ref) => {
     const formattedName = studentName.trim().replace(/\s+/g, ' ');
     const isWinnerDesign = type === 'exam_winner';
 
@@ -112,8 +113,8 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
 
         <div className="relative z-10 mt-6">
            <div className={cn("px-24 py-4 rounded-[2rem] shadow-xl border-b-4", isWinnerDesign ? "border-black/20" : "bg-[#0f172a] border-black/20")} style={isWinnerDesign ? { backgroundColor: headerColor } : {}}>
-              <h2 className="text-2xl font-black italic text-white uppercase tracking-widest">
-                {isWinnerDesign ? `${title}` : "MASTERY RANK AWARD"}
+              <h2 className="text-2xl font-black italic text-white uppercase tracking-widest text-center">
+                {isWinnerDesign ? `${groupName} RANK ACHIEVER` : "MASTERY RANK AWARD"}
               </h2>
            </div>
         </div>
@@ -135,7 +136,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              </p>
              <div className="flex flex-col items-center gap-1">
                <p className={cn("text-sm font-bold uppercase tracking-widest leading-none")} style={{ color: headerColor }}>
-                 THE DISTINCTION OF <span className={cn("font-black text-4xl ml-2")} style={{ color: subHeaderColor }}>{isWinnerDesign ? 'ELITE ACHIEVER' : title}</span>
+                 THE DISTINCTION OF <span className={cn("font-black text-4xl ml-2")} style={{ color: subHeaderColor }}>{title}</span>
                </p>
              </div>
            </div>
@@ -162,19 +163,19 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              </div>
            </div>
 
-           <div className="text-right w-64">
-             <div className="flex flex-col items-end relative">
+           <div className="text-right w-64 flex flex-col items-end pr-4">
+             <div className="flex flex-col items-center relative">
                 <p 
-                  className={cn("absolute bottom-[4px] right-8 font-sacramento text-[36px] font-bold")}
+                  className={cn("font-sacramento text-[36px] font-bold mb-[-12px]")}
                   style={{ fontFamily: 'var(--font-sacramento), cursive', color: subHeaderColor }}
                 >
                   Satish Mane
                 </p>
-                <div className={cn("h-[1.5px] w-60 mt-10")} style={{ backgroundColor: innerBorder }} />
-             </div>
-             <div className="mt-2">
-                <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]")} style={{ color: subHeaderColor }}>SATISH MANE</p>
-                <p className={cn("text-[8px] font-black uppercase tracking-tighter opacity-70")} style={{ color: subHeaderColor }}>FOUNDER & DIRECTOR, MY ABACUS PRO</p>
+                <div className={cn("h-[1.5px] w-56")} style={{ backgroundColor: innerBorder }} />
+                <div className="mt-2 text-center">
+                   <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]")} style={{ color: subHeaderColor }}>SATISH MANE</p>
+                   <p className={cn("text-[8px] font-black uppercase tracking-tighter opacity-70")} style={{ color: subHeaderColor }}>FOUNDER & DIRECTOR, MY ABACUS PRO</p>
+                </div>
              </div>
            </div>
         </div>
@@ -184,7 +185,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
 );
 CertificateContent.displayName = 'CertificateContent';
 
-const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title, score, date, rank, onClose }) => {
+const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title, score, date, rank, groupName, onClose }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState<'jpeg' | 'pdf' | 'share' | null>(null);
   const [modalScale, setModalScale] = useState(0.5);
@@ -284,7 +285,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
       <div className="flex flex-col items-center w-full max-w-5xl gap-6">
         
         <div className="fixed left-[-9999px] top-0 pointer-events-none">
-          <CertificateContent ref={cardRef} studentName={studentName} title={title} score={score} date={date} type={type} rank={rank} />
+          <CertificateContent ref={cardRef} studentName={studentName} title={title} score={score} date={date} type={type} rank={rank} groupName={groupName} />
         </div>
 
         <div 
@@ -297,7 +298,7 @@ const AchievementModal: React.FC<AchievementProps> = ({ type, studentName, title
             marginBottom: `-${(A4_HEIGHT * (1 - modalScale)) / 2}px`
           }}
         >
-          <CertificateContent studentName={studentName} title={title} score={score} date={date} type={type} rank={rank} />
+          <CertificateContent studentName={studentName} title={title} score={score} date={date} type={type} rank={rank} groupName={groupName} />
         </div>
 
         <div className="flex flex-wrap gap-4 w-full max-w-3xl px-4 relative z-[10002] animate-in slide-in-from-bottom-4 duration-500">

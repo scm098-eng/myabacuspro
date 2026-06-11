@@ -43,7 +43,14 @@ export default function ExamDashboardPage() {
   const [schedule, setSchedule] = useState<any | null>(null);
 
   const [showCertificate, setShowCertificate] = useState(false);
-  const [certData, setCertData] = useState<{ type: AchievementType, title: string, score: string, date: string, rank?: number } | null>(null);
+  const [certData, setCertData] = useState<{ 
+    type: AchievementType, 
+    title: string, 
+    score: string, 
+    date: string, 
+    rank?: number,
+    groupName?: string 
+  } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -101,12 +108,10 @@ export default function ExamDashboardPage() {
     const finalResults = results.filter(r => r.isFinal === true);
     if (finalResults.length === 0) return null;
 
-    // 1. Prioritize the result assigned as a winner in the schedule
     const winnerKey = `group${application.group}WinnerId`;
     const winnerResult = finalResults.find(r => r.id === schedule?.[winnerKey]);
     if (winnerResult) return { ...winnerResult, rank: 1 };
 
-    // 2. Otherwise prioritize any result with an official rank (from declareOfficialResults function)
     if (schedule?.resultsDeclared) {
       const rankedResults = finalResults.filter(r => r.rank !== undefined).sort((a, b) => (a.rank || 999) - (b.rank || 999));
       if (rankedResults.length > 0) return rankedResults[0];
@@ -129,15 +134,15 @@ export default function ExamDashboardPage() {
   };
 
   const handleGetCertificate = (res: ExamResult, forWinner: boolean) => {
-    // Determine effective rank for the winning certificate
     const effectiveRank = forWinner ? (res.rank || 1) : undefined;
-
+    
     setCertData({
       type: forWinner ? 'exam_winner' : 'exam_participation',
-      title: forWinner ? `GROUP ${res.group} ${getOrdinal(effectiveRank || 1)} RANK ACHIEVER` : `GROUP ${res.group} PARTICIPANT`,
+      title: forWinner ? `RANK ${effectiveRank} ACHIEVER` : `GROUP ${res.group} PARTICIPANT`,
       score: `${res.score}/${res.totalQuestions} (${res.accuracy.toFixed(1)}%)`,
       date: format(res.submittedAt?.toDate ? res.submittedAt.toDate() : new Date(), 'MMMM do, yyyy'),
-      rank: effectiveRank
+      rank: effectiveRank,
+      groupName: `GROUP ${res.group}`
     });
     setShowCertificate(true);
   };
@@ -188,6 +193,7 @@ export default function ExamDashboardPage() {
           score={certData.score}
           date={certData.date}
           rank={certData.rank}
+          groupName={certData.groupName}
           onClose={() => setShowCertificate(false)}
         />
       )}
@@ -221,7 +227,6 @@ export default function ExamDashboardPage() {
               </div>
               
               <div className="flex flex-wrap gap-4 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
-                {/* Always show Winning Certificate if a rank is available or results are declared */}
                 {(finalAttempt.rank !== undefined || schedule?.resultsDeclared) && (
                   <Button 
                     onClick={() => handleGetCertificate(finalAttempt!, true)}
@@ -373,4 +378,3 @@ export default function ExamDashboardPage() {
     </div>
   );
 }
-
