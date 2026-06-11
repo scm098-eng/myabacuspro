@@ -101,15 +101,15 @@ export default function ExamDashboardPage() {
     const finalResults = results.filter(r => r.isFinal === true);
     if (finalResults.length === 0) return null;
 
-    // Prioritize the result assigned as a winner in the schedule
+    // 1. Prioritize the result assigned as a winner in the schedule
     const winnerKey = `group${application.group}WinnerId`;
     const winnerResult = finalResults.find(r => r.id === schedule?.[winnerKey]);
-    if (winnerResult) return winnerResult;
+    if (winnerResult) return { ...winnerResult, rank: 1 };
 
-    // Otherwise prioritize the best rank assigned to any result
+    // 2. Otherwise prioritize any result with an official rank (from declareOfficialResults function)
     if (schedule?.resultsDeclared) {
       const rankedResults = finalResults.filter(r => r.rank !== undefined).sort((a, b) => (a.rank || 999) - (b.rank || 999));
-      return rankedResults[0] || finalResults[0];
+      if (rankedResults.length > 0) return rankedResults[0];
     }
 
     return finalResults[0];
@@ -129,10 +129,8 @@ export default function ExamDashboardPage() {
   };
 
   const handleGetCertificate = (res: ExamResult, forWinner: boolean) => {
-    // If they are explicitly marked as a winner in the schedule, force rank 1 if missing
-    const winnerKey = `group${res.group}WinnerId`;
-    const isExplicitWinner = schedule?.[winnerKey] === res.id;
-    const effectiveRank = forWinner ? (res.rank || (isExplicitWinner ? 1 : undefined)) : undefined;
+    // Determine effective rank for the winning certificate
+    const effectiveRank = forWinner ? (res.rank || 1) : undefined;
 
     setCertData({
       type: forWinner ? 'exam_winner' : 'exam_participation',
@@ -210,38 +208,39 @@ export default function ExamDashboardPage() {
       </Card>
 
       {schedule?.resultsDeclared && finalAttempt && (
-        <Card className="bg-indigo-600 border-none shadow-2xl rounded-[2rem] overflow-hidden animate-in zoom-in-95 duration-700">
+        <Card className="bg-indigo-600 border-none shadow-2xl rounded-[2.5rem] overflow-hidden animate-in zoom-in-95 duration-700">
            <CardContent className="p-8 flex flex-col lg:flex-row items-center justify-between gap-8 text-white">
               <div className="flex items-center gap-6">
                 <div className="bg-white/20 p-5 rounded-full shadow-lg"><Award className="w-12 h-12 text-yellow-300 drop-shadow-sm" /></div>
                 <div className="space-y-1 text-center md:text-left">
-                  <h2 className="text-3xl font-black uppercase tracking-tighter italic leading-none">Official Certification Ready!</h2>
+                  <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter italic leading-none">Official Certification Ready!</h2>
                   <p className="font-bold opacity-80 text-lg mt-2">
-                    { (finalAttempt.rank !== undefined) ? "Incredible performance! Your prestigious honors are ready." : "Your Group results are official. Claim your professional award now." }
+                    { (finalAttempt.rank !== undefined) ? "Outstanding achievement! Your prestigious honors are ready." : "Your results are official. Claim your professional award now." }
                   </p>
                 </div>
               </div>
               
               <div className="flex flex-wrap gap-4 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
-                {finalAttempt.rank !== undefined && (
+                {/* Always show Winning Certificate if a rank is available or results are declared */}
+                {(finalAttempt.rank !== undefined || schedule?.resultsDeclared) && (
                   <Button 
                     onClick={() => handleGetCertificate(finalAttempt!, true)}
                     className={cn(
-                      "font-black h-14 px-8 rounded-2xl text-sm shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest min-w-[200px]",
-                      (finalAttempt.rank === 1) ? "bg-yellow-400 text-indigo-950 hover:bg-yellow-500" : "bg-indigo-400 text-white hover:bg-indigo-500"
+                      "font-black h-14 px-8 rounded-2xl text-xs sm:text-sm shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest min-w-[200px]",
+                      (finalAttempt.rank === 1) ? "bg-yellow-400 text-indigo-950 hover:bg-yellow-500" : "bg-white text-indigo-900 hover:bg-slate-50"
                     )}
                   >
-                    <Medal className="w-5 h-5 mr-2" />
-                    Rank {finalAttempt.rank} Cert
+                    <Medal className="w-5 h-5 mr-2 text-indigo-600" />
+                    Rank {finalAttempt.rank || 'Achiever'} Certificate
                   </Button>
                 )}
                 <Button 
                   onClick={() => handleGetCertificate(finalAttempt!, false)}
                   variant="outline"
-                  className="bg-white/10 text-white hover:bg-white/20 font-black h-14 px-8 rounded-2xl text-sm shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest min-w-[200px]"
+                  className="bg-white/10 text-white hover:bg-white/20 font-black h-14 px-8 rounded-2xl text-xs sm:text-sm shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest min-w-[200px]"
                 >
                   <Download className="w-5 h-5 mr-2" />
-                  Participation
+                  Participation Certificate
                 </Button>
               </div>
            </CardContent>
@@ -374,3 +373,4 @@ export default function ExamDashboardPage() {
     </div>
   );
 }
+
