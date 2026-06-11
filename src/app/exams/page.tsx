@@ -99,7 +99,7 @@ export default function ExamDashboardPage() {
   const finalAttempt = useMemo(() => {
     if (!application || results.length === 0) return null;
     
-    // Prioritize official ranked results
+    // Prioritize official ranked results for certification
     const rankedResults = results
       .filter(r => r.rank !== undefined)
       .sort((a, b) => (a.rank || 999) - (b.rank || 999));
@@ -280,7 +280,7 @@ export default function ExamDashboardPage() {
                       disabled={examOpen || !!schedule?.resultsDeclared}
                       className={cn(
                         "h-24 rounded-2xl flex flex-col gap-2 font-black transition-all",
-                        (!examOpen && !schedule?.resultsDeclared) ? "hover:scale-105" : "opacity-50 cursor-not-allowed grayscale bg-muted/50"
+                        (!examOpen && !schedule?.resultsDeclared) ? "hover:scale-105" : "opacity-50 grayscale bg-muted/50"
                       )} 
                       onClick={() => router.push(`/exams/arena/paper-${i + 1}`)}
                     >
