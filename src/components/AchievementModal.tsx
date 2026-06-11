@@ -42,7 +42,6 @@ const AbacusToolIcon = ({ color }: { color: string }) => (
         <React.Fragment key={i}>
           <line x1={x} y1="2" x2={x} y2="48" opacity="0.3" />
           <circle cx={x} cy="9" r="3" fill={color} stroke="none" />
-          {/* Earthly Beads - 4 beads at bottom */}
           <circle cx={x} cy="23" r="3" fill={color} stroke="none" />
           <circle cx={x} cy="30" r="3" fill={color} stroke="none" />
           <circle cx={x} cy="37" r="3" fill={color} stroke="none" />
