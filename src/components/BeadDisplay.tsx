@@ -11,7 +11,7 @@ const Bead = ({
   return (
     <div
       onClick={onClick}
-      className="w-10 h-6 sm:w-14 sm:h-8 transition-all duration-150 ease-in-out relative group cursor-pointer shrink-0 z-20"
+      className="w-10 h-6 sm:w-14 sm:h-8 transition-all duration-100 ease-in-out relative group cursor-pointer shrink-0 z-20"
     >
       <div
         className={cn(
@@ -61,7 +61,7 @@ const AbacusRod = ({
 
         {/* Upper Section (Heavenly Bead) */}
         <div className="w-full h-[30%] flex flex-col items-center justify-end pb-[6.5px] z-20">
-           <div className={cn("transition-all duration-150", !upperBeadActive && "-translate-y-12")}>
+           <div className={cn("transition-all duration-100", !upperBeadActive && "-translate-y-12")}>
               <Bead onClick={() => onBeadClick(5)} />
            </div>
         </div>
