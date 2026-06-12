@@ -189,7 +189,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
                 <AbacusToolIcon color={headerColor} />
              </div>
              <div className="px-8 py-2 rounded-full shadow-lg border border-black/5" style={{ backgroundColor: subHeaderColor }}>
-                <p className="text-xs font-black uppercase tracking-widest text-white">Congratulations</p>
+                <p className="text-2xl font-sacramento text-white font-bold leading-none px-2">Congratulations!</p>
              </div>
            </div>
 
@@ -204,8 +204,8 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
                 </p>
                 <div className={cn("h-[1px] w-52 mb-2")} style={{ backgroundColor: headerColor, opacity: 0.2 }} />
                 <div className="text-center">
-                   <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]")} style={{ color: subHeaderColor }}>SATISH MANE</p>
-                   <p className={cn("text-[8px] font-black uppercase tracking-tighter opacity-70")} style={{ color: subHeaderColor }}>FOUNDER & DIRECTOR, MY ABACUS PRO</p>
+                   <p className={cn("text-[11px] font-black uppercase tracking-[0.2em]")} style={{ color: subHeaderColor }}>SATISH MANE</p>
+                   <p className={cn("text-[9px] font-black uppercase tracking-tighter opacity-70")} style={{ color: subHeaderColor }}>FOUNDER & DIRECTOR, MY ABACUS PRO</p>
                 </div>
              </div>
            </div>
