@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -19,6 +20,7 @@ import { RANK_CRITERIA, ADMIN_EMAILS } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import AchievementModal, { AchievementType } from '@/components/AchievementModal';
+import { format, parseISO, isValid } from 'date-fns';
 
 function getUTCMondayKey() {
     const now = new Date();
@@ -47,7 +49,7 @@ export default function StudentDashboardPage() {
   const [globalWinner, setGlobalWinner] = useState<any>(null);
   
   const [showCertificate, setShowCertificate] = useState(false);
-  const [certData, setCertData] = useState<{ type: AchievementType, title: string, score?: string } | null>(null);
+  const [certData, setCertData] = useState<{ type: AchievementType, title: string, score?: string, date?: string } | null>(null);
 
   const currentWeekKey = useMemo(() => getUTCMondayKey(), []);
   const currentMonthKey = useMemo(() => getUTCMonthKey(), []);
@@ -97,16 +99,28 @@ export default function StudentDashboardPage() {
     setCertData({
       type: 'rank',
       title: getStudentTitle(profile.totalDaysPracticed || 0, profile.totalPoints || 0).name,
-      score: `${(profile.totalPoints || 0).toLocaleString()} Global Mastery Points`
+      score: `${(profile.totalPoints || 0).toLocaleString()} Global Mastery Points`,
+      date: format(new Date(), 'MMMM do, yyyy')
     });
     setShowCertificate(true);
   };
 
   const handleDownloadWinnerCert = (type: AchievementType, points: number) => {
+    let issuanceDate = new Date();
+    
+    if (type === 'weekly_winner' && lastWinner?.weekKey) {
+        const parsed = parseISO(lastWinner.weekKey);
+        if (isValid(parsed)) issuanceDate = parsed;
+    } else if (type === 'monthly_winner' && monthlyWinner?.monthKey) {
+        const parsed = parseISO(`${monthlyWinner.monthKey}-01`);
+        if (isValid(parsed)) issuanceDate = parsed;
+    }
+
     setCertData({
       type,
       title: type === 'weekly_winner' ? 'Weekly Champion' : (type === 'monthly_winner' ? 'Monthly Master' : 'Global Legend'),
-      score: `${points.toLocaleString()} Mastery Points`
+      score: `${points.toLocaleString()} Mastery Points`,
+      date: format(issuanceDate, 'MMMM do, yyyy')
     });
     setShowCertificate(true);
   };
@@ -133,6 +147,7 @@ export default function StudentDashboardPage() {
           studentName={`${profile.firstName} ${profile.surname}`}
           title={certData.title}
           score={certData.score}
+          date={certData.date}
           onClose={() => setShowCertificate(false)}
         />
       )}

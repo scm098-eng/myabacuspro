@@ -97,7 +97,12 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
       }
     }
 
-    const headerPillTitle = isOfficialExam ? `Group "${groupName || 'A'}" Rank Achiever` : "Mastery Rank Award";
+    let headerPillTitle = "Mastery Rank Award";
+    if (isOfficialExam) {
+      headerPillTitle = `Group "${groupName || 'A'}" Rank Achiever`;
+    } else if (type === 'rank') {
+      headerPillTitle = "Title Achiever";
+    }
 
     return (
       <div 
@@ -138,7 +143,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
           <p className={cn("font-black text-[10px] tracking-[0.5em] uppercase")} style={{ color: subHeaderColor }}>LEARN • PRACTICE • SUCCEED</p>
         </div>
 
-        {/* Prestigious Group Label - Dynamic based on exam type */}
+        {/* Prestigious Dynamic Header Pill */}
         <div className="relative z-10 mt-6">
            <div className={cn("px-16 py-3.5 rounded-[2rem] shadow-xl border-b-4", isWinnerDesign ? "border-black/20" : "bg-[#0f172a] border-black/20")} style={isWinnerDesign ? { backgroundColor: headerColor } : {}}>
               <h2 className="text-xl font-black italic text-white tracking-widest text-center">
@@ -193,7 +198,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              </div>
            </div>
 
-           {/* Executive Signature Block - Right Aligned */}
+           {/* Executive Signature Block - Right Aligned with Color Matching */}
            <div className="text-right w-64 flex flex-col items-end">
              <div className="flex flex-col items-center relative pr-4">
                 <p 
@@ -204,8 +209,8 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
                 </p>
                 <div className={cn("h-[1px] w-52 mb-2")} style={{ backgroundColor: headerColor, opacity: 0.2 }} />
                 <div className="text-center">
-                   <p className={cn("text-[11px] font-black uppercase tracking-[0.2em]")} style={{ color: subHeaderColor }}>SATISH MANE</p>
-                   <p className={cn("text-[9px] font-black uppercase tracking-tighter opacity-70")} style={{ color: subHeaderColor }}>FOUNDER & DIRECTOR, MY ABACUS PRO</p>
+                   <p className={cn("text-[11px] font-black uppercase tracking-[0.2em]")} style={{ color: headerColor }}>SATISH MANE</p>
+                   <p className={cn("text-[9px] font-black uppercase tracking-tighter opacity-70")} style={{ color: headerColor }}>FOUNDER & DIRECTOR, MY ABACUS PRO</p>
                 </div>
              </div>
            </div>
