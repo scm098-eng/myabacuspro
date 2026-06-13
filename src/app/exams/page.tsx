@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -21,6 +22,13 @@ import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import AchievementModal, { AchievementType } from '@/components/AchievementModal';
+
+const EXAM_GROUPS: Record<ExamGroup, { t: string, i: React.ReactNode }> = {
+  'A': { t: 'Direct Mastery', i: <ShieldAlert className="w-6 h-6" /> },
+  'B': { t: 'Formula Champion', i: <ShieldAlert className="w-6 h-6" /> },
+  'C': { t: 'Anzan Expert', i: <ShieldAlert className="w-6 h-6" /> },
+  'D': { t: 'Elite Grandmaster', i: <Trophy className="w-6 h-6" /> }
+};
 
 export default function ExamDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
@@ -122,9 +130,12 @@ export default function ExamDashboardPage() {
   };
 
   const handleGetCertificate = (res: ExamResult, isRankCert: boolean) => {
+    const groupInfo = EXAM_GROUPS[res.group];
+    const groupDisplay = `Group ${res.group}: ${groupInfo?.t || ''}`;
+
     setCertData({
       type: isRankCert ? 'exam_winner' : 'exam_participation',
-      title: isRankCert ? `RANK ${res.rank} ACHIEVER` : `Group "${res.group}" Participant`,
+      title: isRankCert ? `RANK ${res.rank} ACHIEVER` : groupDisplay,
       score: `${res.score}/${res.totalQuestions} (${res.accuracy.toFixed(1)}%)`,
       date: format(res.submittedAt?.toDate ? res.submittedAt.toDate() : new Date(), 'MMMM do, yyyy'),
       rank: isRankCert ? res.rank : undefined,
@@ -245,17 +256,17 @@ export default function ExamDashboardPage() {
              <p className="text-muted-foreground font-medium mt-2">Select the level that matches your current training progress.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {[{id:'A',t:'Direct Mastery',i:<ShieldAlert/>},{id:'B',t:'Formula Champion',i:<ShieldAlert/>},{id:'C',t:'Anzan Expert',i:<ShieldAlert/>},{id:'D',t:'Elite Grandmaster',i:<Trophy/>}].map((g) => (
-              <Card key={g.id} className="relative group overflow-hidden border-2 hover:border-primary transition-all rounded-[2rem] shadow-lg bg-white/50">
+            {(Object.entries(EXAM_GROUPS) as [ExamGroup, {t: string, i: React.ReactNode}][]).map(([id, g]) => (
+              <Card key={id} className="relative group overflow-hidden border-2 hover:border-primary transition-all rounded-[2rem] shadow-lg bg-white/50">
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-muted rounded-2xl group-hover:scale-110 transition-transform text-primary">{g.i}</div>
-                    <div><CardTitle className="text-2xl font-black">Group {g.id}: {g.t}</CardTitle></div>
+                    <div><CardTitle className="text-2xl font-black">Group {id}: {g.t}</CardTitle></div>
                   </div>
                 </CardHeader>
                 <CardFooter>
-                  <Button onClick={() => handleApply(g.id as ExamGroup)} disabled={isApplying} className="w-full font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl">
-                    Apply for Group {g.id}
+                  <Button onClick={() => handleApply(id as ExamGroup)} disabled={isApplying} className="w-full font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl">
+                    Apply for Group {id}
                   </Button>
                 </CardFooter>
               </Card>

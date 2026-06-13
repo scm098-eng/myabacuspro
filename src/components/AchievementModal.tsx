@@ -113,17 +113,14 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
           themeClass
         )}
       >
-        {/* Decorative Corner Brackets */}
         <div className={cn("absolute top-2 left-2 w-24 h-24 border-t-[6px] border-l-[6px] z-20", cornerBorder)} />
         <div className={cn("absolute top-2 right-2 w-24 h-24 border-t-[6px] border-r-[6px] z-20", cornerBorder)} />
         <div className={cn("absolute bottom-2 left-2 w-24 h-24 border-b-[6px] border-l-[6px] z-20", cornerBorder)} />
         <div className={cn("absolute bottom-2 right-2 w-24 h-24 border-b-[6px] border-r-[6px] z-20", cornerBorder)} />
 
-        {/* Double Inner Frame */}
         <div className={cn("absolute top-8 left-8 right-8 bottom-8 border-[0.5px] pointer-events-none z-20", innerBorder)} />
         <div className={cn("absolute top-10 left-10 right-10 bottom-10 border-[0.5px] pointer-events-none z-20", innerBorder)} />
 
-        {/* Watermark Grid - 6x6 Layout, 60px icons */}
         <div className={cn("absolute inset-0 z-0 grid grid-cols-6 grid-rows-6 pointer-events-none p-16 transition-opacity", isWinnerDesign ? "opacity-[0.07]" : "opacity-[0.02]")}>
           {Array.from({ length: 36 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center">
@@ -132,7 +129,6 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
           ))}
         </div>
 
-        {/* Brand Header */}
         <div className="relative z-10 w-full flex flex-col items-center mt-12">
           <div className="flex items-center gap-3 mb-1">
             <div className={cn("p-2 rounded-xl shadow-lg")} style={{ backgroundColor: subHeaderColor }}>
@@ -143,7 +139,6 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
           <p className={cn("font-black text-[10px] tracking-[0.5em] uppercase")} style={{ color: subHeaderColor }}>LEARN • PRACTICE • SUCCEED</p>
         </div>
 
-        {/* Prestigious Dynamic Header Pill */}
         <div className="relative z-10 mt-6">
            <div className={cn("px-16 py-3.5 rounded-[2rem] shadow-xl border-b-4", isWinnerDesign ? "border-black/20" : "bg-[#0f172a] border-black/20")} style={isWinnerDesign ? { backgroundColor: headerColor } : {}}>
               <h2 className="text-xl font-black italic text-white tracking-widest text-center">
@@ -152,9 +147,8 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            </div>
         </div>
 
-        {/* Main Distinction Content */}
         <div className="relative z-10 mt-8 text-center flex flex-col items-center gap-1">
-           <p className={cn("text-[13px] font-black uppercase tracking-[0.4em] mb-1")} style={{ color: subHeaderColor }}>OFFICIAL MASTERY CERTIFICATION</p>
+           <p className={cn("text-[12px] font-black uppercase tracking-[0.4em] mb-1")} style={{ color: subHeaderColor }}>OFFICIAL MASTERY CERTIFICATION</p>
            <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90 leading-none">This prestigious award is proudly presented to</p>
            
            <div className="mt-3 w-fit px-12 pb-1 flex flex-col items-center gap-2">
@@ -165,7 +159,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            </div>
 
            <div className="mt-6 text-center space-y-1.5 max-w-4xl">
-             <p className={cn("text-[13px] font-bold uppercase tracking-wide leading-none opacity-60")} style={{ color: headerColor }}>
+             <p className={cn("text-[11px] font-bold uppercase tracking-wide leading-none opacity-60")} style={{ color: headerColor }}>
                WHO HAS DEMONSTRATED EXCEPTIONAL CALCULATION SPEED AND PRECISION BY ACHIEVING
              </p>
              <div className="flex flex-col items-center gap-1">
@@ -182,14 +176,13 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            </div>
         </div>
 
-        {/* Footer Section: Abacus Tool & Signature */}
         <div className="relative z-10 w-full mt-auto flex justify-between items-end px-12 pb-10">
            <div className="text-left space-y-1 w-64">
              <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]")} style={{ color: subHeaderColor }}>DATE OF ISSUE</p>
              <p className={cn("text-xl font-bold")} style={{ color: headerColor }}>{date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
            </div>
 
-           <div className="flex flex-col items-center gap-3 mb-[-15px] relative">
+           <div className="flex flex-col items-center gap-3 relative">
              <div className={cn("p-3 rounded-[2rem] border-[3px] shadow-2xl relative animate-in zoom-in-50 duration-700 bg-white border-slate-100")}>
                 <AbacusToolIcon color={headerColor} />
              </div>
@@ -198,7 +191,6 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              </div>
            </div>
 
-           {/* Executive Signature Block - Right Aligned with Color Matching */}
            <div className="text-right w-64 flex flex-col items-end">
              <div className="flex flex-col items-center relative pr-4">
                 <p 
