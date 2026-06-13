@@ -63,7 +63,7 @@ const GROUP_TITLES: Record<string, string> = {
 const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: string; title: string; score?: string; date?: string; type: AchievementType, rank?: number, groupName?: string }>(
   ({ studentName, title, score, date, type, rank, groupName }, ref) => {
     const formattedName = studentName.trim().replace(/\s+/g, ' ');
-    const isWinnerDesign = type === 'exam_winner' || rank !== undefined;
+    const isWinnerDesign = type === 'exam_winner' || rank !== undefined || type === 'weekly_winner' || type === 'monthly_winner' || type === 'global_winner';
     const isOfficialExam = type === 'exam_participation' || type === 'exam_winner';
 
     let themeClass = "bg-white border-[#0f172a]";
@@ -74,7 +74,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
     let innerBorder = "border-[#cbd5e1]";
 
     if (isWinnerDesign) {
-      if (rank === 1) {
+      if (rank === 1 || type === 'weekly_winner' || type === 'monthly_winner' || type === 'global_winner') {
         themeClass = "bg-[#fffcf0] border-[#b45309]"; 
         accentColor = "#fbbf24";
         headerColor = "#78350f";
@@ -191,7 +191,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              <p className={cn("text-xl font-bold")} style={{ color: headerColor }}>{date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
            </div>
 
-           <div className="flex flex-col items-center gap-3 relative translate-y-2">
+           <div className="flex flex-col items-center gap-3 relative translate-y-4">
              <div className={cn("p-2.5 rounded-[1.5rem] border-[3px] shadow-2xl relative animate-in zoom-in-50 duration-700 bg-white border-slate-100")}>
                 <AbacusToolIcon color={headerColor} />
              </div>

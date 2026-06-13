@@ -20,7 +20,7 @@ import { RANK_CRITERIA, ADMIN_EMAILS } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import AchievementModal, { AchievementType } from '@/components/AchievementModal';
-import { format, parseISO, isValid } from 'date-fns';
+import { format, parseISO, isValid, addMonths, addDays, startOfWeek, startOfMonth } from 'date-fns';
 
 function getUTCMondayKey() {
     const now = new Date();
@@ -97,7 +97,7 @@ export default function StudentDashboardPage() {
   const handleDownloadRankCert = () => {
     if (!profile) return;
     
-    // New: Pull accurate historical date of title achievement
+    // Use lastRankAchievedAt if available, otherwise fallback to updatedAt or now
     const achievementDate = profile.lastRankAchievedAt?.toDate 
       ? profile.lastRankAchievedAt.toDate() 
       : (profile.updatedAt?.toDate ? profile.updatedAt.toDate() : new Date());
@@ -113,18 +113,30 @@ export default function StudentDashboardPage() {
 
   const handleDownloadWinnerCert = (type: AchievementType, points: number) => {
     let issuanceDate = new Date();
+    let displayTitle = "";
     
     if (type === 'weekly_winner' && lastWinner?.weekKey) {
-        const parsed = parseISO(lastWinner.weekKey);
-        if (isValid(parsed)) issuanceDate = parsed;
+        const winningWeekStart = parseISO(lastWinner.weekKey);
+        if (isValid(winningWeekStart)) {
+          // Date of Issue is the following Monday
+          issuanceDate = addDays(winningWeekStart, 7);
+          displayTitle = `${format(winningWeekStart, 'MMM d')} Weekly Champion`;
+        }
     } else if (type === 'monthly_winner' && monthlyWinner?.monthKey) {
-        const parsed = parseISO(`${monthlyWinner.monthKey}-01`);
-        if (isValid(parsed)) issuanceDate = parsed;
+        const winningMonthStart = parseISO(`${monthlyWinner.monthKey}-01`);
+        if (isValid(winningMonthStart)) {
+          // Date of Issue is the 1st of the following month
+          issuanceDate = addMonths(winningMonthStart, 1);
+          displayTitle = `${format(winningMonthStart, 'MMMM yyyy').toUpperCase()} MONTHLY MASTER`;
+        }
+    } else if (type === 'global_winner') {
+      displayTitle = "Global Legend";
+      issuanceDate = new Date();
     }
 
     setCertData({
       type,
-      title: type === 'weekly_winner' ? 'Weekly Champion' : (type === 'monthly_winner' ? 'Monthly Master' : 'Global Legend'),
+      title: displayTitle || (type === 'weekly_winner' ? 'Weekly Champion' : 'Monthly Master'),
       score: `${points.toLocaleString()} Mastery Points`,
       date: format(issuanceDate, 'MMMM do, yyyy')
     });
