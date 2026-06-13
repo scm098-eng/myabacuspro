@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Lock, ShieldAlert, Trophy, FileEdit, Award, Loader2, Timer, HelpCircle, CheckCircle2, ChevronRight, Download, Medal, ScrollText } from 'lucide-react';
+import { Lock, ShieldAlert, Trophy, FileEdit, Award, Loader2, Timer, HelpCircle, CheckCircle2, ChevronRight, Download, Medal, ScrollText, Brain, MonitorOff, Calculator, Zap, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getFirestore, collection, query, where, onSnapshot, doc, orderBy, getDocs, limit } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -23,11 +23,50 @@ import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import AchievementModal, { AchievementType } from '@/components/AchievementModal';
 
-const EXAM_GROUPS: Record<ExamGroup, { t: string, i: React.ReactNode }> = {
-  'A': { t: 'Direct Mastery', i: <ShieldAlert className="w-6 h-6" /> },
-  'B': { t: 'Formula Champion', i: <ShieldAlert className="w-6 h-6" /> },
-  'C': { t: 'Anzan Expert', i: <ShieldAlert className="w-6 h-6" /> },
-  'D': { t: 'Elite Grandmaster', i: <Trophy className="w-6 h-6" /> }
+interface GroupConfig {
+    title: string;
+    description: string;
+    focusAreas: string[];
+    toolAllowed: boolean;
+    icon: React.ReactNode;
+}
+
+const EXAM_GROUPS: Record<ExamGroup, GroupConfig> = {
+  'A': { 
+    title: 'Direct Mastery', 
+    description: 'Foundation level using direct bead movements.',
+    focusAreas: ['1 & 2 Digit Basic Add & Sub', 'Visual Beads Identification'],
+    toolAllowed: true,
+    icon: <Brain className="w-6 h-6" /> 
+  },
+  'B': { 
+    title: 'Formula Champion', 
+    description: 'Comprehensive test of all primary formulas.',
+    focusAreas: ['All Formulas (S.S, B.B, Combination)', '1 & 2 Digit Arithmetic'],
+    toolAllowed: true,
+    icon: <Calculator className="w-6 h-6" /> 
+  },
+  'C': { 
+    title: 'Anzan Expert', 
+    description: 'Advanced mental arithmetic without aids.',
+    focusAreas: ['Mentally perform 1, 2 & 3 Digit Arithmetic', 'Without using any tool'],
+    toolAllowed: false,
+    icon: <Zap className="w-6 h-6" /> 
+  },
+  'D': { 
+    title: 'Elite Grandmaster', 
+    description: 'The ultimate assessment of speed.',
+    focusAreas: ['Fast multi-digit calculation', 'Multiplication & Division mastery'],
+    toolAllowed: false,
+    icon: <Trophy className="w-6 h-6" /> 
+  },
+  'E': { 
+    title: 'Mental Math Legend', 
+    description: 'The summit of human calculation ability.',
+    focusAreas: ['Advanced Multi-Digit Mental Arithmetic', 'Multiplication & Division Mastery', 'Powers & Roots (Square, Cube, etc.)'],
+    toolAllowed: false,
+    icon: <Sparkles className="w-6 h-6" /> 
+  }
 };
 
 export default function ExamDashboardPage() {
@@ -107,7 +146,6 @@ export default function ExamDashboardPage() {
   const finalAttempt = useMemo(() => {
     if (!application || results.length === 0) return null;
     
-    // Prioritize official ranked results for certification
     const rankedResults = results
       .filter(r => r.rank !== undefined)
       .sort((a, b) => (a.rank || 999) - (b.rank || 999));
@@ -131,7 +169,7 @@ export default function ExamDashboardPage() {
 
   const handleGetCertificate = (res: ExamResult, isRankCert: boolean) => {
     const groupInfo = EXAM_GROUPS[res.group];
-    const groupDisplay = `Group ${res.group}: ${groupInfo?.t || ''}`;
+    const groupDisplay = `Group ${res.group}: ${groupInfo?.title || ''}`;
 
     setCertData({
       type: isRankCert ? 'exam_winner' : 'exam_participation',
@@ -195,20 +233,18 @@ export default function ExamDashboardPage() {
         />
       )}
 
-      <Card className="border-none shadow-xl bg-gradient-to-br from-indigo-900 to-slate-900 text-white overflow-hidden rounded-[2.5rem]">
-        <CardHeader className="p-10">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="space-y-2 text-center md:text-left">
-              <h1 className="text-4xl md:text-6xl font-black font-headline uppercase tracking-tighter italic">Online Exam <span className="text-orange-400">Arena</span></h1>
-              <p className="text-indigo-200 text-lg font-medium">Official certification and competitive assessment hub.</p>
-            </div>
-            <div className="bg-white/10 p-6 rounded-3xl border border-white/20 backdrop-blur-md text-center">
-              <p className="text-[10px] font-black uppercase tracking-widest text-orange-400">Next Final Exam</p>
-              <p className="text-2xl font-black">{(schedule && !schedule.resultsDeclared && schedule.isActive !== false) ? format(parseISO(schedule.date), 'MMMM do, yyyy') : 'Stay Tuned'}</p>
-            </div>
+      <div className="text-center space-y-4 pt-4">
+        <h1 className="text-4xl sm:text-5xl font-black font-headline uppercase tracking-tight text-slate-900 leading-none">IDENTIFY YOUR <span className="text-primary italic">MASTERY GROUP</span></h1>
+        <p className="text-muted-foreground font-bold text-lg">Select the level that matches your current training progress.</p>
+        
+        {schedule?.lastApplyDate && (
+          <div className="mt-8">
+            <Badge variant="secondary" className="bg-blue-50 text-blue-700 px-10 py-3 rounded-2xl border-2 border-blue-100 font-bold gap-2 text-base">
+              ⌛ Last date to apply: {format(parseISO(schedule.lastApplyDate), 'MMMM do, yyyy')}
+            </Badge>
           </div>
-        </CardHeader>
-      </Card>
+        )}
+      </div>
 
       {schedule?.resultsDeclared && finalAttempt && (
         <Card className="bg-indigo-600 border-none shadow-2xl rounded-[2.5rem] overflow-hidden animate-in zoom-in-95 duration-700">
@@ -222,56 +258,56 @@ export default function ExamDashboardPage() {
                   </p>
                 </div>
               </div>
-              
               <div className="flex flex-col sm:flex-row gap-4 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
                 {finalAttempt.rank !== undefined && (
-                  <Button 
-                    onClick={() => handleGetCertificate(finalAttempt!, true)}
-                    className={cn(
-                      "font-black h-14 px-8 rounded-2xl text-xs sm:text-sm shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest min-w-[220px]",
-                      (finalAttempt.rank === 1) ? "bg-yellow-400 text-indigo-950 hover:bg-yellow-500" : "bg-white text-indigo-900 hover:bg-slate-50"
-                    )}
-                  >
-                    <Medal className="w-5 h-5 mr-2 text-indigo-600" />
-                    RANK ACHIEVER CERTIFICATE
-                  </Button>
+                  <Button onClick={() => handleGetCertificate(finalAttempt!, true)} className={cn("font-black h-14 px-8 rounded-2xl text-xs sm:text-sm shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest min-w-[220px]", (finalAttempt.rank === 1) ? "bg-yellow-400 text-indigo-950 hover:bg-yellow-500" : "bg-white text-indigo-900 hover:bg-slate-50")}><Medal className="w-5 h-5 mr-2 text-indigo-600" />RANK ACHIEVER CERTIFICATE</Button>
                 )}
-                <Button 
-                  onClick={() => handleGetCertificate(finalAttempt!, false)}
-                  variant="outline"
-                  className="bg-white/10 text-white hover:bg-white/20 font-black h-14 px-8 rounded-2xl text-xs sm:text-sm shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest min-w-[220px]"
-                >
-                  <Download className="w-5 h-5 mr-2" />
-                  PARTICIPATION CERTIFICATE
-                </Button>
+                <Button onClick={() => handleGetCertificate(finalAttempt!, false)} variant="outline" className="bg-white/10 text-white hover:bg-white/20 font-black h-14 px-8 rounded-2xl text-xs sm:text-sm shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest min-w-[220px]"><Download className="w-5 h-5 mr-2" />PARTICIPATION CERTIFICATE</Button>
               </div>
            </CardContent>
         </Card>
       )}
 
       {!application ? (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-          <div className="text-center">
-             <h2 className="text-3xl font-black uppercase tracking-tight text-foreground">Identify Your <span className="text-primary">Mastery Group</span></h2>
-             <p className="text-muted-foreground font-medium mt-2">Select the level that matches your current training progress.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {(Object.entries(EXAM_GROUPS) as [ExamGroup, {t: string, i: React.ReactNode}][]).map(([id, g]) => (
-              <Card key={id} className="relative group overflow-hidden border-2 hover:border-primary transition-all rounded-[2rem] shadow-lg bg-white/50">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-muted rounded-2xl group-hover:scale-110 transition-transform text-primary">{g.i}</div>
-                    <div><CardTitle className="text-2xl font-black">Group {id}: {g.t}</CardTitle></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start pb-12">
+          {(Object.entries(EXAM_GROUPS) as [ExamGroup, GroupConfig][]).map(([id, g]) => (
+            <Card key={id} className="relative group overflow-hidden border-none rounded-[2.5rem] shadow-2xl bg-white transition-all hover:scale-[1.01] hover:shadow-orange-200/50">
+              <CardHeader className="p-8">
+                <div className="flex items-start gap-5">
+                  <div className="p-5 bg-muted/50 rounded-[1.5rem] group-hover:scale-110 transition-transform text-primary shadow-inner">
+                    {g.icon}
                   </div>
-                </CardHeader>
-                <CardFooter>
-                  <Button onClick={() => handleApply(id as ExamGroup)} disabled={isApplying} className="w-full font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl">
-                    Apply for Group {id}
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+                  <div className="space-y-1">
+                    <CardTitle className="text-3xl font-black uppercase tracking-tight text-slate-900">Group {id}: {g.title}</CardTitle>
+                    <p className="text-muted-foreground font-medium text-lg leading-snug">{g.description}</p>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="px-8 pb-8 space-y-8">
+                <div className="bg-slate-100/50 p-4 rounded-2xl flex items-center justify-center gap-3 border border-slate-200">
+                    {g.toolAllowed ? <Calculator className="w-4 h-4 text-slate-500" /> : <MonitorOff className="w-4 h-4 text-slate-500" />}
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-500">{g.toolAllowed ? 'Abacus Tool Allowed' : 'No Tool Allowed'}</span>
+                </div>
+
+                <div className="space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Focus Areas:</p>
+                    <div className="grid gap-3">
+                        {g.focusAreas.map((area, i) => (
+                            <div key={i} className="flex items-center gap-3 text-slate-700 font-bold text-sm">
+                                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                                <span>{area}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <Button onClick={() => handleApply(id as ExamGroup)} disabled={isApplying} className="w-full h-20 text-xl font-black uppercase tracking-widest rounded-3xl shadow-xl shadow-orange-200 transition-all active:scale-95">
+                  Apply for Group {id}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -285,24 +321,8 @@ export default function ExamDashboardPage() {
                 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {Array.from({ length: 20 }).map((_, i) => (
-                    <Button 
-                      key={i} 
-                      variant="outline" 
-                      disabled={examOpen || !!schedule?.resultsDeclared}
-                      className={cn(
-                        "h-24 rounded-2xl flex flex-col gap-2 font-black transition-all",
-                        (!examOpen && !schedule?.resultsDeclared) ? "hover:scale-105" : "opacity-50 grayscale bg-muted/50"
-                      )} 
-                      onClick={() => router.push(`/exams/arena/paper-${i + 1}`)}
-                    >
-                      {(examOpen || schedule?.resultsDeclared) ? (
-                        <Lock className="w-5 h-5 text-muted-foreground" />
-                      ) : (
-                        <>
-                          <span className="text-[10px] uppercase opacity-60">Practice</span>
-                          <span className="text-2xl">#{i + 1}</span>
-                        </>
-                      )}
+                    <Button key={i} variant="outline" disabled={examOpen || !!schedule?.resultsDeclared} className={cn("h-24 rounded-2xl flex flex-col gap-2 font-black transition-all", (!examOpen && !schedule?.resultsDeclared) ? "hover:scale-105" : "opacity-50 grayscale bg-muted/50")} onClick={() => router.push(`/exams/arena/paper-${i + 1}`)}>
+                      {(examOpen || schedule?.resultsDeclared) ? <Lock className="w-5 h-5 text-muted-foreground" /> : <><span className="text-[10px] uppercase opacity-60">Practice</span><span className="text-2xl">#{i + 1}</span></>}
                     </Button>
                   ))}
                 </div>

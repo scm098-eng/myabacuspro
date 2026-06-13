@@ -1,3 +1,4 @@
+
 import type { Question, ExamGroup } from '@/types';
 import { generateTest, deDuplicateQuestions } from './questions';
 import { differenceInYears, parseISO, isValid } from 'date-fns';
@@ -74,6 +75,25 @@ export function generateExamQuestions(group: ExamGroup): Question[] {
         ...generateTest('addition-subtraction-input', 'medium'),
         ...generateTest('multiplication-input', 'medium'),
         ...generateTest('division-input', 'medium')
+      ];
+      break;
+    case 'E':
+      // Group E: The summit of human calculation ability
+      initialPool = [
+        // Add/Sub (60 questions requested)
+        ...generateTest('addition-subtraction-input', 'easy'),   // Single digit
+        ...generateTest('addition-subtraction-input', 'medium'), // Double digit
+        ...generateTest('addition-subtraction-input', 'hard'),   // Triple digit
+        // Multi/Div (60 questions requested mix)
+        ...generateTest('multiplication-input', 'medium'),
+        ...generateTest('multiplication-input', 'hard'),
+        ...generateTest('division-input', 'medium'),
+        ...generateTest('division-input', 'hard'),
+        // Powers (30 questions requested mix)
+        ...generateTest('square-input', 'medium'),
+        ...generateTest('square-root-input', 'medium'),
+        ...generateTest('cube-input', 'medium'),
+        ...generateTest('cube-root-input', 'medium')
       ];
       break;
   }

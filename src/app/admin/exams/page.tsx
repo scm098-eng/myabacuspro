@@ -199,7 +199,7 @@ export default function AdminExamsPage() {
 
   const groupedResults = useMemo(() => {
     const finals = allResults.filter(r => r.isFinal === true);
-    const groups: Record<ExamGroup, ExamResult[]> = { A: [], B: [], C: [], D: [] };
+    const groups: Record<ExamGroup, ExamResult[]> = { A: [], B: [], C: [], D: [], E: [] };
     finals.forEach(r => { if (groups[r.group]) groups[r.group].push(r); });
     Object.keys(groups).forEach(g => {
       groups[g as ExamGroup].sort((a, b) => {
@@ -289,7 +289,7 @@ export default function AdminExamsPage() {
                    </AlertDialog>
                 </div>
 
-                {(['A', 'B', 'C', 'D'] as ExamGroup[]).map(group => (
+                {(['A', 'B', 'C', 'D', 'E'] as ExamGroup[]).map(group => (
                   <div key={group} className="space-y-4">
                     <div className="flex items-center gap-3 ml-2"><Badge className="bg-slate-900 text-white h-10 w-10 flex items-center justify-center rounded-xl font-black text-lg shrink-0 aspect-square">{group}</Badge><h4 className="text-lg font-black uppercase tracking-widest text-slate-700">Group {group} Results</h4></div>
                     <div className="rounded-2xl border overflow-hidden bg-white shadow-sm">

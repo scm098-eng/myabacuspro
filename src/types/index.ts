@@ -100,7 +100,7 @@ export type TestType =
   | 'mastery-mix-12'
   | 'bubble-game';
 
-export type ExamGroup = 'A' | 'B' | 'C' | 'D';
+export type ExamGroup = 'A' | 'B' | 'C' | 'D' | 'E';
 
 export interface ExamApplication {
   id: string;
@@ -126,6 +126,7 @@ export interface ExamResult {
   resultDeclared?: boolean;
   submittedAt: any;
   timeLeft?: number;
+  rank?: number;
   answeredCount?: number;
   details?: {
     correct: number;
@@ -262,6 +263,7 @@ export interface ProfileData {
   whatsappNo?: string;
   profilePhoto?: string; 
   createdAt?: any;
+  updatedAt?: any;
   subscriptionStatus?: SubscriptionStatus;
   role: UserRole;
   teacherId?: string | null;

@@ -493,7 +493,7 @@ exports.declareOfficialResults = onCall(async (request) => {
     const adminDoc = await db.collection('users').doc(request.auth.uid).get();
     if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
 
-    const groups = ['A', 'B', 'C', 'D'];
+    const groups = ['A', 'B', 'C', 'D', 'E'];
     const winners = {};
 
     for (const group of groups) {

@@ -52,6 +52,14 @@ const AbacusToolIcon = ({ color }: { color: string }) => (
   </svg>
 );
 
+const GROUP_TITLES: Record<string, string> = {
+    'A': 'Direct Mastery',
+    'B': 'Formula Champion',
+    'C': 'Anzan Expert',
+    'D': 'Elite Grandmaster',
+    'E': 'Mental Math Legend'
+};
+
 const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: string; title: string; score?: string; date?: string; type: AchievementType, rank?: number, groupName?: string }>(
   ({ studentName, title, score, date, type, rank, groupName }, ref) => {
     const formattedName = studentName.trim().replace(/\s+/g, ' ');
@@ -99,7 +107,8 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
 
     let headerPillTitle = "Mastery Rank Award";
     if (isOfficialExam) {
-      headerPillTitle = `Group "${groupName || 'A'}" Rank Achiever`;
+      const gTitle = groupName ? GROUP_TITLES[groupName] : '';
+      headerPillTitle = `Group "${groupName || 'A'}" Rank Achiever${gTitle ? `: ${gTitle}` : ''}`;
     } else if (type === 'rank') {
       headerPillTitle = "Title Achiever";
     }
@@ -148,7 +157,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
         </div>
 
         <div className="relative z-10 mt-8 text-center flex flex-col items-center gap-1">
-           <p className={cn("text-[12px] font-black uppercase tracking-[0.4em] mb-1")} style={{ color: subHeaderColor }}>OFFICIAL MASTERY CERTIFICATION</p>
+           <p className={cn("text-[13px] font-black uppercase tracking-[0.4em] mb-1")} style={{ color: subHeaderColor }}>OFFICIAL MASTERY CERTIFICATION</p>
            <p className="text-2xl font-bold italic text-[#475569] font-serif opacity-90 leading-none">This prestigious award is proudly presented to</p>
            
            <div className="mt-3 w-fit px-12 pb-1 flex flex-col items-center gap-2">
@@ -159,7 +168,7 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            </div>
 
            <div className="mt-6 text-center space-y-1.5 max-w-4xl">
-             <p className={cn("text-[11px] font-bold uppercase tracking-wide leading-none opacity-60")} style={{ color: headerColor }}>
+             <p className={cn("text-[13px] font-bold uppercase tracking-wide leading-none opacity-60")} style={{ color: headerColor }}>
                WHO HAS DEMONSTRATED EXCEPTIONAL CALCULATION SPEED AND PRECISION BY ACHIEVING
              </p>
              <div className="flex flex-col items-center gap-1">
