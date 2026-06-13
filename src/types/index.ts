@@ -297,6 +297,7 @@ export interface ProfileData {
   marketingCampaignClicked?: boolean;
   lastCampaignClicked?: string;
   lastLevelAttended?: number;
+  rank?: number;
 }
 
 export type UpdateProfilePayload = {

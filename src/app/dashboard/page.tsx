@@ -20,7 +20,7 @@ import { RANK_CRITERIA, ADMIN_EMAILS } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import AchievementModal, { AchievementType } from '@/components/AchievementModal';
-import { format, parseISO, isValid, addMonths, addDays, startOfWeek, startOfMonth } from 'date-fns';
+import { format, parseISO, isValid, addMonths, addDays } from 'date-fns';
 
 function getUTCMondayKey() {
     const now = new Date();
@@ -97,7 +97,7 @@ export default function StudentDashboardPage() {
   const handleDownloadRankCert = () => {
     if (!profile) return;
     
-    // Use lastRankAchievedAt if available, otherwise fallback to updatedAt or now
+    // Pull accurate historical date of title achievement
     const achievementDate = profile.lastRankAchievedAt?.toDate 
       ? profile.lastRankAchievedAt.toDate() 
       : (profile.updatedAt?.toDate ? profile.updatedAt.toDate() : new Date());
@@ -120,7 +120,14 @@ export default function StudentDashboardPage() {
         if (isValid(winningWeekStart)) {
           // Date of Issue is the following Monday
           issuanceDate = addDays(winningWeekStart, 7);
-          displayTitle = `${format(winningWeekStart, 'MMM d')} Weekly Champion`;
+          
+          // Calculate Week Number of the Month
+          const dayOfMonth = winningWeekStart.getUTCDate();
+          const weekNumber = Math.ceil(dayOfMonth / 7);
+          const suffixes = ["th", "st", "nd", "rd", "th", "th"];
+          const suffix = (weekNumber <= 3) ? suffixes[weekNumber] : "th";
+          
+          displayTitle = `${format(winningWeekStart, 'MMM')} ${weekNumber}${suffix} Week Champion`;
         }
     } else if (type === 'monthly_winner' && monthlyWinner?.monthKey) {
         const winningMonthStart = parseISO(`${monthlyWinner.monthKey}-01`);
