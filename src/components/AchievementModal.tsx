@@ -185,14 +185,14 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
            </div>
         </div>
 
-        <div className="relative z-10 w-full mt-auto flex justify-between items-end px-12 pb-10">
+        <div className="relative z-10 w-full mt-auto flex justify-between items-end px-12 pb-12">
            <div className="text-left space-y-1 w-64">
              <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]")} style={{ color: subHeaderColor }}>DATE OF ISSUE</p>
              <p className={cn("text-xl font-bold")} style={{ color: headerColor }}>{date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
            </div>
 
-           <div className="flex flex-col items-center gap-3 relative translate-y-4">
-             <div className={cn("p-2.5 rounded-[1.5rem] border-[3px] shadow-2xl relative animate-in zoom-in-50 duration-700 bg-white border-slate-100")}>
+           <div className="flex flex-col items-center gap-3 relative translate-y-6">
+             <div className={cn("p-2 rounded-[1.2rem] border-[3px] shadow-2xl relative animate-in zoom-in-50 duration-700 bg-white border-slate-100 scale-90")}>
                 <AbacusToolIcon color={headerColor} />
              </div>
              <div className="px-8 py-2 rounded-full shadow-lg border border-black/5" style={{ backgroundColor: subHeaderColor }}>

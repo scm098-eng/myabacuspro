@@ -116,18 +116,21 @@ export default function StudentDashboardPage() {
     let displayTitle = "";
     
     if (type === 'weekly_winner' && lastWinner?.weekKey) {
-        const winningWeekStart = parseISO(lastWinner.weekKey);
+        // Robust split parsing to avoid timezone shifts
+        const parts = lastWinner.weekKey.split('-').map(Number);
+        const winningWeekStart = new Date(parts[0], parts[1] - 1, parts[2]);
+        
         if (isValid(winningWeekStart)) {
-          // Date of Issue is the following Monday
+          // Date of Issue is exactly 7 days after the winning week started
           issuanceDate = addDays(winningWeekStart, 7);
           
-          // Calculate Week Number of the Month
-          const dayOfMonth = winningWeekStart.getUTCDate();
+          // Calculate Week Number based on day of month (1-7 = 1st, 8-14 = 2nd, etc.)
+          const dayOfMonth = winningWeekStart.getDate();
           const weekNumber = Math.ceil(dayOfMonth / 7);
-          const suffixes = ["th", "st", "nd", "rd", "th", "th"];
-          const suffix = (weekNumber <= 3) ? suffixes[weekNumber] : "th";
+          const suffixes = ["th", "st", "nd", "rd", "th", "th", "th"];
+          const suffix = (weekNumber >= 1 && weekNumber <= 3) ? suffixes[weekNumber] : "th";
           
-          displayTitle = `${format(winningWeekStart, 'MMM')} ${weekNumber}${suffix} Week Champion`;
+          displayTitle = `${format(winningWeekStart, 'MMM').toUpperCase()} ${weekNumber}${suffix} WEEK CHAMPION`;
         }
     } else if (type === 'monthly_winner' && monthlyWinner?.monthKey) {
         const winningMonthStart = parseISO(`${monthlyWinner.monthKey}-01`);
