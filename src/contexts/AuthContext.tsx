@@ -283,6 +283,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           weeklyPoints: 0,
           totalPoints: 0,
           lastAwardedRank: 'Math Beginner',
+          lastRankAchievedAt: serverTimestamp(),
           lastWeeklyReset: getUTCMondayKey(),
           lastMonthlyReset: getUTCMonthKey()
       };
@@ -325,6 +326,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         weeklyPoints: 0,
         totalPoints: 0,
         lastAwardedRank: 'Math Beginner',
+        lastRankAchievedAt: serverTimestamp(),
         lastWeeklyReset: getUTCMondayKey(),
         lastMonthlyReset: getUTCMonthKey()
       };
@@ -490,6 +492,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const bonus = nextRank.bonusPoints || 0;
       updateData.lastAwardedRank = nextRank.name;
       updateData.totalPoints = increment(earnedPoints + bonus);
+      // New: Record exact historical timestamp for rank achieved
+      updateData.lastRankAchievedAt = serverTimestamp();
       
       triggerAutoEmail('achievement', data.email, data.firstName, { 
         rankName: nextRank.name, 

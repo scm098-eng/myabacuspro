@@ -97,8 +97,10 @@ export default function StudentDashboardPage() {
   const handleDownloadRankCert = () => {
     if (!profile) return;
     
-    // Use the updatedAt date as the historical "Date of Title Achieved"
-    const achievementDate = profile.updatedAt?.toDate ? profile.updatedAt.toDate() : new Date();
+    // New: Pull accurate historical date of title achievement
+    const achievementDate = profile.lastRankAchievedAt?.toDate 
+      ? profile.lastRankAchievedAt.toDate() 
+      : (profile.updatedAt?.toDate ? profile.updatedAt.toDate() : new Date());
 
     setCertData({
       type: 'rank',

@@ -191,8 +191,8 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
              <p className={cn("text-xl font-bold")} style={{ color: headerColor }}>{date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
            </div>
 
-           <div className="flex flex-col items-center gap-3 relative">
-             <div className={cn("p-3 rounded-[2rem] border-[3px] shadow-2xl relative animate-in zoom-in-50 duration-700 bg-white border-slate-100")}>
+           <div className="flex flex-col items-center gap-3 relative translate-y-2">
+             <div className={cn("p-2.5 rounded-[1.5rem] border-[3px] shadow-2xl relative animate-in zoom-in-50 duration-700 bg-white border-slate-100")}>
                 <AbacusToolIcon color={headerColor} />
              </div>
              <div className="px-8 py-2 rounded-full shadow-lg border border-black/5" style={{ backgroundColor: subHeaderColor }}>

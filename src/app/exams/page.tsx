@@ -63,7 +63,7 @@ const EXAM_GROUPS: Record<ExamGroup, GroupConfig> = {
   'E': { 
     title: 'Mental Math Legend', 
     description: 'The summit of human calculation ability.',
-    focusAreas: ['Advanced Multi-Digit Mental Arithmetic', 'Multiplication & Division Mastery', 'Powers & Roots (Square, Cube, etc.)'],
+    focusAreas: ['Advanced 1, 2 & 3 Digit Mental Arithmetic', 'Advanced Multiplication & Division', 'Powers & Roots (Square, Cube, etc.)'],
     toolAllowed: false,
     icon: <Sparkles className="w-6 h-6" /> 
   }
@@ -273,13 +273,15 @@ export default function ExamDashboardPage() {
           {(Object.entries(EXAM_GROUPS) as [ExamGroup, GroupConfig][]).map(([id, g]) => (
             <Card key={id} className="relative group overflow-hidden border-none rounded-[2.5rem] shadow-2xl bg-white transition-all hover:scale-[1.01] hover:shadow-orange-200/50">
               <CardHeader className="p-8">
-                <div className="flex items-start gap-5">
-                  <div className="p-5 bg-muted/50 rounded-[1.5rem] group-hover:scale-110 transition-transform text-primary shadow-inner">
+                <div className="flex items-start gap-5 min-w-0">
+                  <div className="p-5 bg-muted/50 rounded-[1.5rem] group-hover:scale-110 transition-transform text-primary shadow-inner shrink-0">
                     {g.icon}
                   </div>
-                  <div className="space-y-1">
-                    <CardTitle className="text-3xl font-black uppercase tracking-tight text-slate-900">Group {id}: {g.title}</CardTitle>
-                    <p className="text-muted-foreground font-medium text-lg leading-snug">{g.description}</p>
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <CardTitle className="text-xl sm:text-2xl lg:text-3xl font-black uppercase tracking-tight text-slate-900 leading-tight">
+                        Group {id}: {g.title}
+                    </CardTitle>
+                    <p className="text-muted-foreground font-medium text-base sm:text-lg leading-snug">{g.description}</p>
                   </div>
                 </div>
               </CardHeader>
@@ -315,7 +317,9 @@ export default function ExamDashboardPage() {
             {isApproved && (
               <div className="space-y-12">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2"><Trophy className="text-yellow-500 w-7 h-7" /> Practice Papers (Group {application.group})</h2>
+                  <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2 text-slate-900 leading-none">
+                    <Trophy className="text-yellow-500 w-7 h-7" /> Practice Papers (Group {application.group})
+                  </h2>
                   <Badge className="bg-green-500 py-1.5 px-4 font-black border-none text-white">APPROVED</Badge>
                 </div>
                 
@@ -328,21 +332,23 @@ export default function ExamDashboardPage() {
                 </div>
 
                 <div className="pt-8">
-                   <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2 mb-6"><ShieldAlert className="text-red-500 w-7 h-7" /> Final Official Exam</h2>
+                   <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2 mb-6 text-slate-900 leading-none">
+                     <ShieldAlert className="text-red-500 w-7 h-7" /> Final Official Exam
+                   </h2>
                    <Card className={cn("rounded-[2.5rem] border-4 overflow-hidden shadow-2xl transition-all", (examOpen && !finalAttempt) ? "border-orange-500" : "border-slate-200 grayscale opacity-60")}>
                     <CardHeader className="bg-slate-900 text-white p-8">
                       <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-3xl font-black uppercase italic tracking-tighter">Grand Final 2026</CardTitle>
-                          <div className="text-slate-400 font-bold mt-1 flex items-center gap-2">
+                        <div className="min-w-0 flex-1">
+                          <CardTitle className="text-3xl font-black uppercase italic tracking-tighter truncate">Grand Final 2026</CardTitle>
+                          <div className="text-slate-400 font-bold mt-1 flex items-center flex-wrap gap-2 text-xs sm:text-sm">
                              Group {application.group} Certification
-                             <Separator orientation="vertical" className="h-3 bg-white/20" />
+                             <Separator orientation="vertical" className="h-3 bg-white/20 hidden sm:block" />
                              <span className="flex items-center gap-1 text-orange-400"><HelpCircle className="w-3 h-3" /> 150 Questions</span>
-                             <Separator orientation="vertical" className="h-3 bg-white/20" />
+                             <Separator orientation="vertical" className="h-3 bg-white/20 hidden sm:block" />
                              <span className="flex items-center gap-1 text-sky-400"><Timer className="w-3 h-3" /> {timeLimitDisplay}</span>
                           </div>
                         </div>
-                        <Lock className="w-10 h-10 text-slate-500" />
+                        <Lock className="w-10 h-10 text-slate-500 shrink-0 ml-4" />
                       </div>
                     </CardHeader>
                     <CardFooter className="p-10 bg-slate-50 border-t">
@@ -354,7 +360,7 @@ export default function ExamDashboardPage() {
                 </div>
               </div>
             )}
-            {application.status === 'pending' && <Card className="bg-orange-50 border-orange-200 p-10 rounded-[2.5rem] text-center shadow-lg"><CardTitle className="text-2xl font-black uppercase text-orange-900">Application Pending</CardTitle><p className="text-orange-700 font-bold mt-4">We are reviewing your Group {application.group} application.</p></Card>}
+            {application.status === 'pending' && <Card className="bg-orange-50 border-orange-200 p-10 rounded-[2.5rem] text-center shadow-lg"><CardTitle className="text-2xl font-black uppercase text-orange-900 leading-none">Application Pending</CardTitle><p className="text-orange-700 font-bold mt-4">We are reviewing your Group {application.group} application.</p></Card>}
           </div>
 
           <div className="space-y-8">
@@ -366,14 +372,14 @@ export default function ExamDashboardPage() {
                     return (
                       <div key={r.id} className="flex flex-col gap-3 p-4 bg-muted/50 rounded-2xl border border-muted group transition-all hover:bg-muted">
                         <div className="flex justify-between items-start">
-                          <div className="space-y-1">
+                          <div className="space-y-1 min-w-0">
                             <div className="flex items-center gap-2">
                               {r.isFinal ? <ShieldAlert className="w-3 h-3 text-orange-500" /> : <FileEdit className="w-3 h-3 text-slate-400" />}
-                              <p className="text-xs font-black uppercase tracking-tight">{r.paperId === 'final' ? 'FINAL EXAM' : `Practice ${r.paperId.split('-')[1]}`}</p>
+                              <p className="text-xs font-black uppercase tracking-tight truncate">{r.paperId === 'final' ? 'FINAL EXAM' : `Practice ${r.paperId.split('-')[1]}`}</p>
                             </div>
                             <p className="text-[10px] text-muted-foreground font-bold">{format(r.submittedAt?.toDate ? r.submittedAt.toDate() : new Date(), 'MMM d, h:mm a')}</p>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right shrink-0">
                             {hideResult ? (
                               <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-200 font-black text-[9px]">AWAITING RESULT</Badge>
                             ) : (
