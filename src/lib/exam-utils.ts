@@ -1,21 +1,21 @@
 
+'use client';
+
 import type { Question, ExamGroup } from '@/types';
-import { generateTest, deDuplicateQuestions } from './questions';
+import { generateTest, deDuplicateQuestions, getRandomInt, generateOptions, shuffleArray } from './questions';
 import { differenceInYears, parseISO, isValid } from 'date-fns';
 
 /**
  * Default fallback dates.
- * These are overridden by the dynamic values fetched from Firestore in the components.
  */
 export const DEFAULT_EXAM_DATE = new Date('2026-05-25T12:30:00');
 export const DEFAULT_EXAM_END_TIME = new Date('2026-05-25T16:00:00');
 
 export function getExamTimeLimit(age: number): number {
-  // 5-10: 10 mins, 11-13: 8 mins, 14+: 7 mins
   if (age >= 5 && age <= 10) return 10 * 60;
   if (age >= 11 && age <= 13) return 8 * 60;
   if (age >= 14) return 7 * 60;
-  return 10 * 60; // Default fallback
+  return 10 * 60;
 }
 
 export function calculateAge(dob: string | undefined): number {
@@ -25,92 +25,105 @@ export function calculateAge(dob: string | undefined): number {
   return differenceInYears(new Date(), birthDate);
 }
 
-/**
- * Standard Fisher-Yates Shuffle
- */
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+function sampleQuestions(questions: Question[], count: number): Question[] {
+  return shuffleArray([...questions]).slice(0, count);
+}
+
+function generateMultiplication(m1Min: number, m1Max: number, m2Min: number, m2Max: number, count: number): Question[] {
+  const result: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const m1 = getRandomInt(m1Min, m1Max);
+    const m2 = getRandomInt(m2Min, m2Max);
+    const answer = m1 * m2;
+    result.push({
+      text: `${m1} × ${m2}`,
+      answer: answer,
+      options: generateOptions(answer)
+    });
   }
-  return shuffled;
+  return result;
+}
+
+function generateDivision(answerMin: number, answerMax: number, divisorMin: number, divisorMax: number, count: number): Question[] {
+  const result: Question[] = [];
+  for (let i = 0; i < count; i++) {
+    const divisor = getRandomInt(divisorMin, divisorMax);
+    const answer = getRandomInt(answerMin, answerMax);
+    const dividend = divisor * answer;
+    result.push({
+      text: `${dividend} ÷ ${divisor}`,
+      answer: answer,
+      options: generateOptions(answer)
+    });
+  }
+  return result;
 }
 
 export function generateExamQuestions(group: ExamGroup): Question[] {
-  let initialPool: Question[] = [];
+  let finalPool: Question[] = [];
   
-  // 1. Gather group-specific questions from base logic
   switch (group) {
     case 'A':
-      // Group A: Mix of 1, 2, and 3 digit Beads + 4-5 step Direct moves
-      initialPool = [
-        ...generateTest('beads-identify', 'level-2'), 
-        ...generateTest('beads-identify', 'level-4'), 
-        ...generateTest('beads-identify', 'level-6'), 
-        ...generateTest('basic-add-sub-l1', 'easy'),  
-        ...generateTest('basic-add-sub-l2', 'easy')   
+      finalPool = [
+        ...sampleQuestions(generateTest('beads-identify', 'level-2'), 30),
+        ...sampleQuestions(generateTest('beads-identify', 'level-4'), 30),
+        ...sampleQuestions(generateTest('beads-identify', 'level-6'), 30),
+        ...sampleQuestions(generateTest('basic-add-sub-l1', 'easy'), 30),
+        ...sampleQuestions(generateTest('basic-add-sub-l2', 'easy'), 30)
       ];
       break;
     case 'B':
-      // Group B: Small Sister, Big Brother, AND Combination (With Tool)
-      initialPool = [
-        ...generateTest('basic-addition-plus-4', 'easy'),   
-        ...generateTest('big-brother-addition-plus-9', 'easy'), 
-        ...generateTest('combination-plus-6', 'easy'),      
-        ...generateTest('addition-subtraction', 'medium')   
+      finalPool = [
+        ...sampleQuestions(generateTest('basic-addition-plus-4', 'easy'), 30),
+        ...sampleQuestions(generateTest('big-brother-addition-plus-9', 'easy'), 40),
+        ...sampleQuestions(generateTest('combination-plus-6', 'easy'), 40),
+        ...sampleQuestions(generateTest('addition-subtraction', 'medium'), 40)
       ];
       break;
     case 'C':
-      // Group C: Single, Double & Triple Digit Mental Calculation (Without Tool)
-      initialPool = [
-        ...generateTest('addition-subtraction-input', 'easy'),   
-        ...generateTest('addition-subtraction-input', 'medium'), 
-        ...generateTest('addition-subtraction-input', 'hard')    
+      finalPool = [
+        ...sampleQuestions(generateTest('addition-subtraction-input', 'easy'), 50),
+        ...sampleQuestions(generateTest('addition-subtraction-input', 'medium'), 50),
+        ...sampleQuestions(generateTest('addition-subtraction-input', 'hard'), 50)
       ];
       break;
     case 'D':
-      // Group D: Elite Multi-Digit Mental + Multi/Div
-      initialPool = [
-        ...generateTest('addition-subtraction-input', 'medium'),
-        ...generateTest('multiplication-input', 'medium'),
-        ...generateTest('division-input', 'medium')
+      finalPool = [
+        ...sampleQuestions(generateTest('addition-subtraction-input', 'medium'), 50),
+        ...sampleQuestions(generateTest('multiplication-input', 'medium'), 50),
+        ...sampleQuestions(generateTest('division-input', 'medium'), 50)
       ];
       break;
     case 'E':
-      // Group E: The summit of human calculation ability
-      initialPool = [
-        // Add/Sub (60 questions requested)
-        ...generateTest('addition-subtraction-input', 'easy'),   // Single digit
-        ...generateTest('addition-subtraction-input', 'medium'), // Double digit
-        ...generateTest('addition-subtraction-input', 'hard'),   // Triple digit
-        // Multi/Div (60 questions requested mix)
-        ...generateTest('multiplication-input', 'medium'),
-        ...generateTest('multiplication-input', 'hard'),
-        ...generateTest('division-input', 'medium'),
-        ...generateTest('division-input', 'hard'),
-        // Powers (30 questions requested mix)
-        ...generateTest('square-input', 'medium'),
-        ...generateTest('square-root-input', 'medium'),
-        ...generateTest('cube-input', 'medium'),
-        ...generateTest('cube-root-input', 'medium')
+      // STRICT CURRICULUM FOR GROUP E
+      finalPool = [
+        // 1. Addition / Subtraction (60 Questions)
+        ...sampleQuestions(generateTest('addition-subtraction-input', 'easy'), 20),   // Single digit
+        ...sampleQuestions(generateTest('addition-subtraction-input', 'medium'), 20), // Double digit
+        ...sampleQuestions(generateTest('addition-subtraction-input', 'hard'), 20),   // Triple digit
+        
+        // 2. Advanced Multiplication (30 Questions)
+        ...generateMultiplication(100, 999, 2, 9, 10),    // Triple x Single
+        ...generateMultiplication(1000, 9999, 2, 9, 10),  // 4-digit x Single
+        ...generateMultiplication(100, 999, 10, 99, 10),  // Triple x Double
+        
+        // 3. Advanced Division (30 Questions)
+        ...generateDivision(10, 99, 2, 9, 15),    // Resulting in 2-digit (Dividend ~3 digit)
+        ...generateDivision(100, 999, 2, 9, 15),  // Resulting in 3-digit (Dividend ~4 digit)
+        
+        // 4. Powers & Roots (30 Questions)
+        ...sampleQuestions(generateTest('square-input', 'medium'), 7),
+        ...sampleQuestions(generateTest('square-root-input', 'medium'), 8),
+        ...sampleQuestions(generateTest('cube-input', 'medium'), 7),
+        ...sampleQuestions(generateTest('cube-root-input', 'medium'), 8)
       ];
       break;
   }
   
-  // 2. Expand to 150 questions
-  let expandedPool = [...initialPool];
-  while (expandedPool.length < 150) {
-    expandedPool = expandedPool.concat(shuffleArray([...initialPool]));
-  }
-
-  // 3. Final global shuffle and consecutive answer de-duplication
-  return deDuplicateQuestions(expandedPool.slice(0, 150)); 
+  // Final global shuffle and consecutive answer de-duplication
+  return deDuplicateQuestions(shuffleArray(finalPool).slice(0, 150)); 
 }
 
-/**
- * Checks if the final exam is currently open based on passed parameters.
- */
 export function isFinalExamAvailable(startDate: Date, endDate: Date): boolean {
   const now = new Date();
   return now >= startDate && now <= endDate;

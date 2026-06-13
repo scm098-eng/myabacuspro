@@ -267,11 +267,11 @@ export function getTestSettings(testId: TestType, difficulty: Difficulty): TestS
   return TEST_CONFIG[testId]?.[difficulty as keyof Partial<Record<Difficulty, TestSettings>>] as TestSettings | undefined;
 }
 
-function getRandomInt(min: number, max: number): number {
+export function getRandomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function shuffleArray<T>(array: T[]): T[] {
+export function shuffleArray<T>(array: T[]): T[] {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
@@ -610,7 +610,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
   return deDuplicateQuestions(questions);
 }
 
-function getNumberRange(difficulty: Difficulty): [number, number] {
+export function getNumberRange(difficulty: Difficulty): [number, number] {
     switch (difficulty) {
         case 'easy': return [1, 9];
         case 'medium': return [10, 99];
