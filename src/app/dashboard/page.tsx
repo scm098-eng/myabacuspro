@@ -96,11 +96,15 @@ export default function StudentDashboardPage() {
 
   const handleDownloadRankCert = () => {
     if (!profile) return;
+    
+    // Use the updatedAt date as the historical "Date of Title Achieved"
+    const achievementDate = profile.updatedAt?.toDate ? profile.updatedAt.toDate() : new Date();
+
     setCertData({
       type: 'rank',
       title: getStudentTitle(profile.totalDaysPracticed || 0, profile.totalPoints || 0).name,
       score: `${(profile.totalPoints || 0).toLocaleString()} Global Mastery Points`,
-      date: format(new Date(), 'MMMM do, yyyy')
+      date: format(achievementDate, 'MMMM do, yyyy')
     });
     setShowCertificate(true);
   };
