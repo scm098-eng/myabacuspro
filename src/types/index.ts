@@ -127,7 +127,6 @@ export interface ExamResult {
   rank?: number;
   submittedAt: any;
   timeLeft?: number;
-  rank?: number;
   answeredCount?: number;
   details?: {
     correct: number;
@@ -289,6 +288,7 @@ export interface ProfileData {
   lastMonthlyReset?: string;
   fcmToken?: string;
   lastAwardedRank?: string;
+  lastRankAchievedAt?: any;
   isSuspended?: boolean;
   isAdminRead?: boolean;
   emailVerified?: boolean;
@@ -327,6 +327,7 @@ export type UpdateProfilePayload = {
   profilePhoto?: File;
   fcmToken?: string;
   lastAwardedRank?: string;
+  lastRankAchievedAt?: any;
   isSuspended?: boolean;
   trialStartDate?: any;
   emailVerified?: boolean;
