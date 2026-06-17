@@ -64,7 +64,6 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
   ({ studentName, title, score, date, type, rank, groupName }, ref) => {
     const formattedName = studentName.trim().replace(/\s+/g, ' ');
     const isWinnerDesign = type === 'exam_winner' || rank !== undefined || type === 'weekly_winner' || type === 'monthly_winner' || type === 'global_winner';
-    const isOfficialExam = type === 'exam_participation' || type === 'exam_winner';
 
     let themeClass = "bg-white border-[#0f172a]";
     let accentColor = "#f97316";
@@ -106,9 +105,12 @@ const CertificateContent = React.forwardRef<HTMLDivElement, { studentName: strin
     }
 
     let headerPillTitle = "Mastery Rank Award";
-    if (isOfficialExam) {
+    if (type === 'exam_participation') {
       const gTitle = groupName ? GROUP_TITLES[groupName] : '';
-      headerPillTitle = `Group "${groupName || 'A'}" Rank Achiever${gTitle ? `: ${gTitle}` : ''}`;
+      headerPillTitle = `Group "${groupName || 'A'}" Participation${gTitle ? ` : ${gTitle}` : ''}`;
+    } else if (type === 'exam_winner') {
+      const gTitle = groupName ? GROUP_TITLES[groupName] : '';
+      headerPillTitle = `Group "${groupName || 'A'}" Rank Achiever${gTitle ? ` : ${gTitle}` : ''}`;
     } else if (type === 'rank') {
       headerPillTitle = "Title Achiever";
     }
