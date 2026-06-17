@@ -144,15 +144,9 @@ export default function ExamDashboardPage() {
   }, [user]);
 
   const finalAttempt = useMemo(() => {
-    if (!application || results.length === 0) return null;
-    
-    const rankedResults = results
-      .filter(r => r.rank !== undefined)
-      .sort((a, b) => (a.rank || 999) - (b.rank || 999));
-    
-    if (rankedResults.length > 0) return rankedResults[0];
+    if (results.length === 0) return null;
     return results.find(r => r.isFinal === true) || null;
-  }, [results, application]);
+  }, [results]);
 
   const handleApply = async (group: ExamGroup) => {
     if (!user || !profile) return;
@@ -343,7 +337,7 @@ export default function ExamDashboardPage() {
                           <div className="text-slate-400 font-bold mt-1 flex items-center flex-wrap gap-2 text-xs sm:text-sm">
                              Group {application.group} Certification
                              <Separator orientation="vertical" className="h-3 bg-white/20 hidden sm:block" />
-                             <span className="flex items-center gap-1 text-orange-400"><HelpCircle className="w-3 h-3" /> 150 Questions</span>
+                             <span className="flex items-center gap-1 text-orange-400"><HelpCircle className="w-3 h-3" /> {application.group === 'A' ? '120' : (application.group === 'B' ? '124' : '150')} Questions</span>
                              <Separator orientation="vertical" className="h-3 bg-white/20 hidden sm:block" />
                              <span className="flex items-center gap-1 text-sky-400"><Timer className="w-3 h-3" /> {timeLimitDisplay}</span>
                           </div>

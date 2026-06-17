@@ -61,23 +61,26 @@ function generateDivision(answerMin: number, answerMax: number, divisorMin: numb
 
 export function generateExamQuestions(group: ExamGroup): Question[] {
   let finalPool: Question[] = [];
+  let targetCount = 150;
   
   switch (group) {
     case 'A':
+      targetCount = 120;
       finalPool = [
-        ...sampleQuestions(generateTest('beads-identify', 'level-2'), 30),
-        ...sampleQuestions(generateTest('beads-identify', 'level-4'), 30),
-        ...sampleQuestions(generateTest('beads-identify', 'level-6'), 30),
-        ...sampleQuestions(generateTest('basic-add-sub-l1', 'easy'), 30),
-        ...sampleQuestions(generateTest('basic-add-sub-l2', 'easy'), 30)
+        ...sampleQuestions(generateTest('beads-identify', 'level-2'), 24),
+        ...sampleQuestions(generateTest('beads-identify', 'level-4'), 24),
+        ...sampleQuestions(generateTest('beads-identify', 'level-6'), 24),
+        ...sampleQuestions(generateTest('basic-add-sub-l1', 'easy'), 24),
+        ...sampleQuestions(generateTest('basic-add-sub-l2', 'easy'), 24)
       ];
       break;
     case 'B':
+      targetCount = 124;
       finalPool = [
-        ...sampleQuestions(generateTest('basic-addition-plus-4', 'easy'), 30),
-        ...sampleQuestions(generateTest('big-brother-addition-plus-9', 'easy'), 40),
-        ...sampleQuestions(generateTest('combination-plus-6', 'easy'), 40),
-        ...sampleQuestions(generateTest('addition-subtraction', 'medium'), 40)
+        ...sampleQuestions(generateTest('basic-addition-plus-4', 'easy'), 31),
+        ...sampleQuestions(generateTest('big-brother-addition-plus-9', 'easy'), 31),
+        ...sampleQuestions(generateTest('combination-plus-6', 'easy'), 31),
+        ...sampleQuestions(generateTest('addition-subtraction', 'medium'), 31)
       ];
       break;
     case 'C':
@@ -121,7 +124,7 @@ export function generateExamQuestions(group: ExamGroup): Question[] {
   }
   
   // Final global shuffle and consecutive answer de-duplication
-  return deDuplicateQuestions(shuffleArray(finalPool).slice(0, 150)); 
+  return deDuplicateQuestions(shuffleArray(finalPool).slice(0, targetCount)); 
 }
 
 export function isFinalExamAvailable(startDate: Date, endDate: Date): boolean {

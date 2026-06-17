@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
@@ -124,7 +125,7 @@ export default function ExamArenaPage() {
   }, [user, profile, router, toast]);
 
   const finishExam = useCallback(async () => {
-    if (isFinishedRef.current || !user || !application || questions.length === 0) return;
+    if (isFinishedRef.current || !user || !application || questions.length === 0 || isSubmitting) return;
     
     isFinishedRef.current = true;
     setIsFinished(true);
@@ -154,6 +155,7 @@ export default function ExamArenaPage() {
       submittedAt: serverTimestamp(),
       timeLeft: finalTimeLeft,
       details: questions.map((q, i) => ({
+        text: q.text || (q.questionType === 'set' ? `Set Value: ${q.answer}` : `Identify Value: ${q.answer}`),
         correct: q.answer,
         student: currentAnswers[i]
       }))
@@ -174,7 +176,7 @@ export default function ExamArenaPage() {
         setIsSubmitting(false);
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examResults', operation: 'create' }));
       });
-  }, [user, application, questions, paperId, router, toast]);
+  }, [user, application, questions, paperId, router, toast, isSubmitting]);
 
   const finishExamRef = useRef(finishExam);
   useEffect(() => { finishExamRef.current = finishExam; }, [finishExam]);
@@ -265,14 +267,14 @@ export default function ExamArenaPage() {
         </CardHeader>
         <CardContent className="p-8 text-center flex-grow flex flex-col justify-center overflow-hidden">
           <div className="space-y-6">
-            <div className="py-4 bg-muted/30 rounded-[2rem] border-2 border-dashed flex flex-col items-center min-h-[160px] justify-center">
+            <div className="py-4 bg-muted/30 rounded-[2rem] border-2 border-dashed flex flex-col items-center min-h-[160px] justify-center px-4">
                 {questions[currentIdx]?.questionType === 'identify' ? (
                   <div className="w-full max-w-md">
                     <BeadDisplay value={questions[currentIdx].answer} rodCount={dynamicRodCount} />
                   </div>
                 ) : (
-                  <div className="w-full overflow-hidden px-4">
-                    <p className={cn("font-black tracking-tight whitespace-nowrap", getQuestionFontSize(questions[currentIdx]?.text || ""))}>
+                  <div className="w-full overflow-hidden">
+                    <p className={cn("font-black tracking-tight whitespace-normal break-words", getQuestionFontSize(questions[currentIdx]?.text || ""))}>
                       {questions[currentIdx]?.text} = ?
                     </p>
                   </div>

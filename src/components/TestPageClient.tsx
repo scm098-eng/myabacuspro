@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -218,8 +219,8 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
           <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-3 text-center">Progress: {currentIdx + 1} of {questions.length}</p>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center text-center p-8 overflow-hidden">
-            <div className="w-full overflow-hidden bg-muted/20 py-10 rounded-[2rem] border-2 border-dashed">
-              <p className={cn("font-black tracking-tight whitespace-nowrap", getQuestionFontSize(questions[currentIdx].text))}>
+            <div className="w-full overflow-hidden bg-muted/20 py-10 rounded-[2rem] border-2 border-dashed px-4">
+              <p className={cn("font-black tracking-tight whitespace-normal break-words", getQuestionFontSize(questions[currentIdx].text))}>
                 {questions[currentIdx].text} = ?
               </p>
             </div>
