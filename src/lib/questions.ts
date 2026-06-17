@@ -9,6 +9,22 @@ import { bigBrotherSubtractionQuestions } from './question-data/big-brother-subt
 import { combinationAdditionQuestions } from './question-data/combination-addition';
 import { combinationSubtractionQuestions } from './question-data/combination-subtraction';
 
+/**
+ * Deterministic PRNG Generator (Mulberry32)
+ * Ensures "Same Paper" for all students when a seed is provided.
+ */
+export function createPRNG(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+  let s = h >>> 0;
+  return function() {
+    s |= 0; s = s + 0x6D2B79F5 | 0;
+    let t = Math.imul(s ^ s >>> 15, 1 | s);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
 const masteryMixQuestions: Record<string, Question[]> = {
     'mastery-mix-1': [...basicAdditionQuestions['basic-addition-plus-4'], ...basicSubtractionQuestions['basic-subtraction-minus-1']],
     'mastery-mix-2': [...basicAdditionQuestions['basic-addition-plus-3'], ...basicSubtractionQuestions['basic-subtraction-minus-2']],
@@ -177,7 +193,7 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
   'combination-minus-90': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -90 = -100 + 50 - 40', icon: 'puzzle' } },
 };
 
-const preDefinedQuestions: Record<string, Question[]> = {
+export const preDefinedQuestions: Record<string, Question[]> = {
   ...basicAdditionQuestions,
   ...basicSubtractionQuestions,
   ...bigBrotherAdditionQuestions,
@@ -267,13 +283,13 @@ export function getTestSettings(testId: TestType, difficulty: Difficulty): TestS
   return TEST_CONFIG[testId]?.[difficulty as keyof Partial<Record<Difficulty, TestSettings>>] as TestSettings | undefined;
 }
 
-export function getRandomInt(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+export function getRandomInt(min: number, max: number, prng: () => number = Math.random): number {
+  return Math.floor(prng() * (max - min + 1)) + min;
 }
 
-export function shuffleArray<T>(array: T[]): T[] {
+export function shuffleArray<T>(array: T[], prng: () => number = Math.random): T[] {
   for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(prng() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
   }
   return array;
@@ -310,7 +326,7 @@ export function deDuplicateQuestions(questions: Question[]): Question[] {
   return result;
 }
 
-export function generateOptions(correctAnswer: number): number[] {
+export function generateOptions(correctAnswer: number, prng: () => number = Math.random): number[] {
   const options = new Set<number>([correctAnswer]);
   const safeAnswer = Math.max(0, correctAnswer);
   const range = Math.max(10, Math.abs(Math.floor(safeAnswer * 0.4)));
@@ -318,17 +334,17 @@ export function generateOptions(correctAnswer: number): number[] {
   while (options.size < 4) {
     let wrongAnswer;
     if (safeAnswer < 10) {
-        wrongAnswer = getRandomInt(0, 20);
+        wrongAnswer = getRandomInt(0, 20, prng);
     } else {
         const minOption = Math.max(0, safeAnswer - range);
         const maxOption = safeAnswer + range;
-        wrongAnswer = getRandomInt(minOption, maxOption);
+        wrongAnswer = getRandomInt(minOption, maxOption, prng);
     }
     if (wrongAnswer !== safeAnswer && wrongAnswer >= 0) {
       options.add(wrongAnswer);
     }
   }
-  return shuffleArray(Array.from(options));
+  return shuffleArray(Array.from(options), prng);
 }
 
 function isDirectDigitAdd(d1: number, d2: number): boolean {
@@ -364,9 +380,9 @@ function isDirectFull(val: number, delta: number, op: '+' | '-'): boolean {
   return true;
 }
 
-function generateDirectQuestion(max: number, numTerms: number = 3): Question {
+function generateDirectQuestion(max: number, numTerms: number = 3, prng: () => number = Math.random): Question {
   while (true) {
-    let currentVal = getRandomInt(max === 9 ? 1 : 10, max);
+    let currentVal = getRandomInt(max === 9 ? 1 : 10, max, prng);
     let numbers: (number | string)[] = [currentVal];
     let successCount = 0;
 
@@ -374,8 +390,8 @@ function generateDirectQuestion(max: number, numTerms: number = 3): Question {
       let attempts = 0;
       let foundOp = false;
       while (attempts < 50) { 
-        const op = Math.random() > 0.5 ? '+' : '-';
-        const delta = getRandomInt(1, max > 9 ? 40 : max); 
+        const op = prng() > 0.5 ? '+' : '-';
+        const delta = getRandomInt(1, max > 9 ? 40 : max, prng); 
         const nextVal = op === '+' ? currentVal + delta : currentVal - delta;
         
         if (nextVal >= 0 && nextVal <= max && isDirectFull(currentVal, delta, op)) {
@@ -396,7 +412,7 @@ function generateDirectQuestion(max: number, numTerms: number = 3): Question {
       return {
         text: numbers.join(' '),
         answer: answer,
-        options: generateOptions(answer)
+        options: generateOptions(answer, prng)
       };
     }
   }

@@ -63,8 +63,10 @@ export default function ExamArenaPage() {
     const fetchArenaData = async () => {
       try {
         const scheduleSnap = await getDoc(doc(db, "stats", "examSchedule"));
+        let examSeed = "";
         if (scheduleSnap.exists()) {
           const data = scheduleSnap.data();
+          examSeed = data.date || "";
           if (data.date && data.endTime) {
             const endTime = new Date(`${data.date}T${data.endTime}:00`);
             if (!isNaN(endTime.getTime()) && new Date() > endTime) {
@@ -99,7 +101,11 @@ export default function ExamArenaPage() {
         const app = { id: appSnap.id, ...appData, group } as ExamApplication;
         setApplication(app);
 
-        const generated = generateExamQuestions(group);
+        // Maintain same paper for all students by using deterministic seeds
+        // Final Exam: Seeded by exam date + group
+        // Practice Papers: Seeded by paperId + group
+        const finalSeed = paperId === 'final' ? `${examSeed}-${group}` : `${paperId}-${group}`;
+        const generated = generateExamQuestions(group, finalSeed);
         setQuestions(generated);
         questionButtonRefs.current = new Array(generated.length).fill(null);
         
@@ -107,7 +113,6 @@ export default function ExamArenaPage() {
         setAnswers(initialAnswers);
         answersRef.current = initialAnswers;
         
-        // Ensure robust time limit calculation if not stored
         const age = calculateAge(profile.dob);
         const limit = app.timeLimit || getExamTimeLimit(age);
         setTimeLeft(limit);
@@ -122,7 +127,7 @@ export default function ExamArenaPage() {
     };
 
     fetchArenaData();
-  }, [user, profile, router, toast]);
+  }, [user, profile, router, toast, paperId]);
 
   const finishExam = useCallback(async () => {
     if (isFinishedRef.current || !user || !application || questions.length === 0 || isSubmitting) return;
