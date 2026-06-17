@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Question, ExamGroup } from '@/types';
@@ -116,11 +115,9 @@ export function generateExamQuestions(group: ExamGroup, seed?: string): Question
         ...generateDivision(10, 99, 2, 9, 15, prng),
         ...generateDivision(100, 999, 2, 9, 15, prng),
         
-        // 4. Powers & Roots (30 Questions)
-        ...sampleQuestions(generateTest('square-input', 'medium'), 7, prng),
-        ...sampleQuestions(generateTest('square-root-input', 'medium'), 8, prng),
-        ...sampleQuestions(generateTest('cube-input', 'medium'), 7, prng),
-        ...sampleQuestions(generateTest('cube-root-input', 'medium'), 8, prng)
+        // 4. Powers (30 Questions) - Strictly Square and Cube only
+        ...sampleQuestions(generateTest('square-input', 'medium'), 15, prng),
+        ...sampleQuestions(generateTest('cube-input', 'medium'), 15, prng)
       ];
       break;
   }

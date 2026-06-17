@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -63,7 +62,7 @@ const EXAM_GROUPS: Record<ExamGroup, GroupConfig> = {
   'E': { 
     title: 'Mental Math Legend', 
     description: 'The summit of human calculation ability.',
-    focusAreas: ['Advanced 1, 2 & 3 Digit Mental Arithmetic', 'Advanced Multiplication & Division', 'Powers & Roots (Square, Cube, etc.)'],
+    focusAreas: ['Advanced 1, 2 & 3 Digit Mental Arithmetic', 'Advanced Multiplication & Division', 'Powers (Square, Cube)'],
     toolAllowed: false,
     icon: <Sparkles className="w-6 h-6" /> 
   }
@@ -337,7 +336,7 @@ export default function ExamDashboardPage() {
                           <div className="text-slate-400 font-bold mt-1 flex items-center flex-wrap gap-2 text-xs sm:text-sm">
                              Group {application.group} Certification
                              <Separator orientation="vertical" className="h-3 bg-white/20 hidden sm:block" />
-                             <span className="flex items-center gap-1 text-orange-400"><HelpCircle className="w-3 h-3" /> {application.group === 'A' ? '120' : (application.group === 'B' ? '124' : '150')} Questions</span>
+                             <span className="flex items-center gap-1 text-orange-400"><HelpCircle className="w-3 h-3" /> 150 Questions</span>
                              <Separator orientation="vertical" className="h-3 bg-white/20 hidden sm:block" />
                              <span className="flex items-center gap-1 text-sky-400"><Timer className="w-3 h-3" /> {timeLimitDisplay}</span>
                           </div>
