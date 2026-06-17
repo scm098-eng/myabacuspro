@@ -370,7 +370,10 @@ export default function ExamDashboardPage() {
                               {r.isFinal ? <ShieldAlert className="w-3 h-3 text-orange-500" /> : <FileEdit className="w-3 h-3 text-slate-400" />}
                               <p className="text-xs font-black uppercase tracking-tight truncate">{r.paperId === 'final' ? 'FINAL EXAM' : `Practice ${r.paperId.split('-')[1]}`}</p>
                             </div>
-                            <p className="text-[10px] text-muted-foreground font-bold">{format(r.submittedAt?.toDate ? r.submittedAt.toDate() : new Date(), 'MMM d, h:mm a')}</p>
+                            <p className="text-[10px] text-indigo-600 font-black uppercase flex items-center gap-1.5 tracking-wider">
+                              <Timer className="w-3 h-3" />
+                              Time Left: {Math.floor((r.timeLeft || 0)/60)}:{((r.timeLeft || 0) % 60).toString().padStart(2,'0')}
+                            </p>
                           </div>
                           <div className="text-right shrink-0">
                             {hideResult ? (
