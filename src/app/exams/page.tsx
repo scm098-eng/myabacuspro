@@ -103,7 +103,19 @@ export default function ExamDashboardPage() {
     if (!user) return;
     const db = getFirestore(firebaseApp);
     
-    const unsubSchedule = onSnapshot(doc(db, "stats", "examSchedule"), (snap) => {
+    const unsubSchedule = onSnapshot(doc(db, "stats", "leaderboard"), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          // setLastWinner(data.lastWeeklyWinner);
+          // setMonthlyWinner(data.lastMonthlyWinner);
+          // setGlobalWinner(data.lastGlobalWinner);
+        }
+      }, async (error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'stats/leaderboard', operation: 'get' }));
+      }
+    );
+
+    const unsubExamSchedule = onSnapshot(doc(db, "stats", "examSchedule"), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         if (data.date) {
@@ -139,7 +151,7 @@ export default function ExamDashboardPage() {
       async (serverError) => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examResults', operation: 'list' })); }
     );
 
-    return () => { unsubSchedule(); unsubscribeApp(); unsubscribeResults(); };
+    return () => { unsubSchedule(); unsubExamSchedule(); unsubscribeApp(); unsubscribeResults(); };
   }, [user]);
 
   const finalAttempt = useMemo(() => {
@@ -203,7 +215,7 @@ export default function ExamDashboardPage() {
   }, [schedule]);
 
   const timeLimitDisplay = useMemo(() => {
-    if (!profile) return "10 Minutes";
+    if (!profile) return "9 Minutes";
     const age = calculateAge(profile.dob);
     const seconds = getExamTimeLimit(age);
     return `${Math.floor(seconds / 60)} Minutes`;

@@ -10,11 +10,16 @@ import { differenceInYears, parseISO, isValid } from 'date-fns';
 export const DEFAULT_EXAM_DATE = new Date('2026-05-25T12:30:00');
 export const DEFAULT_EXAM_END_TIME = new Date('2026-05-25T16:00:00');
 
+/**
+ * Calculates the exam time limit based on the student's age.
+ * - Age 6 to 8 Years : 9 min
+ * - Age 9 to 11 Years : 8 min
+ * - Age 12 to 14 Years : 7 min
+ */
 export function getExamTimeLimit(age: number): number {
-  if (age >= 5 && age <= 10) return 10 * 60;
-  if (age >= 11 && age <= 13) return 8 * 60;
-  if (age >= 14) return 7 * 60;
-  return 10 * 60;
+  if (age <= 8) return 9 * 60;
+  if (age <= 11) return 8 * 60;
+  return 7 * 60; // 12-14 and above
 }
 
 export function calculateAge(dob: string | undefined): number {
