@@ -13,7 +13,7 @@ import { getFirestore, collection, query, where, onSnapshot, doc, orderBy, getDo
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult, ExamGroup } from '@/types';
-import { format, parseISO, isSameDay } from 'date-fns';
+import { format, parseISO, isSameDay, isBefore, isAfter } from 'date-fns';
 import { isFinalExamAvailable, getExamTimeLimit, calculateAge } from '@/lib/exam-utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -106,9 +106,6 @@ export default function ExamDashboardPage() {
     const unsubSchedule = onSnapshot(doc(db, "stats", "leaderboard"), (snap) => {
         if (snap.exists()) {
           const data = snap.data();
-          // setLastWinner(data.lastWeeklyWinner);
-          // setMonthlyWinner(data.lastMonthlyWinner);
-          // setGlobalWinner(data.lastGlobalWinner);
         }
       }, async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'stats/leaderboard', operation: 'get' }));
@@ -221,6 +218,15 @@ export default function ExamDashboardPage() {
     return `${Math.floor(seconds / 60)} Minutes`;
   }, [profile]);
 
+  const showApplyDeadline = useMemo(() => {
+    if (!schedule?.lastApplyDate) return false;
+    const now = new Date();
+    const deadline = parseISO(schedule.lastApplyDate);
+    // Format is YYYY-MM-DD, so we compare current date string to deadline string
+    const todayStr = now.toISOString().split('T')[0];
+    return todayStr <= schedule.lastApplyDate;
+  }, [schedule]);
+
   if (loading || authLoading) return <div className="p-8 max-w-6xl mx-auto"><Skeleton className="h-[600px] w-full rounded-3xl" /></div>;
 
   return (
@@ -242,7 +248,7 @@ export default function ExamDashboardPage() {
         <h1 className="text-4xl sm:text-5xl font-black font-headline uppercase tracking-tight text-slate-900 leading-none">IDENTIFY YOUR <span className="text-primary italic">MASTERY GROUP</span></h1>
         <p className="text-muted-foreground font-bold text-lg">Select the level that matches your current training progress.</p>
         
-        {schedule?.lastApplyDate && (
+        {showApplyDeadline && schedule?.lastApplyDate && (
           <div className="mt-8">
             <Badge variant="secondary" className="bg-blue-50 text-blue-700 px-10 py-3 rounded-2xl border-2 border-blue-100 font-bold gap-2 text-base">
               ⌛ Last date to apply: {format(parseISO(schedule.lastApplyDate), 'MMMM do, yyyy')}
