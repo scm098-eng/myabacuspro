@@ -105,7 +105,7 @@ export default function ExamDashboardPage() {
     
     const unsubSchedule = onSnapshot(doc(db, "stats", "leaderboard"), (snap) => {
         if (snap.exists()) {
-          const data = snap.data();
+          // data loaded
         }
       }, async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'stats/leaderboard', operation: 'get' }));
@@ -220,12 +220,13 @@ export default function ExamDashboardPage() {
 
   const showApplyDeadline = useMemo(() => {
     if (!schedule?.lastApplyDate) return false;
+    // Hide if student is already approved for a group
+    if (application && application.status === 'approved') return false;
+    
     const now = new Date();
-    const deadline = parseISO(schedule.lastApplyDate);
-    // Format is YYYY-MM-DD, so we compare current date string to deadline string
     const todayStr = now.toISOString().split('T')[0];
     return todayStr <= schedule.lastApplyDate;
-  }, [schedule]);
+  }, [schedule, application]);
 
   if (loading || authLoading) return <div className="p-8 max-w-6xl mx-auto"><Skeleton className="h-[600px] w-full rounded-3xl" /></div>;
 
@@ -246,7 +247,9 @@ export default function ExamDashboardPage() {
 
       <div className="text-center space-y-4 pt-4">
         <h1 className="text-4xl sm:text-5xl font-black font-headline uppercase tracking-tight text-slate-900 leading-none">IDENTIFY YOUR <span className="text-primary italic">MASTERY GROUP</span></h1>
-        <p className="text-muted-foreground font-bold text-lg">Select the level that matches your current training progress.</p>
+        <p className="text-muted-foreground font-bold text-lg">
+          {application ? "Group Selected" : "Select the level that matches your current training progress."}
+        </p>
         
         {showApplyDeadline && schedule?.lastApplyDate && (
           <div className="mt-8">
