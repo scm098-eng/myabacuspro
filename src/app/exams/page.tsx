@@ -248,7 +248,10 @@ export default function ExamDashboardPage() {
       <div className="text-center space-y-4 pt-4">
         <h1 className="text-4xl sm:text-5xl font-black font-headline uppercase tracking-tight text-slate-900 leading-none">IDENTIFY YOUR <span className="text-primary italic">MASTERY GROUP</span></h1>
         <p className="text-muted-foreground font-bold text-lg">
-          {application ? "Group Selected" : "Select the level that matches your current training progress."}
+          {application 
+            ? `Group ${application.group} Selected` 
+            : "Select the level that matches your current training progress."
+          }
         </p>
         
         {showApplyDeadline && schedule?.lastApplyDate && (
