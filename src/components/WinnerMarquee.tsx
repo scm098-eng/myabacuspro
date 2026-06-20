@@ -47,7 +47,7 @@ export default function WinnerMarquee() {
       }
     }
 
-    // 3. Exam Day Status (Open or Concluded)
+    // 3. Exam Day Status (Open or Concluded) or Future Schedule
     if (schedule?.isActive !== false && schedule?.date && !schedule?.resultsDeclared) {
       const examDate = parseISO(schedule.date);
       const endTimeStr = schedule.endTime || '16:00';
@@ -66,11 +66,19 @@ export default function WinnerMarquee() {
             icon: <MonitorOff className="w-5 h-5 text-red-400 animate-pulse" /> 
           });
         }
-      } else if (schedule.lastApplyDate && isBefore(now, parseISO(schedule.lastApplyDate))) {
-        msgs.push({ 
-          text: `REGISTRATION OPEN: Exam on ${schedule.date}. Apply before deadline: ${schedule.lastApplyDate}!`, 
-          icon: <Calendar className="w-5 h-5" /> 
-        });
+      } else if (isAfter(examDate, now)) {
+        // Exam is in the future. We show relevant message for the scheduled date.
+        if (schedule.lastApplyDate && isBefore(now, parseISO(schedule.lastApplyDate))) {
+          msgs.push({ 
+            text: `REGISTRATION OPEN: Official Exam on ${schedule.date}. Apply before deadline: ${schedule.lastApplyDate}!`, 
+            icon: <Calendar className="w-5 h-5" /> 
+          });
+        } else {
+          msgs.push({ 
+            text: `UPCOMING EXAM: The Grand Final is scheduled for ${schedule.date}. Prepare for Mastery!`, 
+            icon: <Calendar className="w-5 h-5" /> 
+          });
+        }
       }
     }
 
@@ -99,7 +107,7 @@ export default function WinnerMarquee() {
   return (
     <div className="bg-indigo-600 text-white h-10 flex items-center overflow-hidden relative z-[100] border-b border-white/10">
       <div className="flex whitespace-nowrap animate-marquee items-center gap-12">
-        {Array.from({ length: 4 }).map((_, i) => (
+        {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="flex items-center gap-12">
             {messages.map((m, idx) => (
               <div key={idx} className="flex items-center gap-4 px-4 font-black uppercase tracking-tighter text-xs sm:text-sm italic">
@@ -111,7 +119,7 @@ export default function WinnerMarquee() {
       </div>
       <style jsx global>{`
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        .animate-marquee { animation: marquee 45s linear infinite; }
+        .animate-marquee { animation: marquee 60s linear infinite; }
       `}</style>
     </div>
   );
