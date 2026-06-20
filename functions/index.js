@@ -518,11 +518,15 @@ exports.declareOfficialResults = onCall(async (request) => {
 
             winners[`group${group}WinnerId`] = groupResults[0].id;
             
-            // Assign ranks to all final attempts in this group
+            // Assign ranks to all final attempts in this group and mark as declared
             let batch = db.batch();
             let count = 0;
             groupResults.forEach((doc, idx) => {
-              batch.update(doc.ref, { rank: idx + 1 });
+              batch.update(doc.ref, { 
+                rank: idx + 1,
+                resultDeclared: true,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+              });
               count++;
               if (count % 400 === 0) {
                 batch.commit();

@@ -152,6 +152,7 @@ export default function ExamArenaPage() {
       score: finalScore,
       totalQuestions: questions.length,
       accuracy,
+      rank: null, // Initialize rank as null so it appears in Firestore UI
       isFinal: paperId === 'final',
       resultDeclared: paperId !== 'final',
       submittedAt: serverTimestamp(),
