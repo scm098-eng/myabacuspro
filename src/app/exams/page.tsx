@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -103,16 +104,7 @@ export default function ExamDashboardPage() {
     if (!user) return;
     const db = getFirestore(firebaseApp);
     
-    const unsubSchedule = onSnapshot(doc(db, "stats", "leaderboard"), (snap) => {
-        if (snap.exists()) {
-          // data loaded
-        }
-      }, async (error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'stats/leaderboard', operation: 'get' }));
-      }
-    );
-
-    const unsubExamSchedule = onSnapshot(doc(db, "stats", "examSchedule"), (snap) => {
+    const unsubSchedule = onSnapshot(doc(db, "stats", "examSchedule"), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         if (data.date) {
@@ -148,7 +140,7 @@ export default function ExamDashboardPage() {
       async (serverError) => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examResults', operation: 'list' })); }
     );
 
-    return () => { unsubSchedule(); unsubExamSchedule(); unsubscribeApp(); unsubscribeResults(); };
+    return () => { unsubSchedule(); unsubscribeApp(); unsubscribeResults(); };
   }, [user]);
 
   const finalAttempt = useMemo(() => {
@@ -217,6 +209,13 @@ export default function ExamDashboardPage() {
     const seconds = getExamTimeLimit(age);
     return `${Math.floor(seconds / 60)} Minutes`;
   }, [profile]);
+
+  const formatTime = (seconds?: number) => {
+    if (seconds === undefined) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
 
   const showApplyDeadline = useMemo(() => {
     if (!schedule?.lastApplyDate) return false;
@@ -396,7 +395,7 @@ export default function ExamDashboardPage() {
                             </div>
                             <p className="text-[10px] text-indigo-600 font-black uppercase flex items-center gap-1.5 tracking-wider">
                               <Timer className="w-3 h-3" />
-                              Time Left: {Math.floor((r.timeLeft || 0)/60)}:{((r.timeLeft || 0) % 60).toString().padStart(2,'0')}
+                              Time Left: {formatTime(r.timeLeft)}
                             </p>
                           </div>
                           <div className="text-right shrink-0">
@@ -421,3 +420,4 @@ export default function ExamDashboardPage() {
     </div>
   );
 }
+

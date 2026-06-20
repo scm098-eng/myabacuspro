@@ -204,6 +204,7 @@ export default function AdminExamsPage() {
     Object.keys(groups).forEach(g => {
       groups[g as ExamGroup].sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
+        if ((b.accuracy || 0) !== (a.accuracy || 0)) return (b.accuracy || 0) - (a.accuracy || 0);
         return (b.timeLeft || 0) - (a.timeLeft || 0);
       });
     });
@@ -214,6 +215,13 @@ export default function AdminExamsPage() {
     if (!dateStr) return 'None';
     const d = parseISO(dateStr);
     return isValid(d) ? format(d, pattern) : 'None';
+  };
+
+  const formatTime = (seconds?: number) => {
+    if (seconds === undefined) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
   if (loading || authLoading) return <div className="p-8 text-center font-bold uppercase tracking-widest animate-pulse">Loading Exam Center...</div>;
@@ -307,7 +315,7 @@ export default function AdminExamsPage() {
                               <TableCell className="pl-6 py-4">{idx === 0 ? (<Badge className="bg-yellow-400 text-yellow-900 border-none font-black text-[10px] px-3 gap-1 shadow-sm"><Crown className="w-3 h-3" /> RANK 1</Badge>) : (<span className="text-sm font-black text-slate-400 ml-4">#{idx + 1}</span>)}</TableCell>
                               <TableCell className="font-bold">{res.studentName || 'Unknown Student'}</TableCell>
                               <TableCell className="font-black text-indigo-600">{res.accuracy.toFixed(1)}%</TableCell>
-                              <TableCell className="font-bold text-slate-500 font-mono">{Math.floor((res.timeLeft || 0)/60)}:{(res.timeLeft || 0 % 60).toString().padStart(2,'0')}</TableCell>
+                              <TableCell className="font-bold text-slate-500 font-mono">{formatTime(res.timeLeft)}</TableCell>
                               <TableCell className="text-center font-black text-lg">{res.score} <span className="text-[10px] text-muted-foreground">/ {res.totalQuestions}</span></TableCell>
                               <TableCell className="text-right pr-6 relative isolate"><Button variant="ghost" size="sm" className="h-9 px-4 rounded-xl border-2 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 font-bold gap-2 relative z-50" onClick={(e) => { e.stopPropagation(); setAuditResult(res); }}><FileSearch className="w-4 h-4" /> Audit</Button></TableCell>
                             </TableRow>
@@ -345,7 +353,7 @@ export default function AdminExamsPage() {
                     <Button onClick={(e) => { e.preventDefault(); handleUpdateOnly(); }} disabled={isUpdatingOnly || isSavingSchedule} variant="outline" className="h-14 px-8 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl border-2 bg-white shadow-md">{isUpdatingOnly ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <Save className="mr-2 h-5 w-5" />}Update Schedule Only</Button>
                     <AlertDialog><AlertDialogTrigger asChild><Button disabled={isSavingSchedule || isUpdatingOnly} className="h-14 px-10 w-full sm:w-auto font-black uppercase tracking-widest rounded-2xl shadow-xl bg-red-600 hover:bg-red-700 border-none text-white">{isSavingSchedule ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <RefreshCcw className="mr-2 h-5 w-5" />}Reset & Publish Cycle</Button></AlertDialogTrigger>
                       <AlertDialogContent className="rounded-3xl"><AlertDialogHeader><AlertDialogTitle className="text-red-700 uppercase font-black">Permanent Data Reset</AlertDialogTitle><AlertDialogDescription className="font-bold text-slate-600">Warning: This will PERMANENTLY DELETE all current applications and results. This is required to start a completely fresh exam cycle.</AlertDialogDescription></AlertDialogHeader>
-                        <AlertDialogFooter><AlertDialogCancel className="rounded-xl">Abort</AlertDialogCancel><AlertDialogAction onClick={handleSaveAndReset} className="bg-red-600 hover:bg-red-700 rounded-xl border-none text-white">Confirm Full Reset</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+                        <AlertDialogFooter className="mt-4"><AlertDialogCancel className="rounded-xl">Abort</AlertDialogCancel><AlertDialogAction onClick={handleSaveAndReset} className="rounded-xl h-12 font-black bg-red-600 hover:bg-red-700 border-none text-white">Confirm Full Reset</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
                   </div></CardFooter>
               </Card>
             </TabsContent>
@@ -374,3 +382,4 @@ export default function AdminExamsPage() {
     </div>
   );
 }
+
