@@ -39,6 +39,7 @@
       "type": "object",
       "properties": {
         "userId": { "type": "string" },
+        "studentName": { "type": "string" },
         "paperId": { "type": "string" },
         "group": { "type": "string" },
         "score": { "type": "number" },
@@ -46,7 +47,9 @@
         "accuracy": { "type": "number" },
         "isFinal": { "type": "boolean" },
         "resultDeclared": { "type": "boolean", "description": "Whether the result is released to the student." },
-        "submittedAt": { "type": "string", "format": "date-time" }
+        "rank": { "type": "number", "description": "Official rank assigned by admin (1, 2, 3, etc.)" },
+        "submittedAt": { "type": "string", "format": "date-time" },
+        "timeLeft": { "type": "number" }
       }
     },
     "TestResult": {
