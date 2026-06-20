@@ -60,22 +60,25 @@ export default function WinnerMarquee() {
             icon: <Megaphone className="w-5 h-5 text-yellow-300 animate-pulse" /> 
           });
         } else {
-          // Stay until end of day
           msgs.push({ 
             text: `GRAND FINAL HAS FINISHED AT ${endTimeStr}! THE ARENA IS NOW CLOSED.`, 
             icon: <MonitorOff className="w-5 h-5 text-red-400 animate-pulse" /> 
           });
         }
       } else if (isAfter(examDate, now)) {
-        // Exam is in the future. We show relevant message for the scheduled date.
-        if (schedule.lastApplyDate && isBefore(now, parseISO(schedule.lastApplyDate))) {
+        // Exam is in the future.
+        const deadlineDate = schedule.lastApplyDate ? parseISO(schedule.lastApplyDate) : null;
+        const isDeadlineActive = deadlineDate && isBefore(now, deadlineDate);
+
+        if (isDeadlineActive) {
           msgs.push({ 
             text: `REGISTRATION OPEN: Official Exam on ${schedule.date}. Apply before deadline: ${schedule.lastApplyDate}!`, 
-            icon: <Calendar className="w-5 h-5" /> 
+            icon: <Calendar className="w-5 h-5 text-sky-400" /> 
           });
         } else {
+          // Message after deadline but before exam
           msgs.push({ 
-            text: `UPCOMING EXAM: The Grand Final is scheduled for ${schedule.date}. Prepare for Mastery!`, 
+            text: `UPCOMING EXAM: The Grand Final is scheduled for ${schedule.date}. (Registration Closed on ${schedule.lastApplyDate || 'N/A'}). Prepare for Mastery!`, 
             icon: <Calendar className="w-5 h-5" /> 
           });
         }
