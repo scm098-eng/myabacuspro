@@ -154,8 +154,17 @@ export default function ExamDashboardPage() {
     const sorted = [...results].sort((a, b) => {
         const aRank = a.rank != null;
         const bRank = b.rank != null;
+        
+        // Priority 1: Ranked results first
         if (aRank && !bRank) return -1;
         if (!aRank && bRank) return 1;
+        
+        // Priority 2: If both are ranked, pick the best rank (lowest number)
+        if (aRank && bRank && a.rank !== b.rank) {
+            return (a.rank || Infinity) - (b.rank || Infinity);
+        }
+
+        // Priority 3: Latest submittedAt
         const timeA = a.submittedAt?.toMillis?.() || 0;
         const timeB = b.submittedAt?.toMillis?.() || 0;
         return timeB - timeA;
