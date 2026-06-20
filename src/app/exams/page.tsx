@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Lock, ShieldAlert, Trophy, FileEdit, Award, Loader2, Timer, HelpCircle, CheckCircle2, ChevronRight, Download, Medal, ScrollText, Brain, MonitorOff, Calculator, Zap, Sparkles } from 'lucide-react';
+import { Lock, ShieldAlert, Trophy, FileEdit, Award, Loader2, HelpCircle, CheckCircle2, ChevronRight, Download, Medal, ScrollText, Brain, MonitorOff, Calculator, Zap, Sparkles, Timer } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getFirestore, collection, query, where, onSnapshot, doc, orderBy, getDocs, limit } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -143,23 +143,23 @@ export default function ExamDashboardPage() {
     return () => { unsubSchedule(); unsubscribeApp(); unsubscribeResults(); };
   }, [user]);
 
+  // Robust De-duplication Logic: Consolidates results per paperId
   const uniqueResults = useMemo(() => {
     const paperMap: Record<string, ExamResult> = {};
     
-    // De-duplication Strategy:
-    // 1. Sort results by paperId and then by priority
-    // 2. Ranked results (rank != null) always come first
-    // 3. Higher scores come second
-    // 4. Latest submissions come third
+    // Priority Sort:
+    // 1. Ranked results (rank > 0)
+    // 2. Highest scores
+    // 3. Latest submissions
     const sorted = [...results].sort((a, b) => {
-        const aRank = a.rank != null;
-        const bRank = b.rank != null;
+        const aRank = (a.rank !== undefined && a.rank > 0);
+        const bRank = (b.rank !== undefined && b.rank > 0);
         
         if (aRank && !bRank) return -1;
         if (!aRank && bRank) return 1;
         
         if (aRank && bRank && a.rank !== b.rank) {
-            return (a.rank || Infinity) - (b.rank || Infinity);
+            return (a.rank || 0) - (b.rank || 0);
         }
 
         if (a.score !== b.score) return b.score - a.score;
@@ -216,6 +216,7 @@ export default function ExamDashboardPage() {
 
   const isApproved = useMemo(() => application?.status === 'approved', [application]);
 
+  // Source of truth for declared results is the global schedule, not individual result fields
   const displayedResults = useMemo(() => {
     if (schedule?.resultsDeclared) {
         return uniqueResults.filter(r => r.paperId === 'final' || r.resultDeclared);
@@ -306,12 +307,12 @@ export default function ExamDashboardPage() {
                 <div className="space-y-1 text-center md:text-left">
                   <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter italic leading-none">Official Certification Ready!</h2>
                   <p className="font-bold opacity-80 text-lg mt-2">
-                    { (finalAttempt.rank != null && finalAttempt.rank > 0) ? `Outstanding achievement! You secured Rank ${finalAttempt.rank}.` : "Your results are official. Claim your professional award now." }
+                    { (finalAttempt.rank !== undefined && finalAttempt.rank > 0) ? `Outstanding achievement! You secured Rank ${finalAttempt.rank}.` : "Your results are official. Claim your professional award now." }
                   </p>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
-                {(finalAttempt.rank != null && finalAttempt.rank > 0) && (
+                {(finalAttempt.rank !== undefined && finalAttempt.rank > 0) && (
                   <Button onClick={() => handleGetCertificate(finalAttempt!, true)} className={cn("font-black h-14 px-8 rounded-2xl text-xs sm:text-sm shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest min-w-[220px]", (finalAttempt.rank === 1) ? "bg-yellow-400 text-indigo-950 hover:bg-yellow-500" : "bg-white text-indigo-900 hover:bg-slate-50")}><Medal className="w-5 h-5 mr-2 text-indigo-600" />RANK ACHIEVER CERTIFICATE</Button>
                 )}
                 <Button onClick={() => handleGetCertificate(finalAttempt!, false)} variant="outline" className="bg-white/10 text-white hover:bg-white/20 font-black h-14 px-8 rounded-2xl text-xs sm:text-sm shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest min-w-[220px]"><Download className="w-5 h-5 mr-2" />PARTICIPATION CERTIFICATE</Button>
