@@ -145,15 +145,17 @@ export default function ExamDashboardPage() {
 
   /**
    * Consolidate results to fix duplicate displays and Rank Achiever visibility.
-   * Prioritizes ranked Grand Final attempts.
+   * Prioritizes ranked Grand Final attempts over accidental duplicates.
    */
   const uniqueResults = useMemo(() => {
     const paperMap: Record<string, ExamResult> = {};
     
-    // Process results: ranked first, then most recent
+    // Sort results: ranked (rank != null) attempts bubble to the top, then sort by date
     const sorted = [...results].sort((a, b) => {
-        if (a.rank !== undefined && b.rank === undefined) return -1;
-        if (a.rank === undefined && b.rank !== undefined) return 1;
+        const aRank = a.rank != null;
+        const bRank = b.rank != null;
+        if (aRank && !bRank) return -1;
+        if (!aRank && bRank) return 1;
         const timeA = a.submittedAt?.toMillis?.() || 0;
         const timeB = b.submittedAt?.toMillis?.() || 0;
         return timeB - timeA;
@@ -292,12 +294,12 @@ export default function ExamDashboardPage() {
                 <div className="space-y-1 text-center md:text-left">
                   <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter italic leading-none">Official Certification Ready!</h2>
                   <p className="font-bold opacity-80 text-lg mt-2">
-                    { (finalAttempt.rank !== undefined) ? `Outstanding achievement! You secured Rank ${finalAttempt.rank}.` : "Your results are official. Claim your professional award now." }
+                    { (finalAttempt.rank != null) ? `Outstanding achievement! You secured Rank ${finalAttempt.rank}.` : "Your results are official. Claim your professional award now." }
                   </p>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
-                {finalAttempt.rank !== undefined && (
+                {finalAttempt.rank != null && (
                   <Button onClick={() => handleGetCertificate(finalAttempt!, true)} className={cn("font-black h-14 px-8 rounded-2xl text-xs sm:text-sm shadow-xl transition-transform hover:scale-105 border-none uppercase tracking-widest min-w-[220px]", (finalAttempt.rank === 1) ? "bg-yellow-400 text-indigo-950 hover:bg-yellow-500" : "bg-white text-indigo-900 hover:bg-slate-50")}><Medal className="w-5 h-5 mr-2 text-indigo-600" />RANK ACHIEVER CERTIFICATE</Button>
                 )}
                 <Button onClick={() => handleGetCertificate(finalAttempt!, false)} variant="outline" className="bg-white/10 text-white hover:bg-white/20 font-black h-14 px-8 rounded-2xl text-xs sm:text-sm shadow-xl transition-transform hover:scale-105 border-2 border-white/20 uppercase tracking-widest min-w-[220px]"><Download className="w-5 h-5 mr-2" />PARTICIPATION CERTIFICATE</Button>
