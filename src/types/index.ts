@@ -129,6 +129,7 @@ export interface ExamResult {
   timeLeft?: number;
   answeredCount?: number;
   details?: {
+    text?: string;
     correct: number;
     student: number | null;
   }[];
@@ -297,7 +298,6 @@ export interface ProfileData {
   marketingCampaignClicked?: boolean;
   lastCampaignClicked?: string;
   lastLevelAttended?: number;
-  rank?: number;
 }
 
 export type UpdateProfilePayload = {

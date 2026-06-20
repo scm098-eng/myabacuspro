@@ -101,9 +101,6 @@ export default function ExamArenaPage() {
         const app = { id: appSnap.id, ...appData, group } as ExamApplication;
         setApplication(app);
 
-        // Maintain same paper for all students by using deterministic seeds
-        // Final Exam: Seeded by exam date + group
-        // Practice Papers: Seeded by paperId + group
         const finalSeed = paperId === 'final' ? `${examSeed}-${group}` : `${paperId}-${group}`;
         const generated = generateExamQuestions(group, finalSeed);
         setQuestions(generated);
@@ -278,7 +275,7 @@ export default function ExamArenaPage() {
                     <BeadDisplay value={questions[currentIdx].answer} rodCount={dynamicRodCount} />
                   </div>
                 ) : (
-                  <div className="w-full overflow-hidden">
+                  <div className="w-full overflow-visible">
                     <p className={cn("font-black tracking-tight whitespace-normal break-words", getQuestionFontSize(questions[currentIdx]?.text || ""))}>
                       {questions[currentIdx]?.text} = ?
                     </p>

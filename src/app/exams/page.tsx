@@ -143,10 +143,34 @@ export default function ExamDashboardPage() {
     return () => { unsubSchedule(); unsubscribeApp(); unsubscribeResults(); };
   }, [user]);
 
-  const finalAttempt = useMemo(() => {
-    if (results.length === 0) return null;
-    return results.find(r => r.isFinal === true) || null;
+  /**
+   * Consolidate results to fix duplicate displays and Rank Achiever visibility.
+   * Prioritizes ranked Grand Final attempts.
+   */
+  const uniqueResults = useMemo(() => {
+    const paperMap: Record<string, ExamResult> = {};
+    
+    // Process results: ranked first, then most recent
+    const sorted = [...results].sort((a, b) => {
+        if (a.rank !== undefined && b.rank === undefined) return -1;
+        if (a.rank === undefined && b.rank !== undefined) return 1;
+        const timeA = a.submittedAt?.toMillis?.() || 0;
+        const timeB = b.submittedAt?.toMillis?.() || 0;
+        return timeB - timeA;
+    });
+
+    sorted.forEach(res => {
+        if (!paperMap[res.paperId]) {
+            paperMap[res.paperId] = res;
+        }
+    });
+
+    return Object.values(paperMap);
   }, [results]);
+
+  const finalAttempt = useMemo(() => {
+    return uniqueResults.find(r => r.paperId === 'final') || null;
+  }, [uniqueResults]);
 
   const handleApply = async (group: ExamGroup) => {
     if (!user || !profile) return;
@@ -180,10 +204,10 @@ export default function ExamDashboardPage() {
 
   const displayedResults = useMemo(() => {
     if (schedule?.resultsDeclared) {
-        return results.filter(r => r.isFinal);
+        return uniqueResults.filter(r => r.paperId === 'final' || r.resultDeclared);
     }
-    return results;
-  }, [results, schedule?.resultsDeclared]);
+    return uniqueResults;
+  }, [uniqueResults, schedule?.resultsDeclared]);
 
   const examEnded = useMemo(() => {
     if (!schedule || isNaN(schedule.end?.getTime())) return false;
@@ -219,9 +243,7 @@ export default function ExamDashboardPage() {
 
   const showApplyDeadline = useMemo(() => {
     if (!schedule?.lastApplyDate) return false;
-    // Hide if student is already approved for a group
     if (application && application.status === 'approved') return false;
-    
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
     return todayStr <= schedule.lastApplyDate;
@@ -384,13 +406,13 @@ export default function ExamDashboardPage() {
                 <CardHeader><CardTitle className="text-xl font-black uppercase tracking-tight">My Performance</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   {displayedResults.length > 0 ? displayedResults.map(r => {
-                    const hideResult = r.isFinal && !schedule?.resultsDeclared;
+                    const hideResult = r.paperId === 'final' && !schedule?.resultsDeclared;
                     return (
                       <div key={r.id} className="flex flex-col gap-3 p-4 bg-muted/50 rounded-2xl border border-muted group transition-all hover:bg-muted">
                         <div className="flex justify-between items-start">
                           <div className="space-y-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              {r.isFinal ? <ShieldAlert className="w-3 h-3 text-orange-500" /> : <FileEdit className="w-3 h-3 text-slate-400" />}
+                              {r.paperId === 'final' ? <ShieldAlert className="w-3 h-3 text-orange-500" /> : <FileEdit className="w-3 h-3 text-slate-400" />}
                               <p className="text-xs font-black uppercase tracking-tight truncate">{r.paperId === 'final' ? 'FINAL EXAM' : `Practice ${r.paperId.split('-')[1]}`}</p>
                             </div>
                             <p className="text-[10px] text-indigo-600 font-black uppercase flex items-center gap-1.5 tracking-wider">
@@ -420,4 +442,3 @@ export default function ExamDashboardPage() {
     </div>
   );
 }
-
