@@ -444,6 +444,82 @@ exports.forceDeclareWinner = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (
 });
 
 /**
+ * Marks the current cycle results as official.
+ * Assigns sequential ranks using Triple-Tie-Breaker: Score > Accuracy > TimeLeft.
+ */
+exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
+    const adminDoc = await db.collection('users').doc(request.auth.uid).get();
+    if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
+
+    const groups = ['A', 'B', 'C', 'D', 'E'];
+    const winners = {};
+
+    for (const group of groups) {
+        const snap = await db.collection('examResults')
+            .where('group', '==', group)
+            .where('isFinal', '==', true)
+            .get();
+        
+        if (!snap.empty) {
+            // Sort in memory for complex tie-breakers
+            const groupResults = snap.docs.map(doc => {
+              const data = doc.data();
+              return { 
+                id: doc.id, 
+                ref: doc.ref, 
+                ...data,
+                // Ensure accuracy is present for sorting
+                accuracy: data.accuracy ?? ((data.score / (data.totalQuestions || 1)) * 100)
+              };
+            });
+            
+            // Triple-Tie-Breaker Sort Logic
+            groupResults.sort((a, b) => {
+                // 1. Score
+                if (b.score !== a.score) return b.score - a.score;
+                // 2. Accuracy
+                if ((b.accuracy || 0) !== (a.accuracy || 0)) return (b.accuracy || 0) - (a.accuracy || 0);
+                // 3. Time Left (Higher is faster)
+                return (b.timeLeft || 0) - (a.timeLeft || 0);
+            });
+
+            winners[`group${group}WinnerId`] = groupResults[0].id;
+            
+            // Assign ranks to all final attempts in this group and mark as declared
+            let batch = db.batch();
+            let count = 0;
+            for (const res of groupResults) {
+                batch.update(res.ref, { 
+                  rank: count + 1,
+                  resultDeclared: true,
+                  updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+                count++;
+                
+                // Firestore batch limit is 500
+                if (count % 400 === 0) {
+                  await batch.commit();
+                  batch = db.batch();
+                }
+            }
+            if (count > 0 && count % 400 !== 0) {
+              await batch.commit();
+            }
+        }
+    }
+
+    await db.collection('stats').doc('examSchedule').set({
+        resultsDeclared: true,
+        isActive: false, 
+        lastResultDeclaredAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...winners
+    }, { merge: true });
+
+    return { status: "success", message: "Results official and sequential ranks assigned." };
+});
+
+/**
  * Reset all exam applications and publish a new schedule cycle.
  */
 exports.resetExamCycle = onCall(async (request) => {
@@ -482,73 +558,6 @@ exports.resetExamCycle = onCall(async (request) => {
     }, { merge: true });
 
     return { status: "success" };
-});
-
-/**
- * Marks the current cycle results as official.
- * Assigns sequential ranks using Triple-Tie-Breaker: Score > Accuracy > TimeLeft.
- */
-exports.declareOfficialResults = onCall(async (request) => {
-    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
-    const adminDoc = await db.collection('users').doc(request.auth.uid).get();
-    if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
-
-    const groups = ['A', 'B', 'C', 'D', 'E'];
-    const winners = {};
-
-    for (const group of groups) {
-        const snap = await db.collection('examResults')
-            .where('group', '==', group)
-            .where('isFinal', '==', true)
-            .get();
-        
-        if (!snap.empty) {
-            // Sort in memory for complex tie-breakers
-            const groupResults = snap.docs.map(doc => ({ id: doc.id, ref: doc.ref, ...doc.data() }));
-            
-            // Triple-Tie-Breaker Sort Logic
-            groupResults.sort((a, b) => {
-                // 1. Score
-                if (b.score !== a.score) return b.score - a.score;
-                // 2. Accuracy
-                if ((b.accuracy || 0) !== (a.accuracy || 0)) return (b.accuracy || 0) - (a.accuracy || 0);
-                // 3. Time Left (Higher is faster)
-                return (b.timeLeft || 0) - (a.timeLeft || 0);
-            });
-
-            winners[`group${group}WinnerId`] = groupResults[0].id;
-            
-            // Assign ranks to all final attempts in this group and mark as declared
-            let batch = db.batch();
-            let count = 0;
-            for (const res of groupResults) {
-                batch.update(res.ref, { 
-                  rank: count + 1,
-                  resultDeclared: true,
-                  updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                });
-                count++;
-                
-                // Firestore batch limit is 500
-                if (count % 400 === 0) {
-                  await batch.commit();
-                  batch = db.batch();
-                }
-            }
-            if (count % 400 !== 0) {
-              await batch.commit();
-            }
-        }
-    }
-
-    await db.collection('stats').doc('examSchedule').update({
-        resultsDeclared: true,
-        isActive: false, 
-        lastResultDeclaredAt: admin.firestore.FieldValue.serverTimestamp(),
-        ...winners
-    });
-
-    return { status: "success", message: "Results official and sequential ranks assigned." };
 });
 
 /**

@@ -142,7 +142,7 @@ export default function ExamArenaPage() {
         return acc;
     }, 0);
 
-    const accuracy = (finalScore / questions.length) * 100;
+    const accuracy = parseFloat(((finalScore / questions.length) * 100).toFixed(2));
 
     const payload = {
       userId: user.uid,
@@ -152,7 +152,7 @@ export default function ExamArenaPage() {
       score: finalScore,
       totalQuestions: questions.length,
       accuracy,
-      rank: null, // Initialize rank as null so it appears in Firestore UI
+      rank: null, 
       isFinal: paperId === 'final',
       resultDeclared: paperId !== 'final',
       submittedAt: serverTimestamp(),
