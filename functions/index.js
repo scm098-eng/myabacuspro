@@ -521,19 +521,23 @@ exports.declareOfficialResults = onCall(async (request) => {
             // Assign ranks to all final attempts in this group and mark as declared
             let batch = db.batch();
             let count = 0;
-            groupResults.forEach((doc, idx) => {
-              batch.update(doc.ref, { 
-                rank: idx + 1,
-                resultDeclared: true,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-              });
-              count++;
-              if (count % 400 === 0) {
-                batch.commit();
-                batch = db.batch();
-              }
-            });
-            await batch.commit();
+            for (const res of groupResults) {
+                batch.update(res.ref, { 
+                  rank: count + 1,
+                  resultDeclared: true,
+                  updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+                count++;
+                
+                // Firestore batch limit is 500
+                if (count % 400 === 0) {
+                  await batch.commit();
+                  batch = db.batch();
+                }
+            }
+            if (count % 400 !== 0) {
+              await batch.commit();
+            }
         }
     }
 
