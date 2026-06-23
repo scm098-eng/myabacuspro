@@ -449,20 +449,25 @@ exports.forceDeclareWinner = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (
  */
 exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
-    const adminDoc = await db.collection('users').doc(request.auth.uid).get();
-    if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin required.");
+    
+    // Explicitly await every doc read
+    const adminSnap = await db.collection('users').doc(request.auth.uid).get();
+    if (!adminSnap.exists || adminSnap.data()?.role !== 'admin') {
+        throw new HttpsError('permission-denied', "Admin required.");
+    }
 
     const groups = ['A', 'B', 'C', 'D', 'E'];
     const winners = {};
+    let totalUpdated = 0;
 
     for (const group of groups) {
+        // Await the query snapshot
         const snap = await db.collection('examResults')
             .where('group', '==', group)
             .where('isFinal', '==', true)
             .get();
         
         if (!snap.empty) {
-            // Sort in memory for complex tie-breakers
             const groupResults = snap.docs.map(doc => {
               const data = doc.data();
               return { 
@@ -476,39 +481,41 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
             
             // Triple-Tie-Breaker Sort Logic
             groupResults.sort((a, b) => {
-                // 1. Score
                 if (b.score !== a.score) return b.score - a.score;
-                // 2. Accuracy
                 if ((b.accuracy || 0) !== (a.accuracy || 0)) return (b.accuracy || 0) - (a.accuracy || 0);
-                // 3. Time Left (Higher is faster)
                 return (b.timeLeft || 0) - (a.timeLeft || 0);
             });
 
-            winners[`group${group}WinnerId`] = groupResults[0].id;
+            if (groupResults.length > 0) {
+              winners[`group${group}WinnerId`] = groupResults[0].id;
+            }
             
-            // Assign ranks to all final attempts in this group and mark as declared
+            // Assign ranks to all final attempts in this group in awaited batches
             let batch = db.batch();
-            let count = 0;
-            for (const res of groupResults) {
+            let countInBatch = 0;
+            for (let i = 0; i < groupResults.length; i++) {
+                const res = groupResults[i];
                 batch.update(res.ref, { 
-                  rank: count + 1,
+                  rank: i + 1,
                   resultDeclared: true,
                   updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 });
-                count++;
+                countInBatch++;
+                totalUpdated++;
                 
-                // Firestore batch limit is 500
-                if (count % 400 === 0) {
-                  await batch.commit();
+                if (countInBatch >= 400) {
+                  await batch.commit(); // CRITICAL: explicit await
                   batch = db.batch();
+                  countInBatch = 0;
                 }
             }
-            if (count > 0 && count % 400 !== 0) {
-              await batch.commit();
+            if (countInBatch > 0) {
+              await batch.commit(); // CRITICAL: explicit await
             }
         }
     }
 
+    // Await the final stats update
     await db.collection('stats').doc('examSchedule').set({
         resultsDeclared: true,
         isActive: false, 
@@ -516,7 +523,11 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
         ...winners
     }, { merge: true });
 
-    return { status: "success", message: "Results official and sequential ranks assigned." };
+    return { 
+        status: "success", 
+        message: "Results official and sequential ranks assigned.",
+        updatedCount: totalUpdated 
+    };
 });
 
 /**
@@ -530,21 +541,27 @@ exports.resetExamCycle = onCall(async (request) => {
     const { date, startTime, endTime, lastApplyDate } = request.data || {};
     if (!date) throw new HttpsError('invalid-argument', "Missing exam date.");
 
-    // 1. Delete all existing exam applications
+    // 1. Delete all existing exam applications in awaited batches
     const appsSnap = await db.collection('examApplications').select().get();
     let batch = db.batch();
+    let c = 0;
     for (const doc of appsSnap.docs) {
         batch.delete(doc.ref);
+        c++;
+        if (c >= 400) { await batch.commit(); batch = db.batch(); c = 0; }
     }
-    await batch.commit();
+    if (c > 0) await batch.commit();
 
-    // 2. Delete all existing exam results
+    // 2. Delete all existing exam results in awaited batches
     const resultsSnap = await db.collection('examResults').select().get();
     batch = db.batch();
+    c = 0;
     for (const doc of resultsSnap.docs) {
         batch.delete(doc.ref);
+        c++;
+        if (c >= 400) { await batch.commit(); batch = db.batch(); c = 0; }
     }
-    await batch.commit();
+    if (c > 0) await batch.commit();
 
     // 3. Update the exam schedule
     await db.collection('stats').doc('examSchedule').set({

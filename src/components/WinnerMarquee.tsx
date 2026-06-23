@@ -25,6 +25,8 @@ export default function WinnerMarquee() {
   const messages = useMemo(() => {
     const msgs: { text: string; icon: any }[] = [];
     const now = new Date();
+    // Get current date string in YYYY-MM-DD for stable comparison across timezones
+    const todayStr = now.toISOString().split('T')[0];
     const { winners, schedule } = data;
 
     // 1. Exam Cancelled Message
@@ -47,13 +49,13 @@ export default function WinnerMarquee() {
       }
     }
 
-    // 3. Exam Day Status (Open or Concluded) or Future Schedule
+    // 3. Exam Schedule & Deadline (Stable YYYY-MM-DD checks)
     if (schedule?.isActive !== false && schedule?.date && !schedule?.resultsDeclared) {
-      const examDate = parseISO(schedule.date);
+      const isExamToday = schedule.date === todayStr;
       const endTimeStr = schedule.endTime || '16:00';
       const endTimeDate = new Date(`${schedule.date}T${endTimeStr}:00`);
 
-      if (isSameDay(now, examDate)) {
+      if (isExamToday) {
         if (isBefore(now, endTimeDate)) {
           msgs.push({ 
             text: `EXAM DAY IS HERE! ARENA OPEN UNTIL ${endTimeStr}!`, 
@@ -65,10 +67,10 @@ export default function WinnerMarquee() {
             icon: <MonitorOff className="w-5 h-5 text-red-400 animate-pulse" /> 
           });
         }
-      } else if (isAfter(examDate, now)) {
-        // Exam is in the future.
-        const deadlineDate = schedule.lastApplyDate ? parseISO(schedule.lastApplyDate) : null;
-        const isDeadlineActive = deadlineDate && isBefore(now, deadlineDate);
+      } else if (schedule.date > todayStr) {
+        // Exam is in the future
+        const deadlineDateStr = schedule.lastApplyDate;
+        const isDeadlineActive = deadlineDateStr && deadlineDateStr >= todayStr;
 
         if (isDeadlineActive) {
           msgs.push({ 
@@ -76,7 +78,6 @@ export default function WinnerMarquee() {
             icon: <Calendar className="w-5 h-5 text-sky-400" /> 
           });
         } else {
-          // Message after deadline but before exam
           msgs.push({ 
             text: `UPCOMING EXAM: The Grand Final is scheduled for ${schedule.date}. (Registration Closed on ${schedule.lastApplyDate || 'N/A'}). Prepare for Mastery!`, 
             icon: <Calendar className="w-5 h-5" /> 
