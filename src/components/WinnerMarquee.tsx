@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import { Trophy, Star, Crown, Megaphone, Calendar, ScrollText, XCircle, MonitorOff } from 'lucide-react';
-import { isSameDay, parseISO, isAfter, isBefore } from 'date-fns';
+import { isAfter, isBefore } from 'date-fns';
 
 export default function WinnerMarquee() {
   const [data, setData] = useState<{ winners: any, schedule: any }>({ winners: null, schedule: null });

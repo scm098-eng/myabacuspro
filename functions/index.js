@@ -460,6 +460,8 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
     const winners = {};
     let totalUpdated = 0;
 
+    logger.info("Starting result declaration for all groups.");
+
     for (const group of groups) {
         // Await the query snapshot
         const snap = await db.collection('examResults')
@@ -468,6 +470,7 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
             .get();
         
         if (!snap.empty) {
+            logger.info(`Found ${snap.size} final attempts for Group ${group}.`);
             const groupResults = snap.docs.map(doc => {
               const data = doc.data();
               return { 
@@ -504,14 +507,18 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
                 totalUpdated++;
                 
                 if (countInBatch >= 400) {
-                  await batch.commit(); // CRITICAL: explicit await
+                  await batch.commit(); // CRITICAL: explicit await ensures persistence
+                  logger.info(`Committed batch of 400 results for Group ${group}.`);
                   batch = db.batch();
                   countInBatch = 0;
                 }
             }
             if (countInBatch > 0) {
-              await batch.commit(); // CRITICAL: explicit await
+              await batch.commit(); // CRITICAL: final remainder commit
+              logger.info(`Committed final batch of ${countInBatch} results for Group ${group}.`);
             }
+        } else {
+            logger.info(`No results found for Group ${group}. skipping.`);
         }
     }
 
@@ -522,6 +529,8 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
         lastResultDeclaredAt: admin.firestore.FieldValue.serverTimestamp(),
         ...winners
     }, { merge: true });
+
+    logger.info(`Declaration complete. Total documents updated: ${totalUpdated}`);
 
     return { 
         status: "success", 
@@ -541,6 +550,8 @@ exports.resetExamCycle = onCall(async (request) => {
     const { date, startTime, endTime, lastApplyDate } = request.data || {};
     if (!date) throw new HttpsError('invalid-argument', "Missing exam date.");
 
+    logger.info("Starting exam cycle reset.");
+
     // 1. Delete all existing exam applications in awaited batches
     const appsSnap = await db.collection('examApplications').select().get();
     let batch = db.batch();
@@ -548,7 +559,12 @@ exports.resetExamCycle = onCall(async (request) => {
     for (const doc of appsSnap.docs) {
         batch.delete(doc.ref);
         c++;
-        if (c >= 400) { await batch.commit(); batch = db.batch(); c = 0; }
+        if (c >= 400) { 
+            await batch.commit(); 
+            logger.info("Batch deleted 400 applications.");
+            batch = db.batch(); 
+            c = 0; 
+        }
     }
     if (c > 0) await batch.commit();
 
@@ -559,7 +575,12 @@ exports.resetExamCycle = onCall(async (request) => {
     for (const doc of resultsSnap.docs) {
         batch.delete(doc.ref);
         c++;
-        if (c >= 400) { await batch.commit(); batch = db.batch(); c = 0; }
+        if (c >= 400) { 
+            await batch.commit(); 
+            logger.info("Batch deleted 400 results.");
+            batch = db.batch(); 
+            c = 0; 
+        }
     }
     if (c > 0) await batch.commit();
 
@@ -573,6 +594,8 @@ exports.resetExamCycle = onCall(async (request) => {
         resultsDeclared: false,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
+
+    logger.info("Exam cycle successfully reset and published.");
 
     return { status: "success" };
 });
