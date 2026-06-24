@@ -227,10 +227,11 @@ async function performWeeklyReset() {
         if (count % 500 === 0) {
             await batch.commit();
             batch = db.batch();
+            count = 0;
         }
     }
 
-    if (count % 500 !== 0) await batch.commit();
+    if (count > 0) await batch.commit();
     return count;
 }
 
@@ -309,10 +310,11 @@ async function performMonthlyReset() {
         if (count % 500 === 0) {
             await batch.commit();
             batch = db.batch();
+            count = 0;
         }
     }
 
-    if (count % 500 !== 0) await batch.commit();
+    if (count > 0) await batch.commit();
     return count;
 }
 
@@ -460,7 +462,7 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
     const winners = {};
     let totalUpdated = 0;
 
-    logger.info("Starting result declaration for all groups.");
+    logger.info("ADMIN: Starting official result declaration for all groups.");
 
     for (const group of groups) {
         // Await the query snapshot
@@ -470,7 +472,8 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
             .get();
         
         if (!snap.empty) {
-            logger.info(`Found ${snap.size} final attempts for Group ${group}.`);
+            logger.info(`Group ${group}: Found ${snap.size} final attempts. Ranking now...`);
+            
             const groupResults = snap.docs.map(doc => {
               const data = doc.data();
               return { 
@@ -493,7 +496,7 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
               winners[`group${group}WinnerId`] = groupResults[0].id;
             }
             
-            // Assign ranks to all final attempts in this group in awaited batches
+            // Assign ranks in awaited batches
             let batch = db.batch();
             let countInBatch = 0;
             for (let i = 0; i < groupResults.length; i++) {
@@ -508,21 +511,21 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
                 
                 if (countInBatch >= 400) {
                   await batch.commit(); // CRITICAL: explicit await ensures persistence
-                  logger.info(`Committed batch of 400 results for Group ${group}.`);
+                  logger.info(`Group ${group}: Committed rank batch of 400.`);
                   batch = db.batch();
                   countInBatch = 0;
                 }
             }
             if (countInBatch > 0) {
               await batch.commit(); // CRITICAL: final remainder commit
-              logger.info(`Committed final batch of ${countInBatch} results for Group ${group}.`);
+              logger.info(`Group ${group}: Committed final rank batch.`);
             }
         } else {
-            logger.info(`No results found for Group ${group}. skipping.`);
+            logger.info(`Group ${group}: No final results found. Skipping.`);
         }
     }
 
-    // Await the final stats update
+    // Await the final global state update
     await db.collection('stats').doc('examSchedule').set({
         resultsDeclared: true,
         isActive: false, 
@@ -530,11 +533,11 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
         ...winners
     }, { merge: true });
 
-    logger.info(`Declaration complete. Total documents updated: ${totalUpdated}`);
+    logger.info(`ADMIN: Declaration cycle complete. Total student records updated: ${totalUpdated}`);
 
     return { 
         status: "success", 
-        message: "Results official and sequential ranks assigned.",
+        message: "Results declared official. sequential ranks assigned.",
         updatedCount: totalUpdated 
     };
 });
@@ -550,10 +553,10 @@ exports.resetExamCycle = onCall(async (request) => {
     const { date, startTime, endTime, lastApplyDate } = request.data || {};
     if (!date) throw new HttpsError('invalid-argument', "Missing exam date.");
 
-    logger.info("Starting exam cycle reset.");
+    logger.info("ADMIN: Starting full exam cycle reset.");
 
-    // 1. Delete all existing exam applications in awaited batches
-    const appsSnap = await db.collection('examApplications').select().get();
+    // 1. Delete all applications in awaited batches
+    const appsSnap = await db.collection('examApplications').get();
     let batch = db.batch();
     let c = 0;
     for (const doc of appsSnap.docs) {
@@ -561,15 +564,15 @@ exports.resetExamCycle = onCall(async (request) => {
         c++;
         if (c >= 400) { 
             await batch.commit(); 
-            logger.info("Batch deleted 400 applications.");
+            logger.info("Cycle Reset: Deleted 400 applications.");
             batch = db.batch(); 
             c = 0; 
         }
     }
     if (c > 0) await batch.commit();
 
-    // 2. Delete all existing exam results in awaited batches
-    const resultsSnap = await db.collection('examResults').select().get();
+    // 2. Delete all results in awaited batches
+    const resultsSnap = await db.collection('examResults').get();
     batch = db.batch();
     c = 0;
     for (const doc of resultsSnap.docs) {
@@ -577,14 +580,14 @@ exports.resetExamCycle = onCall(async (request) => {
         c++;
         if (c >= 400) { 
             await batch.commit(); 
-            logger.info("Batch deleted 400 results.");
+            logger.info("Cycle Reset: Deleted 400 results.");
             batch = db.batch(); 
             c = 0; 
         }
     }
     if (c > 0) await batch.commit();
 
-    // 3. Update the exam schedule
+    // 3. Update the schedule
     await db.collection('stats').doc('examSchedule').set({
         date,
         startTime: startTime || "12:30",
@@ -595,7 +598,7 @@ exports.resetExamCycle = onCall(async (request) => {
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    logger.info("Exam cycle successfully reset and published.");
+    logger.info("ADMIN: New exam cycle successfully published.");
 
     return { status: "success" };
 });
