@@ -447,55 +447,49 @@ exports.forceDeclareWinner = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (
 
 /**
  * Marks the current cycle results as official.
- * Assigns sequential ranks using Triple-Tie-Breaker: Score > Accuracy > TimeLeft.
+ * Bypasses restrictive queries by filtering all final results in memory.
  */
 exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
     
-    // Explicitly await every doc read
     const adminSnap = await db.collection('users').doc(request.auth.uid).get();
     if (!adminSnap.exists || adminSnap.data()?.role !== 'admin') {
         throw new HttpsError('permission-denied', "Admin required.");
+    }
+
+    logger.info("ADMIN: Starting result declaration using in-memory filtering.");
+
+    // 1. Fetch ALL exam results
+    const allResultsSnap = await db.collection('examResults').get();
+    if (allResultsSnap.empty) {
+        logger.info("No exam results found in collection.");
+        return { status: "success", message: "No data to process." };
     }
 
     const groups = ['A', 'B', 'C', 'D', 'E'];
     const winners = {};
     let totalUpdated = 0;
 
-    logger.info("ADMIN: Starting official result declaration for all groups.");
-
     for (const group of groups) {
-        // Await the query snapshot
-        const snap = await db.collection('examResults')
-            .where('group', '==', group)
-            .where('isFinal', '==', true)
-            .get();
-        
-        if (!snap.empty) {
-            logger.info(`Group ${group}: Found ${snap.size} final attempts. Ranking now...`);
-            
-            const groupResults = snap.docs.map(doc => {
-              const data = doc.data();
-              return { 
-                id: doc.id, 
-                ref: doc.ref, 
-                ...data,
-                // Ensure accuracy is present for sorting
-                accuracy: data.accuracy ?? ((data.score / (data.totalQuestions || 1)) * 100)
-              };
-            });
-            
-            // Triple-Tie-Breaker Sort Logic
+        // Filter in memory to avoid index requirements
+        const groupResults = allResultsSnap.docs
+            .map(doc => ({ id: doc.id, ref: doc.ref, ...doc.data() }))
+            .filter(r => r.group === group && r.isFinal === true);
+
+        if (groupResults.length > 0) {
+            logger.info(`Group ${group}: Ranking ${groupResults.length} students.`);
+
+            // Triple-Tie-Breaker Sort
             groupResults.sort((a, b) => {
                 if (b.score !== a.score) return b.score - a.score;
-                if ((b.accuracy || 0) !== (a.accuracy || 0)) return (b.accuracy || 0) - (a.accuracy || 0);
+                const accA = a.accuracy ?? ((a.score / (a.totalQuestions || 1)) * 100);
+                const accB = b.accuracy ?? ((b.score / (b.totalQuestions || 1)) * 100);
+                if (accB !== accA) return accB - accA;
                 return (b.timeLeft || 0) - (a.timeLeft || 0);
             });
 
-            if (groupResults.length > 0) {
-              winners[`group${group}WinnerId`] = groupResults[0].id;
-            }
-            
+            winners[`group${group}WinnerId`] = groupResults[0].id;
+
             // Assign ranks in awaited batches
             let batch = db.batch();
             let countInBatch = 0;
@@ -510,22 +504,16 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
                 totalUpdated++;
                 
                 if (countInBatch >= 400) {
-                  await batch.commit(); // CRITICAL: explicit await ensures persistence
-                  logger.info(`Group ${group}: Committed rank batch of 400.`);
+                  await batch.commit();
                   batch = db.batch();
                   countInBatch = 0;
                 }
             }
-            if (countInBatch > 0) {
-              await batch.commit(); // CRITICAL: final remainder commit
-              logger.info(`Group ${group}: Committed final rank batch.`);
-            }
-        } else {
-            logger.info(`Group ${group}: No final results found. Skipping.`);
+            if (countInBatch > 0) await batch.commit();
         }
     }
 
-    // Await the final global state update
+    // 2. Update global schedule state
     await db.collection('stats').doc('examSchedule').set({
         resultsDeclared: true,
         isActive: false, 
@@ -533,11 +521,11 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
         ...winners
     }, { merge: true });
 
-    logger.info(`ADMIN: Declaration cycle complete. Total student records updated: ${totalUpdated}`);
+    logger.info(`ADMIN: Success. Total students ranked: ${totalUpdated}`);
 
     return { 
         status: "success", 
-        message: "Results declared official. sequential ranks assigned.",
+        message: "Results declared official.",
         updatedCount: totalUpdated 
     };
 });
@@ -564,7 +552,6 @@ exports.resetExamCycle = onCall(async (request) => {
         c++;
         if (c >= 400) { 
             await batch.commit(); 
-            logger.info("Cycle Reset: Deleted 400 applications.");
             batch = db.batch(); 
             c = 0; 
         }
@@ -580,7 +567,6 @@ exports.resetExamCycle = onCall(async (request) => {
         c++;
         if (c >= 400) { 
             await batch.commit(); 
-            logger.info("Cycle Reset: Deleted 400 results.");
             batch = db.batch(); 
             c = 0; 
         }
