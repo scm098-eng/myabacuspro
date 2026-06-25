@@ -447,23 +447,42 @@ exports.forceDeclareWinner = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (
 
 /**
  * Marks the current cycle results as official.
- * Bypasses restrictive queries by filtering all final results in memory.
+ * Robust Implementation: Detailed gatekeeper logging and strictly awaited persistence.
  */
 exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (request) => {
-    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
-    
-    const adminSnap = await db.collection('users').doc(request.auth.uid).get();
-    if (!adminSnap.exists || adminSnap.data()?.role !== 'admin') {
-        throw new HttpsError('permission-denied', "Admin required.");
+    // 1. Gatekeeper: Diagnostic logging for function entry
+    logger.info("!!! FUNCTION TRIGGERED: declareOfficialResults !!!");
+    logger.info("Caller UID context:", request.auth ? request.auth.uid : "MISSING AUTH");
+
+    if (!request.auth) {
+        logger.error("GATEKEEPER REJECTED: No authentication context found in request.");
+        throw new HttpsError('unauthenticated', "A valid login session is required to declare results.");
     }
 
-    logger.info("ADMIN: Starting result declaration using in-memory filtering.");
+    // 2. Gatekeeper: Diagnostic logging for Admin role resolution
+    const adminDocRef = db.collection('users').doc(request.auth.uid);
+    const adminDoc = await adminDocRef.get();
 
-    // 1. Fetch ALL exam results
+    if (!adminDoc.exists) {
+        logger.error(`GATEKEEPER REJECTED: User document does not exist for UID: ${request.auth.uid}`);
+        throw new HttpsError('not-found', "Administrator profile record was not found.");
+    }
+
+    const userRole = adminDoc.data()?.role;
+    logger.info(`GATEKEEPER RESOLVED: Caller role is "${userRole}"`);
+
+    if (userRole !== 'admin') {
+        logger.error(`GATEKEEPER REJECTED: User is not authorized to declare results. Found role: "${userRole}"`);
+        throw new HttpsError('permission-denied', "Insufficient permissions. Only administrators can perform this action.");
+    }
+
+    logger.info("GATEKEEPER PASSED: Commencing official ranking and database synchronization...");
+
+    // 3. Main Business Logic: Fetch and Rank
     const allResultsSnap = await db.collection('examResults').get();
     if (allResultsSnap.empty) {
-        logger.info("No exam results found in collection.");
-        return { status: "success", message: "No data to process." };
+        logger.info("LOGIC: No exam results found in collection. Returning early.");
+        return { status: "success", message: "No student records found to process." };
     }
 
     const groups = ['A', 'B', 'C', 'D', 'E'];
@@ -471,15 +490,15 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
     let totalUpdated = 0;
 
     for (const group of groups) {
-        // Filter in memory to avoid index requirements
+        // Filter in-memory to ensure all records are reached without index failures
         const groupResults = allResultsSnap.docs
             .map(doc => ({ id: doc.id, ref: doc.ref, ...doc.data() }))
             .filter(r => r.group === group && r.isFinal === true);
 
         if (groupResults.length > 0) {
-            logger.info(`Group ${group}: Ranking ${groupResults.length} students.`);
+            logger.info(`RANKING: Processing Group ${group} (${groupResults.length} students).`);
 
-            // Triple-Tie-Breaker Sort
+            // Triple-Tie-Breaker Sort (Airtight)
             groupResults.sort((a, b) => {
                 if (b.score !== a.score) return b.score - a.score;
                 const accA = a.accuracy ?? ((a.score / (a.totalQuestions || 1)) * 100);
@@ -490,9 +509,10 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
 
             winners[`group${group}WinnerId`] = groupResults[0].id;
 
-            // Assign ranks in awaited batches
+            // 4. Persistence: strictly awaited batch execution
             let batch = db.batch();
             let countInBatch = 0;
+            
             for (let i = 0; i < groupResults.length; i++) {
                 const res = groupResults[i];
                 batch.update(res.ref, { 
@@ -503,17 +523,24 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
                 countInBatch++;
                 totalUpdated++;
                 
+                // Firestore batch limit safety (400 per commit)
                 if (countInBatch >= 400) {
+                  logger.info(`PERSISTENCE: Committing intermediate batch of 400 records...`);
                   await batch.commit();
                   batch = db.batch();
                   countInBatch = 0;
                 }
             }
-            if (countInBatch > 0) await batch.commit();
+            
+            if (countInBatch > 0) {
+              logger.info(`PERSISTENCE: Committing final batch for Group ${group}...`);
+              await batch.commit();
+            }
         }
     }
 
-    // 2. Update global schedule state
+    // 5. Global State Sync: Mark cycle as Declared
+    logger.info("LOGIC: Updating global examSchedule status...");
     await db.collection('stats').doc('examSchedule').set({
         resultsDeclared: true,
         isActive: false, 
@@ -521,11 +548,11 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
         ...winners
     }, { merge: true });
 
-    logger.info(`ADMIN: Success. Total students ranked: ${totalUpdated}`);
+    logger.info(`SUCCESS: Ranking complete. Total documents successfully persisted: ${totalUpdated}`);
 
     return { 
         status: "success", 
-        message: "Results declared official.",
+        message: "Results declared official and database successfully updated.",
         updatedCount: totalUpdated 
     };
 });
