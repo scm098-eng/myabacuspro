@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Lock, ShieldAlert, Trophy, FileEdit, Award, Loader2, HelpCircle, CheckCircle2, ChevronRight, Download, Medal, ScrollText, Brain, MonitorOff, Calculator, Zap, Sparkles, Timer } from 'lucide-react';
+import { Lock, ShieldAlert, Trophy, FileEdit, Award, Loader2, HelpCircle, CheckCircle2, ChevronRight, Download, Medal, ScrollText, Brain, MonitorOff, Calculator, Zap, Sparkles, Timer, ShieldCheck, History, UserCheck, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getFirestore, collection, query, where, onSnapshot, doc, orderBy, getDocs, limit } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -114,6 +114,8 @@ export default function ExamDashboardPage() {
              start: new Date(`${dateString}T${data.startTime || '12:30'}:00`),
              end: new Date(`${dateString}T${data.endTime || '16:00'}:00`),
            });
+        } else {
+          setSchedule(data);
         }
       }
     }, async (error) => {
@@ -143,48 +145,29 @@ export default function ExamDashboardPage() {
     return () => { unsubSchedule(); unsubscribeApp(); unsubscribeResults(); };
   }, [user]);
 
-  // Robust De-duplication Logic: Consolidates results per paperId
+  const isCycleActive = useMemo(() => {
+    if (!schedule || schedule.isActive === false || !schedule.date) return false;
+    return true;
+  }, [schedule]);
+
   const uniqueResults = useMemo(() => {
     const paperMap: Record<string, ExamResult> = {};
-    
-    // Priority Sort:
-    // 1. Ranked results (rank > 0)
-    // 2. Highest scores
-    // 3. Latest submissions
     const sorted = [...results].sort((a, b) => {
         const aRank = (a.rank !== undefined && a.rank > 0);
         const bRank = (b.rank !== undefined && b.rank > 0);
-        
         if (aRank && !bRank) return -1;
         if (!aRank && bRank) return 1;
-        
-        if (aRank && bRank && a.rank !== b.rank) {
-            return (a.rank || 0) - (b.rank || 0);
-        }
-
+        if (aRank && bRank && a.rank !== b.rank) return (a.rank || 0) - (b.rank || 0);
         if (a.score !== b.score) return b.score - a.score;
-
         const timeA = a.submittedAt?.toMillis?.() || 0;
         const timeB = b.submittedAt?.toMillis?.() || 0;
         return timeB - timeA;
     });
-
-    sorted.forEach(res => {
-        if (!paperMap[res.paperId]) {
-            paperMap[res.paperId] = res;
-        }
-    });
-
-    return Object.values(paperMap).sort((a, b) => {
-        const timeA = a.submittedAt?.toMillis?.() || 0;
-        const timeB = b.submittedAt?.toMillis?.() || 0;
-        return timeB - timeA;
-    });
+    sorted.forEach(res => { if (!paperMap[res.paperId]) paperMap[res.paperId] = res; });
+    return Object.values(paperMap).sort((a, b) => (b.submittedAt?.toMillis?.() || 0) - (a.submittedAt?.toMillis?.() || 0));
   }, [results]);
 
-  const finalAttempt = useMemo(() => {
-    return uniqueResults.find(r => r.paperId === 'final') || null;
-  }, [uniqueResults]);
+  const finalAttempt = useMemo(() => uniqueResults.find(r => r.paperId === 'final') || null, [uniqueResults]);
 
   const handleApply = async (group: ExamGroup) => {
     if (!user || !profile) return;
@@ -202,7 +185,6 @@ export default function ExamDashboardPage() {
   const handleGetCertificate = (res: ExamResult, isRankCert: boolean) => {
     const groupInfo = EXAM_GROUPS[res.group];
     const groupDisplay = `Group ${res.group}: ${groupInfo?.title || ''}`;
-
     setCertData({
       type: isRankCert ? 'exam_winner' : 'exam_participation',
       title: isRankCert ? `RANK ${res.rank} ACHIEVER` : groupDisplay,
@@ -215,14 +197,6 @@ export default function ExamDashboardPage() {
   };
 
   const isApproved = useMemo(() => application?.status === 'approved', [application]);
-
-  // Source of truth for declared results is the global schedule, not individual result fields
-  const displayedResults = useMemo(() => {
-    if (schedule?.resultsDeclared) {
-        return uniqueResults.filter(r => r.paperId === 'final' || r.resultDeclared);
-    }
-    return uniqueResults;
-  }, [uniqueResults, schedule?.resultsDeclared]);
 
   const examEnded = useMemo(() => {
     if (!schedule || isNaN(schedule.end?.getTime())) return false;
@@ -256,14 +230,6 @@ export default function ExamDashboardPage() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  const showApplyDeadline = useMemo(() => {
-    if (!schedule?.lastApplyDate) return false;
-    if (application && application.status === 'approved') return false;
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    return todayStr <= schedule.lastApplyDate;
-  }, [schedule, application]);
-
   if (loading || authLoading) return <div className="p-8 max-w-6xl mx-auto"><Skeleton className="h-[600px] w-full rounded-3xl" /></div>;
 
   return (
@@ -281,24 +247,23 @@ export default function ExamDashboardPage() {
         />
       )}
 
+      {/* --- HEADER SECTION --- */}
       <div className="text-center space-y-4 pt-4">
-        <h1 className="text-4xl sm:text-5xl font-black font-headline uppercase tracking-tight text-slate-900 leading-none">IDENTIFY YOUR <span className="text-primary italic">MASTERY GROUP</span></h1>
+        <h1 className="text-4xl sm:text-5xl font-black font-headline uppercase tracking-tight text-slate-900 leading-none">
+          {(!application && !isCycleActive) ? "ABOUT OUR OFFICIAL " : "IDENTIFY YOUR "}
+          <span className="text-primary italic">EXAMS</span>
+        </h1>
         <p className="text-muted-foreground font-bold text-lg">
           {application 
             ? `Group ${application.group} Selected` 
-            : "Select the level that matches your current training progress."
+            : isCycleActive 
+              ? "Select the level that matches your current training progress."
+              : "Learn about our prestigious certification program and prepare for the next cycle."
           }
         </p>
-        
-        {showApplyDeadline && schedule?.lastApplyDate && (
-          <div className="mt-8">
-            <Badge variant="secondary" className="bg-blue-50 text-blue-700 px-10 py-3 rounded-2xl border-2 border-blue-100 font-bold gap-2 text-base">
-              ⌛ Last date to apply: {format(parseISO(schedule.lastApplyDate), 'MMMM do, yyyy')}
-            </Badge>
-          </div>
-        )}
       </div>
 
+      {/* --- RESULTS BANNER --- */}
       {schedule?.resultsDeclared && finalAttempt && (
         <Card className="bg-indigo-600 border-none shadow-2xl rounded-[2.5rem] overflow-hidden animate-in zoom-in-95 duration-700">
            <CardContent className="p-8 flex flex-col lg:flex-row items-center justify-between gap-8 text-white">
@@ -322,49 +287,100 @@ export default function ExamDashboardPage() {
       )}
 
       {!application ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start pb-12">
-          {(Object.entries(EXAM_GROUPS) as [ExamGroup, GroupConfig][]).map(([id, g]) => (
-            <Card key={id} className="relative group overflow-hidden border-none rounded-[2.5rem] shadow-2xl bg-white transition-all hover:scale-[1.01] hover:shadow-orange-200/50">
-              <CardHeader className="p-8">
-                <div className="flex items-start gap-5 min-w-0">
-                  <div className="p-5 bg-muted/50 rounded-[1.5rem] group-hover:scale-110 transition-transform text-primary shadow-inner shrink-0">
-                    {g.icon}
-                  </div>
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <CardTitle className="text-xl sm:text-2xl lg:text-3xl font-black uppercase tracking-tight text-slate-900 leading-tight">
-                        Group {id}: {g.title}
-                    </CardTitle>
-                    <p className="text-muted-foreground font-medium text-base sm:text-lg leading-snug">{g.description}</p>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="px-8 pb-8 space-y-8">
-                <div className="bg-slate-100/50 p-4 rounded-2xl flex items-center justify-center gap-3 border border-slate-200">
-                    {g.toolAllowed ? <Calculator className="w-4 h-4 text-slate-500" /> : <MonitorOff className="w-4 h-4 text-slate-500" />}
-                    <span className="text-xs font-black uppercase tracking-widest text-slate-500">{g.toolAllowed ? 'Abacus Tool Allowed' : 'No Tool Allowed'}</span>
-                </div>
+        !isCycleActive ? (
+          /* --- INFORMATIONAL VIEW (WHEN NO CYCLE ACTIVE) --- */
+          <div className="space-y-16 animate-in fade-in duration-1000">
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <Card className="rounded-[2rem] border-none shadow-lg bg-white/50 backdrop-blur-sm p-6 text-center hover:-translate-y-2 transition-transform">
+                <div className="mx-auto bg-primary/10 p-4 rounded-2xl w-fit mb-4 text-primary"><ShieldCheck className="w-8 h-8" /></div>
+                <h3 className="text-xl font-black uppercase tracking-tight mb-2">Professional Awards</h3>
+                <p className="text-sm text-muted-foreground font-medium">Earn high-fidelity Participation and Rank Achiever certificates signed by our founder.</p>
+              </Card>
+              <Card className="rounded-[2rem] border-none shadow-lg bg-white/50 backdrop-blur-sm p-6 text-center hover:-translate-y-2 transition-transform">
+                <div className="mx-auto bg-indigo-100 p-4 rounded-2xl w-fit mb-4 text-indigo-600"><Star className="w-8 h-8" /></div>
+                <h3 className="text-xl font-black uppercase tracking-tight mb-2">Global Ranking</h3>
+                <p className="text-sm text-muted-foreground font-medium">Compete for the top spot in your mastery group and secure your place in the Hall of Fame.</p>
+              </Card>
+              <Card className="rounded-[2rem] border-none shadow-lg bg-white/50 backdrop-blur-sm p-6 text-center hover:-translate-y-2 transition-transform">
+                <div className="mx-auto bg-green-100 p-4 rounded-2xl w-fit mb-4 text-green-600"><History className="w-8 h-8" /></div>
+                <h3 className="text-xl font-black uppercase tracking-tight mb-2">Regular Cycles</h3>
+                <p className="text-sm text-muted-foreground font-medium">Exams are held periodically. Master your formulas now to be ready for the next Grand Final.</p>
+              </Card>
+            </section>
 
-                <div className="space-y-4">
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Focus Areas:</p>
-                    <div className="grid gap-3">
+            <div className="space-y-8">
+              <div className="text-center"><h2 className="text-3xl font-black uppercase tracking-tight font-headline">Training Groups <span className="text-primary">& Curriculum</span></h2></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {(Object.entries(EXAM_GROUPS) as [ExamGroup, GroupConfig][]).map(([id, g]) => (
+                  <Card key={id} className="rounded-[2rem] border-none shadow-xl bg-white overflow-hidden group">
+                    <CardHeader className="bg-muted/30 p-6 flex flex-row items-center gap-4">
+                      <div className="p-3 bg-white rounded-xl text-primary shadow-sm group-hover:scale-110 transition-transform">{g.icon}</div>
+                      <div><CardTitle className="text-lg font-black uppercase">Group {id}</CardTitle><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{g.title}</p></div>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-4">
+                      <p className="text-sm font-medium text-slate-600 leading-relaxed">{g.description}</p>
+                      <div className="space-y-2 pt-2">
                         {g.focusAreas.map((area, i) => (
-                            <div key={i} className="flex items-center gap-3 text-slate-700 font-bold text-sm">
-                                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                                <span>{area}</span>
-                            </div>
+                          <div key={i} className="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase"><CheckCircle2 className="w-3 h-3 text-green-500" /> {area}</div>
                         ))}
-                    </div>
-                </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
 
-                <Button onClick={() => handleApply(id as ExamGroup)} disabled={isApplying} className="w-full h-20 text-xl font-black uppercase tracking-widest rounded-3xl shadow-xl shadow-orange-200 transition-all active:scale-95">
-                  Apply for Group {id}
-                </Button>
-              </CardContent>
+            <Card className="bg-slate-900 text-white p-10 rounded-[2.5rem] text-center border-none shadow-2xl relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+               <div className="relative z-10 space-y-6">
+                 <h2 className="text-3xl font-black uppercase italic tracking-tighter">Stay Prepared!</h2>
+                 <p className="text-slate-400 font-medium text-lg max-w-xl mx-auto">The next Grand Final is coming soon. Use the practice papers and daily drills to sharpen your visualization and speed.</p>
+                 <Button onClick={() => router.push('/tests')} className="h-14 px-10 font-black uppercase tracking-widest rounded-2xl shadow-xl">
+                   Start Practice Now
+                 </Button>
+               </div>
             </Card>
-          ))}
-        </div>
+          </div>
+        ) : (
+          /* --- APPLICATION VIEW (WHEN CYCLE IS ACTIVE) --- */
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start pb-12">
+            {(Object.entries(EXAM_GROUPS) as [ExamGroup, GroupConfig][]).map(([id, g]) => (
+              <Card key={id} className="relative group overflow-hidden border-none rounded-[2.5rem] shadow-2xl bg-white transition-all hover:scale-[1.01] hover:shadow-orange-200/50">
+                <CardHeader className="p-8">
+                  <div className="flex items-start gap-5 min-w-0">
+                    <div className="p-5 bg-muted/50 rounded-[1.5rem] group-hover:scale-110 transition-transform text-primary shadow-inner shrink-0">{g.icon}</div>
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <CardTitle className="text-xl sm:text-2xl lg:text-3xl font-black uppercase tracking-tight text-slate-900 leading-tight">Group {id}: {g.title}</CardTitle>
+                      <p className="text-muted-foreground font-medium text-base sm:text-lg leading-snug">{g.description}</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-8 pb-8 space-y-8">
+                  <div className="bg-slate-100/50 p-4 rounded-2xl flex items-center justify-center gap-3 border border-slate-200">
+                      {g.toolAllowed ? <Calculator className="w-4 h-4 text-slate-500" /> : <MonitorOff className="w-4 h-4 text-slate-500" />}
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-500">{g.toolAllowed ? 'Abacus Tool Allowed' : 'No Tool Allowed'}</span>
+                  </div>
+                  <div className="space-y-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Focus Areas:</p>
+                      <div className="grid gap-3">
+                          {g.focusAreas.map((area, i) => (
+                              <div key={i} className="flex items-center gap-3 text-slate-700 font-bold text-sm">
+                                  <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                                  <span>{area}</span>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+                  <Button onClick={() => handleApply(id as ExamGroup)} disabled={isApplying} className="w-full h-20 text-xl font-black uppercase tracking-widest rounded-3xl shadow-xl shadow-orange-200 transition-all active:scale-95">
+                    Apply for Group {id}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )
       ) : (
+        /* --- PROGRESS VIEW (WHEN ALREADY APPLIED) --- */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             {isApproved && (
@@ -420,7 +436,7 @@ export default function ExamDashboardPage() {
              <Card className="rounded-[2rem] shadow-lg border-none">
                 <CardHeader><CardTitle className="text-xl font-black uppercase tracking-tight">My Performance</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  {displayedResults.length > 0 ? displayedResults.map(r => {
+                  {uniqueResults.length > 0 ? uniqueResults.map(r => {
                     const hideResult = r.paperId === 'final' && !schedule?.resultsDeclared;
                     return (
                       <div key={r.id} className="flex flex-col gap-3 p-4 bg-muted/50 rounded-2xl border border-muted group transition-all hover:bg-muted">

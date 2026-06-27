@@ -344,11 +344,9 @@ exports.dailyBirthdayWish = onSchedule({ schedule: "0 9 * * *", secrets: ["GMAIL
 
         let dobMonth, dobDay;
         if (dobParts[0].length === 4) {
-            // YYYY-MM-DD
             dobMonth = parseInt(dobParts[1]);
             dobDay = parseInt(dobParts[2]);
         } else {
-            // DD-MM-YYYY
             dobMonth = parseInt(dobParts[1]);
             dobDay = parseInt(dobParts[0]);
         }
@@ -368,7 +366,6 @@ exports.dailyBirthdayWish = onSchedule({ schedule: "0 9 * * *", secrets: ["GMAIL
                 }
             }
             
-            // Birthday bonus only added to GLOBAL points
             await doc.ref.update({
                 totalPoints: admin.firestore.FieldValue.increment(100),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -429,7 +426,6 @@ exports.forceDeclareWinner = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (
         }
     }, { merge: true });
 
-    // Send Winner Notification Email
     if (winner.email) {
         const transporter = getTransporter(process.env.GMAIL_APP_PASSWORD);
         try {
@@ -447,19 +443,17 @@ exports.forceDeclareWinner = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (
 
 /**
  * Marks the current cycle results as official.
- * Robust Implementation: Detailed gatekeeper logging and strictly awaited persistence.
+ * Correctly awaits Firestore writes to ensure database persistence.
  */
 exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (request) => {
-    // 1. Gatekeeper: Diagnostic logging for function entry
     logger.info("!!! FUNCTION TRIGGERED: declareOfficialResults !!!");
     logger.info("Caller UID context:", request.auth ? request.auth.uid : "MISSING AUTH");
 
     if (!request.auth) {
-        logger.error("GATEKEEPER REJECTED: No authentication context found in request.");
-        throw new HttpsError('unauthenticated', "A valid login session is required to declare results.");
+        logger.error("GATEKEEPER REJECTED: No authentication context.");
+        throw new HttpsError('unauthenticated', "A valid login session is required.");
     }
 
-    // 2. Gatekeeper: Diagnostic logging for Admin role resolution
     const adminDocRef = db.collection('users').doc(request.auth.uid);
     const adminDoc = await adminDocRef.get();
 
@@ -472,17 +466,16 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
     logger.info(`GATEKEEPER RESOLVED: Caller role is "${userRole}"`);
 
     if (userRole !== 'admin') {
-        logger.error(`GATEKEEPER REJECTED: User is not authorized to declare results. Found role: "${userRole}"`);
-        throw new HttpsError('permission-denied', "Insufficient permissions. Only administrators can perform this action.");
+        logger.error(`GATEKEEPER REJECTED: Not an admin.`);
+        throw new HttpsError('permission-denied', "Insufficient permissions.");
     }
 
-    logger.info("GATEKEEPER PASSED: Commencing official ranking and database synchronization...");
+    logger.info("GATEKEEPER PASSED: Fetching and ranking students...");
 
-    // 3. Main Business Logic: Fetch and Rank
     const allResultsSnap = await db.collection('examResults').get();
     if (allResultsSnap.empty) {
-        logger.info("LOGIC: No exam results found in collection. Returning early.");
-        return { status: "success", message: "No student records found to process." };
+        logger.info("LOGIC: No exam results found.");
+        return { status: "success", message: "No student records to process." };
     }
 
     const groups = ['A', 'B', 'C', 'D', 'E'];
@@ -490,7 +483,6 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
     let totalUpdated = 0;
 
     for (const group of groups) {
-        // Filter in-memory to ensure all records are reached without index failures
         const groupResults = allResultsSnap.docs
             .map(doc => ({ id: doc.id, ref: doc.ref, ...doc.data() }))
             .filter(r => r.group === group && r.isFinal === true);
@@ -498,7 +490,6 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
         if (groupResults.length > 0) {
             logger.info(`RANKING: Processing Group ${group} (${groupResults.length} students).`);
 
-            // Triple-Tie-Breaker Sort (Airtight)
             groupResults.sort((a, b) => {
                 if (b.score !== a.score) return b.score - a.score;
                 const accA = a.accuracy ?? ((a.score / (a.totalQuestions || 1)) * 100);
@@ -509,7 +500,6 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
 
             winners[`group${group}WinnerId`] = groupResults[0].id;
 
-            // 4. Persistence: strictly awaited batch execution
             let batch = db.batch();
             let countInBatch = 0;
             
@@ -523,24 +513,16 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
                 countInBatch++;
                 totalUpdated++;
                 
-                // Firestore batch limit safety (400 per commit)
                 if (countInBatch >= 400) {
-                  logger.info(`PERSISTENCE: Committing intermediate batch of 400 records...`);
                   await batch.commit();
                   batch = db.batch();
                   countInBatch = 0;
                 }
             }
-            
-            if (countInBatch > 0) {
-              logger.info(`PERSISTENCE: Committing final batch for Group ${group}...`);
-              await batch.commit();
-            }
+            if (countInBatch > 0) await batch.commit();
         }
     }
 
-    // 5. Global State Sync: Mark cycle as Declared
-    logger.info("LOGIC: Updating global examSchedule status...");
     await db.collection('stats').doc('examSchedule').set({
         resultsDeclared: true,
         isActive: false, 
@@ -548,7 +530,7 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
         ...winners
     }, { merge: true });
 
-    logger.info(`SUCCESS: Ranking complete. Total documents successfully persisted: ${totalUpdated}`);
+    logger.info(`SUCCESS: Total documents successfully updated: ${totalUpdated}`);
 
     return { 
         status: "success", 
@@ -557,9 +539,6 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
     };
 });
 
-/**
- * Reset all exam applications and publish a new schedule cycle.
- */
 exports.resetExamCycle = onCall(async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
     const adminDoc = await db.collection('users').doc(request.auth.uid).get();
@@ -568,39 +547,26 @@ exports.resetExamCycle = onCall(async (request) => {
     const { date, startTime, endTime, lastApplyDate } = request.data || {};
     if (!date) throw new HttpsError('invalid-argument', "Missing exam date.");
 
-    logger.info("ADMIN: Starting full exam cycle reset.");
-
-    // 1. Delete all applications in awaited batches
     const appsSnap = await db.collection('examApplications').get();
     let batch = db.batch();
     let c = 0;
     for (const doc of appsSnap.docs) {
         batch.delete(doc.ref);
         c++;
-        if (c >= 400) { 
-            await batch.commit(); 
-            batch = db.batch(); 
-            c = 0; 
-        }
+        if (c >= 400) { await batch.commit(); batch = db.batch(); c = 0; }
     }
     if (c > 0) await batch.commit();
 
-    // 2. Delete all results in awaited batches
     const resultsSnap = await db.collection('examResults').get();
     batch = db.batch();
     c = 0;
     for (const doc of resultsSnap.docs) {
         batch.delete(doc.ref);
         c++;
-        if (c >= 400) { 
-            await batch.commit(); 
-            batch = db.batch(); 
-            c = 0; 
-        }
+        if (c >= 400) { await batch.commit(); batch = db.batch(); c = 0; }
     }
     if (c > 0) await batch.commit();
 
-    // 3. Update the schedule
     await db.collection('stats').doc('examSchedule').set({
         date,
         startTime: startTime || "12:30",
@@ -611,14 +577,9 @@ exports.resetExamCycle = onCall(async (request) => {
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    logger.info("ADMIN: New exam cycle successfully published.");
-
     return { status: "success" };
 });
 
-/**
- * Allows a student to apply for the current exam cycle.
- */
 exports.applyToExam = onCall(async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
     const userDoc = await db.collection('users').doc(request.auth.uid).get();
@@ -638,7 +599,7 @@ exports.applyToExam = onCall(async (request) => {
     if (schedule.lastApplyDate) {
         const today = new Date().toISOString().split('T')[0];
         if (today > schedule.lastApplyDate) {
-            throw new HttpsError('deadline-exceeded', `The application deadline has passed (${schedule.lastApplyDate}).`);
+            throw new HttpsError('deadline-exceeded', `Deadline passed (${schedule.lastApplyDate}).`);
         }
     }
 
