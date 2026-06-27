@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { getAuth } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import type { ProfileData } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Loader2, Zap, ShieldCheck, HelpCircle, X } from 'lucide-react';
+import { Check, Star, Loader2, Zap, ShieldCheck, HelpCircle, X, Gift, Ticket, Send } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +18,8 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
+import { Input } from '@/components/ui/input';
+import confetti from 'canvas-confetti';
 
 // --- CONFIGURATION ---
 const RAZORPAY_PLAN_ID = 'plan_S89FukHU9XcnKu';
@@ -202,6 +205,48 @@ export default function PricingPage() {
     const router = useRouter();
     const { toast } = useToast();
 
+    const [couponCode, setCouponCode] = useState('');
+    const [isRedeeming, setIsRedeeming] = useState(false);
+
+    const handleRedeemCoupon = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!couponCode.trim()) return;
+        if (!user) {
+            toast({ title: "Login Required", description: "Please log in to redeem a gift code.", variant: "destructive" });
+            return;
+        }
+
+        setIsRedeeming(true);
+        try {
+            const functions = getFunctions(firebaseApp);
+            const redeemFn = httpsCallable<{ code: string }, any>(functions, 'redeemCoupon');
+            const result = await redeemFn({ code: couponCode });
+            
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#f97316', '#fbbf24', '#ffffff']
+            });
+
+            toast({ 
+                title: "Gift Redeemed! 🎁", 
+                description: `You now have ${result.data.durationDays} days of Pro access. Enjoy!` 
+            });
+            setCouponCode('');
+            // Optional: Redirect to dashboard after a delay
+            setTimeout(() => router.push('/dashboard'), 2000);
+        } catch (error: any) {
+            toast({ 
+                title: "Redemption Failed", 
+                description: error.message || "Invalid or expired code.", 
+                variant: "destructive" 
+            });
+        } finally {
+            setIsRedeeming(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="max-w-6xl mx-auto p-4">
@@ -292,6 +337,38 @@ export default function PricingPage() {
                     </Card>
                 ))}
             </div>
+
+            {/* --- GIFT COUPON SECTION --- */}
+            {!isAlreadyPro && (
+                <section className="max-w-xl mx-auto animate-in slide-in-from-bottom-8 duration-700">
+                    <Card className="rounded-[2.5rem] border-2 border-dashed border-primary/20 bg-primary/5 p-2">
+                        <CardHeader className="text-center space-y-2">
+                            <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit mb-2">
+                                <Gift className="w-8 h-8 text-primary" />
+                            </div>
+                            <CardTitle className="text-2xl font-black uppercase tracking-tight">Got a Gift Code?</CardTitle>
+                            <CardDescription className="font-bold">Enter your coupon code below to unlock Pro access instantly.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleRedeemCoupon} className="flex gap-2">
+                                <div className="relative flex-1">
+                                    <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                    <Input 
+                                        placeholder="Enter code (e.g. GIFT-30-XYZ)" 
+                                        value={couponCode} 
+                                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                        className="h-12 pl-10 border-2 rounded-xl font-bold uppercase tracking-wider focus-visible:ring-primary"
+                                    />
+                                </div>
+                                <Button type="submit" disabled={isRedeeming || !couponCode.trim()} className="h-12 px-6 rounded-xl font-black uppercase tracking-widest shadow-lg">
+                                    {isRedeeming ? <Loader2 className="animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                                    Redeem
+                                </Button>
+                            </form>
+                        </CardContent>
+                    </Card>
+                </section>
+            )}
 
             {/* Structured Comparison Table for Google Crawler */}
             <section className="space-y-8">

@@ -248,7 +248,8 @@ export interface ProfileData {
   middleName?: string;
   surname: string;
   dob: string; 
-  subscriptionType?: 'recurring' | 'one-time' | 'none';
+  subscriptionType?: 'recurring' | 'one-time' | 'none' | 'gift';
+  subscriptionExpiry?: any;
   activeTier?: 'monthly' | '6months' | '12months' | 'annual';
   lastPaymentId?: string;
   country?: string;

@@ -12,12 +12,29 @@
         "surname": { "type": "string" },
         "role": { "type": "string", "enum": ["student", "teacher", "admin"] },
         "subscriptionStatus": { "type": "string", "enum": ["free", "pro"] },
+        "subscriptionType": { "type": "string", "enum": ["none", "recurring", "one-time", "gift"] },
+        "subscriptionExpiry": { "type": "string", "format": "date-time" },
         "totalPoints": { "type": "number" },
         "totalDaysPracticed": { "type": "number" },
         "isSuspended": { "type": "boolean" },
         "isAdminRead": { "type": "boolean", "description": "Whether the admin has acknowledged this new signup." }
       },
       "required": ["uid", "email", "role"]
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "Gift codes for Pro access.",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "durationDays": { "type": "number" },
+        "isUsed": { "type": "boolean" },
+        "usedBy": { "type": "string" },
+        "usedAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["code", "durationDays", "isUsed"]
     },
     "ExamApplication": {
       "title": "ExamApplication",
@@ -89,6 +106,10 @@
     "/users/{userId}": {
       "schema": "#/backend/entities/UserProfile",
       "description": "User profiles and statistics."
+    },
+    "/coupons/{code}": {
+      "schema": "#/backend/entities/Coupon",
+      "description": "Gift codes for Pro access."
     },
     "/examApplications/{appId}": {
       "schema": "#/backend/entities/ExamApplication",

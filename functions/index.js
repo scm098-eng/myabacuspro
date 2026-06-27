@@ -633,3 +633,113 @@ exports.updateExamSchedule = onCall(async (request) => {
 
     return { status: "success" };
 });
+
+/**
+ * Redeems a gift coupon for Pro access.
+ */
+exports.redeemCoupon = onCall(async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', "Login is required.");
+    const { code } = request.data;
+    if (!code) throw new HttpsError('invalid-argument', "Gift code is missing.");
+
+    const couponRef = db.collection('coupons').doc(code.toUpperCase());
+    const userRef = db.collection('users').doc(request.auth.uid);
+
+    return await db.runTransaction(async (t) => {
+        const couponSnap = await t.get(couponRef);
+        const userSnap = await t.get(userRef);
+
+        if (!couponSnap.exists) throw new HttpsError('not-found', "Invalid gift code.");
+        
+        const coupon = couponSnap.data();
+        if (coupon.isUsed) throw new HttpsError('already-exists', "This code has already been redeemed.");
+
+        if (coupon.expiresAt) {
+            const expiry = coupon.expiresAt.toDate?.() || new Date(coupon.expiresAt);
+            if (new Date() > expiry) throw new HttpsError('failed-precondition', "This code has expired.");
+        }
+
+        const durationDays = coupon.durationDays || 30;
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + durationDays);
+
+        // Update User
+        t.update(userRef, {
+            subscriptionStatus: 'pro',
+            subscriptionType: 'gift',
+            subscriptionExpiry: admin.firestore.Timestamp.fromDate(expiryDate),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Update Coupon
+        t.update(couponRef, {
+            isUsed: true,
+            usedBy: request.auth.uid,
+            usedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        return { status: "success", durationDays, expiryDate: expiryDate.toISOString() };
+    });
+});
+
+/**
+ * Cleanup expired gift subscriptions.
+ * Runs every day at midnight.
+ */
+exports.cleanupExpiredSubscriptions = onSchedule({ schedule: "0 0 * * *" }, async (event) => {
+    const now = admin.firestore.Timestamp.now();
+    const expiredUsersSnap = await db.collection('users')
+        .where('subscriptionType', '==', 'gift')
+        .where('subscriptionStatus', '==', 'pro')
+        .where('subscriptionExpiry', '<', now)
+        .get();
+
+    if (expiredUsersSnap.empty) return;
+
+    let batch = db.batch();
+    let count = 0;
+
+    expiredUsersSnap.docs.forEach(doc => {
+        batch.update(doc.ref, {
+            subscriptionStatus: 'free',
+            subscriptionType: 'none',
+            subscriptionExpiry: null,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        count++;
+        if (count % 500 === 0) {
+            // Commit and reset batch if limit reached
+            batch.commit();
+            batch = db.batch();
+        }
+    });
+
+    if (count % 500 !== 0) await batch.commit();
+    logger.info(`Subscription Cleanup: Downgraded ${count} expired gift accounts.`);
+});
+
+/**
+ * Admin: Generate a gift coupon.
+ */
+exports.generateCoupon = onCall(async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
+    const adminDoc = await db.collection('users').doc(request.auth.uid).get();
+    if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
+
+    const { code, durationDays, expireInDays } = request.data;
+    if (!code || !durationDays) throw new HttpsError('invalid-argument', "Missing parameters.");
+
+    const cleanCode = code.toUpperCase().trim();
+    const expiry = expireInDays ? new Date(Date.now() + expireInDays * 86400000) : null;
+
+    await db.collection('coupons').doc(cleanCode).set({
+        code: cleanCode,
+        durationDays,
+        isUsed: false,
+        expiresAt: expiry ? admin.firestore.Timestamp.fromDate(expiry) : null,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdBy: request.auth.uid
+    });
+
+    return { status: "success", code: cleanCode };
+});

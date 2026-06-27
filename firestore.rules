@@ -35,6 +35,12 @@ service cloud.firestore {
       allow delete: if isAdmin();
       allow list: if request.auth != null;
     }
+
+    // --- COUPON RULES ---
+    match /coupons/{code} {
+      // Locked down. Redemption is handled via secure Cloud Functions (Admin SDK).
+      allow read, write: if false;
+    }
     
     // --- EXAM RULES ---
     match /examApplications/{appId} {
