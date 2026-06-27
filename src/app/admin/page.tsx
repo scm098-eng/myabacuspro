@@ -1,17 +1,18 @@
+
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import type { ProfileData, BlogPost } from '@/types';
+import type { ProfileData, BlogPost, Coupon } from '@/types';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, Zap, Plus, Edit, Trash2, Loader2, Send, ShieldAlert, UserX, Image as ImageIcon, Mail, UserCheck, Upload, CheckCircle2 } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, Zap, Plus, Edit, Trash2, Loader2, Send, ShieldAlert, UserX, Image as ImageIcon, Mail, UserCheck, Upload, CheckCircle2, Ticket, Copy, Check, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
@@ -28,6 +29,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { ADMIN_EMAILS } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
+import { format } from 'date-fns';
 
 function getUTCMondayKey() {
     const now = new Date();
@@ -89,7 +91,7 @@ export default function AdminDashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
-  const [isResetting, setIsResetting] = useState<'weekly' | 'monthly' | 'force' | 'blast' | 'suspension' | 'markRead' | null>(null);
+  const [isResetting, setIsResetting] = useState<'weekly' | 'monthly' | 'force' | 'blast' | 'suspension' | 'markRead' | 'coupon' | null>(null);
 
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [isBlogDialogOpen, setIsBlogDialogOpen] = useState(false);
@@ -98,6 +100,13 @@ export default function AdminDashboardPage() {
   const [editingBlog, setEditingBlog] = useState<Partial<BlogPost> | null>(null);
   const [draftContent, setDraftContent] = useState('');
   const [blogImageFile, setBlogImageFile] = useState<File | null>(null);
+
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [couponForm, setCouponForm] = useState({
+    code: '',
+    durationDays: 30,
+    expireInDays: 7
+  });
 
   const [marketingForm, setMarketingForm] = useState({
     subject: '',
@@ -156,6 +165,20 @@ export default function AdminDashboardPage() {
         }
       );
       unsubscribers.push(blogUnsub);
+
+      const couponUnsub = onSnapshot(
+        query(collection(db, "coupons"), orderBy("createdAt", "desc")),
+        (snap) => {
+          setCoupons(snap.docs.map(doc => ({ ...doc.data() } as Coupon)));
+        },
+        async (error) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: 'coupons',
+            operation: 'list',
+          } satisfies SecurityRuleContext));
+        }
+      );
+      unsubscribers.push(couponUnsub);
     }
 
     if (profile.role === 'admin' || profile.role === 'teacher') {
@@ -184,6 +207,27 @@ export default function AdminDashboardPage() {
     }
     return () => unsubscribers.forEach(unsub => unsub());
   }, [profile, leaderboardTab, getStudentTitle, currentWeekKey, currentMonthKey]);
+
+  const handleGenerateCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponForm.code.trim()) return;
+    setIsResetting('coupon');
+    try {
+      const functions = getFunctions(firebaseApp);
+      const generateFn = httpsCallable(functions, 'generateCoupon');
+      await generateFn({ 
+        code: couponForm.code.toUpperCase().trim(),
+        durationDays: couponForm.durationDays,
+        expireInDays: couponForm.expireInDays
+      });
+      toast({ title: "Coupon Generated", description: `Code ${couponForm.code.toUpperCase()} is now active.` });
+      setCouponForm(p => ({ ...p, code: '' }));
+    } catch (e: any) {
+      toast({ title: "Failed to Generate", description: e.message, variant: "destructive" });
+    } finally {
+      setIsResetting(null);
+    }
+  };
 
   const handleManualReset = async (type: 'weekly' | 'monthly') => {
     setIsResetting(type);
@@ -374,6 +418,7 @@ export default function AdminDashboardPage() {
                     </TabsTrigger>
                     {profile?.role === 'admin' && <TabsTrigger value="staff" className="h-10">Staff List</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="blogs" className="h-10">Blogs</TabsTrigger>}
+                    {profile?.role === 'admin' && <TabsTrigger value="coupons" className="h-10">Gift Coupons</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="moderation" className="h-10">Moderation</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="marketing" className="h-10">Marketing</TabsTrigger>}
                     {profile?.role === 'admin' && <TabsTrigger value="system" className="h-10">System</TabsTrigger>}
@@ -503,6 +548,103 @@ export default function AdminDashboardPage() {
                         </Card>
                       ))}
                     </div>
+                </TabsContent>
+
+                <TabsContent value="coupons" className="space-y-8">
+                    <Card className="rounded-[1.5rem] border-none shadow-lg">
+                      <CardHeader className="bg-muted/30 border-b">
+                        <CardTitle className="flex items-center gap-2 text-2xl font-headline">
+                          <Ticket className="w-6 h-6 text-primary" /> Coupon Management
+                        </CardTitle>
+                        <CardDescription>Issue gift codes for Pro access.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-8 px-8">
+                        <form onSubmit={handleGenerateCoupon} className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="space-y-2">
+                              <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Custom Code</Label>
+                              <Input 
+                                placeholder="GIFT-30-XYZ" 
+                                value={couponForm.code} 
+                                onChange={e => setCouponForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
+                                required
+                                className="h-12 border-2 font-bold uppercase tracking-wider"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Access Days</Label>
+                              <Select value={String(couponForm.durationDays)} onValueChange={v => setCouponForm(p => ({ ...p, durationDays: Number(v) }))}>
+                                <SelectTrigger className="h-12 border-2 font-bold"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="7">7 Days Trial</SelectItem>
+                                  <SelectItem value="30">30 Days Pro</SelectItem>
+                                  <SelectItem value="90">90 Days Pro</SelectItem>
+                                  <SelectItem value="180">180 Days Pro</SelectItem>
+                                  <SelectItem value="365">365 Days Pro</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Claim Deadline (Days)</Label>
+                              <Input 
+                                type="number" 
+                                value={couponForm.expireInDays} 
+                                onChange={e => setCouponForm(p => ({ ...p, expireInDays: Number(e.target.value) }))}
+                                className="h-12 border-2 font-bold"
+                                min={1}
+                              />
+                            </div>
+                          </div>
+                          <Button type="submit" className="w-full h-14 text-base font-black uppercase tracking-widest rounded-xl shadow-xl" disabled={isResetting === 'coupon'}>
+                            {isResetting === 'coupon' ? <Loader2 className="animate-spin mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+                            Generate Coupon
+                          </Button>
+                        </form>
+
+                        <div className="mt-12 rounded-2xl border overflow-hidden">
+                          <Table>
+                            <TableHeader className="bg-muted/50">
+                              <TableRow>
+                                <TableHead className="pl-6">Code</TableHead>
+                                <TableHead>Duration</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right pr-6">Action</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {coupons.length > 0 ? coupons.map(c => (
+                                <TableRow key={c.code} className={cn(c.isUsed && "bg-slate-50 opacity-60")}>
+                                  <TableCell className="pl-6 font-mono font-bold tracking-wider">{c.code}</TableCell>
+                                  <TableCell className="font-bold text-primary">{c.durationDays} Days</TableCell>
+                                  <TableCell>
+                                    {c.isUsed ? (
+                                      <div className="flex flex-col">
+                                        <Badge variant="secondary" className="w-fit bg-slate-200 text-slate-700 font-bold mb-1">USED</Badge>
+                                        <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">By: {c.usedBy}</span>
+                                      </div>
+                                    ) : (
+                                      <Badge variant="default" className="bg-green-500 font-bold">AVAILABLE</Badge>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-right pr-6">
+                                    {!c.isUsed && (
+                                      <Button variant="ghost" size="sm" className="rounded-full" onClick={() => {
+                                        navigator.clipboard.writeText(c.code);
+                                        toast({ title: "Code Copied", description: "Ready to share with student." });
+                                      }}>
+                                        <Copy className="h-4 w-4 text-slate-500" />
+                                      </Button>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              )) : (
+                                <TableRow><TableCell colSpan={4} className="text-center py-10 text-muted-foreground italic">No coupons issued yet.</TableCell></TableRow>
+                              )}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
                 </TabsContent>
 
                 <TabsContent value="moderation" className="space-y-8">

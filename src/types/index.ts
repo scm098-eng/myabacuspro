@@ -301,6 +301,17 @@ export interface ProfileData {
   lastLevelAttended?: number;
 }
 
+export interface Coupon {
+  code: string;
+  durationDays: number;
+  isUsed: boolean;
+  usedBy?: string;
+  usedAt?: any;
+  expiresAt?: any;
+  createdAt: any;
+  createdBy: string;
+}
+
 export type UpdateProfilePayload = {
   firstName: string;
   middleName?: string;
