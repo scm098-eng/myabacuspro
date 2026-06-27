@@ -46,6 +46,15 @@ function getUTCMonthKey() {
     return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
+const generateRandomCode = (length = 8) => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Readable Alphanumeric
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
 const StatCard = ({ title, value, icon: Icon, subValue }: { title: string, value: string | number, icon: React.ElementType, subValue?: string }) => (
     <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -103,7 +112,6 @@ export default function AdminDashboardPage() {
 
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [couponForm, setCouponForm] = useState({
-    code: '',
     durationDays: 30,
     expireInDays: 7
   });
@@ -210,20 +218,21 @@ export default function AdminDashboardPage() {
 
   const handleGenerateCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!couponForm.code.trim()) return;
     setIsResetting('coupon');
     try {
-      const functions = getFunctions(firebaseApp);
+      const generatedCode = generateRandomCode();
+      const functions = getFunctions(firebaseApp, 'us-central1');
       const generateFn = httpsCallable(functions, 'generateCoupon');
+      
       await generateFn({ 
-        code: couponForm.code.toUpperCase().trim(),
+        code: generatedCode,
         durationDays: couponForm.durationDays,
         expireInDays: couponForm.expireInDays
       });
-      toast({ title: "Coupon Generated", description: `Code ${couponForm.code.toUpperCase()} is now active.` });
-      setCouponForm(p => ({ ...p, code: '' }));
+      
+      toast({ title: "Coupon Generated", description: `Code ${generatedCode} is now active.` });
     } catch (e: any) {
-      toast({ title: "Failed to Generate", description: e.message, variant: "destructive" });
+      toast({ title: "Failed to Generate", description: e.message || "An internal error occurred.", variant: "destructive" });
     } finally {
       setIsResetting(null);
     }
@@ -488,7 +497,7 @@ export default function AdminDashboardPage() {
                                 <TableHead>Assigned Students</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right pr-6">Action</TableHead>
-                              </TableRow>
+                            </TableRow>
                             </TableHeader>
                             <TableBody>
                               {processedData.filteredStaff.map(s => (
@@ -560,17 +569,7 @@ export default function AdminDashboardPage() {
                       </CardHeader>
                       <CardContent className="pt-8 px-8">
                         <form onSubmit={handleGenerateCoupon} className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="space-y-2">
-                              <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Custom Code</Label>
-                              <Input 
-                                placeholder="GIFT-30-XYZ" 
-                                value={couponForm.code} 
-                                onChange={e => setCouponForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
-                                required
-                                className="h-12 border-2 font-bold uppercase tracking-wider"
-                              />
-                            </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                               <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Access Days</Label>
                               <Select value={String(couponForm.durationDays)} onValueChange={v => setCouponForm(p => ({ ...p, durationDays: Number(v) }))}>
@@ -597,7 +596,7 @@ export default function AdminDashboardPage() {
                           </div>
                           <Button type="submit" className="w-full h-14 text-base font-black uppercase tracking-widest rounded-xl shadow-xl" disabled={isResetting === 'coupon'}>
                             {isResetting === 'coupon' ? <Loader2 className="animate-spin mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
-                            Generate Coupon
+                            Generate Automated Coupon
                           </Button>
                         </form>
 

@@ -722,6 +722,8 @@ exports.cleanupExpiredSubscriptions = onSchedule({ schedule: "0 0 * * *" }, asyn
  * Admin: Generate a gift coupon.
  */
 exports.generateCoupon = onCall(async (request) => {
+    logger.info("Coupon Generator Triggered", { data: request.data });
+
     if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
     const adminDoc = await db.collection('users').doc(request.auth.uid).get();
     if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
@@ -732,14 +734,18 @@ exports.generateCoupon = onCall(async (request) => {
     const cleanCode = code.toUpperCase().trim();
     const expiry = expireInDays ? new Date(Date.now() + expireInDays * 86400000) : null;
 
-    await db.collection('coupons').doc(cleanCode).set({
-        code: cleanCode,
-        durationDays,
-        isUsed: false,
-        expiresAt: expiry ? admin.firestore.Timestamp.fromDate(expiry) : null,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        createdBy: request.auth.uid
-    });
-
-    return { status: "success", code: cleanCode };
+    try {
+        await db.collection('coupons').doc(cleanCode).set({
+            code: cleanCode,
+            durationDays: Number(durationDays),
+            isUsed: false,
+            expiresAt: expiry ? admin.firestore.Timestamp.fromDate(expiry) : null,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdBy: request.auth.uid
+        });
+        return { status: "success", code: cleanCode };
+    } catch (err) {
+        logger.error("Coupon generation write failed", err);
+        throw new HttpsError('internal', "Failed to save coupon to database.");
+    }
 });
