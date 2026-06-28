@@ -224,6 +224,7 @@ export default function AdminDashboardPage() {
       const functions = getFunctions(firebaseApp, 'us-central1');
       const generateFn = httpsCallable(functions, 'generateCoupon');
       
+      // Explicitly pass Number types to satisfy backend validation
       await generateFn({ 
         code: generatedCode,
         durationDays: Number(couponForm.durationDays),
@@ -233,7 +234,11 @@ export default function AdminDashboardPage() {
       toast({ title: "Coupon Generated", description: `Code ${generatedCode} is now active.` });
     } catch (e: any) {
       console.error("Coupon Generation Error:", e);
-      toast({ title: "Failed to Generate", description: e.message || "An internal error occurred.", variant: "destructive" });
+      toast({ 
+        title: "Failed to Generate", 
+        description: e.message || "An internal error occurred. Check backend logs.", 
+        variant: "destructive" 
+      });
     } finally {
       setIsResetting(null);
     }
@@ -573,7 +578,10 @@ export default function AdminDashboardPage() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                               <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Access Days</Label>
-                              <Select value={String(couponForm.durationDays)} onValueChange={v => setCouponForm(p => ({ ...p, durationDays: Number(v) }))}>
+                              <Select 
+                                value={String(couponForm.durationDays)} 
+                                onValueChange={v => setCouponForm(p => ({ ...p, durationDays: Number(v) }))}
+                              >
                                 <SelectTrigger className="h-12 border-2 font-bold"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="7">7 Days Trial</SelectItem>

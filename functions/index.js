@@ -735,16 +735,17 @@ exports.generateCoupon = onCall(async (request) => {
         throw new HttpsError('permission-denied', "Admin only.");
     }
 
+    // Safety parsing: convert potential strings to Numbers
     const { code, durationDays, expireInDays } = request.data;
-    if (!code || !durationDays) {
-        logger.error("Coupon Rejection: Missing parameters", { code, durationDays });
-        throw new HttpsError('invalid-argument', "Missing parameters.");
+    const duration = parseInt(String(durationDays), 10);
+    const expireDays = parseInt(String(expireInDays || 7), 10);
+
+    if (!code || isNaN(duration)) {
+        logger.error("Coupon Rejection: Invalid parameters", { code, duration });
+        throw new HttpsError('invalid-argument', "Missing or invalid parameters.");
     }
 
     const cleanCode = String(code).toUpperCase().trim();
-    const duration = Number(durationDays);
-    const expireDays = Number(expireInDays || 7);
-    
     const expiry = new Date(Date.now() + expireDays * 86400000);
 
     logger.info(`Saving Coupon: ${cleanCode} for ${duration} days`);
