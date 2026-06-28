@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, ChevronRight, Star, Flame, CalendarDays, Download, Award, Crown, Zap } from 'lucide-react';
+import { Check, Trophy, ChevronRight, Star, Flame, CalendarDays, Download, Award, Crown, Zap, Clock, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,6 +21,7 @@ import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import AchievementModal, { AchievementType } from '@/components/AchievementModal';
 import { format, parseISO, isValid, addMonths, addDays } from 'date-fns';
+import Link from 'next/link';
 
 function getUTCMondayKey() {
     const now = new Date();
@@ -39,7 +40,7 @@ function getUTCMonthKey() {
 
 export default function StudentDashboardPage() {
   usePageBackground('');
-  const { profile, user, isLoading, getStudentTitle } = useAuth();
+  const { profile, user, isLoading, getStudentTitle, isTrialActive, trialDaysRemaining } = useAuth();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -96,8 +97,6 @@ export default function StudentDashboardPage() {
 
   const handleDownloadRankCert = () => {
     if (!profile) return;
-    
-    // Pull accurate historical date of title achievement
     const achievementDate = profile.lastRankAchievedAt?.toDate 
       ? profile.lastRankAchievedAt.toDate() 
       : (profile.updatedAt?.toDate ? profile.updatedAt.toDate() : new Date());
@@ -116,26 +115,19 @@ export default function StudentDashboardPage() {
     let displayTitle = "";
     
     if (type === 'weekly_winner' && lastWinner?.weekKey) {
-        // Robust split parsing to avoid timezone shifts
         const parts = lastWinner.weekKey.split('-').map(Number);
         const winningWeekStart = new Date(parts[0], parts[1] - 1, parts[2]);
-        
         if (isValid(winningWeekStart)) {
-          // Date of Issue is exactly 7 days after the winning week started
           issuanceDate = addDays(winningWeekStart, 7);
-          
-          // Calculate Week Number based on day of month (1-7 = 1st, 8-14 = 2nd, etc.)
           const dayOfMonth = winningWeekStart.getDate();
           const weekNumber = Math.ceil(dayOfMonth / 7);
           const suffixes = ["th", "st", "nd", "rd", "th", "th", "th"];
           const suffix = (weekNumber >= 1 && weekNumber <= 3) ? suffixes[weekNumber] : "th";
-          
           displayTitle = `${format(winningWeekStart, 'MMM').toUpperCase()} ${weekNumber}${suffix} WEEK CHAMPION`;
         }
     } else if (type === 'monthly_winner' && monthlyWinner?.monthKey) {
         const winningMonthStart = parseISO(`${monthlyWinner.monthKey}-01`);
         if (isValid(winningMonthStart)) {
-          // Date of Issue is the 1st of the following month
           issuanceDate = addMonths(winningMonthStart, 1);
           displayTitle = `${format(winningMonthStart, 'MMMM yyyy').toUpperCase()} MONTHLY MASTER`;
         }
@@ -167,6 +159,10 @@ export default function StudentDashboardPage() {
   const amIMonthlyWinner = monthlyWinner?.uid === user.uid;
   const amIGlobalWinner = globalWinner?.uid === user.uid;
 
+  // Compute trial countdown strings
+  const trialHours = Math.floor(trialDaysRemaining * 24);
+  const trialMinutes = Math.floor((trialDaysRemaining * 24 - trialHours) * 60);
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       {showCertificate && certData && (
@@ -178,6 +174,32 @@ export default function StudentDashboardPage() {
           date={certData.date}
           onClose={() => setShowCertificate(false)}
         />
+      )}
+
+      {/* --- TRIAL COUNTDOWN BANNER --- */}
+      {isTrialActive && profile.subscriptionStatus !== 'pro' && (
+        <Card className={cn(
+          "border-none shadow-xl rounded-2xl overflow-hidden animate-in slide-in-from-top duration-700",
+          trialDaysRemaining < 1 ? "bg-destructive text-white" : trialDaysRemaining < 2 ? "bg-orange-500 text-white" : "bg-blue-600 text-white"
+        )}>
+          <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-3 rounded-full shrink-0">
+                <Clock className="w-8 h-8 animate-pulse" />
+              </div>
+              <div className="text-center md:text-left">
+                <h3 className="text-xl font-black uppercase tracking-tight">Free Trial Active!</h3>
+                <p className="font-bold opacity-90 text-sm">
+                  Experience all Pro features for <span className="underline underline-offset-4">{Math.floor(trialDaysRemaining)}d {trialHours % 24}h {trialMinutes % 60}m</span>. 
+                  Don't lose your progress!
+                </p>
+              </div>
+            </div>
+            <Button asChild className="h-12 px-8 font-black uppercase tracking-widest bg-white text-slate-900 hover:bg-slate-100 rounded-xl shadow-lg shrink-0">
+              <Link href="/pricing"><Zap className="w-4 h-4 mr-2 text-primary" /> Upgrade to Pro</Link>
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 text-white min-h-[220px] rounded-[2.5rem] flex items-center">

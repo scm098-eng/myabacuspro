@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Lock, ShieldAlert, Trophy, FileEdit, Award, Loader2, HelpCircle, CheckCircle2, ChevronRight, Download, Medal, ScrollText, Brain, MonitorOff, Calculator, Zap, Sparkles, Timer, ShieldCheck, History, UserCheck, Star } from 'lucide-react';
+import { Lock, ShieldAlert, Trophy, FileEdit, Award, Loader2, HelpCircle, CheckCircle2, ChevronRight, Download, Medal, ScrollText, Brain, MonitorOff, Calculator, Zap, Sparkles, Timer, ShieldCheck, History, UserCheck, Star, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getFirestore, collection, query, where, onSnapshot, doc, orderBy, getDocs, limit } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -22,6 +22,7 @@ import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import AchievementModal, { AchievementType } from '@/components/AchievementModal';
+import Link from 'next/link';
 
 interface GroupConfig {
     title: string;
@@ -71,7 +72,7 @@ const EXAM_GROUPS: Record<ExamGroup, GroupConfig> = {
 
 export default function ExamDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
-  const { profile, isLoading: authLoading, user } = useAuth();
+  const { profile, isLoading: authLoading, user, isTrialActive } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -94,11 +95,11 @@ export default function ExamDashboardPage() {
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
-    if (!authLoading && profile && profile.subscriptionStatus !== 'pro' && profile.role !== 'admin') {
+    if (!authLoading && profile && profile.subscriptionStatus !== 'pro' && profile.role !== 'admin' && !isTrialActive) {
       toast({ title: "Pro Access Required", description: "Online exams are exclusively for Pro members.", variant: "destructive" });
       router.push('/pricing');
     }
-  }, [user, profile, authLoading, router, toast]);
+  }, [user, profile, authLoading, router, toast, isTrialActive]);
 
   useEffect(() => {
     if (!user) return;
@@ -245,6 +246,24 @@ export default function ExamDashboardPage() {
           groupName={certData.groupName}
           onClose={() => setShowCertificate(false)}
         />
+      )}
+
+      {/* --- TRIAL INFO BANNER (MOVED TO EXAMS TOO) --- */}
+      {isTrialActive && profile?.subscriptionStatus !== 'pro' && (
+        <Card className="bg-indigo-50 border-indigo-200 border-2 rounded-[1.5rem] shadow-md overflow-hidden animate-in fade-in duration-500">
+           <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-indigo-100 p-2 rounded-full"><Clock className="w-5 h-5 text-indigo-600" /></div>
+                <p className="text-indigo-900 font-bold text-sm">
+                   You are currently in your <span className="underline">3-day Free Trial</span>. 
+                   Eligibility for the Official Grand Final ranking requires a permanent Pro membership.
+                </p>
+              </div>
+              <Button asChild variant="outline" size="sm" className="border-indigo-200 text-indigo-600 hover:bg-indigo-100 font-black rounded-lg uppercase text-[10px]">
+                <Link href="/pricing">Upgrade Now</Link>
+              </Button>
+           </CardContent>
+        </Card>
       )}
 
       {/* --- HEADER SECTION --- */}
