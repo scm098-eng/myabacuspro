@@ -226,12 +226,13 @@ export default function AdminDashboardPage() {
       
       await generateFn({ 
         code: generatedCode,
-        durationDays: couponForm.durationDays,
-        expireInDays: couponForm.expireInDays
+        durationDays: Number(couponForm.durationDays),
+        expireInDays: Number(couponForm.expireInDays)
       });
       
       toast({ title: "Coupon Generated", description: `Code ${generatedCode} is now active.` });
     } catch (e: any) {
+      console.error("Coupon Generation Error:", e);
       toast({ title: "Failed to Generate", description: e.message || "An internal error occurred.", variant: "destructive" });
     } finally {
       setIsResetting(null);

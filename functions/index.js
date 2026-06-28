@@ -722,24 +722,39 @@ exports.cleanupExpiredSubscriptions = onSchedule({ schedule: "0 0 * * *" }, asyn
  * Admin: Generate a gift coupon.
  */
 exports.generateCoupon = onCall(async (request) => {
-    logger.info("Coupon Generator Triggered", { data: request.data });
+    logger.info("!!! COUPON GENERATOR TRIGGERED !!!");
+    
+    if (!request.auth) {
+        logger.error("Coupon Rejection: No auth context");
+        throw new HttpsError('unauthenticated', "Login required.");
+    }
 
-    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
     const adminDoc = await db.collection('users').doc(request.auth.uid).get();
-    if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
+    if (adminDoc.data()?.role !== 'admin') {
+        logger.error(`Coupon Rejection: Role is ${adminDoc.data()?.role}`);
+        throw new HttpsError('permission-denied', "Admin only.");
+    }
 
     const { code, durationDays, expireInDays } = request.data;
-    if (!code || !durationDays) throw new HttpsError('invalid-argument', "Missing parameters.");
+    if (!code || !durationDays) {
+        logger.error("Coupon Rejection: Missing parameters", { code, durationDays });
+        throw new HttpsError('invalid-argument', "Missing parameters.");
+    }
 
-    const cleanCode = code.toUpperCase().trim();
-    const expiry = expireInDays ? new Date(Date.now() + expireInDays * 86400000) : null;
+    const cleanCode = String(code).toUpperCase().trim();
+    const duration = Number(durationDays);
+    const expireDays = Number(expireInDays || 7);
+    
+    const expiry = new Date(Date.now() + expireDays * 86400000);
+
+    logger.info(`Saving Coupon: ${cleanCode} for ${duration} days`);
 
     try {
         await db.collection('coupons').doc(cleanCode).set({
             code: cleanCode,
-            durationDays: Number(durationDays),
+            durationDays: duration,
             isUsed: false,
-            expiresAt: expiry ? admin.firestore.Timestamp.fromDate(expiry) : null,
+            expiresAt: admin.firestore.Timestamp.fromDate(expiry),
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             createdBy: request.auth.uid
         });
