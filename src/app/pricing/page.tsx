@@ -6,7 +6,7 @@ import { getAuth } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import type { ProfileData } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Loader2, Zap, ShieldCheck, HelpCircle, X, Gift, Ticket, Send } from 'lucide-react';
+import { Check, Star, Loader2, Zap, ShieldCheck, HelpCircle, X, Gift, Ticket, Send, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import confetti from 'canvas-confetti';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 // --- CONFIGURATION ---
 const RAZORPAY_PLAN_ID = 'plan_S89FukHU9XcnKu';
@@ -207,6 +208,7 @@ export default function PricingPage() {
 
     const [couponCode, setCouponCode] = useState('');
     const [isRedeeming, setIsRedeeming] = useState(false);
+    const [redemptionSuccess, setRedemptionSuccess] = useState<{ days: number } | null>(null);
 
     const handleRedeemCoupon = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -229,13 +231,8 @@ export default function PricingPage() {
                 colors: ['#f97316', '#fbbf24', '#ffffff']
             });
 
-            toast({ 
-                title: "Gift Redeemed! 🎁", 
-                description: `You now have ${result.data.durationDays} days of Pro access. Enjoy!` 
-            });
+            setRedemptionSuccess({ days: result.data.durationDays });
             setCouponCode('');
-            // Optional: Redirect to dashboard after a delay
-            setTimeout(() => router.push('/dashboard'), 2000);
         } catch (error: any) {
             toast({ 
                 title: "Redemption Failed", 
@@ -425,6 +422,26 @@ export default function PricingPage() {
                     </div>
                 </div>
             </div>
+
+            {/* --- SUCCESS DIALOG --- */}
+            <Dialog open={!!redemptionSuccess} onOpenChange={(open) => !open && setRedemptionSuccess(null)}>
+              <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden max-w-sm">
+                <div className="bg-green-600 p-8 text-center text-white">
+                  <div className="mx-auto bg-white/20 p-4 rounded-full w-fit mb-4">
+                    <CheckCircle2 className="w-12 h-12 text-white" />
+                  </div>
+                  <DialogTitle className="text-2xl font-black uppercase tracking-tight">Gift Redeemed!</DialogTitle>
+                </div>
+                <div className="p-8 text-center space-y-6">
+                  <DialogDescription className="text-lg font-bold text-slate-700 leading-relaxed">
+                    Congratulations! You now have <span className="text-green-600">{redemptionSuccess?.days} days</span> of Pro access.
+                  </DialogDescription>
+                  <Button asChild className="w-full h-12 rounded-xl font-black uppercase tracking-widest shadow-lg" onClick={() => setRedemptionSuccess(null)}>
+                    <Link href="/dashboard">Go to Dashboard</Link>
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
         </div>
     );
 }

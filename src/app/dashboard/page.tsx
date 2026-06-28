@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Check, Trophy, ChevronRight, Star, Flame, CalendarDays, Download, Award, Crown, Zap, Clock, Sparkles } from 'lucide-react';
+import { Check, Trophy, ChevronRight, Star, Flame, CalendarDays, Download, Award, Crown, Zap, Clock, Sparkles, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,7 +20,7 @@ import { RANK_CRITERIA, ADMIN_EMAILS } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import AchievementModal, { AchievementType } from '@/components/AchievementModal';
-import { format, parseISO, isValid, addMonths, addDays } from 'date-fns';
+import { format, parseISO, isValid, addMonths, addDays, differenceInSeconds } from 'date-fns';
 import Link from 'next/link';
 
 function getUTCMondayKey() {
@@ -163,6 +163,11 @@ export default function StudentDashboardPage() {
   const trialHours = Math.floor(trialDaysRemaining * 24);
   const trialMinutes = Math.floor((trialDaysRemaining * 24 - trialHours) * 60);
 
+  // Compute Pro expiry countdown
+  const proExpiry = profile.subscriptionExpiry?.toDate ? profile.subscriptionExpiry.toDate() : (profile.subscriptionExpiry ? new Date(profile.subscriptionExpiry) : null);
+  const proDaysRemaining = proExpiry ? Math.max(0, differenceInSeconds(proExpiry, new Date()) / (24 * 3600)) : 0;
+  const proHours = Math.floor(proDaysRemaining * 24);
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       {showCertificate && certData && (
@@ -174,6 +179,32 @@ export default function StudentDashboardPage() {
           date={certData.date}
           onClose={() => setShowCertificate(false)}
         />
+      )}
+
+      {/* --- PRO EXPIRY BANNER --- */}
+      {profile.subscriptionStatus === 'pro' && profile.role === 'student' && proExpiry && (
+        <Card className={cn(
+          "border-none shadow-xl rounded-2xl overflow-hidden animate-in slide-in-from-top duration-700",
+          proDaysRemaining < 3 ? "bg-red-600 text-white" : "bg-indigo-600 text-white"
+        )}>
+          <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-3 rounded-full shrink-0">
+                <ShieldCheck className={cn("w-8 h-8", proDaysRemaining < 3 && "animate-pulse")} />
+              </div>
+              <div className="text-center md:text-left">
+                <h3 className="text-xl font-black uppercase tracking-tight">Pro Membership Active</h3>
+                <p className="font-bold opacity-90 text-sm">
+                  Your <span className="capitalize">{profile.subscriptionType || 'Pro'}</span> access expires in: <span className="underline underline-offset-4">{Math.floor(proDaysRemaining)}d {proHours % 24}h</span>. 
+                  Master your formulas before the cycle ends!
+                </p>
+              </div>
+            </div>
+            <Button asChild className="h-12 px-8 font-black uppercase tracking-widest bg-white text-indigo-900 hover:bg-slate-100 rounded-xl shadow-lg shrink-0">
+              <Link href="/pricing"><Zap className="w-4 h-4 mr-2 text-primary" /> Extend Pro</Link>
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* --- TRIAL COUNTDOWN BANNER --- */}
