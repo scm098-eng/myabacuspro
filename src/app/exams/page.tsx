@@ -130,17 +130,24 @@ export default function ExamDashboardPage() {
           const rawGroup = data.group || data.masteryGroup || data.masteryLevel || '?';
           const normalizedStatus = (data.status || 'pending').toLowerCase() as 'pending' | 'approved' | 'rejected';
           setApplication({ id: snap.id, ...data, group: String(rawGroup).toUpperCase() as ExamGroup, status: normalizedStatus } as ExamApplication);
-        } else { setApplication(null); }
+        } else { 
+          setApplication(null); 
+        }
         setLoading(false);
       },
-      async (serverError) => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${user.uid}`, operation: 'get' })); }
+      async (serverError) => { 
+        setLoading(false);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `examApplications/${user.uid}`, operation: 'get' })); 
+      }
     );
 
     const resultsQuery = query(collection(db, "examResults"), where("userId", "==", user.uid), orderBy("submittedAt", "desc"));
     const unsubscribeResults = onSnapshot(resultsQuery, (snap) => {
         setExamResults(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamResult)));
       },
-      async (serverError) => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examResults', operation: 'list' })); }
+      async (serverError) => { 
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examResults', operation: 'list' })); 
+      }
     );
 
     return () => { unsubSchedule(); unsubscribeApp(); unsubscribeResults(); };
@@ -248,7 +255,7 @@ export default function ExamDashboardPage() {
         />
       )}
 
-      {/* --- TRIAL INFO BANNER (MOVED TO EXAMS TOO) --- */}
+      {/* --- TRIAL INFO BANNER --- */}
       {isTrialActive && profile?.subscriptionStatus !== 'pro' && (
         <Card className="bg-indigo-50 border-indigo-200 border-2 rounded-[1.5rem] shadow-md overflow-hidden animate-in fade-in duration-500">
            <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
