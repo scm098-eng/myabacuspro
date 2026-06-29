@@ -585,10 +585,10 @@ export default function AdminDashboardPage() {
                                 <SelectTrigger className="h-12 border-2 font-bold"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="7">7 Days Trial</SelectItem>
-                                  <SelectItem value="30">30 Days Pro</SelectItem>
-                                  <SelectItem value="90">90 Days Pro</SelectItem>
-                                  <SelectItem value="180">180 Days Pro</SelectItem>
-                                  <SelectItem value="365">365 Days Pro</SelectItem>
+                                  <SelectItem value="15">15 Days Pro</SelectItem>
+                                  {[30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 365].map(days => (
+                                    <SelectItem key={days} value={String(days)}>{days} Days Pro</SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             </div>
