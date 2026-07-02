@@ -367,46 +367,71 @@ export default function PricingPage() {
                 </section>
             )}
 
-            {/* Structured Comparison Table for Google Crawler */}
-            <section className="space-y-8">
-                <div className="text-center">
-                    <h2 className="text-3xl font-black uppercase font-headline">Free vs Pro Comparison</h2>
-                    <p className="text-muted-foreground font-medium">See exactly why 1,000+ students upgraded to Pro.</p>
+            {/* --- COMPREHENSIVE COMPARISON TABLE --- */}
+            <section className="space-y-12">
+                <div className="text-center space-y-2">
+                    <h2 className="text-3xl sm:text-4xl font-black uppercase font-headline tracking-tight">The Professional Edge</h2>
+                    <p className="text-muted-foreground font-medium text-lg">Compare our training modules and unlock your full cognitive potential.</p>
                 </div>
-                <Card className="rounded-[2rem] overflow-hidden border-2 shadow-xl">
+                <Card className="rounded-[2.5rem] overflow-hidden border-2 shadow-2xl bg-white/50 backdrop-blur-sm">
                     <Table>
-                        <TableHeader className="bg-muted/50">
-                            <TableRow>
-                                <TableHead className="w-[300px] font-black uppercase text-xs">Feature</TableHead>
-                                <TableHead className="text-center font-black uppercase text-xs">Free Plan</TableHead>
-                                <TableHead className="text-center font-black uppercase text-xs text-primary">Pro Member</TableHead>
+                        <TableHeader className="bg-slate-900 text-white">
+                            <TableRow className="hover:bg-slate-900 border-none">
+                                <TableHead className="w-[350px] font-black uppercase text-[10px] tracking-[0.2em] py-6 px-8">Training Feature</TableHead>
+                                <TableHead className="text-center font-black uppercase text-[10px] tracking-[0.2em] py-6">Basic Learner</TableHead>
+                                <TableHead className="text-center font-black uppercase text-[10px] tracking-[0.2em] py-6 text-primary">Abacus Pro Member</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            <TableRow>
-                                <TableCell className="font-bold">Basic Practice Tests</TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-600" /></TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-600" /></TableCell>
+                            <TableRow className="border-b-slate-100">
+                                <TableCell className="font-bold py-6 px-8">Basic Add & Sub (Direct Movements)</TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                             </TableRow>
-                            <TableRow>
-                                <TableCell className="font-bold">Formula-Specific Training</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-muted-foreground/30" /></TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-600" /></TableCell>
+                            <TableRow className="border-b-slate-100 bg-slate-50/30">
+                                <TableCell className="font-bold py-6 px-8">Visualization Drills (Beads Value)</TableCell>
+                                <TableCell className="text-center"><span className="text-xs font-black text-slate-400">Limited Levels</span></TableCell>
+                                <TableCell className="text-center"><span className="text-xs font-black text-primary">All 12 Mastery Levels</span></TableCell>
                             </TableRow>
-                            <TableRow>
-                                <TableCell className="font-bold">Bubble Game Levels</TableCell>
-                                <TableCell className="text-center">First 5 Levels</TableCell>
-                                <TableCell className="text-center font-bold text-primary">All 1000+ Levels</TableCell>
+                            <TableRow className="border-b-slate-100">
+                                <TableCell className="font-bold py-6 px-8">Formula Mastery (Small/Big/Combi)</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-300 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                             </TableRow>
-                            <TableRow>
-                                <TableCell className="font-bold">Progress Analytics</TableCell>
-                                <TableCell className="text-center">Basic</TableCell>
-                                <TableCell className="text-center font-bold text-primary">Advanced Trends</TableCell>
+                            <TableRow className="border-b-slate-100 bg-slate-50/30">
+                                <TableCell className="font-bold py-6 px-8">Bubble Game Experience</TableCell>
+                                <TableCell className="text-center"><span className="text-xs font-black text-slate-400">First 5 Levels</span></TableCell>
+                                <TableCell className="text-center"><span className="text-xs font-black text-primary">All 1,000+ Levels</span></TableCell>
                             </TableRow>
-                            <TableRow>
-                                <TableCell className="font-bold">Hall of Fame Access</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-muted-foreground/30" /></TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-600" /></TableCell>
+                            <TableRow className="border-b-slate-100">
+                                <TableCell className="font-bold py-6 px-8">Official Grand Final Exams</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-300 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                            </TableRow>
+                            <TableRow className="border-b-slate-100 bg-slate-50/30">
+                                <TableCell className="font-bold py-6 px-8">Professional Certification & Ranks</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-300 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                            </TableRow>
+                            <TableRow className="border-b-slate-100">
+                                <TableCell className="font-bold py-6 px-8">Abacus Mastery Labs (Mult/Div)</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-300 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                            </TableRow>
+                            <TableRow className="border-b-slate-100 bg-slate-50/30">
+                                <TableCell className="font-bold py-6 px-8">Global Hall of Fame Placement</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-300 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                            </TableRow>
+                            <TableRow className="border-b-slate-100">
+                                <TableCell className="font-bold py-6 px-8">Advanced Progress Analytics</TableCell>
+                                <TableCell className="text-center"><span className="text-xs font-black text-slate-400">Basic Scores</span></TableCell>
+                                <TableCell className="text-center"><span className="text-xs font-black text-primary">Full Performance Trends</span></TableCell>
+                            </TableRow>
+                            <TableRow className="bg-slate-50/30">
+                                <TableCell className="font-bold py-6 px-8">Priority Support & Guidance</TableCell>
+                                <TableCell className="text-center"><span className="text-xs font-black text-slate-400">Email Only</span></TableCell>
+                                <TableCell className="text-center"><span className="text-xs font-black text-primary">WhatsApp VIP Concierge</span></TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
