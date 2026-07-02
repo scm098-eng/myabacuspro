@@ -65,7 +65,10 @@ const PRO_FEATURES = [
   'Access All Difficulty Levels',
   'Advanced Progress Analytics',
   'Full Bubble Game Access',
-  'Hall of Fame Placement'
+  'Hall of Fame Placement',
+  'Official Grand Final Exams',
+  'Professional Certification & Ranks',
+  'Abacus Mastery Labs (Mult/Div)'
 ];
 
 declare global {
@@ -381,7 +384,7 @@ export default function PricingPage() {
                             <TableRow className="hover:bg-slate-900 border-none">
                                 <TableHead className="w-[350px] font-black uppercase text-[10px] tracking-[0.2em] py-6 px-8 text-white">Training Feature</TableHead>
                                 <TableHead className="text-center font-black uppercase text-[10px] tracking-[0.2em] py-6 text-white">Free Plan</TableHead>
-                                <TableHead className="text-center font-black uppercase text-[10px] tracking-[0.2em] py-6 text-primary">Pro Member</TableHead>
+                                <TableHead className="text-center font-black uppercase text-[10px] tracking-[0.2em] py-6 text-white">Pro Member</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
