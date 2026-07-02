@@ -60,6 +60,14 @@ const PLANS = [
     }
 ];
 
+const PRO_FEATURES = [
+  'Unlimited Practice Tests',
+  'Access All Difficulty Levels',
+  'Advanced Progress Analytics',
+  'Full Bubble Game Access',
+  'Hall of Fame Placement'
+];
+
 declare global {
     interface Window {
         Razorpay: any;
@@ -268,7 +276,7 @@ export default function PricingPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start relative">
                 {PLANS.map((plan) => (
-                    <Card key={plan.id} className={`relative flex flex-col h-full transition-all duration-300 hover:shadow-2xl rounded-[2rem] overflow-hidden ${
+                    <Card key={plan.id} className={`relative flex flex-col h-full transition-all duration-300 hover:shadow-2xl rounded-[2.5rem] overflow-hidden ${
                         plan.isBestValue 
                         ? 'border-orange-500 border-4 scale-105 z-10 bg-white' 
                         : 'border-2 border-gray-100 bg-white/80'
@@ -297,15 +305,9 @@ export default function PricingPage() {
                             </div>
                         </CardHeader>
 
-                        <CardContent className="flex-grow pt-8">
+                        <CardContent className="flex-grow pt-8 px-8">
                             <ul className="space-y-4">
-                                {[
-                                    'Unlimited Practice Tests',
-                                    'Access All Difficulty Levels',
-                                    'Advanced Progress Analytics',
-                                    'Full Bubble Game Access',
-                                    'Hall of Fame Placement'
-                                ].map((feature) => (
+                                {PRO_FEATURES.map((feature) => (
                                     <li key={feature} className="flex items-start gap-3">
                                         <div className="mt-1 bg-green-100 p-1 rounded-full shrink-0">
                                             <Check className="h-4 w-4 text-green-600" />
@@ -370,16 +372,16 @@ export default function PricingPage() {
             {/* --- COMPREHENSIVE COMPARISON TABLE --- */}
             <section className="space-y-12">
                 <div className="text-center space-y-2">
-                    <h2 className="text-3xl sm:text-4xl font-black uppercase font-headline tracking-tight">The Professional Edge</h2>
+                    <h2 className="text-3xl sm:text-4xl font-black uppercase font-headline tracking-tight">Free vs Pro Comparison</h2>
                     <p className="text-muted-foreground font-medium text-lg">Compare our training modules and unlock your full cognitive potential.</p>
                 </div>
                 <Card className="rounded-[2.5rem] overflow-hidden border-2 shadow-2xl bg-white/50 backdrop-blur-sm">
                     <Table>
-                        <TableHeader className="bg-slate-900 text-white">
+                        <TableHeader className="bg-slate-900">
                             <TableRow className="hover:bg-slate-900 border-none">
                                 <TableHead className="w-[350px] font-black uppercase text-[10px] tracking-[0.2em] py-6 px-8 text-white">Training Feature</TableHead>
-                                <TableHead className="text-center font-black uppercase text-[10px] tracking-[0.2em] py-6 text-white">Basic Learner</TableHead>
-                                <TableHead className="text-center font-black uppercase text-[10px] tracking-[0.2em] py-6 text-primary">Abacus Pro Member</TableHead>
+                                <TableHead className="text-center font-black uppercase text-[10px] tracking-[0.2em] py-6 text-white">Free Plan</TableHead>
+                                <TableHead className="text-center font-black uppercase text-[10px] tracking-[0.2em] py-6 text-primary">Pro Member</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
