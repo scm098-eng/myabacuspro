@@ -377,8 +377,8 @@ export default function PricingPage() {
                     <Table>
                         <TableHeader className="bg-slate-900 text-white">
                             <TableRow className="hover:bg-slate-900 border-none">
-                                <TableHead className="w-[350px] font-black uppercase text-[10px] tracking-[0.2em] py-6 px-8">Training Feature</TableHead>
-                                <TableHead className="text-center font-black uppercase text-[10px] tracking-[0.2em] py-6">Basic Learner</TableHead>
+                                <TableHead className="w-[350px] font-black uppercase text-[10px] tracking-[0.2em] py-6 px-8 text-white">Training Feature</TableHead>
+                                <TableHead className="text-center font-black uppercase text-[10px] tracking-[0.2em] py-6 text-white">Basic Learner</TableHead>
                                 <TableHead className="text-center font-black uppercase text-[10px] tracking-[0.2em] py-6 text-primary">Abacus Pro Member</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -390,7 +390,7 @@ export default function PricingPage() {
                             </TableRow>
                             <TableRow className="border-b-slate-100 bg-slate-50/30">
                                 <TableCell className="font-bold py-6 px-8">Visualization Drills (Beads Value)</TableCell>
-                                <TableCell className="text-center"><span className="text-xs font-black text-slate-400">Limited Levels</span></TableCell>
+                                <TableCell className="text-center"><span className="text-xs font-black text-slate-500">Limited Levels</span></TableCell>
                                 <TableCell className="text-center"><span className="text-xs font-black text-primary">All 12 Mastery Levels</span></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100">
@@ -400,7 +400,7 @@ export default function PricingPage() {
                             </TableRow>
                             <TableRow className="border-b-slate-100 bg-slate-50/30">
                                 <TableCell className="font-bold py-6 px-8">Bubble Game Experience</TableCell>
-                                <TableCell className="text-center"><span className="text-xs font-black text-slate-400">First 5 Levels</span></TableCell>
+                                <TableCell className="text-center"><span className="text-xs font-black text-slate-500">First 5 Levels</span></TableCell>
                                 <TableCell className="text-center"><span className="text-xs font-black text-primary">All 1,000+ Levels</span></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100">
@@ -423,15 +423,10 @@ export default function PricingPage() {
                                 <TableCell className="text-center"><X className="mx-auto text-slate-300 w-5 h-5 stroke-[3px]" /></TableCell>
                                 <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                             </TableRow>
-                            <TableRow className="border-b-slate-100">
-                                <TableCell className="font-bold py-6 px-8">Advanced Progress Analytics</TableCell>
-                                <TableCell className="text-center"><span className="text-xs font-black text-slate-400">Basic Scores</span></TableCell>
-                                <TableCell className="text-center"><span className="text-xs font-black text-primary">Full Performance Trends</span></TableCell>
-                            </TableRow>
                             <TableRow className="bg-slate-50/30">
-                                <TableCell className="font-bold py-6 px-8">Priority Support & Guidance</TableCell>
-                                <TableCell className="text-center"><span className="text-xs font-black text-slate-400">Email Only</span></TableCell>
-                                <TableCell className="text-center"><span className="text-xs font-black text-primary">WhatsApp VIP Concierge</span></TableCell>
+                                <TableCell className="font-bold py-6 px-8">Advanced Progress Analytics</TableCell>
+                                <TableCell className="text-center"><span className="text-xs font-black text-slate-500">Basic Scores</span></TableCell>
+                                <TableCell className="text-center"><span className="text-xs font-black text-primary">Full Performance Trends</span></TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
