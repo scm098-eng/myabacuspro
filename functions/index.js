@@ -706,7 +706,7 @@ exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZO
     if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
     
     const data = request.data || {};
-    const { planId } = data;
+    const planId = data.planId;
     const userId = request.auth.uid;
 
     if (!planId) {
@@ -743,8 +743,13 @@ exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZO
             currency: 'INR'
         };
     } catch (err) {
-        logger.error("Razorpay Sub Creation Error", err);
-        throw new HttpsError('internal', err.message);
+        logger.error("DEBUG_PAYMENT: Full Razorpay Error Context (Subscription)", {
+            message: err.message,
+            statusCode: err.statusCode,
+            errorBody: err.error,
+            stack: err.stack
+        });
+        throw new HttpsError('internal', err.message || "Failed to create subscription");
     }
 });
 
@@ -762,8 +767,8 @@ exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY
     const planDuration = data.planDuration;
 
     if (!amount || isNaN(amount)) {
-        logger.error("DEBUG_PAYMENT: Invalid amount in request data", { data });
-        throw new HttpsError('invalid-argument', "Amount is required for one-time orders.");
+        logger.error("DEBUG_PAYMENT: Invalid or missing amount in request data", { data });
+        throw new HttpsError('invalid-argument', "Valid amount is required for one-time orders.");
     }
 
     try {
@@ -784,8 +789,13 @@ exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY
             currency: order.currency
         };
     } catch (err) {
-        logger.error("Razorpay Order Creation Error", err);
-        throw new HttpsError('internal', err.message);
+        logger.error("DEBUG_PAYMENT: Full Razorpay Error Context (Order)", {
+            message: err.message,
+            statusCode: err.statusCode,
+            errorBody: err.error,
+            stack: err.stack
+        });
+        throw new HttpsError('internal', err.message || "Failed to create order");
     }
 });
 
