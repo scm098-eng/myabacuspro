@@ -158,6 +158,13 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, localEstimate,
     };
 
     const handleSubscribe = async () => {
+        console.log("PAYMENT_DEBUG: handleSubscribe triggered", { 
+            type: selectedPlan.type, 
+            planId: selectedPlan.planId, 
+            price: selectedPlan.price,
+            currency: selectedPlan.currency
+        });
+
         const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
         if (!user?.uid) {
@@ -184,6 +191,7 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, localEstimate,
 
             if (selectedPlan.type === 'recurring') {
                 const createSubscription = httpsCallable<any, any>(functions, 'createRazorpaySubscription');
+                console.log("PAYMENT_DEBUG: Calling createRazorpaySubscription", { planId: selectedPlan.planId });
                 result = await createSubscription({ 
                     planId: selectedPlan.planId,
                     amount: selectedPlan.price,
@@ -191,6 +199,7 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, localEstimate,
                 });
             } else {
                 const createOneTimeOrder = httpsCallable<any, any>(functions, 'createOneTimeOrder');
+                console.log("PAYMENT_DEBUG: Calling createOneTimeOrder", { amount: selectedPlan.price });
                 result = await createOneTimeOrder({ 
                     amount: selectedPlan.price,
                     currency: selectedPlan.currency,
@@ -234,6 +243,7 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, localEstimate,
             rzp.open();
 
         } catch (error: any) {
+            console.error("PAYMENT_DEBUG: handleSubscribe error", error);
             onError(error.message || 'Failed to start payment.');
             setIsProcessing(false); 
         }

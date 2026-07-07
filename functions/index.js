@@ -49,7 +49,12 @@ function getTransporter(password) {
 function getRazorpay() {
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    
     if (!keyId || !keySecret) {
+        logger.error("Razorpay Init Error: Missing environment variables", { 
+            hasKeyId: !!keyId, 
+            hasKeySecret: !!keySecret 
+        });
         throw new Error("Razorpay configuration missing in backend secrets. Ensure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are set.");
     }
     return new Razorpay({ key_id: keyId, key_secret: keySecret });
@@ -696,13 +701,18 @@ exports.generateCoupon = onCall(async (request) => {
  * Creates a Razorpay Subscription for the given plan.
  */
 exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] }, async (request) => {
+    logger.info("DEBUG_PAYMENT: createRazorpaySubscription started", { data: request.data });
+    
     if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
     
     const data = request.data || {};
     const { planId } = data;
     const userId = request.auth.uid;
 
-    if (!planId) throw new HttpsError('invalid-argument', "Missing plan ID for subscription.");
+    if (!planId) {
+        logger.error("DEBUG_PAYMENT: Missing planId in request data", { data });
+        throw new HttpsError('invalid-argument', "Missing plan ID for subscription.");
+    }
 
     try {
         const rzp = getRazorpay();
@@ -729,7 +739,7 @@ exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZO
 
         return { 
             subscriptionId: subscription.id,
-            amount: 0, // Placeholder, as amount is handled by the subscription plan
+            amount: 0, 
             currency: 'INR'
         };
     } catch (err) {
@@ -742,6 +752,8 @@ exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZO
  * Creates a one-time Razorpay Order.
  */
 exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] }, async (request) => {
+    logger.info("DEBUG_PAYMENT: createOneTimeOrder started", { data: request.data });
+
     if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
     
     const data = request.data || {};
@@ -750,6 +762,7 @@ exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY
     const planDuration = data.planDuration;
 
     if (!amount || isNaN(amount)) {
+        logger.error("DEBUG_PAYMENT: Invalid amount in request data", { data });
         throw new HttpsError('invalid-argument', "Amount is required for one-time orders.");
     }
 
@@ -780,8 +793,5 @@ exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY
  * Razorpay Webhook
  */
 exports.razorpayWebhook = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] }, async (request) => {
-    // Note: In real production, this should be an onRequest function to handle standard POST from Razorpay
-    // This is a placeholder for the logic required to upgrade users and set expiry.
     return { status: "ready" };
 });
-
