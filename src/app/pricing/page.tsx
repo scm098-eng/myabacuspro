@@ -66,7 +66,7 @@ const INDIA_PLANS = [
 const GLOBAL_PLANS = [
     {
         id: 'monthly',
-        name: 'Global Monthly',
+        name: 'Monthly Pro',
         price: 19,
         originalPrice: 29,
         savings: '34% OFF',
@@ -78,10 +78,10 @@ const GLOBAL_PLANS = [
     },
     {
         id: '6months',
-        name: 'Global Half-Yearly',
+        name: '6 Months Pro',
         price: 89,
-        originalPrice: 174,
-        savings: '49% OFF',
+        originalPrice: 149,
+        savings: '40% OFF',
         durationLabel: 'for 6 months',
         description: 'One-time payment. Non-recurring.',
         type: 'one-time',
@@ -89,7 +89,7 @@ const GLOBAL_PLANS = [
     },
     {
         id: '12months',
-        name: 'Global Annual',
+        name: 'Annual Pro',
         price: 129,
         originalPrice: 249,
         savings: '48% OFF',
