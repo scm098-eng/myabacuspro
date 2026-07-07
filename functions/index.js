@@ -699,10 +699,10 @@ exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZO
     if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
     
     const data = request.data || {};
-    const { planId, amount, currency } = data;
+    const { planId } = data;
     const userId = request.auth.uid;
 
-    if (!planId) throw new HttpsError('invalid-argument', "Plan ID is required.");
+    if (!planId) throw new HttpsError('invalid-argument', "Missing plan ID for subscription.");
 
     try {
         const rzp = getRazorpay();
@@ -729,8 +729,8 @@ exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZO
 
         return { 
             subscriptionId: subscription.id,
-            amount: Math.round(Number(amount || 0) * 100),
-            currency: currency || 'INR'
+            amount: 0, // Placeholder, as amount is handled by the subscription plan
+            currency: 'INR'
         };
     } catch (err) {
         logger.error("Razorpay Sub Creation Error", err);
@@ -750,7 +750,7 @@ exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY
     const planDuration = data.planDuration;
 
     if (!amount || isNaN(amount)) {
-        throw new HttpsError('invalid-argument', "Amount is required and must be a number.");
+        throw new HttpsError('invalid-argument', "Amount is required for one-time orders.");
     }
 
     try {
@@ -784,3 +784,4 @@ exports.razorpayWebhook = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SE
     // This is a placeholder for the logic required to upgrade users and set expiry.
     return { status: "ready" };
 });
+
