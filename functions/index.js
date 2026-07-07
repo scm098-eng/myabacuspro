@@ -50,7 +50,7 @@ function getRazorpay() {
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
     if (!keyId || !keySecret) {
-        throw new Error("Razorpay configuration missing in backend secrets.");
+        throw new Error("Razorpay configuration missing in backend secrets. Ensure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are set.");
     }
     return new Razorpay({ key_id: keyId, key_secret: keySecret });
 }
@@ -456,39 +456,20 @@ exports.forceDeclareWinner = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (
 
 /**
  * Marks the current cycle results as official.
- * Correctly awaits Firestore writes to ensure database persistence.
  */
 exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, async (request) => {
-    logger.info("!!! FUNCTION TRIGGERED: declareOfficialResults !!!");
-    logger.info("Caller UID context:", request.auth ? request.auth.uid : "MISSING AUTH");
-
     if (!request.auth) {
-        logger.error("GATEKEEPER REJECTED: No authentication context.");
-        throw new HttpsError('unauthenticated', "A valid login session is required.");
+        throw new HttpsError('unauthenticated', "Login required.");
     }
 
-    const adminDocRef = db.collection('users').doc(request.auth.uid);
-    const adminDoc = await adminDocRef.get();
-
-    if (!adminDoc.exists) {
-        logger.error(`GATEKEEPER REJECTED: User document does not exist for UID: ${request.auth.uid}`);
-        throw new HttpsError('not-found', "Administrator profile record was not found.");
-    }
-
-    const userRole = adminDoc.data()?.role;
-    logger.info(`GATEKEEPER RESOLVED: Caller role is "${userRole}"`);
-
-    if (userRole !== 'admin') {
-        logger.error(`GATEKEEPER REJECTED: Not an admin.`);
+    const adminDoc = await db.collection('users').doc(request.auth.uid).get();
+    if (adminDoc.data()?.role !== 'admin') {
         throw new HttpsError('permission-denied', "Insufficient permissions.");
     }
 
-    logger.info("GATEKEEPER PASSED: Fetching and ranking students...");
-
     const allResultsSnap = await db.collection('examResults').get();
     if (allResultsSnap.empty) {
-        logger.info("LOGIC: No exam results found.");
-        return { status: "success", message: "No student records to process." };
+        return { status: "success", message: "No records found." };
     }
 
     const groups = ['A', 'B', 'C', 'D', 'E'];
@@ -501,12 +482,10 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
             .filter(r => r.group === group && r.isFinal === true);
 
         if (groupResults.length > 0) {
-            logger.info(`RANKING: Processing Group ${group} (${groupResults.length} students).`);
-
             groupResults.sort((a, b) => {
                 if (b.score !== a.score) return b.score - a.score;
-                const accA = a.accuracy ?? ((a.score / (a.totalQuestions || 1)) * 100);
-                const accB = b.accuracy ?? ((b.score / (b.totalQuestions || 1)) * 100);
+                const accA = a.accuracy ?? 0;
+                const accB = b.accuracy ?? 0;
                 if (accB !== accA) return accB - accA;
                 return (b.timeLeft || 0) - (a.timeLeft || 0);
             });
@@ -543,11 +522,8 @@ exports.declareOfficialResults = onCall({ secrets: ["GMAIL_APP_PASSWORD"] }, asy
         ...winners
     }, { merge: true });
 
-    logger.info(`SUCCESS: Total documents successfully updated: ${totalUpdated}`);
-
     return { 
         status: "success", 
-        message: "Results declared official and database successfully updated.",
         updatedCount: totalUpdated 
     };
 });
@@ -633,20 +609,6 @@ exports.applyToExam = onCall(async (request) => {
     return { status: "success", message: "Applied successfully." };
 });
 
-exports.updateExamSchedule = onCall(async (request) => {
-    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
-    const adminDoc = await db.collection('users').doc(request.auth.uid).get();
-    if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
-
-    const { date, startTime, endTime, lastApplyDate } = request.data;
-    await db.collection('stats').doc('examSchedule').set({ 
-        date, startTime, endTime, lastApplyDate, 
-        updatedAt: admin.firestore.FieldValue.serverTimestamp() 
-    }, { merge: true });
-
-    return { status: "success" };
-});
-
 /**
  * Redeems a gift coupon for Pro access.
  */
@@ -696,77 +658,29 @@ exports.redeemCoupon = onCall(async (request) => {
 });
 
 /**
- * Cleanup expired gift subscriptions.
- * Runs every day at midnight.
- */
-exports.cleanupExpiredSubscriptions = onSchedule({ schedule: "0 0 * * *" }, async (event) => {
-    const now = admin.firestore.Timestamp.now();
-    const expiredUsersSnap = await db.collection('users')
-        .where('subscriptionType', '==', 'gift')
-        .where('subscriptionStatus', '==', 'pro')
-        .where('subscriptionExpiry', '<', now)
-        .get();
-
-    if (expiredUsersSnap.empty) return;
-
-    let batch = db.batch();
-    let count = 0;
-
-    expiredUsersSnap.docs.forEach(doc => {
-        batch.update(doc.ref, {
-            subscriptionStatus: 'free',
-            subscriptionType: 'none',
-            subscriptionExpiry: null,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-        count++;
-        if (count % 500 === 0) {
-            // Commit and reset batch if limit reached
-            batch.commit();
-            batch = db.batch();
-        }
-    });
-
-    if (count % 500 !== 0) await batch.commit();
-    logger.info(`Subscription Cleanup: Downgraded ${count} expired gift accounts.`);
-});
-
-/**
  * Admin: Generate a gift coupon.
  */
 exports.generateCoupon = onCall(async (request) => {
-    logger.info("!!! COUPON GENERATOR TRIGGERED !!!");
-    
-    if (!request.auth) {
-        logger.error("Coupon Rejection: No auth context");
-        throw new HttpsError('unauthenticated', "Login required.");
-    }
-
+    if (!request.auth) throw new HttpsError('unauthenticated', "Login required.");
     const adminDoc = await db.collection('users').doc(request.auth.uid).get();
-    if (adminDoc.data()?.role !== 'admin') {
-        logger.error(`Coupon Rejection: Role is ${adminDoc.data()?.role}`);
-        throw new HttpsError('permission-denied', "Admin only.");
-    }
+    if (adminDoc.data()?.role !== 'admin') throw new HttpsError('permission-denied', "Admin only.");
 
-    // Safety parsing: convert potential strings to Numbers
-    const { code, durationDays, expireInDays } = request.data;
-    const duration = parseInt(String(durationDays), 10);
-    const expireDays = parseInt(String(expireInDays || 7), 10);
+    const data = request.data || {};
+    const code = data.code;
+    const durationDays = parseInt(String(data.durationDays), 10);
+    const expireInDays = parseInt(String(data.expireInDays || 7), 10);
 
-    if (!code || isNaN(duration)) {
-        logger.error("Coupon Rejection: Invalid parameters", { code, duration });
+    if (!code || isNaN(durationDays)) {
         throw new HttpsError('invalid-argument', "Missing or invalid parameters.");
     }
 
     const cleanCode = String(code).toUpperCase().trim();
-    const expiry = new Date(Date.now() + expireDays * 86400000);
-
-    logger.info(`Saving Coupon: ${cleanCode} for ${duration} days`);
+    const expiry = new Date(Date.now() + expireInDays * 86400000);
 
     try {
         await db.collection('coupons').doc(cleanCode).set({
             code: cleanCode,
-            durationDays: duration,
+            durationDays: durationDays,
             isUsed: false,
             expiresAt: admin.firestore.Timestamp.fromDate(expiry),
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -774,48 +688,54 @@ exports.generateCoupon = onCall(async (request) => {
         });
         return { status: "success", code: cleanCode };
     } catch (err) {
-        logger.error("Coupon generation write failed", err);
-        throw new HttpsError('internal', "Failed to save coupon to database.");
+        throw new HttpsError('internal', "Failed to save coupon.");
     }
 });
 
 /**
  * Creates a Razorpay Subscription for the given plan.
- * Returns the subscription ID and amount.
  */
 exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
-    const { planId, amount, currency } = request.data;
-
-    const rzp = getRazorpay();
+    
+    const data = request.data || {};
+    const { planId, amount, currency } = data;
     const userId = request.auth.uid;
-    const userDoc = await db.collection('users').doc(userId).get();
-    const userData = userDoc.data();
 
-    // Find or create customer
-    let customerId = userData.razorpayCustomerId;
-    if (!customerId) {
-        const customer = await rzp.customers.create({
-            name: `${userData.firstName} ${userData.surname}`,
-            email: userData.email,
+    if (!planId) throw new HttpsError('invalid-argument', "Plan ID is required.");
+
+    try {
+        const rzp = getRazorpay();
+        const userDoc = await db.collection('users').doc(userId).get();
+        const userData = userDoc.data();
+
+        let customerId = userData.razorpayCustomerId;
+        if (!customerId) {
+            const customer = await rzp.customers.create({
+                name: `${userData.firstName} ${userData.surname}`,
+                email: userData.email,
+                notes: { user_id: userId }
+            });
+            customerId = customer.id;
+            await db.collection('users').doc(userId).update({ razorpayCustomerId: customerId });
+        }
+
+        const subscription = await rzp.subscriptions.create({
+            plan_id: planId,
+            customer_id: customerId,
+            total_count: 12,
             notes: { user_id: userId }
         });
-        customerId = customer.id;
-        await db.collection('users').doc(userId).update({ razorpayCustomerId: customerId });
+
+        return { 
+            subscriptionId: subscription.id,
+            amount: Math.round(Number(amount || 0) * 100),
+            currency: currency || 'INR'
+        };
+    } catch (err) {
+        logger.error("Razorpay Sub Creation Error", err);
+        throw new HttpsError('internal', err.message);
     }
-
-    const subscription = await rzp.subscriptions.create({
-        plan_id: planId,
-        customer_id: customerId,
-        total_count: 12, // Monthly for 1 year
-        notes: { user_id: userId }
-    });
-
-    return { 
-        subscriptionId: subscription.id,
-        amount: amount * 100, // Razorpay expects paise/cents
-        currency: currency || 'INR'
-    };
 });
 
 /**
@@ -823,22 +743,44 @@ exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZO
  */
 exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
-    const { amount, currency, planDuration } = request.data;
+    
+    const data = request.data || {};
+    const amount = Number(data.amount);
+    const currency = data.currency || 'INR';
+    const planDuration = data.planDuration;
 
-    const rzp = getRazorpay();
-    const order = await rzp.orders.create({
-        amount: amount * 100,
-        currency: currency || 'INR',
-        receipt: `receipt_${Date.now()}`,
-        notes: { 
-            user_id: request.auth.uid,
-            plan_duration_months: planDuration
-        }
-    });
+    if (!amount || isNaN(amount)) {
+        throw new HttpsError('invalid-argument', "Amount is required and must be a number.");
+    }
 
-    return { 
-        orderId: order.id,
-        amount: order.amount,
-        currency: order.currency
-    };
+    try {
+        const rzp = getRazorpay();
+        const order = await rzp.orders.create({
+            amount: Math.round(amount * 100),
+            currency: currency,
+            receipt: `receipt_${Date.now()}_${request.auth.uid.slice(0, 5)}`,
+            notes: { 
+                user_id: request.auth.uid,
+                plan_duration_months: planDuration
+            }
+        });
+
+        return { 
+            orderId: order.id,
+            amount: order.amount,
+            currency: order.currency
+        };
+    } catch (err) {
+        logger.error("Razorpay Order Creation Error", err);
+        throw new HttpsError('internal', err.message);
+    }
+});
+
+/**
+ * Razorpay Webhook
+ */
+exports.razorpayWebhook = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] }, async (request) => {
+    // Note: In real production, this should be an onRequest function to handle standard POST from Razorpay
+    // This is a placeholder for the logic required to upgrade users and set expiry.
+    return { status: "ready" };
 });
