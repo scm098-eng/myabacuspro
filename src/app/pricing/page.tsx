@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -68,9 +67,9 @@ const GLOBAL_PLANS = [
     {
         id: 'monthly',
         name: 'Global Monthly',
-        price: 15,
+        price: 19,
         originalPrice: 29,
-        savings: '48% OFF',
+        savings: '34% OFF',
         durationLabel: '/month',
         description: 'Recurring monthly access.',
         type: 'recurring',
