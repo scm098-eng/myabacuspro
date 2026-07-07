@@ -452,7 +452,7 @@ export default function AdminDashboardPage() {
                                   <TableCell className="pl-6 py-4">
                                     <div className="flex items-center gap-3">
                                       <div className="relative">
-                                        <Avatar className="h-10 w-10"><AvatarImage src={s.profilePhoto}/></Avatar>
+                                        <Avatar className="h-10 w-10"><AvatarImage src={s.profilePhoto ?? undefined}/></Avatar>
                                         {s.isAdminRead === false && (
                                           <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-white" />
                                         )}
