@@ -10,6 +10,7 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const logger = require("firebase-functions/logger");
 const nodemailer = require('nodemailer');
+const Razorpay = require('razorpay');
 
 const admin = require('firebase-admin');
 
@@ -40,6 +41,18 @@ function getTransporter(password) {
             pass: password,
         },
     });
+}
+
+/**
+ * Razorpay Helpers
+ */
+function getRazorpay() {
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) {
+        throw new Error("Razorpay configuration missing in backend secrets.");
+    }
+    return new Razorpay({ key_id: keyId, key_secret: keySecret });
 }
 
 /**
@@ -764,4 +777,68 @@ exports.generateCoupon = onCall(async (request) => {
         logger.error("Coupon generation write failed", err);
         throw new HttpsError('internal', "Failed to save coupon to database.");
     }
+});
+
+/**
+ * Creates a Razorpay Subscription for the given plan.
+ * Returns the subscription ID and amount.
+ */
+exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
+    const { planId, amount, currency } = request.data;
+
+    const rzp = getRazorpay();
+    const userId = request.auth.uid;
+    const userDoc = await db.collection('users').doc(userId).get();
+    const userData = userDoc.data();
+
+    // Find or create customer
+    let customerId = userData.razorpayCustomerId;
+    if (!customerId) {
+        const customer = await rzp.customers.create({
+            name: `${userData.firstName} ${userData.surname}`,
+            email: userData.email,
+            notes: { user_id: userId }
+        });
+        customerId = customer.id;
+        await db.collection('users').doc(userId).update({ razorpayCustomerId: customerId });
+    }
+
+    const subscription = await rzp.subscriptions.create({
+        plan_id: planId,
+        customer_id: customerId,
+        total_count: 12, // Monthly for 1 year
+        notes: { user_id: userId }
+    });
+
+    return { 
+        subscriptionId: subscription.id,
+        amount: amount * 100, // Razorpay expects paise/cents
+        currency: currency || 'INR'
+    };
+});
+
+/**
+ * Creates a one-time Razorpay Order.
+ */
+exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
+    const { amount, currency, planDuration } = request.data;
+
+    const rzp = getRazorpay();
+    const order = await rzp.orders.create({
+        amount: amount * 100,
+        currency: currency || 'INR',
+        receipt: `receipt_${Date.now()}`,
+        notes: { 
+            user_id: request.auth.uid,
+            plan_duration_months: planDuration
+        }
+    });
+
+    return { 
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency
+    };
 });

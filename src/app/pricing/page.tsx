@@ -6,7 +6,7 @@ import { getAuth } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import type { ProfileData } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Loader2, Zap, ShieldCheck, HelpCircle, X, Gift, Ticket, Send, CheckCircle2 } from 'lucide-react';
+import { Check, Star, Loader2, Zap, ShieldCheck, HelpCircle, X, Gift, Ticket, Send, CheckCircle2, Globe, Landmark } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Badge } from '@/components/ui/badge';
@@ -21,12 +21,12 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import confetti from 'canvas-confetti';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 // --- CONFIGURATION ---
-const RAZORPAY_PLAN_ID = 'plan_S89FukHU9XcnKu';
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!;
 
-const PLANS = [
+const INDIA_PLANS = [
     {
         id: 'monthly',
         name: 'Monthly Pro',
@@ -35,7 +35,9 @@ const PLANS = [
         savings: '55% OFF',
         durationLabel: '/month',
         description: 'Billed monthly, cancel anytime.',
-        type: 'recurring'
+        type: 'recurring',
+        planId: 'plan_S89FukHU9XcnKu',
+        currency: 'INR'
     },
     {
         id: '6months',
@@ -45,7 +47,8 @@ const PLANS = [
         savings: '57% OFF',
         durationLabel: 'for 6 months',
         description: 'One-time payment. Non-recurring.',
-        type: 'one-time'
+        type: 'one-time',
+        currency: 'INR'
     },
     {
         id: '12months',
@@ -56,7 +59,46 @@ const PLANS = [
         durationLabel: 'for 1 year',
         description: 'Best value. One-time payment.',
         type: 'one-time',
-        isBestValue: true
+        isBestValue: true,
+        currency: 'INR'
+    }
+];
+
+const GLOBAL_PLANS = [
+    {
+        id: 'monthly',
+        name: 'Global Monthly',
+        price: 15,
+        originalPrice: 29,
+        savings: '48% OFF',
+        durationLabel: '/month',
+        description: 'Recurring monthly access.',
+        type: 'recurring',
+        planId: 'plan_TAWayUWeX6rNiX',
+        currency: 'USD'
+    },
+    {
+        id: '6months',
+        name: 'Global Half-Yearly',
+        price: 89,
+        originalPrice: 174,
+        savings: '49% OFF',
+        durationLabel: 'for 6 months',
+        description: 'One-time payment. Non-recurring.',
+        type: 'one-time',
+        currency: 'USD'
+    },
+    {
+        id: '12months',
+        name: 'Global Annual',
+        price: 129,
+        originalPrice: 249,
+        savings: '48% OFF',
+        durationLabel: 'for 1 year',
+        description: 'Elite training for 12 months.',
+        type: 'one-time',
+        isBestValue: true,
+        currency: 'USD'
     }
 ];
 
@@ -80,7 +122,7 @@ declare global {
 interface DynamicSubscriptionButtonProps {
     user: User | null;
     profile: ProfileData | null;
-    selectedPlan: typeof PLANS[0];
+    selectedPlan: any;
     onSuccess: (response: any) => void;
     onError: (message: string) => void;
 }
@@ -134,19 +176,21 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, onSuccess, onE
                 throw new Error("Razorpay SDK not available.");
             }
             
-            const functions = getFunctions(firebaseApp);
+            const functions = getFunctions(firebaseApp, 'us-central1');
             let result: any;
 
             if (selectedPlan.type === 'recurring') {
                 const createSubscription = httpsCallable<any, any>(functions, 'createRazorpaySubscription');
                 result = await createSubscription({ 
-                    planId: RAZORPAY_PLAN_ID,
-                    amountInRupees: selectedPlan.price, 
+                    planId: selectedPlan.planId,
+                    amount: selectedPlan.price,
+                    currency: selectedPlan.currency
                 });
             } else {
                 const createOneTimeOrder = httpsCallable<any, any>(functions, 'createOneTimeOrder');
                 result = await createOneTimeOrder({ 
-                    amountInRupees: selectedPlan.price,
+                    amount: selectedPlan.price,
+                    currency: selectedPlan.currency,
                     planDuration: selectedPlan.id === '6months' ? 6 : 12
                 });
             }
@@ -158,7 +202,7 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, onSuccess, onE
                 order_id: orderId, 
                 subscription_id: subscriptionId || undefined, 
                 amount: amount, 
-                currency: 'INR',
+                currency: selectedPlan.currency,
                 name: 'Abacus Pro',
                 description: selectedPlan.name,
                 image: 'https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/logo_icon.png?alt=media',
@@ -217,9 +261,16 @@ export default function PricingPage() {
     const router = useRouter();
     const { toast } = useToast();
 
+    const [region, setRegion] = useState<'india' | 'global'>('india');
     const [couponCode, setCouponCode] = useState('');
     const [isRedeeming, setIsRedeeming] = useState(false);
     const [redemptionSuccess, setRedemptionSuccess] = useState<{ days: number } | null>(null);
+
+    useEffect(() => {
+        if (profile?.country && profile.country !== 'India') {
+            setRegion('global');
+        }
+    }, [profile]);
 
     const handleRedeemCoupon = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -231,7 +282,7 @@ export default function PricingPage() {
 
         setIsRedeeming(true);
         try {
-            const functions = getFunctions(firebaseApp);
+            const functions = getFunctions(firebaseApp, 'us-central1');
             const redeemFn = httpsCallable<{ code: string }, any>(functions, 'redeemCoupon');
             const result = await redeemFn({ code: couponCode });
             
@@ -269,16 +320,41 @@ export default function PricingPage() {
     }
 
     const isAlreadyPro = profile?.subscriptionStatus === 'pro';
+    const currentPlans = region === 'india' ? INDIA_PLANS : GLOBAL_PLANS;
+    const currencySymbol = region === 'india' ? '₹' : '$';
 
     return (
         <div className="max-w-6xl mx-auto py-12 px-4 space-y-24">
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-6">
                 <h1 className="text-4xl font-extrabold sm:text-6xl tracking-tight text-gray-900 font-headline uppercase">Upgrade to <span className="text-primary">Abacus Pro</span></h1>
                 <p className="mt-4 text-xl text-muted-foreground max-w-2xl mx-auto font-medium">Unlock the full power of mental math training and join the global leaderboard.</p>
+                
+                <div className="flex justify-center mt-12">
+                    <div className="inline-flex items-center p-1 bg-muted rounded-2xl border shadow-inner">
+                        <button 
+                            onClick={() => setRegion('india')}
+                            className={cn(
+                                "flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all",
+                                region === 'india' ? "bg-white text-slate-900 shadow-md" : "text-muted-foreground hover:text-slate-600"
+                            )}
+                        >
+                            <Landmark className="w-4 h-4" /> India (₹)
+                        </button>
+                        <button 
+                            onClick={() => setRegion('global')}
+                            className={cn(
+                                "flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all",
+                                region === 'global' ? "bg-white text-slate-900 shadow-md" : "text-muted-foreground hover:text-slate-600"
+                            )}
+                        >
+                            <Globe className="w-4 h-4" /> International ($)
+                        </button>
+                    </div>
+                </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start relative">
-                {PLANS.map((plan) => (
+                {currentPlans.map((plan) => (
                     <Card key={plan.id} className={`relative flex flex-col h-full transition-all duration-300 hover:shadow-2xl rounded-[2.5rem] overflow-hidden ${
                         plan.isBestValue 
                         ? 'border-orange-500 border-4 scale-105 z-10 bg-white' 
@@ -298,11 +374,11 @@ export default function PricingPage() {
                             
                             <div className="mt-6 flex flex-col items-center">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-xl text-muted-foreground line-through">₹{plan.originalPrice}</span>
+                                    <span className="text-xl text-muted-foreground line-through">{currencySymbol}{plan.originalPrice}</span>
                                     <Badge variant="destructive" className="font-bold border-none">{plan.savings}</Badge>
                                 </div>
                                 <div className="flex items-baseline mt-2">
-                                    <span className="text-5xl font-black">₹{plan.price}</span>
+                                    <span className="text-5xl font-black">{currencySymbol}{plan.price}</span>
                                     <span className="text-muted-foreground ml-1 font-semibold text-lg">{plan.durationLabel}</span>
                                 </div>
                             </div>
