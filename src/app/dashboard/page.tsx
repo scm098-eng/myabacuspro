@@ -60,21 +60,24 @@ export default function StudentDashboardPage() {
     if (!isLoading && !user) router.push('/login');
   }, [isLoading, user, router]);
 
+  // Leaderboard Stats Listener
   useEffect(() => {
     if (!mounted) return;
     const db = getFirestore(firebaseApp);
-    const unsub = onSnapshot(doc(db, "stats", "leaderboard"), (snap) => {
+    return onSnapshot(doc(db, "stats", "leaderboard"), (snap) => {
         if (snap.exists()) {
           const data = snap.data();
           setLastWinner(data.lastWeeklyWinner);
           setMonthlyWinner(data.lastMonthlyWinner);
           setGlobalWinner(data.lastGlobalWinner);
         }
-      }, async (err) => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'stats/leaderboard', operation: 'get' })); }
+      }, async (err) => { 
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'stats/leaderboard', operation: 'get' })); 
+      }
     );
-    return () => unsub();
   }, [mounted]);
 
+  // Leaderboard List Listener
   useEffect(() => {
     if (!mounted || !user) return;
     const db = getFirestore(firebaseApp);
@@ -83,17 +86,18 @@ export default function StudentDashboardPage() {
     else if (leaderboardTab === 'monthlyPoints') q = query(collection(db, "users"), where("role", "==", "student"), where("lastMonthlyReset", "==", currentMonthKey), orderBy("monthlyPoints", "desc"), limit(20));
     else q = query(collection(db, "users"), where("role", "==", "student"), orderBy("totalPoints", "desc"), limit(20));
     
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    return onSnapshot(q, (snapshot) => {
         const data = snapshot.docs.map(doc => {
             const ud = doc.data() as ProfileData;
             const pts = (ud as any)[leaderboardTab] || 0;
             return { uid: doc.id, email: ud.email?.toLowerCase(), name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: pts, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
           }).filter(s => s.points > 0 && !ADMIN_EMAILS.includes(s.email)).slice(0, 10);
         setLeaderboard(data);
-      }, async (err) => { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' })); }
+      }, async (err) => { 
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' })); 
+      }
     );
-    return () => unsubscribe();
-  }, [mounted, user, getStudentTitle, leaderboardTab, currentWeekKey, currentMonthKey]);
+  }, [mounted, user?.uid, getStudentTitle, leaderboardTab, currentWeekKey, currentMonthKey]);
 
   const handleDownloadRankCert = () => {
     if (!profile) return;
@@ -159,11 +163,9 @@ export default function StudentDashboardPage() {
   const amIMonthlyWinner = monthlyWinner?.uid === user.uid;
   const amIGlobalWinner = globalWinner?.uid === user.uid;
 
-  // Compute trial countdown strings
   const trialHours = Math.floor(trialDaysRemaining * 24);
   const trialMinutes = Math.floor((trialDaysRemaining * 24 - trialHours) * 60);
 
-  // Compute Pro expiry countdown
   const proExpiry = profile.subscriptionExpiry?.toDate ? profile.subscriptionExpiry.toDate() : (profile.subscriptionExpiry ? new Date(profile.subscriptionExpiry) : null);
   const proDaysRemaining = proExpiry ? Math.max(0, differenceInSeconds(proExpiry, new Date()) / (24 * 3600)) : 0;
   const proHours = Math.floor(proDaysRemaining * 24);
@@ -181,7 +183,6 @@ export default function StudentDashboardPage() {
         />
       )}
 
-      {/* --- PRO EXPIRY BANNER --- */}
       {profile.subscriptionStatus === 'pro' && profile.role === 'student' && proExpiry && (
         <Card className={cn(
           "border-none shadow-xl rounded-2xl overflow-hidden animate-in slide-in-from-top duration-700",
@@ -207,7 +208,6 @@ export default function StudentDashboardPage() {
         </Card>
       )}
 
-      {/* --- TRIAL COUNTDOWN BANNER --- */}
       {isTrialActive && profile.subscriptionStatus !== 'pro' && (
         <Card className={cn(
           "border-none shadow-xl rounded-2xl overflow-hidden animate-in slide-in-from-top duration-700",

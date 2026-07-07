@@ -142,7 +142,7 @@ export default function AdminDashboardPage() {
     } finally {
         setIsLoading(false);
     }
-  }, [getAllUsers, profile]);
+  }, [getAllUsers, profile?.role]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -152,69 +152,69 @@ export default function AdminDashboardPage() {
       }
       fetchData();
     }
-  }, [authLoading, profile, router, fetchData]);
+  }, [authLoading, profile?.uid, profile?.role, router, fetchData]);
 
+  // Blogs Listener
   useEffect(() => {
-    if (!profile) return;
+    if (profile?.role !== 'admin') return;
     const db = getFirestore(firebaseApp);
-    const unsubscribers: (() => void)[] = [];
+    const q = query(collection(db, "blogs"), orderBy("createdAt", "desc"));
+    
+    return onSnapshot(q, (snap) => {
+        setBlogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost)));
+      },
+      async (error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'blogs',
+          operation: 'list',
+        }));
+      }
+    );
+  }, [profile?.uid, profile?.role]);
 
-    if (profile.role === 'admin') {
-      const blogUnsub = onSnapshot(
-        query(collection(db, "blogs"), orderBy("createdAt", "desc")), 
-        (snap) => {
-          setBlogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost)));
-        },
-        async (error) => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: 'blogs',
-            operation: 'list',
-          } satisfies SecurityRuleContext));
-        }
-      );
-      unsubscribers.push(blogUnsub);
+  // Coupons Listener
+  useEffect(() => {
+    if (profile?.role !== 'admin') return;
+    const db = getFirestore(firebaseApp);
+    const q = query(collection(db, "coupons"), orderBy("createdAt", "desc"));
 
-      const couponUnsub = onSnapshot(
-        query(collection(db, "coupons"), orderBy("createdAt", "desc")),
-        (snap) => {
-          setCoupons(snap.docs.map(doc => ({ ...doc.data() } as Coupon)));
-        },
-        async (error) => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: 'coupons',
-            operation: 'list',
-          } satisfies SecurityRuleContext));
-        }
-      );
-      unsubscribers.push(couponUnsub);
-    }
+    return onSnapshot(q, (snap) => {
+        setCoupons(snap.docs.map(doc => ({ ...doc.data() } as Coupon)));
+      },
+      async (error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'coupons',
+          operation: 'list',
+        }));
+      }
+    );
+  }, [profile?.uid, profile?.role]);
 
-    if (profile.role === 'admin' || profile.role === 'teacher') {
-      let q;
-      if (leaderboardTab === 'weeklyPoints') q = query(collection(db, "users"), where("role", "==", "student"), where("lastWeeklyReset", "==", currentWeekKey), orderBy("weeklyPoints", "desc"), limit(20));
-      else if (leaderboardTab === 'monthlyPoints') q = query(collection(db, "users"), where("role", "==", "student"), where("lastMonthlyReset", "==", currentMonthKey), orderBy("monthlyPoints", "desc"), limit(20));
-      else q = query(collection(db, "users"), where("role", "==", "student"), orderBy("totalPoints", "desc"), limit(20));
+  // Leaderboard Listener
+  useEffect(() => {
+    if (!profile || (profile.role !== 'admin' && profile.role !== 'teacher')) return;
+    const db = getFirestore(firebaseApp);
+    
+    let q;
+    if (leaderboardTab === 'weeklyPoints') q = query(collection(db, "users"), where("role", "==", "student"), where("lastWeeklyReset", "==", currentWeekKey), orderBy("weeklyPoints", "desc"), limit(20));
+    else if (leaderboardTab === 'monthlyPoints') q = query(collection(db, "users"), where("role", "==", "student"), where("lastMonthlyReset", "==", currentMonthKey), orderBy("monthlyPoints", "desc"), limit(20));
+    else q = query(collection(db, "users"), where("role", "==", "student"), orderBy("totalPoints", "desc"), limit(20));
 
-      const leaderboardUnsub = onSnapshot(
-        q, 
-        (snapshot) => {
-          const filtered = snapshot.docs.map(doc => {
-              const ud = doc.data() as ProfileData;
-              return { uid: doc.id, email: ud.email?.toLowerCase(), name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: (ud as any)[leaderboardTab] || 0, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
-          }).filter(s => !ADMIN_EMAILS.includes(s.email)).slice(0, 10);
-          setLeaderboard(filtered);
-        },
-        async (error) => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: 'users',
-            operation: 'list',
-          } satisfies SecurityRuleContext));
-        }
-      );
-      unsubscribers.push(leaderboardUnsub);
-    }
-    return () => unsubscribers.forEach(unsub => unsub());
-  }, [profile, leaderboardTab, getStudentTitle, currentWeekKey, currentMonthKey]);
+    return onSnapshot(q, (snapshot) => {
+        const filtered = snapshot.docs.map(doc => {
+            const ud = doc.data() as ProfileData;
+            return { uid: doc.id, email: ud.email?.toLowerCase(), name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: (ud as any)[leaderboardTab] || 0, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
+        }).filter(s => !ADMIN_EMAILS.includes(s.email)).slice(0, 10);
+        setLeaderboard(filtered);
+      },
+      async (error) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'users',
+          operation: 'list',
+        }));
+      }
+    );
+  }, [profile?.uid, profile?.role, leaderboardTab, getStudentTitle, currentWeekKey, currentMonthKey]);
 
   const handleGenerateCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -224,7 +224,6 @@ export default function AdminDashboardPage() {
       const functions = getFunctions(firebaseApp, 'us-central1');
       const generateFn = httpsCallable(functions, 'generateCoupon');
       
-      // Explicitly pass Number types to satisfy backend validation
       await generateFn({ 
         code: generatedCode,
         durationDays: Number(couponForm.durationDays),
@@ -234,11 +233,7 @@ export default function AdminDashboardPage() {
       toast({ title: "Coupon Generated", description: `Code ${generatedCode} is now active.` });
     } catch (e: any) {
       console.error("Coupon Generation Error:", e);
-      toast({ 
-        title: "Failed to Generate", 
-        description: e.message || "An internal error occurred. Check backend logs.", 
-        variant: "destructive" 
-      });
+      toast({ title: "Failed to Generate", description: e.message || "An internal error occurred.", variant: "destructive" });
     } finally {
       setIsResetting(null);
     }
@@ -393,7 +388,7 @@ export default function AdminDashboardPage() {
         moderationList: allUsers.filter(u => u.isSuspended || u.emailVerified === false),
         summaryStats: { totalTeachers: allStaff.length, totalStudents: allStudents.length, proUsers: allStudents.filter(s => s.subscriptionStatus === 'pro').length }
     };
-  }, [allUsers, searchTerm, profile]);
+  }, [allUsers, searchTerm, profile?.uid, profile?.role]);
 
   if (isLoading || authLoading) {
     return <div className="p-8"><Skeleton className="h-[600px] w-full rounded-3xl" /></div>;

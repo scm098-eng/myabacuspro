@@ -58,12 +58,12 @@ export default function AdminExamsPage() {
     if (!authLoading && (!profile || profile.role !== 'admin')) {
       router.push('/');
     }
-  }, [profile, authLoading, router]);
+  }, [profile?.uid, profile?.role, authLoading, router]);
 
+  // Exam Schedule Listener
   useEffect(() => {
     const db = getFirestore(firebaseApp);
-    
-    const unsubSchedule = onSnapshot(doc(db, "stats", "examSchedule"), (snap) => {
+    return onSnapshot(doc(db, "stats", "examSchedule"), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         setExamDate(data.date || '');
@@ -80,8 +80,14 @@ export default function AdminExamsPage() {
         setLastApplyDate(data.lastApplyDate || '');
       }
     });
+  }, []);
 
-    const unsubApps = onSnapshot(query(collection(db, "examApplications"), orderBy("appliedAt", "desc")), 
+  // Applications Listener
+  useEffect(() => {
+    const db = getFirestore(firebaseApp);
+    const q = query(collection(db, "examApplications"), orderBy("appliedAt", "desc"));
+    
+    return onSnapshot(q, 
       (snap) => {
         setApplications(snap.docs.map(doc => {
           const data = doc.data();
@@ -93,18 +99,23 @@ export default function AdminExamsPage() {
         setLoading(false);
       },
       async (err) => {
+        setLoading(false);
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examApplications', operation: 'list' }));
       }
     );
+  }, []);
 
-    const unsubResults = onSnapshot(query(collection(db, "examResults"), orderBy("submittedAt", "desc")), 
+  // Results Listener
+  useEffect(() => {
+    const db = getFirestore(firebaseApp);
+    const q = query(collection(db, "examResults"), orderBy("submittedAt", "desc"));
+
+    return onSnapshot(q, 
       (snap) => setAllResults(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamResult))),
       async (err) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'examResults', operation: 'list' }));
       }
     );
-
-    return () => { unsubSchedule(); unsubApps(); unsubResults(); };
   }, []);
 
   const handleUpdateStatus = (id: string, status: 'approved' | 'rejected' | 'pending') => {
@@ -382,4 +393,3 @@ export default function AdminExamsPage() {
     </div>
   );
 }
-
