@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { getAuth } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import type { ProfileData } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Loader2, Zap, ShieldCheck, HelpCircle, X, Gift, Ticket, Send, CheckCircle2, Globe, Landmark } from 'lucide-react';
+import { Check, Star, Loader2, Zap, ShieldCheck, Gift, Ticket, Send, CheckCircle2, Globe, Landmark, Settings2, Info } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +20,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import confetti from 'canvas-confetti';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { CURRENCY_MAP } from '@/lib/constants';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // --- CONFIGURATION ---
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!;
@@ -122,11 +125,12 @@ interface DynamicSubscriptionButtonProps {
     user: User | null;
     profile: ProfileData | null;
     selectedPlan: any;
+    localEstimate?: string;
     onSuccess: (response: any) => void;
     onError: (message: string) => void;
 }
 
-const DynamicSubscriptionButton = ({ user, profile, selectedPlan, onSuccess, onError }: DynamicSubscriptionButtonProps) => {
+const DynamicSubscriptionButton = ({ user, profile, selectedPlan, localEstimate, onSuccess, onError }: DynamicSubscriptionButtonProps) => {
     const [isProcessing, setIsProcessing] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
@@ -203,7 +207,7 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, onSuccess, onE
                 amount: amount, 
                 currency: selectedPlan.currency,
                 name: 'Abacus Pro',
-                description: selectedPlan.name,
+                description: localEstimate ? `${selectedPlan.name} (~${localEstimate})` : selectedPlan.name,
                 image: 'https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/logo_icon.png?alt=media',
                 handler: async function (response: any) {
                     const auth = getAuth();
@@ -260,16 +264,38 @@ export default function PricingPage() {
     const router = useRouter();
     const { toast } = useToast();
 
-    const [region, setRegion] = useState<'india' | 'global'>('india');
+    const [selectedCountry, setSelectedCountry] = useState('India');
+    const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
+    const [isRatesLoading, setIsRatesLoading] = useState(true);
+    
     const [couponCode, setCouponCode] = useState('');
     const [isRedeeming, setIsRedeeming] = useState(false);
     const [redemptionSuccess, setRedemptionSuccess] = useState<{ days: number } | null>(null);
 
+    // Initial detection of country
     useEffect(() => {
-        if (profile?.country && profile.country !== 'India') {
-            setRegion('global');
-        }
+      if (profile?.country) {
+        setSelectedCountry(profile.country);
+      }
     }, [profile]);
+
+    // Fetch exchange rates daily (standard implementation)
+    useEffect(() => {
+      const fetchRates = async () => {
+        try {
+          const res = await fetch('https://open.er-api.com/v6/latest/USD');
+          const data = await res.json();
+          if (data.rates) {
+            setExchangeRates(data.rates);
+          }
+        } catch (err) {
+          console.error("Exchange rate fetch failed:", err);
+        } finally {
+          setIsRatesLoading(false);
+        }
+      };
+      fetchRates();
+    }, []);
 
     const handleRedeemCoupon = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -319,41 +345,64 @@ export default function PricingPage() {
     }
 
     const isAlreadyPro = profile?.subscriptionStatus === 'pro';
-    const currentPlans = region === 'india' ? INDIA_PLANS : GLOBAL_PLANS;
-    const currencySymbol = region === 'india' ? '₹' : '$';
+    const isIndiaPlan = selectedCountry === 'India';
+    const currentPlans = isIndiaPlan ? INDIA_PLANS : GLOBAL_PLANS;
+    const currencyInfo = CURRENCY_MAP[selectedCountry] || CURRENCY_MAP["Other"];
+    
+    const isAdmin = profile?.role === 'admin';
+
+    const getConvertedPrice = (usdPrice: number) => {
+      if (isIndiaPlan) return null;
+      const rate = exchangeRates[currencyInfo.code] || 1;
+      return `${currencyInfo.symbol}${Math.round(usdPrice * rate).toLocaleString()}`;
+    };
 
     return (
         <div className="max-w-6xl mx-auto py-12 px-4 space-y-24">
+            {/* --- ADMIN PRICING SIMULATOR --- */}
+            {isAdmin && (
+              <section className="bg-slate-900 p-6 rounded-3xl border-4 border-primary/20 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500 relative z-50">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/20 p-2 rounded-lg"><Settings2 className="text-primary w-6 h-6" /></div>
+                    <div>
+                      <h3 className="text-white font-black uppercase tracking-widest text-xs">Admin Pricing Simulator</h3>
+                      <p className="text-slate-400 text-[10px] font-bold">Simulate how pricing appears in different global regions.</p>
+                    </div>
+                  </div>
+                  <div className="w-full md:w-64">
+                    <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+                      <SelectTrigger className="h-12 bg-white/10 border-white/20 text-white font-bold rounded-xl focus:ring-primary">
+                        <SelectValue placeholder="Select Country" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-80 rounded-2xl">
+                        {Object.keys(CURRENCY_MAP).map(country => (
+                          <SelectItem key={country} value={country}>{country}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </section>
+            )}
+
             <div className="text-center space-y-6">
                 <h1 className="text-4xl font-extrabold sm:text-6xl tracking-tight text-gray-900 font-headline uppercase">Upgrade to <span className="text-primary">Abacus Pro</span></h1>
                 <p className="mt-4 text-xl text-muted-foreground max-w-2xl mx-auto font-medium">Unlock the full power of mental math training and join the global leaderboard.</p>
                 
-                <div className="flex justify-center mt-12">
-                    <div className="inline-flex items-center p-1 bg-muted rounded-2xl border shadow-inner">
-                        <button 
-                            onClick={() => setRegion('india')}
-                            className={cn(
-                                "flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all",
-                                region === 'india' ? "bg-white text-slate-900 shadow-md" : "text-muted-foreground hover:text-slate-600"
-                            )}
-                        >
-                            <Landmark className="w-4 h-4" /> India (₹)
-                        </button>
-                        <button 
-                            onClick={() => setRegion('global')}
-                            className={cn(
-                                "flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all",
-                                region === 'global' ? "bg-white text-slate-900 shadow-md" : "text-muted-foreground hover:text-slate-600"
-                            )}
-                        >
-                            <Globe className="w-4 h-4" /> International ($)
-                        </button>
-                    </div>
-                </div>
+                {isTrialActive && !isAlreadyPro && (
+                  <Badge className="bg-blue-600 text-white px-6 py-2 rounded-full font-black uppercase tracking-[0.2em] shadow-lg animate-pulse border-none">
+                    TRIAL ACTIVE: UPGRADE TO KEEP YOUR RANK
+                  </Badge>
+                )}
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start relative">
-                {currentPlans.map((plan) => (
+                {currentPlans.map((plan) => {
+                    const convertedPrice = getConvertedPrice(plan.price);
+                    const convertedOriginal = getConvertedPrice(plan.originalPrice);
+
+                    return (
                     <Card key={plan.id} className={`relative flex flex-col h-full transition-all duration-300 hover:shadow-2xl rounded-[2.5rem] overflow-hidden ${
                         plan.isBestValue 
                         ? 'border-orange-500 border-4 scale-105 z-10 bg-white' 
@@ -373,12 +422,26 @@ export default function PricingPage() {
                             
                             <div className="mt-6 flex flex-col items-center">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-xl text-muted-foreground line-through">{currencySymbol}{plan.originalPrice}</span>
+                                    <span className="text-xl text-muted-foreground line-through">
+                                      {convertedOriginal || `${plan.currency === 'INR' ? '₹' : '$'}${plan.originalPrice}`}
+                                    </span>
                                     <Badge variant="destructive" className="font-bold border-none">{plan.savings}</Badge>
                                 </div>
-                                <div className="flex items-baseline mt-2">
-                                    <span className="text-5xl font-black">{currencySymbol}{plan.price}</span>
-                                    <span className="text-muted-foreground ml-1 font-semibold text-lg">{plan.durationLabel}</span>
+                                <div className="flex flex-col items-center mt-2">
+                                    <div className="flex items-baseline">
+                                      <span className="text-5xl font-black">{convertedPrice || `${plan.currency === 'INR' ? '₹' : '$'}${plan.price}`}</span>
+                                      <span className="text-muted-foreground ml-1 font-semibold text-lg">{plan.durationLabel}</span>
+                                    </div>
+                                    {!isIndiaPlan && (
+                                      <div className="mt-3 bg-muted/50 px-4 py-2 rounded-xl border border-border/50">
+                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                                          Securely billed as ${plan.price}.00 USD
+                                        </p>
+                                        <p className="text-[8px] font-bold text-slate-400 uppercase mt-0.5">
+                                          Actual deduction depends on your bank
+                                        </p>
+                                      </div>
+                                    )}
                                 </div>
                             </div>
                         </CardHeader>
@@ -404,6 +467,7 @@ export default function PricingPage() {
                             ) : (
                                 <DynamicSubscriptionButton 
                                     selectedPlan={plan}
+                                    localEstimate={convertedPrice}
                                     user={user} 
                                     profile={profile}
                                     onSuccess={() => toast({ title: "Payment Successful", description: "Your Pro features are now active!" })} 
@@ -412,7 +476,7 @@ export default function PricingPage() {
                             )}
                         </CardFooter>
                     </Card>
-                ))}
+                )})}
             </div>
 
             {/* --- GIFT COUPON SECTION --- */}
@@ -464,62 +528,77 @@ export default function PricingPage() {
                         </TableHeader>
                         <TableBody>
                             <TableRow className="border-b-slate-100">
-                                <TableCell className="font-bold py-6 px-8">Basic Add & Sub (Direct Movements)</TableCell>
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Basic Add & Sub (Direct Movements)</TableCell>
                                 <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                                 <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100 bg-slate-50/30">
-                                <TableCell className="font-bold py-6 px-8">Visualization Drills (Beads Value)</TableCell>
-                                <TableCell className="text-center"><span className="text-xs font-black text-slate-500">Limited Levels</span></TableCell>
-                                <TableCell className="text-center"><span className="text-xs font-black text-primary">All 12 Mastery Levels</span></TableCell>
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Visualization Drills (Beads Value)</TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">Limited Levels</span></TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">All 12 Mastery Levels</span></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100">
-                                <TableCell className="font-bold py-6 px-8">Formula Mastery (Small/Big/Combi)</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-slate-300 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Formula Mastery (Small/Big/Combi)</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
                                 <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100 bg-slate-50/30">
-                                <TableCell className="font-bold py-6 px-8">Bubble Game Experience</TableCell>
-                                <TableCell className="text-center"><span className="text-xs font-black text-slate-500">First 5 Levels</span></TableCell>
-                                <TableCell className="text-center"><span className="text-xs font-black text-primary">All 1,000+ Levels</span></TableCell>
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Bubble Game Experience</TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">First 5 Levels</span></TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">All 1,000+ Levels</span></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100">
-                                <TableCell className="font-bold py-6 px-8">Official Grand Final Exams</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-slate-300 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Official Grand Final Exams</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
                                 <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100 bg-slate-50/30">
-                                <TableCell className="font-bold py-6 px-8">Professional Certification & Ranks</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-slate-300 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Professional Certification & Ranks</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
                                 <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100">
-                                <TableCell className="font-bold py-6 px-8">Abacus Mastery Labs (Mult/Div)</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-slate-300 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Abacus Mastery Labs (Mult/Div)</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
                                 <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100 bg-slate-50/30">
-                                <TableCell className="font-bold py-6 px-8">Global Hall of Fame Placement</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-slate-300 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Global Hall of Fame Placement</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
                                 <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                             </TableRow>
                             <TableRow className="bg-slate-50/30">
-                                <TableCell className="font-bold py-6 px-8">Advanced Progress Analytics</TableCell>
-                                <TableCell className="text-center"><span className="text-xs font-black text-slate-500">Basic Scores</span></TableCell>
-                                <TableCell className="text-center"><span className="text-xs font-black text-primary">Full Performance Trends</span></TableCell>
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Advanced Progress Analytics</TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">Basic Scores</span></TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">Full Performance Trends</span></TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
                 </Card>
             </section>
 
-            <div className="text-center space-y-6 pt-12 border-t">
-                <div className="flex justify-center gap-4">
-                    <ShieldCheck className="w-12 h-12 text-primary" />
-                    <div className="text-left">
-                        <p className="font-black uppercase tracking-tight">100% Secure Payments</p>
-                        <p className="text-sm text-muted-foreground font-medium">Processed via Razorpay with industry-standard encryption.</p>
+            <div className="text-center space-y-10 pt-12 border-t">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-10">
+                    <div className="flex items-center gap-4 text-left">
+                        <div className="bg-blue-100 p-3 rounded-2xl"><ShieldCheck className="w-10 h-10 text-blue-600" /></div>
+                        <div>
+                            <p className="font-black uppercase tracking-tight text-slate-900 leading-none mb-1">100% Secure Payments</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Industry-Standard Encryption</p>
+                        </div>
                     </div>
+                    <div className="flex items-center gap-4 text-left">
+                        <div className="bg-orange-100 p-3 rounded-2xl"><Globe className="w-10 h-10 text-orange-600" /></div>
+                        <div>
+                            <p className="font-black uppercase tracking-tight text-slate-900 leading-none mb-1">Global Training Ground</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Mastery for all countries</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-slate-100/50 p-6 rounded-2xl max-w-2xl mx-auto flex items-start gap-4">
+                  <Info className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
+                  <p className="text-left text-xs font-medium text-slate-500 leading-relaxed">
+                    Note: International payments are processed in USD. Your financial institution will automatically convert this to your local currency at their prevailing daily rate. Subscription prices shown in local currency are close estimates to help you understand the value in your region.
+                  </p>
                 </div>
             </div>
 

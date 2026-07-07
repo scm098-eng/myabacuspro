@@ -190,6 +190,25 @@ export const FORMULA_GUIDES: Record<string, { title: string, steps: string[] }> 
   'combination-plus-9': { title: "Combination +9", steps: ["Formula: +9 = +10 - 5 + 4", "To add 9: Add 1 bead to the rod on the LEFT (+10).", "Then: Push UP the 5-bead (-5) and Add 4 earthly beads (+4)."] },
 };
 
+export const CURRENCY_MAP: Record<string, { code: string, symbol: string }> = {
+  "India": { code: "INR", symbol: "₹" },
+  "China": { code: "CNY", symbol: "¥" },
+  "United States": { code: "USD", symbol: "$" },
+  "United Kingdom": { code: "GBP", symbol: "£" },
+  "United Arab Emirates": { code: "AED", symbol: "د.إ" },
+  "Australia": { code: "AUD", symbol: "$" },
+  "Canada": { code: "CAD", symbol: "$" },
+  "Singapore": { code: "SGD", symbol: "$" },
+  "Malaysia": { code: "MYR", symbol: "RM" },
+  "Japan": { code: "JPY", symbol: "¥" },
+  "Germany": { code: "EUR", symbol: "€" },
+  "France": { code: "EUR", symbol: "€" },
+  "Brazil": { code: "BRL", symbol: "R$" },
+  "Russia": { code: "RUB", symbol: "₽" },
+  "South Africa": { code: "ZAR", symbol: "R" },
+  "Other": { code: "USD", symbol: "$" }
+};
+
 export const APP_VERSION = "2.3.0";
 
 export const UPDATE_NOTES = [
