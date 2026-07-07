@@ -5,7 +5,7 @@ import { getAuth } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import type { ProfileData } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Loader2, Zap, ShieldCheck, Gift, Ticket, Send, CheckCircle2, Globe, Landmark, Settings2, Info, X } from 'lucide-react';
+import { Check, Star, Loader2, Zap, ShieldCheck, Gift, Ticket, Send, CheckCircle2, Globe, Landmark, Settings2, Info, X, Crown } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Badge } from '@/components/ui/badge';
@@ -25,8 +25,6 @@ import { CURRENCY_MAP } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // --- CONFIGURATION ---
-const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!;
-
 const INDIA_PLANS = [
     {
         id: 'monthly',
@@ -159,13 +157,15 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, localEstimate,
     };
 
     const handleSubscribe = async () => {
+        const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+
         if (!user?.uid) {
             onError("Authentication failed. Please log in.");
             return;
         }
 
         if (!RAZORPAY_KEY_ID) {
-            onError("Razorpay Key ID is not configured.");
+            onError("Razorpay Key ID is not configured. Please check your App Hosting secrets.");
             return;
         }
 
@@ -278,7 +278,7 @@ export default function PricingPage() {
       }
     }, [profile]);
 
-    // Fetch exchange rates daily (standard implementation)
+    // Fetch exchange rates daily
     useEffect(() => {
       const fetchRates = async () => {
         try {
