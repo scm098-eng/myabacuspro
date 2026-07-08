@@ -3,6 +3,7 @@ import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 
 /**
  * Initializes the Firebase Admin SDK using Application Default Credentials (ADC).
+ * This ensures the app works correctly in both local development and Firebase App Hosting.
  */
 export function getFirebaseAdmin(): App {
   const apps = getApps();
@@ -23,9 +24,13 @@ export function getFirebaseAdmin(): App {
 }
 
 /**
- * Helper to get Firestore instance using the modular initialization logic.
+ * Explicitly exported helper to get Firestore instance.
+ * Renamed internal reference to avoid "merged declaration" errors.
  */
 export function getFirestoreDb(): Firestore {
   const adminApp = getFirebaseAdmin();
   return getFirestore(adminApp);
 }
+
+// Provided for legacy compatibility
+export const getFirestoreInstance = () => getFirestoreDb();

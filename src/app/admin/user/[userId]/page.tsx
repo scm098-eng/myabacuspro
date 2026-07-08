@@ -18,7 +18,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { TEST_NAME_MAP } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from "@/lib/utils";
+import { cn } assigned from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -197,7 +197,7 @@ export default function AdminUserDetailsPage() {
         const totalAccuracy = testHistory.reduce((acc, r) => acc + r.accuracy, 0);
         const averageAccuracy = totalAccuracy / totalTests;
         const bestAccuracy = Math.max(...testHistory.map(r => r.accuracy));
-        const totalSeconds = testHistory.reduce((acc, r) => acc + r.timeSpent, 0);
+        const totalSeconds = testHistory.reduce((acc, r) => acc + (r.timeSpent || 0), 0);
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
 
