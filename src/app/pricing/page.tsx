@@ -277,19 +277,57 @@ export default function PricingPage() {
     const [selectedCountry, setSelectedCountry] = useState('India');
     const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
     const [isRatesLoading, setIsRatesLoading] = useState(true);
+    const [isMounted, setIsMounted] = useState(false);
     
     const [couponCode, setCouponCode] = useState('');
     const [isRedeeming, setIsRedeeming] = useState(false);
     const [redemptionSuccess, setRedemptionSuccess] = useState<{ days: number } | null>(null);
 
-    // Initial detection of country
     useEffect(() => {
-      if (profile?.country) {
-        setSelectedCountry(profile.country);
-      }
-    }, [profile]);
+      setIsMounted(true);
+    }, []);
 
-    // Fetch exchange rates daily
+    // Dynamic detection of country via Profile, IP Geolocation, or URL parameter
+    useEffect(() => {
+      if (!isMounted) return;
+
+      // 1. Priority check for URL override (Developer testing)
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlCountry = urlParams.get('country');
+      if (urlCountry && CURRENCY_MAP[urlCountry]) {
+        setSelectedCountry(urlCountry);
+        return;
+      }
+
+      if (profile?.country) {
+        // 2. If logged in, use their database profile selection
+        setSelectedCountry(profile.country);
+      } else {
+        // 3. For public visitors, check their true IP location
+        const detectIpCountry = async () => {
+          try {
+            const res = await fetch('https://ipapi.co/json/');
+            const data = await res.json();
+            
+            if (data.country_name) {
+              if (data.country_name === 'India') {
+                setSelectedCountry('India');
+              } else if (CURRENCY_MAP[data.country_name]) {
+                setSelectedCountry(data.country_name);
+              } else {
+                setSelectedCountry('Other');
+              }
+            }
+          } catch (err) {
+            console.error("IP-based geolocation detection failed:", err);
+            setSelectedCountry('India'); // Fallback default
+          }
+        };
+        detectIpCountry();
+      }
+    }, [profile, isMounted]);
+
+    // Fetch exchange rates
     useEffect(() => {
       const fetchRates = async () => {
         try {
@@ -341,7 +379,7 @@ export default function PricingPage() {
         }
     };
 
-    if (isLoading) {
+    if (isLoading || !isMounted) {
         return (
             <div className="max-w-6xl mx-auto p-4">
                 <Skeleton className="h-12 w-3/4 mx-auto mb-12" />

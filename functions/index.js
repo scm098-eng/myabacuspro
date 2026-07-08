@@ -1,3 +1,4 @@
+
 /**
  * Firebase Cloud Functions v2 (Node.js) Code
  * filename: functions/index.js
@@ -704,7 +705,7 @@ exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZO
     const payload = request.data || {};
     const planId = payload.planId || (payload.data && payload.data.planId);
     
-    logger.info("DEBUG_PAYMENT: createRazorpaySubscription Incoming Data", { payload });
+    logger.info("DEBUG_PAYMENT: Incoming Data (Subscription)", { payload });
 
     if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
     if (!planId) throw new HttpsError('invalid-argument', "Missing plan ID for subscription.");
@@ -742,7 +743,7 @@ exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZO
         logger.error("DEBUG_PAYMENT: Full Razorpay Error Context (Subscription)", {
             message: err.message,
             statusCode: err.statusCode,
-            errorBody: err.error,
+            errorBody: err.error, 
             stack: err.stack
         });
         throw new HttpsError('internal', err.message || "Failed to create subscription");
@@ -758,7 +759,7 @@ exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY
     const amountVal = payload.amount || (payload.data && payload.data.amount);
     const currency = payload.currency || (payload.data && payload.data.currency) || 'INR';
     
-    logger.info("DEBUG_PAYMENT: createOneTimeOrder Incoming Data", { payload });
+    logger.info("DEBUG_PAYMENT: Incoming Data (Order)", { payload });
 
     if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
     
@@ -786,7 +787,7 @@ exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY
         logger.error("DEBUG_PAYMENT: Full Razorpay Error Context (Order)", {
             message: err.message,
             statusCode: err.statusCode,
-            errorBody: err.error,
+            errorBody: err.error, 
             stack: err.stack
         });
         throw new HttpsError('internal', err.message || "Failed to create order");
