@@ -1,4 +1,3 @@
-
 import { MetadataRoute } from 'next';
 import { getFirestoreDb } from '@/lib/firebase-admin';
 
@@ -41,7 +40,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 2. Fetch dynamic blog routes from Firestore
   let blogRoutes: MetadataRoute.Sitemap = [];
   try {
-    const snapshot = await getFirestoreDb().collection('blogs').get();
+    const db = getFirestoreDb();
+    const snapshot = await db.collection('blogs').get();
     
     blogRoutes = snapshot.docs.map((doc: any) => {
       const data = doc.data();

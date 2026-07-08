@@ -1,4 +1,3 @@
-
 /**
  * Firebase Cloud Functions v2 (Node.js) Code
  * filename: functions/index.js
@@ -701,21 +700,17 @@ exports.generateCoupon = onCall(async (request) => {
  * Creates a Razorpay Subscription for the given plan.
  */
 exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] }, async (request) => {
-    logger.info("DEBUG_PAYMENT: createRazorpaySubscription started", { data: request.data });
-    
-    if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
-    
     const data = request.data || {};
     const planId = data.planId;
-    const userId = request.auth.uid;
+    
+    logger.info("DEBUG_PAYMENT: createRazorpaySubscription Incoming Data", { data });
 
-    if (!planId) {
-        logger.error("DEBUG_PAYMENT: Missing planId in request data", { data });
-        throw new HttpsError('invalid-argument', "Missing plan ID for subscription.");
-    }
+    if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
+    if (!planId) throw new HttpsError('invalid-argument', "Missing plan ID for subscription.");
 
     try {
         const rzp = getRazorpay();
+        const userId = request.auth.uid;
         const userDoc = await db.collection('users').doc(userId).get();
         const userData = userDoc.data();
 
@@ -757,29 +752,24 @@ exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZO
  * Creates a one-time Razorpay Order.
  */
 exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] }, async (request) => {
-    logger.info("DEBUG_PAYMENT: createOneTimeOrder started", { data: request.data });
-
-    if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
-    
     const data = request.data || {};
     const amount = Number(data.amount);
     const currency = data.currency || 'INR';
-    const planDuration = data.planDuration;
+    
+    logger.info("DEBUG_PAYMENT: createOneTimeOrder Incoming Data", { data });
 
-    if (!amount || isNaN(amount)) {
-        logger.error("DEBUG_PAYMENT: Invalid or missing amount in request data", { data });
-        throw new HttpsError('invalid-argument', "Valid amount is required for one-time orders.");
-    }
+    if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
+    if (!amount || isNaN(amount)) throw new HttpsError('invalid-argument', "Valid amount is required for one-time orders.");
 
     try {
         const rzp = getRazorpay();
         const order = await rzp.orders.create({
-            amount: Math.round(amount * 100),
+            amount: Math.round(amount * 100), // Convert to paise/cents
             currency: currency,
             receipt: `receipt_${Date.now()}_${request.auth.uid.slice(0, 5)}`,
             notes: { 
                 user_id: request.auth.uid,
-                plan_duration_months: planDuration
+                plan_duration_months: data.planDuration
             }
         });
 

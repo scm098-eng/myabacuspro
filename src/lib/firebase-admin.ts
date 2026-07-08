@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 
@@ -24,7 +23,7 @@ export function getFirebaseAdmin(): App {
 }
 
 /**
- * Helper to get Firestore directly using the modular initialization logic.
+ * Helper to get Firestore instance using the modular initialization logic.
  */
 export function getFirestoreDb(): Firestore {
   const adminApp = getFirebaseAdmin();
