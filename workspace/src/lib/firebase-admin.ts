@@ -31,4 +31,5 @@ export function getFirestoreDb(): Firestore {
   return getAdminFirestore(adminApp);
 }
 
-export const getFirestore = () => getFirestoreDb();
+// Fixed merged declaration collision by using a clear internal reference name
+export const getFirestoreInstance = () => getFirestoreDb();

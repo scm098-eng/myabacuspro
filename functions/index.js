@@ -700,10 +700,11 @@ exports.generateCoupon = onCall(async (request) => {
  * Creates a Razorpay Subscription for the given plan.
  */
 exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] }, async (request) => {
-    const data = request.data || {};
-    const planId = data.planId || data.data?.planId;
+    // Robust extraction of planId from v2 callable format
+    const payload = request.data || {};
+    const planId = payload.planId || (payload.data && payload.data.planId);
     
-    logger.info("DEBUG_PAYMENT: createRazorpaySubscription Incoming Data", { data });
+    logger.info("DEBUG_PAYMENT: createRazorpaySubscription Incoming Data", { payload });
 
     if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
     if (!planId) throw new HttpsError('invalid-argument', "Missing plan ID for subscription.");
@@ -752,13 +753,16 @@ exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZO
  * Creates a one-time Razorpay Order.
  */
 exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] }, async (request) => {
-    const data = request.data || {};
-    const amount = Number(data.amount || data.data?.amount);
-    const currency = data.currency || data.data?.currency || 'INR';
+    // Robust extraction of amount from v2 callable format
+    const payload = request.data || {};
+    const amountVal = payload.amount || (payload.data && payload.data.amount);
+    const currency = payload.currency || (payload.data && payload.data.currency) || 'INR';
     
-    logger.info("DEBUG_PAYMENT: createOneTimeOrder Incoming Data", { data });
+    logger.info("DEBUG_PAYMENT: createOneTimeOrder Incoming Data", { payload });
 
     if (!request.auth) throw new HttpsError('unauthenticated', "Auth required.");
+    
+    const amount = Number(amountVal);
     if (!amount || isNaN(amount)) throw new HttpsError('invalid-argument', "Valid amount is required for one-time orders.");
 
     try {
@@ -769,7 +773,7 @@ exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY
             receipt: `receipt_${Date.now()}_${request.auth.uid.slice(0, 5)}`,
             notes: { 
                 user_id: request.auth.uid,
-                plan_duration_months: data.planDuration || data.data?.planDuration
+                plan_duration_months: payload.planDuration || (payload.data && payload.data.planDuration)
             }
         });
 
