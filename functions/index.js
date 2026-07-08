@@ -701,7 +701,7 @@ exports.generateCoupon = onCall(async (request) => {
  */
 exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] }, async (request) => {
     const data = request.data || {};
-    const planId = data.planId;
+    const planId = data.planId || data.data?.planId;
     
     logger.info("DEBUG_PAYMENT: createRazorpaySubscription Incoming Data", { data });
 
@@ -753,8 +753,8 @@ exports.createRazorpaySubscription = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZO
  */
 exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] }, async (request) => {
     const data = request.data || {};
-    const amount = Number(data.amount);
-    const currency = data.currency || 'INR';
+    const amount = Number(data.amount || data.data?.amount);
+    const currency = data.currency || data.data?.currency || 'INR';
     
     logger.info("DEBUG_PAYMENT: createOneTimeOrder Incoming Data", { data });
 
@@ -769,7 +769,7 @@ exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY
             receipt: `receipt_${Date.now()}_${request.auth.uid.slice(0, 5)}`,
             notes: { 
                 user_id: request.auth.uid,
-                plan_duration_months: data.planDuration
+                plan_duration_months: data.planDuration || data.data?.planDuration
             }
         });
 

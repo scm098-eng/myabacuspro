@@ -254,7 +254,7 @@ export default function AdminUserDetailsPage() {
         <Card className={cn("overflow-hidden border-slate-100 shadow-sm", userProfile.isSuspended ? "bg-red-50/50" : "bg-card")}>
             <CardHeader className="flex flex-col md:flex-row items-center gap-8 p-10">
                  <Avatar className="h-24 w-24 bg-pink-500 text-white shrink-0">
-                    <AvatarImage src={userProfile.profilePhoto || ''} alt={displayName} />
+                    <AvatarImage src={userProfile.profilePhoto ?? undefined} alt={displayName} />
                     <AvatarFallback className="text-4xl font-bold">{displayInitial}</AvatarFallback>
                 </Avatar>
                 
@@ -450,7 +450,7 @@ export default function AdminUserDetailsPage() {
                             <TableRow key={student.uid} className="hover:bg-slate-50/50">
                                 <TableCell className="pl-8">
                                     <div className="flex items-center gap-3">
-                                        <Avatar className="h-8 w-8"><AvatarImage src={student.profilePhoto} /><AvatarFallback>{student.firstName?.[0]}</AvatarFallback></Avatar>
+                                        <Avatar className="h-8 w-8"><AvatarImage src={student.profilePhoto ?? undefined} /><AvatarFallback>{student.firstName?.[0]}</AvatarFallback></Avatar>
                                         <p className="font-bold text-slate-900">{student.firstName} {student.surname}</p>
                                     </div>
                                 </TableCell>
