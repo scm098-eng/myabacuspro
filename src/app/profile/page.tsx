@@ -133,7 +133,6 @@ export default function ProfilePage() {
   const dobValue = watch('dob');
   const age = calculateAge(dobValue);
 
-  // Check if profile is essentially empty (common for new Google signups)
   const isProfileEmpty = profile && !profile.grade && !profile.schoolName;
 
   useEffect(() => {
@@ -216,8 +215,6 @@ export default function ProfilePage() {
       await fetchProfile(user); 
       toast({ title: "Profile Updated", description: "Your details have been saved successfully." });
       setIsEditing(false);
-      
-      // If they were onboarding, send them to dashboard
       if (isProfileEmpty) {
         router.push('/dashboard');
       }
@@ -286,6 +283,7 @@ export default function ProfilePage() {
   const isStudentWithoutTeacher = profile.role === 'student' && (!watch('teacherId') || watch('teacherId') === 'unassigned');
   const teacherObj = teachers.find(t => t.uid === watch('teacherId'));
   const teacherName = teacherObj ? `${teacherObj.firstName} ${teacherObj.surname}` : 'Not Assigned';
+  const roleName = profile.role === 'teacher' ? 'teacher' : 'student';
 
   return (
     <>
@@ -299,7 +297,7 @@ export default function ProfilePage() {
                         {profile.emailVerified ? <BadgeCheck className="w-6 h-6 text-green-500" /> : <ShieldAlert className="w-6 h-6 text-orange-500" />}
                     </CardTitle>
                     <CardDescription>
-                      {isProfileEmpty ? 'Welcome! Please complete your student profile details first.' : (profile.emailVerified ? 'Verified Account' : 'Action Required: Verification Pending')}
+                      {isProfileEmpty ? `Welcome! Please complete your ${roleName} profile details first.` : (profile.emailVerified ? 'Verified Account' : 'Action Required: Verification Pending')}
                     </CardDescription>
                 </div>
                 {!isEditing && !isProfileEmpty && <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>}
@@ -321,7 +319,9 @@ export default function ProfilePage() {
                     <div className="space-y-6">
                       <div className="flex items-center gap-2 text-primary border-b pb-2">
                         <User className="w-5 h-5" />
-                        <h3 className="text-xl font-headline font-bold uppercase tracking-tight">Student Details</h3>
+                        <h3 className="text-xl font-headline font-bold uppercase tracking-tight">
+                          {profile.role === 'teacher' ? 'Teacher Details' : 'Student Details'}
+                        </h3>
                       </div>
 
                       {isEditing ? (
@@ -359,25 +359,25 @@ export default function ProfilePage() {
                         </div>
                       )}
                       
-                      {isEditing ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="teacherId" render={({ field }) => (
-                                    <FormItem><FormLabel>Assigned Teacher *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={profile.role !== 'student'}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>
-                                        <SelectItem value="unassigned">None</SelectItem>
-                                        {teachers.map(t => <SelectItem key={t.uid} value={t.uid}>{t.firstName} {t.surname}</SelectItem>)}
-                                    </SelectContent></Select><FormMessage /></FormItem>
+                      {profile.role === 'student' && (
+                        isEditing ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <FormField control={form.control} name="teacherId" render={({ field }) => (
+                                      <FormItem><FormLabel>Assigned Teacher *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>
+                                          <SelectItem value="unassigned">None</SelectItem>
+                                          {teachers.map(t => <SelectItem key={t.uid} value={t.uid}>{t.firstName} {t.surname}</SelectItem>)}
+                                      </SelectContent></Select><FormMessage /></FormItem>
+                                  )} />
+                                <FormField control={form.control} name="grade" render={({ field }) => (
+                                    <FormItem><FormLabel>Grade/Std. *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                 )} />
-                            {profile.role === 'student' && (
-                              <FormField control={form.control} name="grade" render={({ field }) => (
-                                  <FormItem><FormLabel>Grade/Std. *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                              )} />
-                            )}
+                            </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <ReadOnlyField label="Teacher" value={teacherName} />
+                            <ReadOnlyField label="Grade/Std." value={watch('grade')} />
                           </div>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <ReadOnlyField label="Teacher" value={teacherName} />
-                          {profile.role === 'student' && <ReadOnlyField label="Grade/Std." value={watch('grade')} />}
-                        </div>
+                        )
                       )}
 
                       {isEditing && profile.role === 'student' && (
