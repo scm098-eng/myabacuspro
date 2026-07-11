@@ -24,6 +24,8 @@ import ReactCrop, { type Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
+import { firebaseApp } from '@/lib/firebase';
 
 const indianStates = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"];
 const grades = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"];
@@ -127,7 +129,7 @@ function SignupContent() {
   const ageValue = calculateAge(watch('dob'));
   const selectedRole = watch('role');
   const selectedCountry = watch('country');
-  const teacherIdParam = searchParams.get('teacher');
+  const refParam = searchParams.get('ref');
 
   useEffect(() => {
     const fetchTeachers = async () => {
@@ -135,18 +137,23 @@ function SignupContent() {
         const approved = await getApprovedTeachers();
         setTeachers(approved);
         
-        // Auto-detect teacher from URL
-        if (teacherIdParam) {
-          const matched = approved.find(t => t.uid === teacherIdParam);
-          if (matched) {
-            setValue('teacherId', teacherIdParam);
-            toast({ title: "Referral Applied", description: `Registering under ${matched.firstName} ${matched.surname}.` });
+        // Auto-detect teacher from Referral Code
+        if (refParam) {
+          const db = getFirestore(firebaseApp);
+          const q = query(collection(db, 'users'), where('referralCode', '==', refParam));
+          const snap = await getDocs(q);
+          
+          if (!snap.empty) {
+            const teacherDoc = snap.docs[0];
+            const data = teacherDoc.data() as ProfileData;
+            setValue('teacherId', teacherDoc.id);
+            toast({ title: "Referral Applied", description: `Registering under ${data.firstName} ${data.surname}.` });
           }
         }
       } catch (err) { console.error(err); }
     };
     fetchTeachers();
-  }, [getApprovedTeachers, teacherIdParam, setValue, toast]);
+  }, [getApprovedTeachers, refParam, setValue, toast]);
 
   useEffect(() => {
     const subscription = watch((value, { name }) => {
@@ -260,12 +267,12 @@ function SignupContent() {
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
                           Assigned Teacher *
-                          {teacherIdParam && <Lock className="w-3 h-3 text-muted-foreground" />}
+                          {refParam && <Lock className="w-3 h-3 text-muted-foreground" />}
                         </FormLabel>
                         <Select 
                           onValueChange={field.onChange} 
                           value={field.value} 
-                          disabled={!!teacherIdParam}
+                          disabled={!!refParam}
                         >
                           <FormControl><SelectTrigger><SelectValue placeholder="Select Teacher" /></SelectTrigger></FormControl>
                           <SelectContent>
@@ -273,7 +280,7 @@ function SignupContent() {
                             {teachers.map(t => <SelectItem key={t.uid} value={t.uid}>{t.firstName} {t.surname}</SelectItem>)}
                           </SelectContent>
                         </Select>
-                        {teacherIdParam && <p className="text-[10px] font-bold text-primary uppercase">Locked by referral link</p>}
+                        {refParam && <p className="text-[10px] font-bold text-primary uppercase">Locked by referral code</p>}
                         <FormMessage />
                       </FormItem>
                     )} />

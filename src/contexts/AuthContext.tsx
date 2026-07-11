@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -263,6 +262,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userDocRef = doc(firestore, 'users', user.uid);
       const userEmail = user.email?.toLowerCase() || '';
       const isAdmin = ADMIN_EMAILS.includes(userEmail);
+      const isTeacher = values.role === 'teacher';
       
       const rawData = {
           ...values,
@@ -274,6 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           subscriptionStatus: isAdmin ? 'pro' : 'free',
           role: isAdmin ? 'admin' : values.role,
           teacherId: values.teacherId || null, 
+          referralCode: isTeacher ? `REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}` : null,
           isSuspended: false,
           isAdminRead: false,
           status: isAdmin ? 'approved' : (values.role === 'teacher' ? 'pending' : null),
@@ -317,6 +318,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         subscriptionStatus: isAdmin ? 'pro' : 'free',
         role: isAdmin ? 'admin' : 'student',
         teacherId: null,
+        referralCode: null, // Default to null, will be generated if they switch to teacher
         isSuspended: false,
         isAdminRead: false,
         status: isAdmin ? 'approved' : null,

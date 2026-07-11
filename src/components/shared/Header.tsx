@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -107,7 +106,7 @@ export function Header() {
             <DropdownMenuSeparator />
             {canSeeDashboard && (
               <DropdownMenuItem onClick={() => router.push('/admin')}>
-                Admin Dashboard
+                {profile?.role === 'teacher' ? 'Teacher Dashboard' : 'Admin Dashboard'}
               </DropdownMenuItem>
             )}
             {profile?.role === 'admin' && (
@@ -237,7 +236,7 @@ export function Header() {
                                             </div>
                                             
                                             <div className="grid grid-cols-1 gap-2">
-                                                {canSeeDashboard && <Button className="w-full justify-start" variant="outline" onClick={() => handleLinkClick('/admin')}>Admin Dashboard</Button>}
+                                                {canSeeDashboard && <Button className="w-full justify-start" variant="outline" onClick={() => handleLinkClick('/admin')}>{profile?.role === 'teacher' ? 'Teacher Dashboard' : 'Admin Dashboard'}</Button>}
                                                 {profile?.role === 'admin' && <Button className="w-full justify-start" variant="outline" onClick={() => handleLinkClick('/admin/exams')}>Manage Exams</Button>}
                                                 {profile?.role === 'student' && <Button className="w-full justify-start" variant="outline" onClick={() => handleLinkClick('/dashboard')}>My Dashboard</Button>}
                                                 {profile?.subscriptionStatus === 'pro' && <Button className="w-full justify-start text-indigo-600 font-bold" variant="outline" onClick={() => handleLinkClick('/exams')}>Official Exams</Button>}

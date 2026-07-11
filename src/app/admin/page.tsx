@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, Zap, Plus, Edit, Trash2, Loader2, Send, ShieldAlert, UserX, Image as ImageIcon, Mail, UserCheck, Upload, CheckCircle2, Ticket, Copy, Check, Clock, Share2 } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, Zap, Plus, Edit, Trash2, Loader2, Send, ShieldAlert, UserX, Image as ImageIcon, Mail, UserCheck, Upload, CheckCircle2, Ticket, Copy, Check, Clock, Share2, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
@@ -90,7 +90,7 @@ const htmlToPlainText = (html: string) => {
 
 export default function AdminDashboardPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
-  const { profile, getAllUsers, isLoading: authLoading, getStudentTitle, approveTeacher, toggleUserSuspension, markUserAsRead } = useAuth();
+  const { profile, getAllUsers, isLoading: authLoading, getStudentTitle, approveTeacher, toggleUserSuspension, markUserAsRead, updateUserProfile } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -128,6 +128,14 @@ export default function AdminDashboardPage() {
 
   const currentWeekKey = useMemo(() => getUTCMondayKey(), []);
   const currentMonthKey = useMemo(() => getUTCMonthKey(), []);
+
+  // Ensure teacher has a referral code
+  useEffect(() => {
+    if (profile?.role === 'teacher' && !profile.referralCode) {
+      const newCode = `REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      updateUserProfile(profile.uid, { referralCode: newCode } as any).catch(e => console.warn("Referral code generation failed", e));
+    }
+  }, [profile, updateUserProfile]);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -376,16 +384,25 @@ export default function AdminDashboardPage() {
     const allStaff = allUsers.filter(u => u.role === 'teacher' || u.role === 'admin');
     const allStudents = allUsers.filter(u => u.role === 'student').filter(u => !ADMIN_EMAILS.includes(u.email?.toLowerCase()));
     
+    const myStudents = allStudents.filter(u => (profile?.role === 'admin' || u.teacherId === profile?.uid));
+    const proStudents = myStudents.filter(s => s.subscriptionStatus === 'pro');
+    const freeStudents = myStudents.filter(s => s.subscriptionStatus !== 'pro');
+
     return { 
         filteredStaff: allStaff.filter(matches).map(s => {
           const students = allStudents.filter(stu => stu.teacherId === s.uid);
           return { ...s, proCount: students.filter(stu => stu.subscriptionStatus === 'pro').length, freeCount: students.filter(stu => stu.subscriptionStatus !== 'pro').length };
         }),
-        filteredStudents: allStudents.filter(u => (profile?.role === 'admin' || u.teacherId === profile?.uid)).filter(matches),
+        filteredStudents: myStudents.filter(matches),
         pendingTeachers: allUsers.filter(u => u.role === 'teacher' && u.status === 'pending'),
         unreadStudents: allStudents.filter(u => u.isAdminRead === false),
         moderationList: allUsers.filter(u => u.isSuspended || u.emailVerified === false),
-        summaryStats: { totalTeachers: allStaff.length, totalStudents: allStudents.length, proUsers: allStudents.filter(s => s.subscriptionStatus === 'pro').length }
+        summaryStats: { 
+          totalTeachers: allStaff.length, 
+          totalStudents: myStudents.length, 
+          proUsers: proStudents.length,
+          freeUsers: freeStudents.length
+        }
     };
   }, [allUsers, searchTerm, profile?.uid, profile?.role]);
 
@@ -393,7 +410,7 @@ export default function AdminDashboardPage() {
     return <div className="p-8"><Skeleton className="h-[600px] w-full rounded-3xl" /></div>;
   }
 
-  const referralLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/signup?teacher=${profile?.uid}`;
+  const referralLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/signup?ref=${profile?.referralCode || ''}`;
 
   return (
     <div className="space-y-8">
@@ -406,7 +423,11 @@ export default function AdminDashboardPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <StatCard title="Total Students" value={processedData.summaryStats.totalStudents} icon={GraduationCap} />
                 <StatCard title="Pro Accounts" value={processedData.summaryStats.proUsers} icon={Crown} />
-                <StatCard title="Active Staff" value={processedData.summaryStats.totalTeachers} icon={Briefcase} />
+                {profile?.role === 'admin' ? (
+                  <StatCard title="Active Staff" value={processedData.summaryStats.totalTeachers} icon={Briefcase} />
+                ) : (
+                  <StatCard title="Free Accounts" value={processedData.summaryStats.freeUsers} icon={User} />
+                )}
             </div>
             <div className="relative group max-w-2xl">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />

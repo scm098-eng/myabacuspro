@@ -1,4 +1,3 @@
-
 export type TestType =
   | 'addition-subtraction'
   | 'multiplication'
@@ -231,6 +230,7 @@ export type SignupData = {
   profilePhoto?: File | null;
   role: UserRole;
   teacherId?: string;
+  referralCode?: string | null;
   instituteName?: string;
   instituteCountry?: string;
   instituteAddressLine1?: string;
@@ -248,6 +248,7 @@ export interface ProfileData {
   middleName?: string;
   surname: string;
   dob: string; 
+  referralCode?: string | null;
   subscriptionType?: 'recurring' | 'one-time' | 'none' | 'gift' | null;
   subscriptionExpiry?: any | null;
   activeTier?: 'monthly' | '6months' | '12months' | 'annual' | null;
@@ -317,6 +318,7 @@ export type UpdateProfilePayload = {
   middleName?: string | null;
   surname: string;
   dob: string;
+  referralCode?: string | null;
   country?: string | null;
   addressLine1?: string | null;
   city?: string | null;

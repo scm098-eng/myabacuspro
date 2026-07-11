@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "UserProfile": {
@@ -11,6 +10,7 @@
         "firstName": { "type": "string" },
         "surname": { "type": "string" },
         "role": { "type": "string", "enum": ["student", "teacher", "admin"] },
+        "referralCode": { "type": "string", "description": "Unique code for teacher referrals." },
         "subscriptionStatus": { "type": "string", "enum": ["free", "pro"] },
         "subscriptionType": { "type": "string", "enum": ["none", "recurring", "one-time", "gift"] },
         "subscriptionExpiry": { "type": "string", "format": "date-time" },
