@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2, User } from 'lucide-react';
+import { Eye, EyeOff, Loader2, User, Lock } from 'lucide-react';
 import type { SignupData, ProfileData } from '@/types';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -64,6 +64,7 @@ const formSchema = z.object({
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
   confirmPassword: z.string(),
   role: z.enum(['student', 'teacher'], { required_error: 'You must select a role.' }),
+  teacherId: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -94,11 +95,12 @@ async function getCroppedImg(image: HTMLImageElement, crop: Crop, fileName: stri
   });
 }
 
-export default function SignupPage() {
-  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/signup_bg.jpg?alt=media');
+function SignupContent() {
   const router = useRouter();
-  const { signup, sendVerificationEmail, loginWithGoogle, user, profile, isLoading } = useAuth();
+  const searchParams = useSearchParams();
+  const { signup, sendVerificationEmail, loginWithGoogle, user, profile, isLoading, getApprovedTeachers } = useAuth();
   const { toast } = useToast();
+  
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -108,6 +110,7 @@ export default function SignupPage() {
   const [completedCrop, setCompletedCrop] = useState<Crop>();
   const [croppedImageFile, setCroppedImageFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [teachers, setTeachers] = useState<ProfileData[]>([]);
   const imgRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -116,7 +119,7 @@ export default function SignupPage() {
     defaultValues: {
       email: '', password: '', confirmPassword: '', firstName: '', middleName: '', surname: '',
       country: 'India', addressLine1: '', city: '', taluka: '', district: '', state: '', pincode: '',
-      schoolName: '', mobileNo: '', whatsappNo: '', dob: '', grade: '', role: 'student',
+      schoolName: '', mobileNo: '', whatsappNo: '', dob: '', grade: '', role: 'student', teacherId: '',
     },
   });
 
@@ -124,17 +127,26 @@ export default function SignupPage() {
   const ageValue = calculateAge(watch('dob'));
   const selectedRole = watch('role');
   const selectedCountry = watch('country');
+  const teacherIdParam = searchParams.get('teacher');
 
-  // Automatic Redirection for logged-in users
   useEffect(() => {
-    if (!isLoading && user && profile) {
-      if (profile.role === 'admin' || (profile.role === 'teacher' && profile.status === 'approved')) {
-        router.replace('/admin');
-      } else {
-        router.replace('/dashboard');
-      }
-    }
-  }, [user, profile, isLoading, router]);
+    const fetchTeachers = async () => {
+      try {
+        const approved = await getApprovedTeachers();
+        setTeachers(approved);
+        
+        // Auto-detect teacher from URL
+        if (teacherIdParam) {
+          const matched = approved.find(t => t.uid === teacherIdParam);
+          if (matched) {
+            setValue('teacherId', teacherIdParam);
+            toast({ title: "Referral Applied", description: `Registering under ${matched.firstName} ${matched.surname}.` });
+          }
+        }
+      } catch (err) { console.error(err); }
+    };
+    fetchTeachers();
+  }, [getApprovedTeachers, teacherIdParam, setValue, toast]);
 
   useEffect(() => {
     const subscription = watch((value, { name }) => {
@@ -190,18 +202,10 @@ export default function SignupPage() {
   };
 
   if (isLoading || (user && profile)) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="text-muted-foreground font-bold animate-pulse text-center">
-          {user ? 'Redirecting to your dashboard...' : 'Loading My Abacus Pro...'}
-        </p>
-      </div>
-    );
+    return <div className="p-20 text-center font-bold">Redirecting...</div>;
   }
 
   return (
-    <>
     <div className="flex flex-col items-center justify-center py-12">
       <Card className="w-full max-w-2xl mx-auto shadow-xl">
         <CardHeader className="text-center">
@@ -249,6 +253,30 @@ export default function SignupPage() {
                           <FormItem><FormLabel>Grade/Std. *</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Grade" /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                       )} />
                     </div>
+                  )}
+
+                  {selectedRole === 'student' && (
+                    <FormField control={form.control} name="teacherId" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          Assigned Teacher *
+                          {teacherIdParam && <Lock className="w-3 h-3 text-muted-foreground" />}
+                        </FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value} 
+                          disabled={!!teacherIdParam}
+                        >
+                          <FormControl><SelectTrigger><SelectValue placeholder="Select Teacher" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            <SelectItem value="unassigned">Direct Registration (None)</SelectItem>
+                            {teachers.map(t => <SelectItem key={t.uid} value={t.uid}>{t.firstName} {t.surname}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        {teacherIdParam && <p className="text-[10px] font-bold text-primary uppercase">Locked by referral link</p>}
+                        <FormMessage />
+                      </FormItem>
+                    )} />
                   )}
                </div>
 
@@ -307,6 +335,14 @@ export default function SignupPage() {
         </DialogContent>
       </Dialog>
     </div>
-    </>
+  );
+}
+
+export default function SignupPage() {
+  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/signup_bg.jpg?alt=media');
+  return (
+    <Suspense fallback={<div className="p-20 text-center font-bold">Loading...</div>}>
+      <SignupContent />
+    </Suspense>
   );
 }

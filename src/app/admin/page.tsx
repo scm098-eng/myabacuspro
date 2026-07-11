@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -12,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, Zap, Plus, Edit, Trash2, Loader2, Send, ShieldAlert, UserX, Image as ImageIcon, Mail, UserCheck, Upload, CheckCircle2, Ticket, Copy, Check, Clock } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, Zap, Plus, Edit, Trash2, Loader2, Send, ShieldAlert, UserX, Image as ImageIcon, Mail, UserCheck, Upload, CheckCircle2, Ticket, Copy, Check, Clock, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
@@ -394,6 +393,8 @@ export default function AdminDashboardPage() {
     return <div className="p-8"><Skeleton className="h-[600px] w-full rounded-3xl" /></div>;
   }
 
+  const referralLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/signup?teacher=${profile?.uid}`;
+
   return (
     <div className="space-y-8">
       <Card>
@@ -416,6 +417,42 @@ export default function AdminDashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
+            {profile?.role === 'teacher' && (
+              <Card className="border-primary/20 bg-primary/5 rounded-[1.5rem] overflow-hidden">
+                <CardHeader className="bg-primary/10 border-b">
+                  <div className="flex items-center gap-2">
+                    <Share2 className="w-5 h-5 text-primary" />
+                    <CardTitle className="font-headline">Invite Students</CardTitle>
+                  </div>
+                  <CardDescription>Share this unique link to automatically assign new students to your account.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                      <Input value={referralLink} readOnly className="pr-10 h-12 border-2 bg-white font-mono text-xs font-bold" />
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                        onClick={() => {
+                          navigator.clipboard.writeText(referralLink);
+                          toast({ title: "Link Copied!", description: "Share this link with your students." });
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Button onClick={() => {
+                      navigator.clipboard.writeText(referralLink);
+                      toast({ title: "Link Copied!", description: "Share this link with your students." });
+                    }} className="h-12 px-6 font-bold shadow-lg">
+                      Copy My Referral Link
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Tabs defaultValue="students" className="w-full">
                 <TabsList className="bg-muted p-1 mb-8 overflow-x-auto justify-start h-auto flex-wrap">
                     <TabsTrigger value="students" className="h-10 relative">

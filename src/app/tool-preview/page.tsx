@@ -328,7 +328,10 @@ function ToolPreviewContent() {
                     <Input 
                       placeholder="e.g. 12 + 34 - 5" 
                       value={addSubInput} 
-                      onChange={(e) => { setAddSubInput(e.target.value); setAddSubStepIndex(-1); }}
+                      onChange={(e) => { 
+                        setAddSubInput(e.target.value); 
+                        setAddSubStepIndex(-1); // Reset steps when input changes
+                      }}
                       className="h-12 border-2 rounded-xl font-bold"
                     />
                   </div>
@@ -430,7 +433,10 @@ function ToolPreviewContent() {
                     <Input 
                       type="number" 
                       value={multiplicand} 
-                      onChange={(e) => setMultiplicand(parseInt(e.target.value) || 0)} 
+                      onChange={(e) => {
+                        setMultiplicand(parseInt(e.target.value) || 0);
+                        setMultStepIndex(-1);
+                      }} 
                       disabled={multStepIndex >= 0}
                       className="h-12 border-2 font-bold rounded-xl"
                     />
@@ -440,7 +446,10 @@ function ToolPreviewContent() {
                     <Input 
                       type="number" 
                       value={multiplier} 
-                      onChange={(e) => setMultiplier(parseInt(e.target.value) || 0)} 
+                      onChange={(e) => {
+                        setMultiplier(parseInt(e.target.value) || 0);
+                        setMultStepIndex(-1);
+                      }} 
                       disabled={multStepIndex >= 0}
                       className="h-12 border-2 font-bold rounded-xl"
                     />
@@ -547,7 +556,10 @@ function ToolPreviewContent() {
                     <Input 
                       type="number" 
                       value={dividend} 
-                      onChange={(e) => setDividend(parseInt(e.target.value) || 0)} 
+                      onChange={(e) => {
+                        setDividend(parseInt(e.target.value) || 0);
+                        setDivStepIndex(-1);
+                      }} 
                       disabled={divStepIndex >= 0}
                       className="h-12 border-2 font-bold rounded-xl"
                     />
@@ -557,7 +569,10 @@ function ToolPreviewContent() {
                     <Input 
                       type="number" 
                       value={divisor} 
-                      onChange={(e) => setDivisor(parseInt(e.target.value) || 0)} 
+                      onChange={(e) => {
+                        setDivisor(parseInt(e.target.value) || 0);
+                        setDivStepIndex(-1);
+                      }} 
                       disabled={divStepIndex >= 0}
                       className="h-12 border-2 font-bold rounded-xl"
                     />

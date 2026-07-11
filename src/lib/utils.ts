@@ -40,14 +40,13 @@ export function parseCalculationSteps(questionText: string): Step[] {
     }
   }
 
-  // Handle Addition & Subtraction
-  const tokens = questionText.split(' ').filter(t => t !== '');
-  const steps: Step[] = [];
-  let currentValue = 0;
+  // Handle Addition & Subtraction using Regex for robust parsing (handles missing spaces)
+  const tokens = questionText.match(/(\d+|\+|-)/g);
+  if (!tokens || tokens.length === 0) return [];
 
-  if (tokens.length === 0) return [];
+  const steps: Step[] = [];
+  let currentValue = parseInt(tokens[0], 10);
   
-  currentValue = parseInt(tokens[0], 10);
   if (isNaN(currentValue)) return [];
   
   steps.push({ 
@@ -58,8 +57,10 @@ export function parseCalculationSteps(questionText: string): Step[] {
 
   for (let i = 1; i < tokens.length; i += 2) {
     const operator = tokens[i];
-    const number = parseInt(tokens[i+1], 10);
-
+    const nextToken = tokens[i + 1];
+    if (!nextToken) break;
+    
+    const number = parseInt(nextToken, 10);
     if (isNaN(number)) continue;
 
     if (operator === '+') {
