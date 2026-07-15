@@ -1,5 +1,7 @@
+
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePageBackground } from '@/hooks/usePageBackground';
@@ -55,8 +57,8 @@ const testCategories = [
   },
   {
     href: '/game',
-    title: 'Bubble Game',
-    description: 'A fun and engaging game to practice your math skills by popping bubbles.',
+    title: 'Game Hub',
+    description: 'A dedicated missions center for Bubble missions, Matrix drills, and 1v1 competitive Duels.',
     icon: Gamepad2,
     iconBg: 'bg-pink-100'
   }
@@ -90,8 +92,8 @@ export default function TestsPage() {
   return (
     <div className="space-y-12">
       <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground font-headline sm:text-5xl">Practice Tests & Games</h1>
-        <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
+        <h1 className="text-4xl font-bold tracking-tight text-foreground font-headline sm:text-5xl uppercase">Practice Tests & Games</h1>
+        <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground font-medium">
           Select a category to begin your training. Each section focuses on different skills to help you master mental math.
         </p>
       </div>

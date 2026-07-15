@@ -9,13 +9,57 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BrainCircuit, Trophy, Timer, Zap, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2, Heart, ShieldAlert } from 'lucide-react';
+import { BrainCircuit, Trophy, Timer, Zap, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2, Heart, ShieldAlert, Star } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { firebaseApp } from '@/lib/firebase';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 const ROUNDS_PER_LEVEL = 5;
 const INITIAL_LIVES = 3;
+
+const FloatingParticle = ({ index }: { index: number }) => {
+  const [style, setStyle] = useState<React.CSSProperties>({ opacity: 0 });
+
+  useEffect(() => {
+    // Animation targets the top-right corner (where the profile is in the header)
+    const randomOffsetX = (Math.random() - 0.5) * 100;
+    const randomOffsetY = (Math.random() - 0.5) * 100;
+    
+    // Target X: Large positive (right)
+    // Target Y: Large negative (up)
+    const targetX = 400 + Math.random() * 400;
+    const targetY = -800 - Math.random() * 400;
+    
+    const duration = 1.2 + Math.random() * 0.8;
+    const delay = Math.random() * 0.4;
+
+    setStyle({
+      position: 'absolute',
+      left: '50%',
+      top: '50%',
+      transform: `translate(calc(-50% + ${randomOffsetX}px), calc(-50% + ${randomOffsetY}px))`,
+      zIndex: 100,
+      pointerEvents: 'none',
+      animation: `float-to-profile ${duration}s cubic-bezier(0.4, 0, 0.2, 1) ${delay}s forwards`,
+      '--target-x': `${targetX}px`,
+      '--target-y': `${targetY}px`,
+    } as any);
+  }, []);
+
+  return (
+    <div style={style}>
+      {index % 2 === 0 ? (
+        <Star className="w-6 h-6 text-yellow-400 fill-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
+      ) : (
+        <div className="w-5 h-5 bg-orange-400 rounded-full border-2 border-orange-600 shadow-lg flex items-center justify-center text-[10px] font-bold text-orange-900 shadow-orange-500/50">₹</div>
+      )}
+    </div>
+  );
+};
 
 export default function PatternMemoryPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/game_bg.jpg?alt=media');
@@ -35,6 +79,8 @@ export default function PatternMemoryPage() {
   const [wrongSelection, setWrongSelection] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [finalMasteryPoints, setFinalMasteryPoints] = useState(0);
+  const [showSubmissionAnim, setShowSubmissionAnim] = useState(false);
 
   // Determine game parameters based on level
   const getLevelParams = useCallback((lvl: number) => {
@@ -184,9 +230,29 @@ export default function PatternMemoryPage() {
     
     if (accuracy >= 80) {
       if (user) {
-        const bonus = level * 20;
+        const bonus = level * 10;
+        setFinalMasteryPoints(bonus);
         await addPoints(user.uid, bonus);
         await recordDailyPractice(user.uid);
+
+        // Record results to history
+        const db = getFirestore(firebaseApp);
+        const resultData = {
+          userId: user.uid,
+          testId: 'matrix-flash',
+          difficulty: `Level ${level}`,
+          score: finalScore,
+          totalQuestions: ROUNDS_PER_LEVEL,
+          accuracy,
+          timeSpent: 0,
+          timeLeft: 0,
+          earnedPoints: bonus,
+          createdAt: serverTimestamp(),
+          isGame: true
+        };
+        addDoc(collection(db, 'testResults'), resultData).catch(err => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'testResults', operation: 'create' }));
+        });
       }
       setGameState('complete');
       playSound('success');
@@ -196,6 +262,7 @@ export default function PatternMemoryPage() {
         origin: { y: 0.6 },
         colors: ['#2dd4bf', '#ffffff', '#fbbf24']
       });
+      setTimeout(() => setShowSubmissionAnim(true), 600);
     } else {
       setGameState('fail');
     }
@@ -207,6 +274,7 @@ export default function PatternMemoryPage() {
     setRound(1);
     setScore(0);
     setLives(INITIAL_LIVES);
+    setShowSubmissionAnim(false);
     setGameState('idle');
   };
 
@@ -231,18 +299,29 @@ export default function PatternMemoryPage() {
           <p className="font-bold opacity-80 mt-2">{score}/{ROUNDS_PER_LEVEL} Patterns Matched</p>
         </div>
         <CardContent className="p-10 space-y-8">
-          <p className="text-center text-slate-600 font-medium text-lg leading-relaxed">
-            {isWin 
-              ? `Your spatial visualization is exceptional! You've unlocked Level ${level + 1} and earned a mastery bonus.` 
-              : 'Try to visualize the tiles as a single shape rather than individual squares. Consistency will sharpen your mind.'}
-          </p>
+          <div className="text-center space-y-6">
+            <div className="space-y-1 relative">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Mastery Points Earned</p>
+                <div className="relative inline-block">
+                  <p className="text-5xl font-black text-primary drop-shadow-sm">{isWin ? finalMasteryPoints : 0}</p>
+                  {showSubmissionAnim && Array.from({ length: 20 }).map((_, i) => (
+                    <FloatingParticle key={i} index={i} />
+                  ))}
+                </div>
+            </div>
+            <p className="text-slate-600 font-medium text-lg leading-relaxed">
+              {isWin 
+                ? `Your spatial visualization is exceptional! You've unlocked Level ${level + 1} and earned a mastery bonus.` 
+                : 'Try to visualize the tiles as a single shape rather than individual squares. Consistency will sharpen your mind.'}
+            </p>
+          </div>
           <div className="grid gap-4">
             {isWin ? (
                <Button onClick={nextLevel} className="h-16 rounded-2xl text-xl font-black uppercase tracking-widest shadow-xl bg-teal-600 hover:bg-teal-700">Next Level <ArrowRight className="ml-2 w-6 h-6" /></Button>
             ) : (
                <Button onClick={() => { setRound(1); setScore(0); setLives(INITIAL_LIVES); setGameState('idle'); }} className="h-16 rounded-2xl text-xl font-black uppercase tracking-widest shadow-xl bg-slate-900 hover:bg-black text-white"><RotateCcw className="mr-2 w-6 h-6" /> Retry Matrix</Button>
             )}
-            <Button variant="ghost" onClick={() => router.push('/game')} className="font-black uppercase tracking-widest text-xs h-12 text-slate-400">Back to Mission Control</Button>
+            <Button variant="ghost" onClick={() => router.push('/game')} className="font-black uppercase tracking-widest text-xs h-12 text-slate-400">Back to Hub</Button>
           </div>
         </CardContent>
       </Card>

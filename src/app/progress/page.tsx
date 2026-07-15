@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useEffect, useState, useMemo, Suspense } from 'react';
+import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
@@ -285,7 +286,7 @@ function ProgressContent() {
             <BookOpen className="w-3 h-3" /> Practice
           </TabsTrigger>
           <TabsTrigger value="games" className="flex items-center gap-2 rounded-xl font-black uppercase text-[10px] py-3">
-            <Gamepad2 className="w-3 h-3" /> Games
+            <Gamepad2 className="w-3 h-3" /> Game Hub
           </TabsTrigger>
           <TabsTrigger value="exams" className="flex items-center gap-2 rounded-xl font-black uppercase text-[10px] py-3">
             <FileCheck className="w-3 h-3" /> Exams
@@ -336,15 +337,15 @@ function ProgressContent() {
         <TabsContent value="games">
           <Card className="border-none shadow-lg overflow-hidden rounded-[2rem]">
             <CardHeader className="bg-pink-500/5">
-              <CardTitle className="font-black uppercase tracking-tight text-pink-600">Bubble Game History</CardTitle>
-              <CardDescription className="font-bold">A record of your journey through the underwater level map.</CardDescription>
+              <CardTitle className="font-black uppercase tracking-tight text-pink-600">Game Activity History</CardTitle>
+              <CardDescription className="font-bold">A record of your journey through Bubble missions, Matrix drills, and 1v1 Duels.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader className="bg-pink-500/10">
                   <TableRow>
                     <TableHead className="pl-6">Date</TableHead>
-                    <TableHead>Level Name</TableHead>
+                    <TableHead>Activity</TableHead>
                     <TableHead>Accuracy</TableHead>
                     <TableHead className="pr-6 text-right">Result</TableHead>
                   </TableRow>
@@ -354,7 +355,7 @@ function ProgressContent() {
                     gameResults.map((result) => (
                       <TableRow key={result.id} className="hover:bg-pink-50/50 transition-colors">
                         <TableCell className="pl-6 text-xs font-medium">{format(result.createdAt, 'MMM d, p')}</TableCell>
-                        <TableCell className="font-bold text-pink-700">{result.difficulty}</TableCell>
+                        <TableCell className="font-bold text-pink-700">{TEST_NAME_MAP[result.testId] || result.difficulty}</TableCell>
                         <TableCell className="font-black text-foreground">{result.accuracy.toFixed(1)}%</TableCell>
                         <TableCell className="pr-6 text-right">
                           <Badge className={cn("rounded-lg px-4 font-black text-[10px]", result.accuracy >= 90 ? "bg-green-600" : "bg-muted text-muted-foreground")}>
@@ -365,7 +366,7 @@ function ProgressContent() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">Your candy road is waiting!</TableCell>
+                      <TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">No gaming activities recorded yet. Visit the Game Hub!</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
