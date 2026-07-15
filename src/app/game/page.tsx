@@ -1,11 +1,11 @@
-
 'use client';
 
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { cn } from '@/lib/utils';
-import { Star, Check, Swords, BrainCircuit, Gamepad2 } from 'lucide-react';
+import { Star, Check, Swords, BrainCircuit, Gamepad2, MonitorOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
