@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -18,7 +19,7 @@ import {
 import { firebaseApp } from '@/lib/firebase';
 import { doc, setDoc, getDoc, serverTimestamp, getFirestore, collection, getDocs, query, where, arrayUnion, updateDoc, increment, orderBy, deleteDoc, onSnapshot, limit } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, getStorage } from 'firebase/storage';
-import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload } from '@/types';
+import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload, Duel } from '@/types';
 import { useRouter, usePathname } from 'next/navigation';
 import { RANK_CRITERIA, ADMIN_EMAILS, EXCLUDED_FROM_TEACHER_LIST } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';

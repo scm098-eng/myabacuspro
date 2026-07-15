@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -20,6 +21,26 @@
         "isAdminRead": { "type": "boolean", "description": "Whether the admin has acknowledged this new signup." }
       },
       "required": ["uid", "email", "role"]
+    },
+    "Duel": {
+      "title": "Duel",
+      "description": "A 1v1 competitive match between two students.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "challengerId": { "type": "string" },
+        "challengerName": { "type": "string" },
+        "opponentId": { "type": "string" },
+        "opponentName": { "type": "string" },
+        "status": { "type": "string", "enum": ["waiting", "active", "completed", "expired"] },
+        "winnerId": { "type": "string" },
+        "questions": { "type": "array" },
+        "challengerScore": { "type": "number" },
+        "opponentScore": { "type": "number" },
+        "challengerFinished": { "type": "boolean" },
+        "opponentFinished": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
     },
     "Coupon": {
       "title": "Coupon",
@@ -107,6 +128,10 @@
       "schema": "#/backend/entities/UserProfile",
       "description": "User profiles and statistics."
     },
+    "/duels/{duelId}": {
+      "schema": "#/backend/entities/Duel",
+      "description": "Competitive 1v1 match data."
+    },
     "/coupons/{code}": {
       "schema": "#/backend/entities/Coupon",
       "description": "Gift codes for Pro access."
@@ -124,7 +149,7 @@
       "description": "History of practice test performance."
     },
     "/gameProgress/{userId}": {
-      "schema": { "type": "object", "properties": { "completedLevels": { "type": "array", "items": { "type": "number" } } } },
+      "schema": { "type": "object", "properties": { "completedLevels": { "type": "array", "items": { "type": "number" } }, "memoryLevels": { "type": "array", "items": { "type": "number" } } } },
       "description": "Tracking of unlocked and completed game levels."
     },
     "/blogs/{blogId}": {

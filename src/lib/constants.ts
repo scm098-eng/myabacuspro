@@ -156,6 +156,15 @@ export const PAGE_GUIDES = {
       "Don't click the wrong answer or let the question float away!",
       "You have 5 lives. Reach 90% accuracy to clear the level."
     ]
+  },
+  memory_game: {
+    title: "Abacus Memory Guide",
+    steps: [
+      "Watch the abacus closely as it flashes a value.",
+      "Try to 'take a photo' of the beads in your mind.",
+      "Once the image disappears, type the number you saw.",
+      "The faster you rank up, the less time the beads are visible!"
+    ]
   }
 };
 
@@ -209,22 +218,22 @@ export const CURRENCY_MAP: Record<string, { code: string, symbol: string }> = {
   "Other": { code: "USD", symbol: "$" }
 };
 
-export const APP_VERSION = "2.3.0";
+export const APP_VERSION = "2.4.0";
 
 export const UPDATE_NOTES = [
   {
-    title: "Advanced Powers & Roots",
-    description: "New Square, Cube, Square Root, and Cube Root modules added to General Practice.",
-    icon: "🚀"
+    title: "Real-Time 1v1 Duels",
+    description: "Challenge students worldwide to high-speed math races and climb the competitive ranks.",
+    icon: "⚔️"
   },
   {
-    title: "Dynamic One-Line Display",
-    description: "Calculations now automatically scale and stay on a single line for perfect visual clarity.",
-    icon: "📏"
+    title: "Abacus Memory Flash",
+    description: "New cognitive game mode to master mental visualization (Anzan) with variable speed drills.",
+    icon: "🧠"
   },
   {
-    title: "Light Visual Feedback",
-    description: "Enjoy smoother practice with light green and red tints for instant answer validation.",
-    icon: "✨"
+    title: "Dynamic Game Hub",
+    description: "Redesigned Game selection center with a clean path-based mission layout.",
+    icon: "🗺️"
   }
 ];

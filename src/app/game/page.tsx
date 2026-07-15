@@ -1,13 +1,16 @@
+
 'use client';
 
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { cn } from '@/lib/utils';
-import { Star, Check } from 'lucide-react';
+import { Star, Check, Swords, BrainCircuit, Gamepad2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from '@/components/ui/badge';
 
 interface Level {
   id: number;
@@ -159,45 +162,128 @@ export default function GameHomePage() {
   const isAdmin = profile?.role === 'admin';
 
   return (
-    <div className="space-y-8">
-      <div className="text-center">
-        <h1 className="text-5xl font-extrabold tracking-tight text-pink-600 font-headline drop-shadow-lg sm:text-6xl uppercase">Level Map</h1>
-        <p className="mt-4 max-w-2xl mx-auto text-lg text-pink-800/80 font-bold">
-          Follow the candy road to master your abacus skills!
+    <div className="space-y-12">
+      <div className="text-center space-y-4">
+        <h1 className="text-5xl font-extrabold tracking-tight text-pink-600 font-headline drop-shadow-lg sm:text-6xl uppercase">The Game Hub</h1>
+        <p className="max-w-2xl mx-auto text-lg text-pink-800/80 font-bold">
+          Challenge your mind with visualization drills, competitive duels, and bubble missions!
         </p>
       </div>
 
-      <div className="relative w-full max-w-sm mx-auto pb-20">
-        {gameLevels.map((level, index) => {
-            const isLocked = isAdmin ? false : (user ? level.id > 1 && !completedLevels.includes(level.id - 1) : level.id > 1);
-            const isCompleted = completedLevels.includes(level.id);
-            const isLeft = index % 2 === 0;
+      <Tabs defaultValue="levels" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto h-16 p-1 bg-pink-100/50 rounded-2xl border-2 border-pink-200">
+          <TabsTrigger value="levels" className="text-lg font-bold flex items-center gap-2 rounded-xl data-[state=active]:bg-pink-500 data-[state=active]:text-white">
+            <Gamepad2 className="w-5 h-5" /> Bubble Path
+          </TabsTrigger>
+          <TabsTrigger value="memory" className="text-lg font-bold flex items-center gap-2 rounded-xl data-[state=active]:bg-blue-500 data-[state=active]:text-white">
+            <BrainCircuit className="w-5 h-5" /> Memory Flash
+          </TabsTrigger>
+          <TabsTrigger value="duels" className="text-lg font-bold flex items-center gap-2 rounded-xl data-[state=active]:bg-orange-500 data-[state=active]:text-white">
+            <Swords className="w-5 h-5" /> 1v1 Duels
+          </TabsTrigger>
+        </TabsList>
 
-            const maxCompleted = Math.max(...completedLevels, 0);
-            const maxReachable = Math.max(maxCompleted + 5, lastAttendedId + 3);
-            
-            if (level.id > maxReachable && !isAdmin) return null;
+        <div className="mt-12">
+          <TabsContent value="levels" className="animate-in fade-in zoom-in-95 duration-500">
+            <div className="relative w-full max-w-sm mx-auto pb-20">
+              {gameLevels.map((level, index) => {
+                  const isLocked = isAdmin ? false : (user ? level.id > 1 && !completedLevels.includes(level.id - 1) : level.id > 1);
+                  const isCompleted = completedLevels.includes(level.id);
+                  const isLeft = index % 2 === 0;
 
-            return (
-                <div key={level.id} id={`level-node-${level.id}`} className="relative h-32 flex items-center">
-                    {index < gameLevels.length - 1 && (
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-32 h-full z-0">
-                            <PathLine reverse={!isLeft} />
-                        </div>
-                    )}
+                  const maxCompleted = Math.max(...completedLevels, 0);
+                  const maxReachable = Math.max(maxCompleted + 5, lastAttendedId + 3);
+                  
+                  if (level.id > maxReachable && !isAdmin) return null;
 
-                    <div className={cn("absolute z-10", isLeft ? "left-0" : "right-0")}>
-                        <LevelNode level={level} isLocked={isLocked} isCompleted={isCompleted} />
-                    </div>
+                  return (
+                      <div key={level.id} id={`level-node-${level.id}`} className="relative h-32 flex items-center">
+                          {index < gameLevels.length - 1 && (
+                              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-32 h-full z-0">
+                                  <PathLine reverse={!isLeft} />
+                              </div>
+                          )}
+
+                          <div className={cn("absolute z-10", isLeft ? "left-0" : "right-0")}>
+                              <LevelNode level={level} isLocked={isLocked} isCompleted={isCompleted} />
+                          </div>
+                      </div>
+                  )
+              })}
+              {!isAdmin && (
+                <div className="text-center mt-12">
+                  <p className="text-muted-foreground font-medium italic">Complete current levels to reveal more of the road...</p>
                 </div>
-            )
-        })}
-        {!isAdmin && (
-          <div className="text-center mt-12">
-            <p className="text-muted-foreground font-medium italic">Complete current levels to reveal more of the road...</p>
-          </div>
-        )}
-      </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="memory" className="animate-in fade-in slide-in-from-left-8 duration-500">
+             <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
+               <div className="bg-blue-600 p-12 text-white text-center">
+                  <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-pulse">
+                    <BrainCircuit className="w-12 h-12" />
+                  </div>
+                  <h2 className="text-4xl font-black uppercase tracking-tighter italic">Abacus Flash Mastery</h2>
+                  <p className="text-blue-100 font-bold mt-2 text-lg">Build perfect mental visualization by recalling high-speed abacus values.</p>
+               </div>
+               <CardContent className="p-12 text-center space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                     <div className="p-6 bg-blue-50 rounded-2xl border-2 border-blue-100">
+                        <Badge className="mb-2 bg-blue-600">Phase 1</Badge>
+                        <h4 className="font-bold text-blue-900">Visualize</h4>
+                        <p className="text-xs text-blue-700/70 mt-1 font-medium">A random abacus value appears for a few seconds.</p>
+                     </div>
+                     <div className="p-6 bg-blue-50 rounded-2xl border-2 border-blue-100">
+                        <Badge className="mb-2 bg-blue-600">Phase 2</Badge>
+                        <h4 className="font-bold text-blue-900">Recall</h4>
+                        <p className="text-xs text-blue-700/70 mt-1 font-medium">The value vanishes. You must hold the image in your mind.</p>
+                     </div>
+                     <div className="p-6 bg-blue-50 rounded-2xl border-2 border-blue-100">
+                        <Badge className="mb-2 bg-blue-600">Phase 3</Badge>
+                        <h4 className="font-bold text-blue-900">Input</h4>
+                        <p className="text-xs text-blue-700/70 mt-1 font-medium">Type the correct value. Pass 10 rounds to rank up.</p>
+                     </div>
+                  </div>
+                  <Button asChild size="lg" className="h-16 px-12 text-xl font-black uppercase tracking-widest rounded-2xl bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-200">
+                    <Link href="/game/memory">Enter Flash Arena</Link>
+                  </Button>
+               </CardContent>
+             </Card>
+          </TabsContent>
+
+          <TabsContent value="duels" className="animate-in fade-in slide-in-from-right-8 duration-500">
+             <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
+               <div className="bg-orange-500 p-12 text-white text-center">
+                  <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-bounce">
+                    <Swords className="w-12 h-12" />
+                  </div>
+                  <h2 className="text-4xl font-black uppercase tracking-tighter italic">World Championship Duels</h2>
+                  <p className="text-orange-100 font-bold mt-2 text-lg">Challenge other students worldwide in real-time or async math races.</p>
+               </div>
+               <CardContent className="p-12 text-center space-y-10">
+                  <div className="flex flex-col md:flex-row items-center justify-center gap-12">
+                     <div className="space-y-4">
+                        <h3 className="text-2xl font-black uppercase text-slate-800">Quick Match</h3>
+                        <p className="text-sm text-slate-500 font-medium">Find an available opponent instantly.</p>
+                        <Button asChild className="h-14 w-full bg-orange-500 hover:bg-orange-600 rounded-xl font-black">
+                           <Link href="/game/duels">Find Opponent</Link>
+                        </Button>
+                     </div>
+                     <div className="h-20 w-px bg-slate-200 hidden md:block" />
+                     <div className="space-y-4">
+                        <h3 className="text-2xl font-black uppercase text-slate-800">Private Duel</h3>
+                        <p className="text-sm text-slate-500 font-medium">Create a lobby and share the link with a friend.</p>
+                        <Button asChild variant="outline" className="h-14 w-full border-2 border-orange-500 text-orange-600 hover:bg-orange-50 rounded-xl font-black">
+                           <Link href="/game/duels?mode=create">Create Lobby</Link>
+                        </Button>
+                     </div>
+                  </div>
+               </CardContent>
+             </Card>
+          </TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 }

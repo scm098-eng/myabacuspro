@@ -1,3 +1,4 @@
+
 export type TestType =
   | 'addition-subtraction'
   | 'multiplication'
@@ -100,6 +101,25 @@ export type TestType =
   | 'bubble-game';
 
 export type ExamGroup = 'A' | 'B' | 'C' | 'D' | 'E';
+
+export interface Duel {
+  id: string;
+  challengerId: string;
+  challengerName: string;
+  challengerPhoto?: string;
+  opponentId?: string;
+  opponentName?: string;
+  opponentPhoto?: string;
+  status: 'waiting' | 'active' | 'completed' | 'expired';
+  winnerId?: string | 'draw';
+  questions: Question[];
+  challengerScore: number;
+  opponentScore: number;
+  challengerFinished: boolean;
+  opponentFinished: boolean;
+  createdAt: any;
+  updatedAt?: any;
+}
 
 export interface ExamApplication {
   id: string;
