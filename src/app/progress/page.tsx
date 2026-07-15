@@ -37,7 +37,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-function ProgressReportSkeleton() {
+const ProgressReportSkeleton = () => {
   return (
     <div className="space-y-8">
       <Card>
@@ -63,7 +63,7 @@ function ProgressReportSkeleton() {
       </Card>
     </div>
   );
-}
+};
 
 function ProgressContent() {
   const { user, isLoading: isAuthLoading } = useAuth();
