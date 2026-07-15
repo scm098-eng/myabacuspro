@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';

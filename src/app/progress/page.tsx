@@ -37,36 +37,33 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-function ProgressReportSkeleton() {
-  return (
-    <div className="space-y-8">
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-80" />
-        </CardHeader>
-      </Card>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-      </div>
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-72" />
-          <Skeleton className="h-4 w-96" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-[300px] w-full rounded-xl" />
-        </CardContent>
-      </Card>
+const ProgressReportSkeleton = () => (
+  <div className="space-y-8">
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-4 w-80" />
+      </CardHeader>
+    </Card>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+      <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+      <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+      <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+      <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
     </div>
-  );
-}
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-72" />
+        <Skeleton className="h-4 w-96" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-[300px] w-full rounded-xl" />
+      </CardContent>
+    </Card>
+  </div>
+);
 
 function ProgressContent() {
-  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/progress_bg.jpg?alt=media');
   const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const [testHistory, setTestHistory] = useState<TestResult[]>([]);
@@ -188,10 +185,6 @@ function ProgressContent() {
       gameResults: testHistory.filter(r => r.isGame === true)
     };
   }, [testHistory]);
-
-  if (isLoading || isAuthLoading) {
-    return <ProgressReportSkeleton />;
-  }
 
   return (
     <div className="space-y-8">
@@ -436,6 +429,7 @@ function ProgressContent() {
 }
 
 export default function ProgressReportPage() {
+  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/progress_bg.jpg?alt=media');
   return (
     <Suspense fallback={<ProgressReportSkeleton />}>
       <ProgressContent />

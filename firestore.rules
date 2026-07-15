@@ -38,6 +38,17 @@ service cloud.firestore {
       allow list: if request.auth != null;
     }
 
+    // --- DUEL RULES ---
+    match /duels/{duelId} {
+      allow read, list: if request.auth != null;
+      allow create: if request.auth != null && isNotSuspended();
+      allow update: if request.auth != null && isNotSuspended() && 
+                    (resource.data.status == 'waiting' || 
+                     request.auth.uid == resource.data.challengerId || 
+                     request.auth.uid == resource.data.opponentId);
+      allow delete: if isAdmin();
+    }
+
     // --- COUPON RULES ---
     match /coupons/{code} {
       allow read, list: if isAdmin();

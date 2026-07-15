@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -37,7 +38,7 @@ export function Header() {
     if (isMounted && profile?.role === 'teacher' && profile.status === 'pending') {
         toast({
             title: 'Approval Pending',
-            description: 'Your teacher account is awaiting admin approval to access the dashboard.',
+            description: 'Your teacher account is awaiting admin approval to access advanced management tools.',
             duration: 10000,
         });
     }
@@ -65,7 +66,9 @@ export function Header() {
 
   const displayName = profile?.firstName ? `${profile.firstName} ${profile.surname}` : user?.email?.split('@')[0] || 'User';
   const displayInitial = (profile?.firstName?.[0] || '') + (profile?.surname?.[0] || displayName.charAt(0).toUpperCase());
-  const canSeeDashboard = profile?.role === 'admin' || (profile?.role === 'teacher' && profile.status === 'approved');
+  
+  // Teachers get immediate access to their hub to start inviting students
+  const canSeeDashboard = profile?.role === 'admin' || profile?.role === 'teacher';
 
   const handleLinkClick = (path: string) => {
     router.push(path);

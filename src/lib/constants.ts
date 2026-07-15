@@ -94,7 +94,6 @@ export const TEST_NAME_MAP: Record<string, string> = {
 export const ADMIN_EMAILS = [
   'scm098@gmail.com', 
   'satishmane@gmail.com', 
-  'pallavib202@gmail.com', 
   'myabacuspro@gmail.com'
 ];
 
