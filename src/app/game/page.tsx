@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -6,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { cn } from '@/lib/utils';
-import { Star, Check, Swords, BrainCircuit, Gamepad2, MonitorOff } from 'lucide-react';
+import { Star, Check, Swords, BrainCircuit, Gamepad2, MonitorOff, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -154,7 +155,7 @@ export default function GameHomePage() {
     return (
       <div className="space-y-12">
         <Skeleton className="h-12 w-3/4 mx-auto" />
-        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-6 w-full" />
       </div>
     );
   }
@@ -175,8 +176,8 @@ export default function GameHomePage() {
           <TabsTrigger value="levels" className="text-lg font-bold flex items-center gap-2 rounded-xl data-[state=active]:bg-pink-500 data-[state=active]:text-white">
             <Gamepad2 className="w-5 h-5" /> Bubble Path
           </TabsTrigger>
-          <TabsTrigger value="memory" className="text-lg font-bold flex items-center gap-2 rounded-xl data-[state=active]:bg-blue-500 data-[state=active]:text-white">
-            <BrainCircuit className="w-5 h-5" /> Memory Flash
+          <TabsTrigger value="memory" className="text-lg font-bold flex items-center gap-2 rounded-xl data-[state=active]:bg-teal-500 data-[state=active]:text-white">
+            <LayoutGrid className="w-5 h-5" /> Matrix Flash
           </TabsTrigger>
           <TabsTrigger value="duels" className="text-lg font-bold flex items-center gap-2 rounded-xl data-[state=active]:bg-orange-500 data-[state=active]:text-white">
             <Swords className="w-5 h-5" /> 1v1 Duels
@@ -220,33 +221,33 @@ export default function GameHomePage() {
 
           <TabsContent value="memory" className="animate-in fade-in slide-in-from-left-8 duration-500">
              <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
-               <div className="bg-blue-600 p-12 text-white text-center">
+               <div className="bg-teal-600 p-12 text-white text-center">
                   <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-pulse">
-                    <BrainCircuit className="w-12 h-12" />
+                    <LayoutGrid className="w-12 h-12 text-white" />
                   </div>
-                  <h2 className="text-4xl font-black uppercase tracking-tighter italic">Abacus Flash Mastery</h2>
-                  <p className="text-blue-100 font-bold mt-2 text-lg">Build perfect mental visualization by recalling high-speed abacus values.</p>
+                  <h2 className="text-4xl font-black uppercase tracking-tighter italic">Matrix Memory Flash</h2>
+                  <p className="text-teal-100 font-bold mt-2 text-lg">Build perfect spatial visualization by reconstructing high-speed pattern matrices.</p>
                </div>
                <CardContent className="p-12 text-center space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-                     <div className="p-6 bg-blue-50 rounded-2xl border-2 border-blue-100">
-                        <Badge className="mb-2 bg-blue-600">Phase 1</Badge>
-                        <h4 className="font-bold text-blue-900">Visualize</h4>
-                        <p className="text-xs text-blue-700/70 mt-1 font-medium">A random abacus value appears for a few seconds.</p>
+                     <div className="p-6 bg-teal-50 rounded-2xl border-2 border-teal-100">
+                        <Badge className="mb-2 bg-teal-600">Phase 1</Badge>
+                        <h4 className="font-bold text-teal-900">Observe</h4>
+                        <p className="text-xs text-teal-700/70 mt-1 font-medium">A unique pattern flashes on the grid. Observe the shape.</p>
                      </div>
-                     <div className="p-6 bg-blue-50 rounded-2xl border-2 border-blue-100">
-                        <Badge className="mb-2 bg-blue-600">Phase 2</Badge>
-                        <h4 className="font-bold text-blue-900">Recall</h4>
-                        <p className="text-xs text-blue-700/70 mt-1 font-medium">The value vanishes. You must hold the image in your mind.</p>
+                     <div className="p-6 bg-teal-50 rounded-2xl border-2 border-teal-100">
+                        <Badge className="mb-2 bg-teal-600">Phase 2</Badge>
+                        <h4 className="font-bold text-teal-900">Visualize</h4>
+                        <p className="text-xs text-teal-700/70 mt-1 font-medium">The tiles clear. Reconstruct the image from your mental "snapshot".</p>
                      </div>
-                     <div className="p-6 bg-blue-50 rounded-2xl border-2 border-blue-100">
-                        <Badge className="mb-2 bg-blue-600">Phase 3</Badge>
-                        <h4 className="font-bold text-blue-900">Input</h4>
-                        <p className="text-xs text-blue-700/70 mt-1 font-medium">Type the correct value. Pass 10 rounds to rank up.</p>
+                     <div className="p-6 bg-teal-50 rounded-2xl border-2 border-teal-100">
+                        <Badge className="mb-2 bg-teal-600">Phase 3</Badge>
+                        <h4 className="font-bold text-teal-900">Scale</h4>
+                        <p className="text-xs text-teal-700/70 mt-1 font-medium">Clear 5 rounds to level up. The grid grows as you improve.</p>
                      </div>
                   </div>
-                  <Button asChild size="lg" className="h-16 px-12 text-xl font-black uppercase tracking-widest rounded-2xl bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-200">
-                    <Link href="/game/memory">Enter Flash Arena</Link>
+                  <Button asChild size="lg" className="h-16 px-12 text-xl font-black uppercase tracking-widest rounded-2xl bg-teal-600 hover:bg-teal-700 shadow-xl shadow-teal-200">
+                    <Link href="/game/memory">Enter Memory Matrix</Link>
                   </Button>
                </CardContent>
              </Card>

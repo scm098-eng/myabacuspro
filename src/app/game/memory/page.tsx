@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -6,107 +7,149 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BrainCircuit, Trophy, Timer, Zap, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2 } from 'lucide-react';
-import BeadDisplay from '@/components/BeadDisplay';
+import { BrainCircuit, Trophy, Timer, Zap, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2, Heart, ShieldAlert } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
-import { getRandomInt, generateOptions } from '@/lib/questions';
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
 
-const ROUNDS_PER_LEVEL = 10;
+const ROUNDS_PER_LEVEL = 5;
+const INITIAL_LIVES = 3;
 
-export default function MemoryGamePage() {
+export default function PatternMemoryPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/game_bg.jpg?alt=media');
-  const { user, profile, addPoints } = useAuth();
+  const { user, profile, addPoints, recordDailyPractice } = useAuth();
   const router = useRouter();
   const { playSound } = useSound();
 
   const [level, setLevel] = useState(1);
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
-  const [status, setStatus] = useState<'idle' | 'showing' | 'recalling' | 'input' | 'feedback' | 'complete' | 'fail'>('idle');
-  const [targetValue, setTargetValue] = useState(0);
-  const [inputValue, setInputValue] = useState('');
-  const [showTime, setShowTime] = useState(3000); // ms
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [lives, setLives] = useState(INITIAL_LIVES);
+  const [gameState, setGameState] = useState<'idle' | 'memorizing' | 'playing' | 'feedback' | 'complete' | 'fail'>('idle');
+  
+  const [gridSize, setGridSize] = useState(3); // 3x3, 4x4, 5x5
+  const [pattern, setPattern] = useState<number[]>([]);
+  const [userSelection, setUserSelection] = useState<number[]>([]);
+  const [wrongSelection, setWrongSelection] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  // Determine game parameters based on level
+  const getLevelParams = useCallback((lvl: number) => {
+    let size = 3;
+    let tileCount = 3;
+    let time = 2500;
 
-  const startRound = useCallback(() => {
-    // Determine complexity based on level
-    let digits = 1;
-    let time = 3000;
+    if (lvl <= 5) {
+      size = 3;
+      tileCount = 3 + Math.floor(lvl / 2);
+      time = 2500 - (lvl * 200);
+    } else if (lvl <= 15) {
+      size = 4;
+      tileCount = 5 + Math.floor((lvl - 5) / 3);
+      time = 3000 - ((lvl - 5) * 150);
+    } else {
+      size = 5;
+      tileCount = 8 + Math.floor((lvl - 15) / 5);
+      time = 3500 - ((lvl - 15) * 100);
+    }
 
-    if (level <= 2) { digits = 1; time = 3000 - (level * 500); }
-    else if (level <= 5) { digits = 2; time = 4000 - ((level - 2) * 500); }
-    else if (level <= 8) { digits = 3; time = 5000 - ((level - 5) * 500); }
-    else { digits = 4; time = 6000 - ((level - 8) * 500); }
+    return { size, tileCount, time: Math.max(800, time) };
+  }, []);
 
-    const min = Math.pow(10, digits - 1);
-    const max = Math.pow(10, digits) - 1;
-    const newVal = getRandomInt(min, max);
+  const generatePattern = useCallback(() => {
+    const { size, tileCount } = getLevelParams(level);
+    setGridSize(size);
+    
+    const newPattern: number[] = [];
+    const totalTiles = size * size;
+    
+    while (newPattern.length < tileCount) {
+      const rand = Math.floor(Math.random() * totalTiles);
+      if (!newPattern.includes(rand)) {
+        newPattern.push(rand);
+      }
+    }
+    
+    setPattern(newPattern);
+    setUserSelection([]);
+    setWrongSelection(null);
+    setGameState('memorizing');
 
-    setTargetValue(newVal);
-    setShowTime(Math.max(500, time));
-    setInputValue('');
-    setIsCorrect(null);
-    setStatus('showing');
-
-    timerRef.current = setTimeout(() => {
-      setStatus('input');
-      setTimeout(() => inputRef.current?.focus(), 50);
+    const { time } = getLevelParams(level);
+    setTimeout(() => {
+      setGameState('playing');
     }, time);
-  }, [level]);
+  }, [level, getLevelParams]);
 
   useEffect(() => {
-    if (status === 'idle') {
-        const t = setTimeout(() => startRound(), 1000);
-        return () => clearTimeout(t);
+    if (gameState === 'idle') {
+      const t = setTimeout(() => generatePattern(), 1000);
+      return () => clearTimeout(t);
     }
-  }, [status, startRound]);
+  }, [gameState, generatePattern]);
 
-  const handleAnswer = () => {
-    if (status !== 'input') return;
-    
-    const isRight = parseInt(inputValue, 10) === targetValue;
-    setIsCorrect(isRight);
-    setStatus('feedback');
-    
-    if (isRight) {
-      setScore(s => s + 1);
+  const handleTileClick = (index: number) => {
+    if (gameState !== 'playing' || userSelection.includes(index) || isSubmitting) return;
+
+    if (pattern.includes(index)) {
+      const newSelection = [...userSelection, index];
+      setUserSelection(newSelection);
       playSound('correct');
-    } else {
-      playSound('wrong');
-    }
 
-    setTimeout(() => {
-      if (round < ROUNDS_PER_LEVEL) {
-        setRound(r => r + 1);
-        startRound();
-      } else {
-        finishGame();
+      if (newSelection.length === pattern.length) {
+        setGameState('feedback');
+        setScore(s => s + 1);
+        setTimeout(() => {
+          if (round < ROUNDS_PER_LEVEL) {
+            setRound(r => r + 1);
+            setGameState('idle');
+          } else {
+            finishGame(score + 1);
+          }
+        }, 1000);
       }
-    }, 1500);
+    } else {
+      setWrongSelection(index);
+      setLives(l => l - 1);
+      playSound('wrong');
+      
+      if (lives <= 1) {
+        setGameState('fail');
+      } else {
+        // Flash wrong and reset round pattern
+        setTimeout(() => {
+          setWrongSelection(null);
+          setUserSelection([]);
+          setGameState('memorizing');
+          const { time } = getLevelParams(level);
+          setTimeout(() => setGameState('playing'), time);
+        }, 800);
+      }
+    }
   };
 
-  const finishGame = async () => {
+  const finishGame = async (finalScore: number) => {
     setIsSubmitting(true);
-    const accuracy = (score / ROUNDS_PER_LEVEL) * 100;
+    const accuracy = (finalScore / ROUNDS_PER_LEVEL) * 100;
     
     if (accuracy >= 80) {
       if (user) {
-        const bonus = level * 10;
+        const bonus = level * 20;
         await addPoints(user.uid, bonus);
+        await recordDailyPractice(user.uid);
       }
-      setStatus('complete');
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+      setGameState('complete');
+      playSound('success');
+      confetti({ 
+        particleCount: 150, 
+        spread: 70, 
+        origin: { y: 0.6 },
+        colors: ['#2dd4bf', '#ffffff', '#fbbf24']
+      });
     } else {
-      setStatus('fail');
+      setGameState('fail');
     }
     setIsSubmitting(false);
   };
@@ -115,48 +158,43 @@ export default function MemoryGamePage() {
     setLevel(l => l + 1);
     setRound(1);
     setScore(0);
-    setStatus('idle');
+    setLives(INITIAL_LIVES);
+    setGameState('idle');
   };
 
-  const dynamicRodCount = useMemo(() => {
-    if (targetValue < 100) return 3;
-    if (targetValue < 1000) return 4;
-    return 7;
-  }, [targetValue]);
-
-  if (status === 'idle') {
+  if (gameState === 'idle') {
     return (
       <div className="flex flex-col items-center justify-center p-20 gap-6">
-        <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
-        <h2 className="text-2xl font-black uppercase italic tracking-widest text-slate-800">Preparing Level {level}...</h2>
+        <Loader2 className="w-16 h-16 animate-spin text-teal-500" />
+        <h2 className="text-2xl font-black uppercase italic tracking-widest text-slate-800">Constructing Level {level}...</h2>
       </div>
     );
   }
 
-  if (status === 'complete' || status === 'fail') {
-    const isWin = status === 'complete';
+  if (gameState === 'complete' || gameState === 'fail') {
+    const isWin = gameState === 'complete';
     return (
       <Card className="max-w-md mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden animate-in zoom-in-95">
-        <div className={cn("p-10 text-center text-white", isWin ? "bg-green-600" : "bg-red-600")}>
-          <div className="mx-auto bg-white/20 p-4 rounded-full w-fit mb-4">
-            {isWin ? <Trophy className="w-10 h-10" /> : <XCircle className="w-10 h-10" />}
+        <div className={cn("p-12 text-center text-white", isWin ? "bg-teal-600" : "bg-red-600")}>
+          <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6">
+            {isWin ? <Trophy className="w-12 h-12 text-yellow-300" /> : <XCircle className="w-12 h-12" />}
           </div>
-          <h2 className="text-3xl font-black uppercase tracking-tighter">{isWin ? 'Level Cleared!' : 'Keep Practicing!'}</h2>
-          <p className="font-bold opacity-80 mt-2">{score}/{ROUNDS_PER_LEVEL} Correct Rounds</p>
+          <h2 className="text-4xl font-black uppercase tracking-tighter italic">{isWin ? 'Perfect Memory!' : 'Grid Failure'}</h2>
+          <p className="font-bold opacity-80 mt-2">{score}/{ROUNDS_PER_LEVEL} Patterns Matched</p>
         </div>
-        <CardContent className="p-10 space-y-6">
-          <p className="text-center text-slate-600 font-medium leading-relaxed">
+        <CardContent className="p-10 space-y-8">
+          <p className="text-center text-slate-600 font-medium text-lg leading-relaxed">
             {isWin 
-              ? `Outstanding visualization skills! You've unlocked Level ${level + 1} and earned a mastery bonus.` 
-              : 'Hold the abacus image in your mind longer. Try this level again to rank up.'}
+              ? `Your spatial visualization is exceptional! You've unlocked Level ${level + 1} and earned a mastery bonus.` 
+              : 'Try to visualize the tiles as a single shape rather than individual squares. Consistency will sharpen your mind.'}
           </p>
-          <div className="grid gap-3">
+          <div className="grid gap-4">
             {isWin ? (
-               <Button onClick={nextLevel} className="h-14 rounded-xl text-lg font-black uppercase tracking-widest shadow-lg">Next Level <ArrowRight className="ml-2 w-5 h-5" /></Button>
+               <Button onClick={nextLevel} className="h-16 rounded-2xl text-xl font-black uppercase tracking-widest shadow-xl bg-teal-600 hover:bg-teal-700">Next Level <ArrowRight className="ml-2 w-6 h-6" /></Button>
             ) : (
-               <Button onClick={() => { setRound(1); setScore(0); setStatus('idle'); }} className="h-14 rounded-xl text-lg font-black uppercase tracking-widest shadow-lg"><RotateCcw className="mr-2 w-5 h-5" /> Retry Level</Button>
+               <Button onClick={() => { setRound(1); setScore(0); setLives(INITIAL_LIVES); setGameState('idle'); }} className="h-16 rounded-2xl text-xl font-black uppercase tracking-widest shadow-xl bg-slate-900 hover:bg-black text-white"><RotateCcw className="mr-2 w-6 h-6" /> Retry Matrix</Button>
             )}
-            <Button variant="ghost" onClick={() => router.push('/game')} className="font-bold uppercase tracking-widest text-xs h-12">Back to Game Hub</Button>
+            <Button variant="ghost" onClick={() => router.push('/game')} className="font-black uppercase tracking-widest text-xs h-12 text-slate-400">Back to Mission Control</Button>
           </div>
         </CardContent>
       </Card>
@@ -164,94 +202,99 @@ export default function MemoryGamePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-10 pb-20">
       <div className="flex justify-between items-center px-4">
          <div className="space-y-1">
-            <h1 className="text-2xl font-black uppercase tracking-tight text-slate-800">Memory Flash</h1>
+            <h1 className="text-3xl font-black uppercase tracking-tight text-slate-900 italic">Matrix Flash</h1>
             <div className="flex gap-2">
-              <Badge variant="outline" className="bg-blue-600 text-white border-none font-black text-[10px]">LEVEL {level}</Badge>
-              <Badge variant="outline" className="font-black text-[10px]">ROUND {round}/{ROUNDS_PER_LEVEL}</Badge>
+              <Badge className="bg-teal-600 text-white border-none font-black text-[10px] px-3">LEVEL {level}</Badge>
+              <Badge variant="outline" className="font-black text-[10px] px-3 border-teal-200 text-teal-700">ROUND {round}/{ROUNDS_PER_LEVEL}</Badge>
             </div>
          </div>
-         <div className="text-right">
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Accuracy</p>
-            <p className="text-2xl font-black text-blue-600">{Math.round((score / Math.max(1, round - 1)) * 100)}%</p>
+         <div className="flex items-center gap-3 bg-white/50 backdrop-blur-md px-6 py-3 rounded-2xl border-2 border-white shadow-sm">
+            {Array.from({length: INITIAL_LIVES}).map((_, i) => (
+                <Heart key={i} className={cn("w-6 h-6 transition-all duration-300", i < lives ? "text-red-500 fill-red-500" : "text-slate-200")} />
+            ))}
          </div>
       </div>
 
-      <Card className="rounded-[2.5rem] shadow-2xl border-none overflow-hidden min-h-[450px] flex flex-col">
-        <div className="bg-slate-900 p-4 shrink-0">
-          <Progress value={(round / ROUNDS_PER_LEVEL) * 100} className="h-1 bg-white/10" />
+      <Card className="rounded-[3rem] shadow-2xl border-none overflow-hidden min-h-[500px] flex flex-col bg-slate-900 relative">
+        <div className="bg-white/5 p-4 shrink-0 border-b border-white/5">
+          <Progress value={(round / ROUNDS_PER_LEVEL) * 100} className="h-1.5 bg-white/10" />
         </div>
         
         <CardContent className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-blue-50/20 pointer-events-none" />
+          {/* Decorative grid lines */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
           
           <div className="relative z-10 w-full flex flex-col items-center">
-            {status === 'showing' && (
-              <div className="animate-in zoom-in-50 duration-300 w-full">
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-500 mb-8">Memorize this Value</p>
-                <div className="flex justify-center">
-                  <BeadDisplay value={targetValue} rodCount={dynamicRodCount} hideLabels />
-                </div>
+            {gameState === 'memorizing' && (
+              <div className="mb-10 animate-in fade-in duration-300 text-teal-400 flex items-center gap-3">
+                 <Zap className="w-5 h-5 fill-teal-400 animate-pulse" />
+                 <p className="text-sm font-black uppercase tracking-[0.3em]">Memorize Pattern</p>
               </div>
             )}
 
-            {status === 'input' && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-sm">
-                <div className="flex items-center justify-center gap-2 text-primary font-black uppercase text-xs tracking-widest">
-                  <Timer className="w-4 h-4 animate-pulse" /> What was the value?
-                </div>
-                <Input 
-                  ref={inputRef}
-                  type="number"
-                  placeholder="???"
-                  value={inputValue}
-                  onChange={e => setInputValue(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleAnswer()}
-                  className="h-24 text-center text-6xl font-black rounded-3xl border-4 shadow-inner focus:ring-blue-500"
-                />
-                <Button onClick={handleAnswer} className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl bg-blue-600 hover:bg-blue-700 shadow-xl">
-                  Recall Answer
-                </Button>
+            {gameState === 'playing' && (
+              <div className="mb-10 animate-in fade-in duration-300 text-sky-400 flex items-center gap-3">
+                 <Timer className="w-5 h-5 animate-pulse" />
+                 <p className="text-sm font-black uppercase tracking-[0.3em]">Reconstruct Matrix</p>
               </div>
             )}
 
-            {status === 'feedback' && (
-               <div className="space-y-6 animate-in zoom-in-95">
-                  <div className="mx-auto p-6 rounded-full bg-white shadow-xl mb-4">
-                    {isCorrect ? (
-                      <CheckCircle2 className="w-16 h-16 text-green-500 animate-bounce" />
-                    ) : (
-                      <XCircle className="w-16 h-16 text-red-500" />
+            <div 
+              className="grid gap-3 sm:gap-4 p-4 bg-white/5 rounded-[2.5rem] border-4 border-white/10 shadow-inner"
+              style={{ 
+                gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
+                width: '100%',
+                maxWidth: gridSize === 3 ? '320px' : gridSize === 4 ? '400px' : '500px'
+              }}
+            >
+              {Array.from({ length: gridSize * gridSize }).map((_, i) => {
+                const isCorrectPattern = pattern.includes(i);
+                const isSelected = userSelection.includes(i);
+                const isWrong = wrongSelection === i;
+                const showHint = gameState === 'memorizing' || gameState === 'feedback';
+
+                return (
+                  <div
+                    key={i}
+                    onClick={() => handleTileClick(i)}
+                    className={cn(
+                      "aspect-square rounded-2xl transition-all duration-300 cursor-pointer shadow-lg",
+                      "border-b-4 border-r-4 active:border-0 active:translate-y-1",
+                      !showHint && !isSelected && !isWrong && "bg-slate-700 border-slate-800 hover:bg-slate-600",
+                      showHint && isCorrectPattern && "bg-teal-400 border-teal-500 scale-[0.98] ring-8 ring-teal-400/20",
+                      showHint && !isCorrectPattern && "bg-slate-800 border-slate-900 opacity-40",
+                      gameState === 'playing' && isSelected && "bg-teal-400 border-teal-500 scale-[0.98] ring-8 ring-teal-400/20 animate-in zoom-in-90",
+                      isWrong && "bg-red-500 border-red-600 ring-8 ring-red-500/20 animate-shake"
                     )}
-                  </div>
-                  <h3 className={cn("text-4xl font-black uppercase italic", isCorrect ? "text-green-600" : "text-red-600")}>
-                    {isCorrect ? 'PERFECT!' : 'OOPS!'}
-                  </h3>
-                  <div className="flex gap-4 justify-center">
-                    <div className="text-center p-3 bg-muted rounded-xl min-w-[100px]">
-                      <p className="text-[10px] font-bold uppercase opacity-50">Target</p>
-                      <p className="text-xl font-black">{targetValue}</p>
-                    </div>
-                    <div className="text-center p-3 bg-muted rounded-xl min-w-[100px]">
-                      <p className="text-[10px] font-bold uppercase opacity-50">Your Answer</p>
-                      <p className={cn("text-xl font-black", isCorrect ? "text-green-600" : "text-red-600")}>{inputValue || 'None'}</p>
-                    </div>
-                  </div>
-               </div>
-            )}
+                  />
+                );
+              })}
+            </div>
           </div>
         </CardContent>
         
-        <CardFooter className="bg-slate-50 p-6 border-t flex justify-between items-center">
-           <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Visualization Training Mode</span>
+        <CardFooter className="bg-black/20 p-6 border-t border-white/5 flex justify-between items-center">
+           <div className="flex items-center gap-2 opacity-50">
+              <ShieldAlert className="w-4 h-4 text-white" />
+              <span className="text-[9px] font-black uppercase tracking-widest text-white">Anzan Visualization Protocol</span>
            </div>
-           <Badge variant="secondary" className="font-bold">Accuracy Req: 80%</Badge>
+           <Badge variant="outline" className="font-black text-[9px] border-white/20 text-white/50 uppercase">Grid: {gridSize}x{gridSize}</Badge>
         </CardFooter>
       </Card>
+      
+      <style jsx global>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+        .animate-shake {
+          animation: shake 0.2s ease-in-out 3;
+        }
+      `}</style>
     </div>
   );
 }
