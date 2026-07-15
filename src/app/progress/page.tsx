@@ -37,31 +37,33 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const ProgressReportSkeleton = () => (
-  <div className="space-y-8">
-    <Card>
-      <CardHeader>
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-4 w-80" />
-      </CardHeader>
-    </Card>
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-      <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-      <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-      <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-      <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+function ProgressReportSkeleton() {
+  return (
+    <div className="space-y-8">
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-80" />
+        </CardHeader>
+      </Card>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+      </div>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-72" />
+          <Skeleton className="h-4 w-96" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-[300px] w-full rounded-xl" />
+        </CardContent>
+      </Card>
     </div>
-    <Card>
-      <CardHeader>
-        <Skeleton className="h-6 w-72" />
-        <Skeleton className="h-4 w-96" />
-      </CardHeader>
-      <CardContent>
-        <Skeleton className="h-[300px] w-full rounded-xl" />
-      </CardContent>
-    </Card>
-  </div>
-);
+  );
+}
 
 function ProgressContent() {
   const { user, isLoading: isAuthLoading } = useAuth();
