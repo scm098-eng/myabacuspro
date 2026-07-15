@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
@@ -12,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { getFirestore, doc, onSnapshot, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { Duel, Question } from '@/types';
-import { Swords, Loader2, Timer, CheckCircle2, XCircle, Share2, Copy, ArrowRight, Trophy, Crown, UserX, AlertCircle, PlayCircle } from 'lucide-react';
+import { Swords, Loader2, Timer, CheckCircle2, XCircle, Share2, Copy, ArrowRight, Trophy, Crown, UserX, AlertCircle, PlayCircle, Users, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';

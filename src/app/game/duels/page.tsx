@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -8,10 +7,10 @@ import { usePageBackground } from '@/hooks/usePageBackground';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, serverTimestamp, deleteDoc, orderBy, limit, addDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, deleteDoc, orderBy, limit, addDoc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { Duel, Question } from '@/types';
-import { Swords, Loader2, PlayCircle, Trophy, UserGroup, Users, Plus, ShieldAlert, Share2, Copy, Zap, Clock } from 'lucide-react';
+import { Swords, Loader2, PlayCircle, Trophy, Users, Plus, ShieldAlert, Share2, Copy, Zap, Clock, MonitorOff } from 'lucide-react';
 import { generateExamQuestions } from '@/lib/exam-utils';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -22,8 +21,8 @@ import { cn } from '@/lib/utils';
 export default function DuelsLobbyPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
   const { user, profile, isLoading: authLoading } = useAuth();
-  const searchParams = useSearchParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
 
   const [activeDuels, setActiveDuels] = useState<Duel[]>([]);
