@@ -145,15 +145,15 @@ function ToolPreviewContent() {
   const [value, setValue] = useState(0);
 
   const [addSubInput, setAddSubInput] = useState('123 + 456 - 78');
-  const [addSubStepIndex, setAddSubStepIndex] = useState(-1);
+  const [addSubStepIndex, setAddSubStepIndex] = useState(0);
 
   const [multiplicand, setMultiplicand] = useState(123);
   const [multiplier, setMultiplier] = useState(45);
-  const [multStepIndex, setMultStepIndex] = useState(-1);
+  const [multStepIndex, setMultStepIndex] = useState(0);
 
   const [dividend, setDividend] = useState(2256);
   const [divisor, setDivisor] = useState(5);
-  const [divStepIndex, setDivStepIndex] = useState(-1);
+  const [divStepIndex, setDivStepIndex] = useState(0);
 
   useEffect(() => {
     if (initialValue !== null) {
@@ -167,8 +167,8 @@ function ToolPreviewContent() {
   const addSubSteps = useMemo(() => parseCalculationSteps(addSubInput), [addSubInput]);
 
   const currentAddSubValue = useMemo(() => {
-    if (addSubStepIndex < 0) return 0;
-    return addSubSteps[addSubStepIndex]?.value || 0;
+    if (addSubStepIndex < 0 || addSubSteps.length === 0) return 0;
+    return addSubSteps[Math.min(addSubStepIndex, addSubSteps.length - 1)]?.value || 0;
   }, [addSubStepIndex, addSubSteps]);
 
   const multiplicationSteps = useMemo(() => {
@@ -211,20 +211,20 @@ function ToolPreviewContent() {
   }, [multiplicand, multiplier]);
 
   const currentMultValue = useMemo(() => {
-    if (multStepIndex < 0) return 0;
-    return multiplicationSteps[multStepIndex]?.value || 0;
+    if (multStepIndex < 0 || multiplicationSteps.length === 0) return 0;
+    return multiplicationSteps[Math.min(multStepIndex, multiplicationSteps.length - 1)]?.value || 0;
   }, [multStepIndex, multiplicationSteps]);
 
   const multActiveRodIndex = useMemo(() => {
-    if (multStepIndex < 0) return -1;
-    return 7 - (multiplicationSteps[multStepIndex].atRodFromRight || 0);
+    if (multStepIndex < 0 || multiplicationSteps.length === 0) return -1;
+    return 7 - (multiplicationSteps[Math.min(multStepIndex, multiplicationSteps.length - 1)].atRodFromRight || 0);
   }, [multStepIndex, multiplicationSteps]);
 
   const divisionSteps15 = useMemo(() => generateDivisionSteps15(dividend, divisor), [dividend, divisor]);
 
   const currentDivState15 = useMemo(() => {
-    if (divStepIndex < 0) return new Array(15).fill(0);
-    return divisionSteps15[divStepIndex]?.fullState || new Array(15).fill(0);
+    if (divStepIndex < 0 || divisionSteps15.length === 0) return new Array(15).fill(0);
+    return divisionSteps15[Math.min(divStepIndex, divisionSteps15.length - 1)]?.fullState || new Array(15).fill(0);
   }, [divStepIndex, divisionSteps15]);
 
   const divisionLabels = [
@@ -330,7 +330,7 @@ function ToolPreviewContent() {
                       value={addSubInput} 
                       onChange={(e) => { 
                         setAddSubInput(e.target.value); 
-                        setAddSubStepIndex(-1); // Reset steps when input changes
+                        setAddSubStepIndex(0); // Reset steps to first operation when input changes
                       }}
                       className="h-12 border-2 rounded-xl font-bold"
                     />
@@ -343,13 +343,13 @@ function ToolPreviewContent() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button onClick={() => setAddSubStepIndex(-1)} variant="outline" className="w-full h-12 rounded-xl font-bold border-2">
+                  <Button onClick={() => setAddSubStepIndex(0)} variant="outline" className="w-full h-12 rounded-xl font-bold border-2">
                     <RotateCcw className="w-4 h-4 mr-2" /> Reset Training
                   </Button>
                 </CardFooter>
               </Card>
 
-              {addSubStepIndex >= 0 && (
+              {addSubStepIndex >= 0 && addSubSteps[addSubStepIndex] && (
                 <Card className="border-primary border-2 bg-primary/5 rounded-3xl shadow-xl">
                   <CardHeader className="pb-2">
                     <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-[10px]">
@@ -400,8 +400,8 @@ function ToolPreviewContent() {
                 <CardFooter className="bg-muted/30 border-t flex flex-col sm:flex-row items-center justify-between p-8 gap-6">
                   <Button 
                     variant="outline" 
-                    onClick={() => setAddSubStepIndex(p => Math.max(-1, p - 1))}
-                    disabled={addSubStepIndex < 0}
+                    onClick={() => setAddSubStepIndex(p => Math.max(0, p - 1))}
+                    disabled={addSubStepIndex <= 0}
                     className="h-14 px-8 w-full sm:w-auto rounded-2xl border-2 font-bold"
                   >
                     <ChevronLeft className="w-5 h-5 mr-2" /> Previous Step
@@ -435,9 +435,8 @@ function ToolPreviewContent() {
                       value={multiplicand} 
                       onChange={(e) => {
                         setMultiplicand(parseInt(e.target.value) || 0);
-                        setMultStepIndex(-1);
+                        setMultStepIndex(0);
                       }} 
-                      disabled={multStepIndex >= 0}
                       className="h-12 border-2 font-bold rounded-xl"
                     />
                   </div>
@@ -448,9 +447,8 @@ function ToolPreviewContent() {
                       value={multiplier} 
                       onChange={(e) => {
                         setMultiplier(parseInt(e.target.value) || 0);
-                        setMultStepIndex(-1);
+                        setMultStepIndex(0);
                       }} 
-                      disabled={multStepIndex >= 0}
                       className="h-12 border-2 font-bold rounded-xl"
                     />
                   </div>
@@ -462,13 +460,13 @@ function ToolPreviewContent() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button onClick={() => setMultStepIndex(-1)} variant="outline" className="w-full h-12 rounded-xl border-2 font-bold">
+                  <Button onClick={() => setMultStepIndex(0)} variant="outline" className="w-full h-12 rounded-xl border-2 font-bold">
                     <RotateCcw className="w-4 h-4 mr-2" /> Reset Lab
                   </Button>
                 </CardFooter>
               </Card>
 
-              {multStepIndex >= 0 && (
+              {multStepIndex >= 0 && multiplicationSteps[multStepIndex] && (
                 <Card className="border-primary border-2 bg-primary/5 rounded-3xl shadow-xl">
                   <CardHeader className="pb-2">
                     <div className="flex items-center gap-2 text-primary font-black uppercase text-[10px] tracking-widest">
@@ -523,8 +521,8 @@ function ToolPreviewContent() {
                 <CardFooter className="bg-muted/30 border-t flex flex-col sm:flex-row items-center justify-between p-8 gap-6">
                   <Button 
                     variant="outline" 
-                    onClick={() => setMultStepIndex(p => Math.max(-1, p - 1))}
-                    disabled={multStepIndex < 0}
+                    onClick={() => setMultStepIndex(p => Math.max(0, p - 1))}
+                    disabled={multStepIndex <= 0}
                     className="h-14 px-8 w-full sm:w-auto rounded-2xl border-2 font-bold"
                   >
                     <ChevronLeft className="w-5 h-5 mr-2" /> Previous
@@ -558,9 +556,8 @@ function ToolPreviewContent() {
                       value={dividend} 
                       onChange={(e) => {
                         setDividend(parseInt(e.target.value) || 0);
-                        setDivStepIndex(-1);
+                        setDivStepIndex(0);
                       }} 
-                      disabled={divStepIndex >= 0}
                       className="h-12 border-2 font-bold rounded-xl"
                     />
                   </div>
@@ -571,9 +568,8 @@ function ToolPreviewContent() {
                       value={divisor} 
                       onChange={(e) => {
                         setDivisor(parseInt(e.target.value) || 0);
-                        setDivStepIndex(-1);
+                        setDivStepIndex(0);
                       }} 
-                      disabled={divStepIndex >= 0}
                       className="h-12 border-2 font-bold rounded-xl"
                     />
                   </div>
@@ -590,13 +586,13 @@ function ToolPreviewContent() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button onClick={() => setDivStepIndex(-1)} variant="outline" className="w-full h-12 rounded-xl border-2 font-bold">
+                  <Button onClick={() => setDivStepIndex(0)} variant="outline" className="w-full h-12 rounded-xl border-2 font-bold">
                     <RotateCcw className="w-4 h-4 mr-2" /> Reset Lab
                   </Button>
                 </CardFooter>
               </Card>
 
-              {divStepIndex >= 0 && (
+              {divStepIndex >= 0 && divisionSteps15[divStepIndex] && (
                 <Card className="border-primary border-2 bg-primary/5 rounded-3xl animate-in slide-in-from-bottom-4 shadow-xl">
                   <CardHeader className="pb-2">
                     <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-[10px]">
@@ -646,8 +642,8 @@ function ToolPreviewContent() {
                 <CardFooter className="bg-muted/30 border-t flex flex-col sm:flex-row items-center justify-between p-8 gap-6">
                   <Button 
                     variant="outline" 
-                    onClick={() => setDivStepIndex(p => Math.max(-1, p - 1))}
-                    disabled={divStepIndex < 0}
+                    onClick={() => setDivStepIndex(p => Math.max(0, p - 1))}
+                    disabled={divStepIndex <= 0}
                     className="h-14 px-8 w-full sm:w-auto rounded-2xl border-2 font-bold"
                   >
                     <ChevronLeft className="w-5 h-5 mr-2" /> Previous Step

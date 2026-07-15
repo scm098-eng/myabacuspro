@@ -8,10 +8,10 @@ import type { ProfileData, BlogPost, Coupon } from '@/types';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, Zap, Plus, Edit, Trash2, Loader2, Send, ShieldAlert, UserX, Image as ImageIcon, Mail, UserCheck, Upload, CheckCircle2, Ticket, Copy, Check, Clock, Share2, User } from 'lucide-react';
+import { Eye, Briefcase, Crown, Trophy, GraduationCap, Search, Settings, Zap, Plus, Edit, Trash2, Loader2, Send, ShieldAlert, UserX, Image as ImageIcon, Mail, UserCheck, Upload, CheckCircle2, Ticket, Copy, Check, Clock, Share2, User, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, query, collection, where, orderBy, limit, setDoc, deleteDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
@@ -29,6 +29,7 @@ import { ADMIN_EMAILS } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
 import { format } from 'date-fns';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 function getUTCMondayKey() {
     const now = new Date();
@@ -100,6 +101,7 @@ export default function AdminDashboardPage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardTab, setLeaderboardTab] = useState("totalPoints");
   const [isResetting, setIsResetting] = useState<'weekly' | 'monthly' | 'force' | 'blast' | 'suspension' | 'markRead' | 'coupon' | null>(null);
+  const [expandedStaff, setExpandedStaff] = useState<string | null>(null);
 
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [isBlogDialogOpen, setIsBlogDialogOpen] = useState(false);
@@ -391,7 +393,7 @@ export default function AdminDashboardPage() {
     return { 
         filteredStaff: allStaff.filter(matches).map(s => {
           const students = allStudents.filter(stu => stu.teacherId === s.uid);
-          return { ...s, proCount: students.filter(stu => stu.subscriptionStatus === 'pro').length, freeCount: students.filter(stu => stu.subscriptionStatus !== 'pro').length };
+          return { ...s, students, proCount: students.filter(stu => stu.subscriptionStatus === 'pro').length, freeCount: students.filter(stu => stu.subscriptionStatus !== 'pro').length };
         }),
         filteredStudents: myStudents.filter(matches),
         pendingTeachers: allUsers.filter(u => u.role === 'teacher' && u.status === 'pending'),
@@ -413,7 +415,7 @@ export default function AdminDashboardPage() {
   const referralLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/signup?ref=${profile?.referralCode || ''}`;
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8 pb-12">
       <Card>
         <CardHeader>
           <CardTitle className="font-headline text-3xl">{profile?.role === 'admin' ? 'Admin Center' : 'Teacher Dashboard'}</CardTitle>
@@ -552,28 +554,78 @@ export default function AdminDashboardPage() {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="pl-6">Teacher</TableHead>
-                                <TableHead>Assigned Students</TableHead>
+                                <TableHead className="w-12"></TableHead>
+                                <TableHead className="pl-0">Teacher</TableHead>
+                                <TableHead>Students</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right pr-6">Action</TableHead>
                             </TableRow>
                             </TableHeader>
                             <TableBody>
                               {processedData.filteredStaff.map(s => (
-                                <TableRow key={s.uid}>
-                                  <TableCell className="pl-6 py-4">
-                                    <div className="font-bold">{s.firstName} {s.surname}</div>
-                                    <div className="text-[10px] text-muted-foreground">{s.email}</div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="flex gap-2">
-                                      <Badge className="bg-green-500/10 text-green-700 border-green-200 font-bold">Pro: {s.proCount}</Badge>
-                                      <Badge variant="outline" className="font-bold text-muted-foreground">Free: {s.freeCount}</Badge>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell><Badge className={cn("font-bold uppercase text-[10px]", s.role === 'admin' ? "bg-blue-600" : "bg-orange-500")}>{s.status || s.role}</Badge></TableCell>
-                                  <TableCell className="text-right pr-6"><Button asChild variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-full"><Link href={`/admin/user/${s.uid}`}><Eye className="w-4 h-4 text-primary" /></Link></Button></TableCell>
-                                </TableRow>
+                                <React.Fragment key={s.uid}>
+                                  <TableRow className={cn("hover:bg-muted/50", expandedStaff === s.uid && "bg-muted/30 border-b-0")}>
+                                    <TableCell className="text-center">
+                                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setExpandedStaff(expandedStaff === s.uid ? null : s.uid)}>
+                                        {expandedStaff === s.uid ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                      </Button>
+                                    </TableCell>
+                                    <TableCell className="pl-0 py-4">
+                                      <div className="flex items-center gap-3">
+                                        <Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto ?? undefined}/><AvatarFallback>{s.firstName?.[0]}</AvatarFallback></Avatar>
+                                        <div>
+                                          <div className="font-bold text-sm">{s.firstName} {s.surname}</div>
+                                          <div className="text-[9px] text-muted-foreground">{s.email}</div>
+                                        </div>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex gap-2">
+                                        <Badge className="bg-green-500/10 text-green-700 border-green-200 font-bold text-[9px]">Pro: {s.proCount}</Badge>
+                                        <Badge variant="outline" className="font-bold text-muted-foreground text-[9px]">Free: {s.freeCount}</Badge>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell><Badge className={cn("font-bold uppercase text-[9px]", s.role === 'admin' ? "bg-blue-600" : "bg-orange-500")}>{s.status || s.role}</Badge></TableCell>
+                                    <TableCell className="text-right pr-6"><Button asChild variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full"><Link href={`/admin/user/${s.uid}`}><Eye className="h-4 w-4 text-primary" /></Link></Button></TableCell>
+                                  </TableRow>
+                                  {expandedStaff === s.uid && (
+                                    <TableRow className="bg-muted/10 border-b">
+                                      <TableCell colSpan={5} className="p-0">
+                                        <div className="px-12 py-4 space-y-4 animate-in slide-in-from-top-2 duration-300">
+                                          <div className="flex items-center justify-between border-b pb-2">
+                                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-500">Teacher's Roster</h4>
+                                            <Badge variant="outline" className="font-bold text-[9px]">{s.students?.length || 0} Total Assigned</Badge>
+                                          </div>
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-4">
+                                            {s.students && s.students.length > 0 ? (
+                                              s.students.map((stu: ProfileData) => (
+                                                <div key={stu.uid} className="flex items-center justify-between p-3 bg-white rounded-xl border shadow-sm">
+                                                  <div className="flex items-center gap-3">
+                                                    <Avatar className="h-7 w-7"><AvatarImage src={stu.profilePhoto ?? undefined}/><AvatarFallback>{stu.firstName?.[0]}</AvatarFallback></Avatar>
+                                                    <div>
+                                                      <p className="text-xs font-bold leading-none">{stu.firstName} {stu.surname}</p>
+                                                      <p className="text-[9px] text-muted-foreground mt-1">{stu.email}</p>
+                                                    </div>
+                                                  </div>
+                                                  <div className="flex items-center gap-2">
+                                                    <Badge variant={stu.subscriptionStatus === 'pro' ? 'default' : 'outline'} className="text-[8px] h-4 font-black">
+                                                      {stu.subscriptionStatus?.toUpperCase()}
+                                                    </Badge>
+                                                    <Button asChild variant="ghost" size="icon" className="h-6 w-6">
+                                                      <Link href={`/admin/user/${stu.uid}`}><Eye className="h-3 w-3" /></Link>
+                                                    </Button>
+                                                  </div>
+                                                </div>
+                                              ))
+                                            ) : (
+                                              <p className="text-xs italic text-muted-foreground col-span-full py-4 text-center">No students currently assigned.</p>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  )}
+                                </React.Fragment>
                               ))}
                             </TableBody>
                           </Table>

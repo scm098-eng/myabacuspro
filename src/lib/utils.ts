@@ -16,7 +16,7 @@ export interface Step {
   value: number;
   explanation?: string;
   atRodFromRight?: number;
-  fullState?: number[]; // Added for 15-rod specialized visualizations like Division
+  fullState?: number[]; 
 }
 
 export function parseCalculationSteps(questionText: string): Step[] {
@@ -45,17 +45,23 @@ export function parseCalculationSteps(questionText: string): Step[] {
   if (!tokens || tokens.length === 0) return [];
 
   const steps: Step[] = [];
-  let currentValue = parseInt(tokens[0], 10);
-  
-  if (isNaN(currentValue)) return [];
-  
-  steps.push({ 
-    operation: `Set ${currentValue}`, 
-    value: currentValue,
-    explanation: `Start by setting the first number ${currentValue} on the abacus.`
-  });
+  let firstToken = tokens[0];
+  let startingIndex = 1;
+  let currentValue = 0;
 
-  for (let i = 1; i < tokens.length; i += 2) {
+  if (firstToken === '+' || firstToken === '-') {
+      currentValue = 0;
+      startingIndex = 0;
+  } else {
+      currentValue = parseInt(firstToken, 10);
+      steps.push({ 
+        operation: `Set ${currentValue}`, 
+        value: currentValue,
+        explanation: `Start by setting the first number ${currentValue} on the abacus.`
+      });
+  }
+
+  for (let i = startingIndex; i < tokens.length; i += 2) {
     const operator = tokens[i];
     const nextToken = tokens[i + 1];
     if (!nextToken) break;
