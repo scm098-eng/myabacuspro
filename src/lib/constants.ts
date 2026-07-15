@@ -16,6 +16,7 @@ export const TEST_NAME_MAP: Record<string, string> = {
     'cube-root-input': 'Cube Root (Master)',
     'beads-identify': 'Beads Value',
     'beads-set': 'Beads Set',
+    'flash-anzan': 'Flash Card Anzan',
     'basic-add-sub-l1': 'Basic Add/Sub Level 1',
     'basic-add-sub-l2': 'Basic Add/Sub Level 2',
     'basic-addition-plus-4': 'Small Sister: +4',
@@ -39,7 +40,7 @@ export const TEST_NAME_MAP: Record<string, string> = {
     'big-brother-addition-plus-8': 'Big Brother: +8',
     'big-brother-addition-plus-80': 'Big Brother: +80',
     'big-brother-addition-plus-7': 'Big Brother: +7',
-    'big-brother-addition-plus-70': 'Big Brother: +70',
+    'big-brother-addition-plus-70': 'Big Brother: +100 - 30',
     'big-brother-addition-plus-6': 'Big Brother: +6',
     'big-brother-addition-plus-60': 'Big Brother: +60',
     'big-brother-addition-plus-5': 'Big Brother: +5',
@@ -166,6 +167,16 @@ export const PAGE_GUIDES = {
       "Once the image disappears, type the number you saw.",
       "The faster you rank up, the less time the beads are visible!"
     ]
+  },
+  flash_anzan: {
+    title: "Flash Card Anzan Guide",
+    steps: [
+      "Numbers will flash on the screen one after another.",
+      "Mentally add or subtract each number as it appears.",
+      "Focus on the 'mental abacus' (Anzan) to keep the total.",
+      "When the sequence finishes, enter the final sum.",
+      "Difficulty levels increase the digit count and speed."
+    ]
   }
 };
 
@@ -219,9 +230,14 @@ export const CURRENCY_MAP: Record<string, { code: string, symbol: string }> = {
   "Other": { code: "USD", symbol: "$" }
 };
 
-export const APP_VERSION = "2.4.0";
+export const APP_VERSION = "2.5.0";
 
 export const UPDATE_NOTES = [
+  {
+    title: "Flash Card Anzan",
+    description: "New high-performance mental math mode. Calculate rapid sequences of flashing numbers.",
+    icon: "⚡"
+  },
   {
     title: "Real-Time 1v1 Duels",
     description: "Challenge students worldwide to high-speed math races and climb the competitive ranks.",
@@ -229,12 +245,7 @@ export const UPDATE_NOTES = [
   },
   {
     title: "Abacus Memory Flash",
-    description: "New cognitive game mode to master mental visualization (Anzan) with variable speed drills.",
+    description: "Cognitive game mode to master mental visualization (Anzan) with variable speed drills.",
     icon: "🧠"
-  },
-  {
-    title: "Dynamic Game Hub",
-    description: "Redesigned Game selection center with a clean path-based mission layout.",
-    icon: "🗺️"
   }
 ];

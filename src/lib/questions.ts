@@ -47,6 +47,11 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
   'beads-set': {
     easy: { numQuestions: 20, timeLimit: 0, title: 'Set Beads Value', icon: 'puzzle' },
   },
+  'flash-anzan': {
+    easy: { numQuestions: 10, timeLimit: 0, title: 'Flash Anzan (Easy)', icon: 'zap' },
+    medium: { numQuestions: 15, timeLimit: 0, title: 'Flash Anzan (Medium)', icon: 'zap' },
+    hard: { numQuestions: 20, timeLimit: 0, title: 'Flash Anzan (Hard)', icon: 'zap' },
+  },
   'basic-add-sub-l1': {
     easy: { numQuestions: 30, timeLimit: 0, title: 'Basic Add/Sub: Level 1 (Direct)', icon: 'brain-circuit' },
   },
@@ -481,6 +486,43 @@ export function generateGameQuestions(level: GameLevel, levelId?: number): Quest
 export function generateTest(testId: TestType, difficulty: Difficulty): Question[] {
   const settings = getTestSettings(testId, difficulty);
   if (!settings) return [];
+
+  if (testId === 'flash-anzan') {
+    const questions: Question[] = [];
+    const rows = difficulty === 'easy' ? 5 : (difficulty === 'medium' ? 8 : 12);
+    const delay = difficulty === 'easy' ? 1500 : (difficulty === 'medium' ? 1000 : 600);
+    const digits = difficulty === 'easy' ? 1 : (difficulty === 'medium' ? 2 : 2); // 3 digits for hard might be too much for now
+
+    for (let i = 0; i < settings.numQuestions; i++) {
+      const sequence: number[] = [];
+      let total = 0;
+      const min = Math.pow(10, digits - 1);
+      const max = Math.pow(10, digits) - 1;
+
+      for (let r = 0; r < rows; r++) {
+        const val = getRandomInt(min, max);
+        // Ensure no negative total
+        if (total - val < 0) {
+          sequence.push(val);
+          total += val;
+        } else {
+          const op = Math.random() > 0.7 ? -1 : 1;
+          const signedVal = val * op;
+          sequence.push(signedVal);
+          total += signedVal;
+        }
+      }
+      questions.push({
+        text: `Flash Anzan ${i + 1}`,
+        answer: total,
+        options: generateOptions(total),
+        questionType: 'flash',
+        sequence,
+        delay
+      });
+    }
+    return questions; // No need to de-duplicate sequences
+  }
 
   if (testId === 'basic-add-sub-l1' || testId === 'basic-add-sub-l2') {
     const max = testId === 'basic-add-sub-l1' ? 9 : 99;

@@ -98,7 +98,8 @@ export type TestType =
   | 'mastery-mix-10'
   | 'mastery-mix-11'
   | 'mastery-mix-12'
-  | 'bubble-game';
+  | 'bubble-game'
+  | 'flash-anzan';
 
 export type ExamGroup = 'A' | 'B' | 'C' | 'D' | 'E';
 
@@ -208,20 +209,22 @@ export type GameLevel =
 
 export type Difficulty = 'easy' | 'medium' | 'hard' | string;
 
-export type BeadQuestionType = 'identify' | 'set';
+export type BeadQuestionType = 'identify' | 'set' | 'flash';
 
 export interface Question {
   text: string;
   options: number[];
   answer: number;
   questionType?: BeadQuestionType;
+  sequence?: number[]; // For Flash Anzan
+  delay?: number; // For Flash Anzan (ms per number)
 }
 
 export interface TestSettings {
   numQuestions: number;
   timeLimit: number; 
   title: string;
-  icon: 'brain-circuit' | 'x' | 'divide' | 'puzzle' | 'eye' | 'keyboard' | 'square-root' | 'sparkles' | 'box';
+  icon: 'brain-circuit' | 'x' | 'divide' | 'puzzle' | 'eye' | 'keyboard' | 'square-root' | 'sparkles' | 'box' | 'zap';
 }
 
 export type SubscriptionStatus = 'free' | 'pro' | 'active';

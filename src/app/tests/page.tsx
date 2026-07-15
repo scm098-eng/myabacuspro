@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePageBackground } from '@/hooks/usePageBackground';
-import { ArrowRight, BookOpen, BrainCircuit, Puzzle, Eye, Gamepad2 } from 'lucide-react';
+import { ArrowRight, BookOpen, BrainCircuit, Puzzle, Eye, Gamepad2, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
@@ -19,6 +19,13 @@ const testCategories = [
     description: 'Learn to recognize the value of beads on the abacus with this visual test.',
     icon: Eye,
     iconBg: 'bg-yellow-100'
+  },
+  {
+    href: '/tests/flash-anzan',
+    title: 'Flash Card Anzan',
+    description: 'High-speed mental math training. Add flashing numbers sequentially.',
+    icon: Zap,
+    iconBg: 'bg-orange-100'
   },
   {
     href: '/tests/basic',

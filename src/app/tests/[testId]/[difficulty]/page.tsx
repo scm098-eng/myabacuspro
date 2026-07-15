@@ -1,19 +1,21 @@
 
 'use client';
 
+import React, { useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
+import { usePageBackground } from '@/hooks/usePageBackground';
 import { getTestSettings } from '@/lib/questions';
 import type { Difficulty, TestType } from '@/types';
 import TestPageClient from '@/components/TestPageClient';
+import BeadsTestPageClient from '@/components/BeadsTestPageClient';
+import FlashAnzanClient from '@/components/FlashAnzanClient';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Crown, Terminal, LogIn } from 'lucide-react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import TestPageWrapper from '@/components/TestPageWrapper';
-import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import BeadsTestPageClient from '@/components/BeadsTestPageClient';
 
 export default function TestPage() {
   const params = useParams();
@@ -29,6 +31,7 @@ export default function TestPage() {
   
   const settings = getTestSettings(testId, difficulty);
   const isBeadTest = testId === 'beads-identify' || testId === 'beads-set';
+  const isFlashAnzan = testId === 'flash-anzan';
 
   if (isLoading || !user) {
     return (
@@ -59,15 +62,16 @@ export default function TestPage() {
     );
   }
 
-  // Pro subscription check for non-bead tests for students (allowing trial access)
-  if (profile?.role === 'student' && profile?.subscriptionStatus !== 'pro' && !isBeadTest && !isTrialActive) {
+  // Pro subscription check for non-bead/flash tests for students (allowing trial access)
+  const isPublicTest = isBeadTest || (isFlashAnzan && difficulty === 'easy');
+  if (profile?.role === 'student' && profile?.subscriptionStatus !== 'pro' && !isPublicTest && !isTrialActive) {
     return (
        <div className="max-w-lg mx-auto text-center">
             <Alert variant="destructive">
                 <Crown className="h-4 w-4" />
                 <AlertTitle>Pro Membership Required</AlertTitle>
                 <AlertDescription>
-                    You need to be a Pro member to access this practice test. Please upgrade your plan to continue.
+                    You need to be a Pro member to access this advanced practice test. Please upgrade your plan to continue.
                 </AlertDescription>
                  <div className="mt-4">
                     <Button asChild>
@@ -98,7 +102,9 @@ export default function TestPage() {
     );
   }
   
-  const TestComponent = isBeadTest ? BeadsTestPageClient : TestPageClient;
+  let TestComponent = TestPageClient;
+  if (isBeadTest) TestComponent = BeadsTestPageClient;
+  if (isFlashAnzan) TestComponent = FlashAnzanClient as any;
 
   return (
     <TestPageWrapper>
