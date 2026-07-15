@@ -1,7 +1,6 @@
-
 'use client';
 
-import { Suspense, useEffect, useState, useMemo } from 'react';
+import React, { Suspense, useEffect, useState, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -253,14 +252,6 @@ function ResultsComponent() {
   
   return (
     <>
-      <style jsx global>{`
-        @keyframes float-to-profile {
-          0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-          20% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
-          100% { transform: translate(calc(-50% + var(--target-x)), calc(-50% + var(--target-y))) scale(0.1); opacity: 0; }
-        }
-      `}</style>
-
       <div className="max-w-4xl mx-auto space-y-8">
         <Card className="shadow-xl border-none bg-gradient-to-br from-card to-muted/20 overflow-hidden">
           <CardHeader className="text-center pb-2">

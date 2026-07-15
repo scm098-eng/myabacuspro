@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,7 +29,6 @@ import { ADMIN_EMAILS } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
 import { format } from 'date-fns';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 function getUTCMondayKey() {
     const now = new Date();
@@ -130,14 +129,6 @@ export default function AdminDashboardPage() {
 
   const currentWeekKey = useMemo(() => getUTCMondayKey(), []);
   const currentMonthKey = useMemo(() => getUTCMonthKey(), []);
-
-  // Ensure teacher has a referral code
-  useEffect(() => {
-    if (profile?.role === 'teacher' && !profile.referralCode) {
-      const newCode = `REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      updateUserProfile(profile.uid, { referralCode: newCode } as any).catch(e => console.warn("Referral code generation failed", e));
-    }
-  }, [profile, updateUserProfile]);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);

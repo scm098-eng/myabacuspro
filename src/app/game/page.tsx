@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,6 @@ import { usePageBackground } from '@/hooks/usePageBackground';
 import { cn } from '@/lib/utils';
 import { Star, Check, Swords, BrainCircuit, Gamepad2, MonitorOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
