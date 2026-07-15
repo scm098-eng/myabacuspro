@@ -34,32 +34,77 @@ export default function PatternMemoryPage() {
   const [userSelection, setUserSelection] = useState<number[]>([]);
   const [wrongSelection, setWrongSelection] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
 
   // Determine game parameters based on level
   const getLevelParams = useCallback((lvl: number) => {
     let size = 3;
     let tileCount = 3;
-    let time = 2500;
+    let memorizeTime = 2500;
+    let playTime = 5000;
 
     if (lvl <= 5) {
       size = 3;
       tileCount = 3 + Math.floor(lvl / 2);
-      time = 2500 - (lvl * 200);
+      memorizeTime = 2500 - (lvl * 200);
+      playTime = 5000 + (lvl * 500); 
     } else if (lvl <= 15) {
       size = 4;
       tileCount = 5 + Math.floor((lvl - 5) / 3);
-      time = 3000 - ((lvl - 5) * 150);
+      memorizeTime = 3000 - ((lvl - 5) * 150);
+      playTime = 8000 + ((lvl - 5) * 400);
     } else {
       size = 5;
       tileCount = 8 + Math.floor((lvl - 15) / 5);
-      time = 3500 - ((lvl - 15) * 100);
+      memorizeTime = 3500 - ((lvl - 15) * 100);
+      playTime = 12000 + ((lvl - 15) * 300);
     }
 
-    return { size, tileCount, time: Math.max(800, time) };
+    return { 
+      size, 
+      tileCount, 
+      memorizeTime: Math.max(800, memorizeTime), 
+      playTime: Math.max(3000, playTime) 
+    };
   }, []);
 
+  const handleTimeOut = useCallback(() => {
+    if (gameState !== 'playing') return;
+    
+    setLives(l => {
+      const next = l - 1;
+      if (next <= 0) {
+        setGameState('fail');
+      } else {
+        setGameState('idle'); // Restart round
+      }
+      return next;
+    });
+    
+    playSound('wrong');
+  }, [gameState, playSound]);
+
+  // Timer Effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (gameState === 'playing' && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft(prev => {
+          const next = prev - 100;
+          if (next <= 0) {
+            clearInterval(interval);
+            handleTimeOut();
+            return 0;
+          }
+          return next;
+        });
+      }, 100);
+    }
+    return () => clearInterval(interval);
+  }, [gameState, timeLeft, handleTimeOut]);
+
   const generatePattern = useCallback(() => {
-    const { size, tileCount } = getLevelParams(level);
+    const { size, tileCount, memorizeTime, playTime } = getLevelParams(level);
     setGridSize(size);
     
     const newPattern: number[] = [];
@@ -77,10 +122,10 @@ export default function PatternMemoryPage() {
     setWrongSelection(null);
     setGameState('memorizing');
 
-    const { time } = getLevelParams(level);
     setTimeout(() => {
+      setTimeLeft(playTime);
       setGameState('playing');
-    }, time);
+    }, memorizeTime);
   }, [level, getLevelParams]);
 
   useEffect(() => {
@@ -123,8 +168,11 @@ export default function PatternMemoryPage() {
           setWrongSelection(null);
           setUserSelection([]);
           setGameState('memorizing');
-          const { time } = getLevelParams(level);
-          setTimeout(() => setGameState('playing'), time);
+          const { memorizeTime, playTime } = getLevelParams(level);
+          setTimeout(() => {
+            setTimeLeft(playTime);
+            setGameState('playing');
+          }, memorizeTime);
         }, 800);
       }
     }
@@ -201,6 +249,8 @@ export default function PatternMemoryPage() {
     );
   }
 
+  const { playTime } = getLevelParams(level);
+
   return (
     <div className="max-w-4xl mx-auto space-y-10 pb-20">
       <div className="flex justify-between items-center px-4">
@@ -236,14 +286,25 @@ export default function PatternMemoryPage() {
             )}
 
             {gameState === 'playing' && (
-              <div className="mb-10 animate-in fade-in duration-300 text-sky-400 flex items-center gap-3">
-                 <Timer className="w-5 h-5 animate-pulse" />
-                 <p className="text-sm font-black uppercase tracking-[0.3em]">Reconstruct Matrix</p>
+              <div className="mb-10 animate-in fade-in duration-300 flex flex-col items-center gap-2">
+                 <div className="flex items-center gap-3 text-sky-400">
+                    <Timer className="w-5 h-5 animate-pulse" />
+                    <p className="text-sm font-black uppercase tracking-[0.3em]">Reconstruct Matrix</p>
+                 </div>
+                 <div className={cn("text-3xl font-black tabular-nums transition-colors", timeLeft <= 3000 ? "text-red-500 animate-pulse" : "text-white")}>
+                    {(timeLeft / 1000).toFixed(1)}s
+                 </div>
+                 <div className="w-48 h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
+                    <div 
+                      className={cn("h-full transition-all duration-100", timeLeft <= 3000 ? "bg-red-500" : "bg-sky-400")}
+                      style={{ width: `${(timeLeft / playTime) * 100}%` }}
+                    />
+                 </div>
               </div>
             )}
 
             <div 
-              className="grid gap-3 sm:gap-4 p-4 bg-white/5 rounded-[2.5rem] border-4 border-white/10 shadow-inner"
+              className="grid gap-3 sm:gap-4 p-4 bg-white/5 rounded-[2.5rem] border-4 border-white/10 shadow-inner mt-4"
               style={{ 
                 gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
                 width: '100%',
