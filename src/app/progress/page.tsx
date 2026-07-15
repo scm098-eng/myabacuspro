@@ -429,7 +429,6 @@ function ProgressContent() {
 }
 
 export default function ProgressReportPage() {
-  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/progress_bg.jpg?alt=media');
   return (
     <Suspense fallback={<ProgressReportSkeleton />}>
       <ProgressContent />

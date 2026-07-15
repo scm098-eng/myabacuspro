@@ -239,7 +239,7 @@ export default function PatternMemoryPage() {
         const db = getFirestore(firebaseApp);
         const resultData = {
           userId: user.uid,
-          testId: 'matrix-flash',
+          testId: 'matrix-flash' as any,
           difficulty: `Level ${level}`,
           score: finalScore,
           totalQuestions: ROUNDS_PER_LEVEL,
