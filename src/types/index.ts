@@ -112,6 +112,7 @@ export interface Duel {
   opponentName?: string;
   opponentPhoto?: string;
   status: 'waiting' | 'active' | 'completed' | 'expired';
+  mode: 'standard' | 'flash';
   winnerId?: string | 'draw';
   questions: Question[];
   challengerScore: number;

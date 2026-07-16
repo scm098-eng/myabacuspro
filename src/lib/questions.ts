@@ -484,6 +484,58 @@ export function generateGameQuestions(level: GameLevel, levelId?: number): Quest
     return deDuplicateQuestions(positiveOnlyQuestions).slice(0, 20); 
 }
 
+export function generateFlashSequence(digits: number, rows: number, prng: () => number = Math.random): { sequence: number[], answer: number } {
+  const sequence: number[] = [];
+  let total = 0;
+  const min = Math.pow(10, digits - 1);
+  const max = Math.pow(10, digits) - 1;
+
+  for (let r = 0; r < rows; r++) {
+    const val = getRandomInt(min, max, prng);
+    if (total - val < 0) {
+      sequence.push(val);
+      total += val;
+    } else {
+      const op = prng() > 0.7 ? -1 : 1;
+      const signedVal = val * op;
+      sequence.push(signedVal);
+      total += signedVal;
+    }
+  }
+  return { sequence, answer: total };
+}
+
+export function generateDuelQuestions(mode: 'standard' | 'flash', seed: string): Question[] {
+    const prng = createPRNG(seed);
+    const count = mode === 'flash' ? 10 : 20;
+    const questions: Question[] = [];
+
+    for (let i = 0; i < count; i++) {
+        if (mode === 'flash') {
+            const { sequence, answer } = generateFlashSequence(2, 5, prng);
+            questions.push({
+                text: `Flash Seq ${i+1}`,
+                answer,
+                options: generateOptions(answer, prng),
+                questionType: 'flash',
+                sequence,
+                delay: 1000
+            });
+        } else {
+            const num1 = getRandomInt(10, 50, prng);
+            const num2 = getRandomInt(1, 9, prng);
+            const op = prng() > 0.5 ? '+' : '-';
+            const answer = op === '+' ? num1 + num2 : num1 - num2;
+            questions.push({
+                text: `${num1} ${op} ${num2}`,
+                answer,
+                options: generateOptions(answer, prng)
+            });
+        }
+    }
+    return deDuplicateQuestions(questions);
+}
+
 export function generateTest(testId: TestType, difficulty: Difficulty, customSettings?: { rows?: number, digits?: number, delay?: number }): Question[] {
   const settings = getTestSettings(testId, difficulty);
   if (!settings && difficulty !== 'custom') return [];
@@ -497,27 +549,11 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
     const numQs = settings?.numQuestions || 10;
 
     for (let i = 0; i < numQs; i++) {
-      const sequence: number[] = [];
-      let total = 0;
-      const min = Math.pow(10, digits - 1);
-      const max = Math.pow(10, digits) - 1;
-
-      for (let r = 0; r < rows; r++) {
-        const val = getRandomInt(min, max);
-        if (total - val < 0) {
-          sequence.push(val);
-          total += val;
-        } else {
-          const op = Math.random() > 0.7 ? -1 : 1;
-          const signedVal = val * op;
-          sequence.push(signedVal);
-          total += signedVal;
-        }
-      }
+      const { sequence, answer } = generateFlashSequence(digits, rows);
       questions.push({
         text: `Flash Anzan ${i + 1}`,
-        answer: total,
-        options: generateOptions(total),
+        answer: answer,
+        options: generateOptions(answer),
         questionType: 'flash',
         sequence,
         delay

@@ -12,12 +12,13 @@ import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, ser
 import { firebaseApp } from '@/lib/firebase';
 import type { Duel, Question } from '@/types';
 import { Swords, Loader2, PlayCircle, Trophy, Users, Plus, ShieldAlert, Share2, Copy, Zap, Clock, MonitorOff } from 'lucide-react';
-import { generateExamQuestions } from '@/lib/exam-utils';
+import { generateDuelQuestions } from '@/lib/questions';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
 
 export default function DuelsLobbyPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
@@ -29,6 +30,7 @@ export default function DuelsLobbyPage() {
   const [activeDuels, setActiveDuels] = useState<Duel[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedMode, setSelectedMode] = useState<'standard' | 'flash'>('standard');
 
   useEffect(() => {
     if (!user) return;
@@ -58,14 +60,15 @@ export default function DuelsLobbyPage() {
 
     try {
       const db = getFirestore(firebaseApp);
-      // Generate a set of 20 mixed math questions for the duel
-      const questions = generateExamQuestions('A', `${Date.now()}`).slice(0, 20);
+      const seed = `${Date.now()}`;
+      const questions = generateDuelQuestions(selectedMode, seed);
       
       const newDuel: Partial<Duel> = {
         challengerId: user.uid,
         challengerName: `${profile.firstName} ${profile.surname}`,
         challengerPhoto: profile.profilePhoto || '',
         status: 'waiting',
+        mode: selectedMode,
         questions,
         challengerScore: 0,
         opponentScore: 0,
@@ -126,7 +129,29 @@ export default function DuelsLobbyPage() {
                   <Zap className="w-12 h-12 text-primary fill-primary animate-pulse" />
                 </div>
                 <h2 className="text-3xl font-black uppercase italic tracking-tighter">New Challenger?</h2>
-                <p className="text-slate-400 font-medium leading-relaxed">Create your own match and wait for a global opponent to step in.</p>
+                
+                <div className="space-y-4 py-2">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Battle Mode</Label>
+                  <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+                    <Button 
+                      variant={selectedMode === 'standard' ? 'default' : 'ghost'} 
+                      size="sm" 
+                      className="flex-1 rounded-lg h-10 font-bold" 
+                      onClick={() => setSelectedMode('standard')}
+                    >
+                      Standard
+                    </Button>
+                    <Button 
+                      variant={selectedMode === 'flash' ? 'default' : 'ghost'} 
+                      size="sm" 
+                      className="flex-1 rounded-lg h-10 font-bold" 
+                      onClick={() => setSelectedMode('flash')}
+                    >
+                      Flash Anzan
+                    </Button>
+                  </div>
+                </div>
+
                 <Button onClick={handleCreateDuel} disabled={isCreating} className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-orange-500/20">
                   {isCreating ? <Loader2 className="animate-spin" /> : <><Plus className="mr-2 w-6 h-6" /> Create Duel</>}
                 </Button>
@@ -146,7 +171,7 @@ export default function DuelsLobbyPage() {
              <CardContent className="space-y-4">
                <div className="flex items-start gap-3">
                  <div className="h-5 w-5 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center font-black text-[10px] shrink-0">1</div>
-                 <p className="text-xs font-bold text-indigo-700/80">20 Randomized mixed math questions.</p>
+                 <p className="text-xs font-bold text-indigo-700/80">Challenger picks the mode for the lobby.</p>
                </div>
                <div className="flex items-start gap-3">
                  <div className="h-5 w-5 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center font-black text-[10px] shrink-0">2</div>
@@ -179,10 +204,13 @@ export default function DuelsLobbyPage() {
                         <AvatarFallback className="font-black text-xl">{duel.challengerName?.[0]}</AvatarFallback>
                       </Avatar>
                       <div className="min-w-0">
-                        <p className="text-sm font-black uppercase tracking-widest text-primary mb-1">Challenger</p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-black uppercase tracking-widest text-primary leading-none">Challenger</p>
+                          <Badge className={cn("text-[9px] font-black uppercase", duel.mode === 'flash' ? "bg-orange-500" : "bg-blue-600")}>{duel.mode || 'standard'}</Badge>
+                        </div>
                         <h3 className="text-xl font-bold truncate leading-none">{duel.challengerName}</h3>
                         <div className="flex items-center gap-2 mt-2">
-                           <Badge variant="outline" className="text-[9px] font-black uppercase border-muted-foreground/20">20 Questions</Badge>
+                           <Badge variant="outline" className="text-[9px] font-black uppercase border-muted-foreground/20">{duel.questions.length} Rounds</Badge>
                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                              <Clock className="w-3 h-3" /> 
                              {new Date(duel.createdAt?.toDate ? duel.createdAt.toDate() : Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

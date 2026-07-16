@@ -12,7 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { getFirestore, doc, onSnapshot, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { Duel, Question } from '@/types';
-import { Swords, Loader2, Timer, CheckCircle2, XCircle, Share2, Copy, ArrowRight, Trophy, Crown, UserX, AlertCircle, PlayCircle, Users, Clock } from 'lucide-react';
+import { Swords, Loader2, Timer, CheckCircle2, XCircle, Share2, Copy, ArrowRight, Trophy, Crown, UserX, AlertCircle, PlayCircle, Users, Clock, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -21,6 +21,7 @@ import { FirestorePermissionError } from '@/lib/errors';
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 
 export default function DuelArenaPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
@@ -38,6 +39,15 @@ export default function DuelArenaPage() {
   const [localScore, setLocalScore] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
 
+  // Flash Mode States
+  const [isFlashing, setIsFlashing] = useState(false);
+  const [activeNumber, setActiveNumber] = useState<number | null>(null);
+  const [sequenceIdx, setSequenceIdx] = useState(0);
+  const [inputValue, setInputValue] = useState('');
+  const [isReadyForInput, setIsReadyForInput] = useState(false);
+
+  const inputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (!user || !duelId) return;
     const db = getFirestore(firebaseApp);
@@ -48,12 +58,6 @@ export default function DuelArenaPage() {
         if (snap.exists()) {
           const data = snap.data() as Duel;
           setDuel({ id: snap.id, ...data });
-          
-          if (data.status === 'active' || (data.challengerId === user.uid && data.challengerFinished) || (data.opponentId === user.uid && data.opponentFinished)) {
-            // Already initialized or finished
-          } else {
-            setAnswers(new Array(data.questions.length).fill(null));
-          }
           setLoading(false);
         } else {
           toast({ title: "Duel not found", variant: "destructive" });
@@ -68,6 +72,48 @@ export default function DuelArenaPage() {
 
   const isChallenger = duel?.challengerId === user?.uid;
   const isFinished = isChallenger ? duel?.challengerFinished : duel?.opponentFinished;
+
+  const startFlashing = useCallback(() => {
+    if (!duel || !duel.questions[currentIdx]?.sequence) return;
+    setIsFlashing(true);
+    setIsReadyForInput(false);
+    setActiveNumber(null);
+    setSequenceIdx(0);
+    setInputValue('');
+
+    const sequence = duel.questions[currentIdx].sequence!;
+    const delay = duel.questions[currentIdx].delay || 1000;
+    
+    let idx = 0;
+    const interval = setInterval(() => {
+      if (idx >= sequence.length) {
+        clearInterval(interval);
+        setTimeout(() => {
+          setIsFlashing(false);
+          setIsReadyForInput(true);
+          setActiveNumber(null);
+          if (inputRef.current) inputRef.current.focus();
+        }, 500);
+        return;
+      }
+      
+      const num = sequence[idx];
+      setActiveNumber(num);
+      playSound('timerTick');
+      
+      setTimeout(() => setActiveNumber(null), delay * 0.8);
+      idx++;
+      setSequenceIdx(idx);
+    }, delay);
+
+    return () => clearInterval(interval);
+  }, [duel, currentIdx, playSound]);
+
+  useEffect(() => {
+    if (hasStarted && !isFinished && duel?.mode === 'flash' && !isFlashing && !isReadyForInput) {
+      startFlashing();
+    }
+  }, [hasStarted, isFinished, duel?.mode, isFlashing, isReadyForInput, startFlashing]);
 
   const handleAnswer = (val: number) => {
     if (isFinished || !duel) return;
@@ -87,6 +133,10 @@ export default function DuelArenaPage() {
     setTimeout(() => {
       if (currentIdx < duel.questions.length - 1) {
         setCurrentIdx(p => p + 1);
+        if (duel.mode === 'flash') {
+          setIsReadyForInput(false);
+          setInputValue('');
+        }
       } else {
         submitDuel(isCorrect ? localScore + 1 : localScore);
       }
@@ -118,12 +168,8 @@ export default function DuelArenaPage() {
       else if (p2Score > p1Score) payload.winnerId = duel.opponentId;
       else payload.winnerId = 'draw';
 
-      // Reward Winner
-      if (payload.winnerId === user.uid) {
-        await addPoints(user.uid, 50);
-      } else if (payload.winnerId === 'draw') {
-        await addPoints(user.uid, 20);
-      }
+      if (payload.winnerId === user.uid) await addPoints(user.uid, 50);
+      else if (payload.winnerId === 'draw') await addPoints(user.uid, 20);
     }
 
     try {
@@ -171,9 +217,6 @@ export default function DuelArenaPage() {
             <Button onClick={copyDuelLink} className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl bg-orange-500 hover:bg-orange-600 shadow-xl">
                <Share2 className="mr-2 w-6 h-6" /> Invite Friend
             </Button>
-            <div className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
-               <Loader2 className="w-3 h-3 animate-spin" /> Live Syncing Registry
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -192,9 +235,6 @@ export default function DuelArenaPage() {
            <h2 className="text-4xl font-black uppercase tracking-tighter italic">
              {isWinner ? 'YOU WON!' : isDraw ? 'MATCH DRAW!' : 'GOOD GAME!'}
            </h2>
-           <p className="text-xl font-bold opacity-80 mt-2">
-             {isWinner ? '+50 Mastery Points Earned' : isDraw ? '+20 Mastery Points Earned' : 'Persistence build speed!'}
-           </p>
         </div>
         <CardContent className="p-12">
            <div className="flex items-center justify-center gap-8 sm:gap-20 mb-12">
@@ -216,12 +256,7 @@ export default function DuelArenaPage() {
                  </div>
               </div>
            </div>
-           <div className="grid gap-4 max-w-sm mx-auto">
-             <Button onClick={() => router.push('/game/duels')} className="h-16 text-xl font-black uppercase tracking-widest rounded-2xl bg-slate-900 hover:bg-black text-white shadow-xl">
-               Play Another Match
-             </Button>
-             <Button variant="ghost" onClick={() => router.push('/game')} className="font-bold text-slate-500 uppercase tracking-widest h-12">Return to Lobby</Button>
-           </div>
+           <Button onClick={() => router.push('/game/duels')} className="w-full h-16 text-xl font-black rounded-2xl bg-slate-900 hover:bg-black text-white shadow-xl">Play Another Match</Button>
         </CardContent>
       </Card>
     );
@@ -237,40 +272,11 @@ export default function DuelArenaPage() {
               </div>
               <h2 className="text-4xl font-black uppercase italic tracking-tighter">Duel Commencing!</h2>
               <p className="text-orange-100 font-bold mt-2 text-lg">Opponent Ready: <span className="underline">{isChallenger ? duel.opponentName : duel.challengerName}</span></p>
+              <Badge className="mt-4 bg-white/20 text-white border-none uppercase font-black px-4">MODE: {duel.mode?.toUpperCase() || 'STANDARD'}</Badge>
            </div>
            <CardContent className="p-10 space-y-8 text-center">
-              <div className="space-y-2">
-                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Match Settings</p>
-                 <p className="text-xl font-bold text-slate-700">20 Questions • 10 Seconds per round • Mixed Arithmetic</p>
-              </div>
-              <Button onClick={() => setHasStarted(true)} className="w-full h-20 text-2xl font-black uppercase tracking-widest rounded-3xl bg-orange-500 hover:bg-orange-600 shadow-2xl shadow-orange-200 transition-all active:scale-95">
+              <Button onClick={() => setHasStarted(true)} className="w-full h-20 text-2xl font-black uppercase tracking-widest rounded-3xl bg-orange-500 hover:bg-orange-600 shadow-2xl transition-all">
                 <PlayCircle className="mr-3 w-8 h-8" /> ENTER ARENA
-              </Button>
-           </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (isFinished) {
-    return (
-      <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500">
-        <Card className="rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
-           <div className="bg-slate-900 p-12 text-center text-white">
-              <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6">
-                <Clock className="w-12 h-12 text-indigo-400 animate-pulse" />
-              </div>
-              <h2 className="text-3xl font-black uppercase italic tracking-tighter">Turn Submitted</h2>
-              <p className="text-slate-400 font-bold mt-2">Waiting for your opponent to finish their turn.</p>
-           </div>
-           <CardContent className="p-10 space-y-8 text-center">
-              <div className="space-y-2">
-                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Your Result</p>
-                 <p className="text-6xl font-black text-slate-900">{isChallenger ? duel.challengerScore : duel.opponentScore}</p>
-                 <p className="text-xs font-bold text-slate-500">Mastery level maintained. Winning points awarded after results declarations.</p>
-              </div>
-              <Button variant="outline" onClick={() => router.push('/game/duels')} className="w-full h-14 rounded-xl border-2 font-black uppercase tracking-widest">
-                Return to Lobby
               </Button>
            </CardContent>
         </Card>
@@ -281,7 +287,7 @@ export default function DuelArenaPage() {
   const question = duel.questions[currentIdx];
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-20 px-2 sm:px-4">
+    <div className="max-w-3xl mx-auto space-y-6 pb-20 px-4">
       <Card className="rounded-[2rem] shadow-2xl border-none overflow-hidden flex flex-col min-h-[500px]">
         <CardHeader className="bg-slate-900 text-white p-6 border-b shrink-0">
           <div className="flex justify-between items-center">
@@ -302,32 +308,47 @@ export default function DuelArenaPage() {
         </CardHeader>
         
         <CardContent className="p-8 text-center flex-grow flex flex-col justify-center overflow-hidden">
-          <div className="space-y-12">
-            <div className="py-12 bg-muted/20 rounded-[2.5rem] border-4 border-dashed border-primary/10 shadow-inner">
-                <p className="text-5xl sm:text-7xl font-black tracking-tighter text-slate-900 animate-in zoom-in-50 duration-300" key={currentIdx}>
-                  {question.text} = ?
-                </p>
+          {duel.mode === 'flash' ? (
+             <div className="space-y-12">
+               {isFlashing ? (
+                  <div className="text-center animate-in zoom-in-95 duration-200">
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground mb-10">Row {sequenceIdx} of {question.sequence?.length}</p>
+                    <div className={cn("text-7xl sm:text-9xl font-black tracking-tighter drop-shadow-xl", activeNumber && activeNumber < 0 ? "text-red-500" : "text-slate-900")}>
+                      {activeNumber !== null ? (activeNumber > 0 ? `+${activeNumber}` : activeNumber) : ''}
+                    </div>
+                  </div>
+               ) : isReadyForInput ? (
+                  <div className="w-full max-w-sm mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="text-center"><h3 className="text-2xl font-black uppercase tracking-tight">Sequence Complete</h3><p className="text-muted-foreground font-medium mt-1">What is the total?</p></div>
+                    <div className="flex gap-4">
+                      <Input ref={inputRef} type="number" value={inputValue} onChange={e => setInputValue(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAnswer(parseInt(inputValue))} className="h-16 text-center text-4xl font-black rounded-2xl border-4 shadow-inner" placeholder="???" />
+                      <Button onClick={() => handleAnswer(parseInt(inputValue))} className="h-16 px-8 rounded-2xl shadow-xl bg-primary hover:bg-primary/90"><ArrowRight className="w-8 h-8" /></Button>
+                    </div>
+                  </div>
+               ) : (
+                 <Button onClick={startFlashing} className="h-20 px-12 rounded-3xl text-2xl font-black uppercase tracking-widest bg-slate-900 shadow-2xl">Start Round {currentIdx + 1}</Button>
+               )}
+             </div>
+          ) : (
+            <div className="space-y-12">
+              <div className="py-12 bg-muted/20 rounded-[2.5rem] border-4 border-dashed border-primary/10 shadow-inner">
+                  <p className="text-5xl sm:text-7xl font-black tracking-tighter text-slate-900 animate-in zoom-in-50 duration-300" key={currentIdx}>
+                    {question.text} = ?
+                  </p>
+              </div>
+              <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+                {question.options.map((opt, i) => (
+                  <Button key={i} variant="outline" className="h-20 text-3xl font-black rounded-2xl border-4 transition-all hover:scale-105 shadow-md" onClick={() => handleAnswer(opt)}>{opt}</Button>
+                ))}
+              </div>
             </div>
-            
-            <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
-              {question.options.map((opt, i) => (
-                <Button 
-                  key={i} 
-                  variant="outline"
-                  className="h-20 text-3xl font-black rounded-2xl border-4 transition-all hover:scale-105 active:scale-95 shadow-md" 
-                  onClick={() => handleAnswer(opt)}
-                >
-                  {opt}
-                </Button>
-              ))}
-            </div>
-          </div>
+          )}
         </CardContent>
         
         <CardFooter className="bg-slate-50 p-6 border-t flex justify-center">
            <div className="flex items-center gap-3 opacity-30">
               <ShieldAlert className="w-4 h-4" />
-              <p className="text-[9px] font-black uppercase tracking-[0.3em]">Anti-Cheat Active • Speed Tracking</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.3em]">Anti-Cheat Active • Duel Mode</p>
            </div>
         </CardFooter>
       </Card>
