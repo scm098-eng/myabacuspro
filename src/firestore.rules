@@ -37,7 +37,7 @@ service cloud.firestore {
 
     // --- DUEL RULES ---
     match /duels/{duelId} {
-      // Explicitly allow authenticated users to list lobbies and read match details
+      // Allow authenticated users to list lobbies and read match details
       allow read, list: if request.auth != null;
       allow create: if request.auth != null && isNotSuspended();
       allow update: if request.auth != null && isNotSuspended() && 

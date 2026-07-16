@@ -99,7 +99,7 @@ export default function TestsPage() {
     <div className="space-y-12">
       <div className="text-center">
         <h1 className="text-4xl font-bold tracking-tight text-foreground font-headline sm:text-5xl uppercase">
-          Master Your Skills on <span className="text-primary whitespace-nowrap">My Abacus Pro</span>
+          Master Your Skills on <span className="text-primary whitespace-nowrap">My&nbsp;Abacus&nbsp;Pro</span>
         </h1>
         <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground font-medium">
           Select a category to begin your training. Each section focuses on different skills to help you master mental math.

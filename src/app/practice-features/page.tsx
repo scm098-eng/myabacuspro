@@ -20,7 +20,7 @@ export default function PracticeFeaturesPage() {
           Master the <span className="text-primary">Ancient Art</span> of Calculation
         </h1>
         <p className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground font-medium leading-relaxed">
-          <span className="whitespace-nowrap">My Abacus Pro</span> is more than a digital calculator—it's a comprehensive brain development platform designed to turn students into human calculators through visualization and formula mastery.
+          <span className="whitespace-nowrap">My&nbsp;Abacus&nbsp;Pro</span> is more than a digital calculator—it's a comprehensive brain development platform designed to turn students into human calculators through visualization and formula mastery.
         </p>
         <div className="flex justify-center gap-4">
           <Button asChild size="lg" className="h-14 px-10 text-lg font-black rounded-2xl shadow-xl">

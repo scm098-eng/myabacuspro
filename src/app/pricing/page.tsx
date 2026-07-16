@@ -420,7 +420,7 @@ export default function PricingPage() {
             )}
 
             <div className="text-center space-y-6">
-                <h1 className="text-4xl font-extrabold sm:text-6xl tracking-tight text-gray-900 font-headline uppercase">Upgrade to <span className="text-primary whitespace-nowrap">My Abacus Pro</span></h1>
+                <h1 className="text-4xl font-extrabold sm:text-6xl tracking-tight text-gray-900 font-headline uppercase">Upgrade to <span className="text-primary whitespace-nowrap">My&nbsp;Abacus&nbsp;Pro</span></h1>
                 <p className="mt-4 text-xl text-muted-foreground max-w-2xl mx-auto font-medium">Unlock the full power of mental math training and join the global leaderboard.</p>
                 
                 {isTrialActive && !isAlreadyPro && (
@@ -544,7 +544,7 @@ export default function PricingPage() {
                 </section>
             )}
 
-            {/* --- COMPREHENSIVE COMPARISON TABLE (EXACT SYNC WITH IMAGE) --- */}
+            {/* --- COMPREHENSIVE COMPARISON TABLE (SYNC WITH REQUESTED IMAGE) --- */}
             <section className="space-y-12">
                 <div className="text-center space-y-2">
                     <h2 className="text-3xl sm:text-4xl font-black uppercase font-headline tracking-tight">Free vs Pro Comparison</h2>
@@ -605,7 +605,7 @@ export default function PricingPage() {
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">BASIC SCORES</span></TableCell>
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">FULL PERFORMANCE TRENDS</span></TableCell>
                             </TableRow>
-                            {/* --- NEW PERFORMANCE MODULES --- */}
+                            {/* --- NEW POINTS APPENDED AT LAST --- */}
                             <TableRow className="border-b-slate-100">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">High-Speed Flash Anzan (0.2s)</TableCell>
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">1-DIGIT ONLY</span></TableCell>

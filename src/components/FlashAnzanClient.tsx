@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -155,7 +154,8 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     isFinishedRef.current = true;
     setIsFinished(true);
 
-    const score = finalAnswers.reduce((acc, ans, i) => (ans !== null && ans === questions[i].answer ? acc + 1 : acc), 0);
+    // Explicit type annotation for accumulator to avoid build error
+    const score = finalAnswers.reduce<number>((acc, ans, i) => (ans !== null && ans === questions[i].answer ? acc + 1 : acc), 0);
     const answeredCount = finalAnswers.filter(a => a !== null).length;
     let earnedPointsTotal = 0;
 
