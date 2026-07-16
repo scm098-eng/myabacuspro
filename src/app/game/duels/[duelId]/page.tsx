@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
@@ -56,8 +55,10 @@ export default function DuelArenaPage() {
     return onSnapshot(docRef, 
       (snap) => {
         if (snap.exists()) {
-          const data = snap.data() as Duel;
-          setDuel({ id: snap.id, ...data });
+          const docData = snap.data() as Duel;
+          // Resolve redundant id property conflict by ensuring snap.id overrides any stored id
+          const { id: _, ...rest } = docData;
+          setDuel({ id: snap.id, ...rest } as Duel);
           setLoading(false);
         } else {
           toast({ title: "Duel not found", variant: "destructive" });
@@ -228,7 +229,7 @@ export default function DuelArenaPage() {
     const isDraw = duel.winnerId === 'draw';
     return (
       <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden animate-in zoom-in-95">
-        <div className={cn("p-12 text-center text-white", isWinner ? "bg-green-600" : isDraw ? "bg-blue-600" : "bg-slate-800")}>
+        <div className={cn("p-12 text-center text-white", isWinner ? "bg-green-600" : "bg-blue-600" : "bg-slate-800")}>
            <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6">
              {isWinner ? <Crown className="w-12 h-12 text-yellow-300" /> : isDraw ? <Users className="w-12 h-12" /> : <Trophy className="w-12 h-12 opacity-50" />}
            </div>

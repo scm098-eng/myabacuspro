@@ -544,7 +544,7 @@ export default function PricingPage() {
                 </section>
             )}
 
-            {/* --- COMPREHENSIVE COMPARISON TABLE (SYNCED WITH IMAGE) --- */}
+            {/* --- COMPREHENSIVE COMPARISON TABLE (EXACT SYNC WITH IMAGE) --- */}
             <section className="space-y-12">
                 <div className="text-center space-y-2">
                     <h2 className="text-3xl sm:text-4xl font-black uppercase font-headline tracking-tight">Free vs Pro Comparison</h2>

@@ -235,7 +235,7 @@ function ProgressContent() {
           <CardContent>
             <div className="text-2xl font-black">{summaryStats.totalPracticeTime}</div>
           </CardContent>
-        </Card>
+        </div>
       </div>
       
       <Card>
