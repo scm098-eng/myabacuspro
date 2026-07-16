@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
@@ -56,7 +57,6 @@ export default function DuelArenaPage() {
       (snap) => {
         if (snap.exists()) {
           const docData = snap.data() as Duel;
-          // Destructure to prevent 'id' overwrite warning
           const { id: _, ...rest } = docData;
           setDuel({ id: snap.id, ...rest } as Duel);
           setLoading(false);
@@ -280,7 +280,7 @@ export default function DuelArenaPage() {
            </div>
            <CardContent className="p-10 space-y-8 text-center">
               <Button onClick={() => setHasStarted(true)} className="w-full h-20 text-2xl font-black uppercase tracking-widest rounded-3xl bg-orange-500 hover:bg-orange-600 shadow-2xl transition-all">
-                <PlayCircle className="mr-3 w-8 h-8" /> ENTER ARENA
+                <PlayCircle className="mr-3 h-6 w-6 sm:h-8 sm:w-8" /> ENTER ARENA
               </Button>
            </CardContent>
         </Card>

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
@@ -20,8 +20,7 @@ import { FirestorePermissionError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 
-export default function DuelsLobbyPage() {
-  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
+function DuelsLobbyContent() {
   const { user, profile, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -44,7 +43,11 @@ export default function DuelsLobbyPage() {
 
     return onSnapshot(q, 
       (snap) => {
-        setActiveDuels(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Duel)));
+        setActiveDuels(snap.docs.map(doc => {
+            const data = doc.data() as Duel;
+            const { id: _, ...rest } = data;
+            return { id: doc.id, ...rest } as Duel;
+        }));
         setLoading(false);
       },
       async (err) => {
@@ -170,15 +173,15 @@ export default function DuelsLobbyPage() {
              </CardHeader>
              <CardContent className="space-y-4">
                <div className="flex items-start gap-3">
-                 <div className="h-5 w-5 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center font-black text-[10px] shrink-0">1</div>
+                 <div className="h-5 p-px w-5 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center font-black text-[10px] shrink-0">1</div>
                  <p className="text-xs font-bold text-indigo-700/80">Challenger picks the mode for the lobby.</p>
                </div>
                <div className="flex items-start gap-3">
-                 <div className="h-5 w-5 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center font-black text-[10px] shrink-0">2</div>
+                 <div className="h-5 p-px w-5 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center font-black text-[10px] shrink-0">2</div>
                  <p className="text-xs font-bold text-indigo-700/80">Highest score wins. Draw if scores equal.</p>
                </div>
                <div className="flex items-start gap-3">
-                 <div className="h-5 w-5 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center font-black text-[10px] shrink-0">3</div>
+                 <div className="h-5 p-px w-5 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center font-black text-[10px] shrink-0">3</div>
                  <p className="text-xs font-bold text-indigo-700/80">Winner takes +50 Mastery Points!</p>
                </div>
              </CardContent>
@@ -239,5 +242,14 @@ export default function DuelsLobbyPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DuelsLobbyPage() {
+  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
+  return (
+    <Suspense fallback={<div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /></div>}>
+      <DuelsLobbyContent />
+    </Suspense>
   );
 }

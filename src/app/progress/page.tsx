@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
@@ -36,24 +37,22 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const ProgressReportSkeleton = () => {
-  return (
-    <div className="space-y-8">
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-80" />
-        </CardHeader>
-      </Card>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-      </div>
+const ProgressReportSkeleton = () => (
+  <div className="space-y-8">
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-4 w-80" />
+      </CardHeader>
+    </Card>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+      <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+      <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+      <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+      <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
     </div>
-  );
-};
+  </div>
+);
 
 function ProgressContent() {
   const { user, isLoading: isAuthLoading } = useAuth();
