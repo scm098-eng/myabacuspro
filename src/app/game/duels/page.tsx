@@ -44,7 +44,6 @@ function DuelsLobbyContent() {
       (snap) => {
         setActiveDuels(snap.docs.map(doc => {
             const data = doc.data() as Duel;
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { id: _, ...rest } = data;
             return { id: doc.id, ...rest } as Duel;
         }));
@@ -123,7 +122,7 @@ function DuelsLobbyContent() {
         <h1 className="text-4xl sm:text-6xl font-black font-headline uppercase tracking-tighter text-slate-900 leading-none">
           Duel <span className="text-primary italic">Arena</span>
         </h1>
-        <p className="text-lg text-muted-foreground font-medium">Join an existing match or create a private lobby to challenge a friend.</p>
+        <p className="text-lg text-muted-foreground font-medium">Join an existing match or create a private lobby to challenge anyone online.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -176,7 +175,7 @@ function DuelsLobbyContent() {
              <CardContent className="space-y-4">
                <div className="flex items-start gap-3">
                  <div className="h-5 p-px w-5 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center font-black text-[10px] shrink-0">1</div>
-                 <p className="text-xs font-bold text-indigo-700/80">Challenger picks the mode for the lobby.</p>
+                 <p className="text-xs font-bold text-indigo-700/80">Lobby host picks the mode for all players.</p>
                </div>
                <div className="flex items-start gap-3">
                  <div className="h-5 p-px w-5 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center font-black text-[10px] shrink-0">2</div>
@@ -224,7 +223,7 @@ function DuelsLobbyContent() {
                       </div>
                     </div>
                     <Button onClick={() => handleJoinDuel(duel)} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest bg-orange-500 hover:bg-orange-600 transition-all group-hover:scale-105 shrink-0 shadow-lg">
-                      Join Match
+                      {duel.challengerId === user?.uid ? "Enter My Lobby" : "Join Match"}
                     </Button>
                   </CardContent>
                 </Card>

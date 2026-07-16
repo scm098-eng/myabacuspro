@@ -36,10 +36,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-function ProgressReportSkeleton() {
+const ProgressReportSkeleton = () => {
   return (
     <div className="space-y-8">
-      <Card className="border-none shadow-md">
+      <Card>
         <CardHeader>
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-4 w-80" />
@@ -47,9 +47,9 @@ function ProgressReportSkeleton() {
       </Card>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
-          <Card key={i} className="p-6 flex flex-col gap-2">
+          <Card key={i} className="p-6">
             <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full mt-2" />
           </Card>
         ))}
       </div>
@@ -187,7 +187,7 @@ function ProgressContent() {
 
   return (
     <div className="space-y-8">
-      <Card className="border-none shadow-md">
+      <Card>
         <CardHeader>
           <CardTitle className="text-3xl font-headline flex items-center gap-2">
             <TrendingUp className="w-8 h-8 text-primary" />
@@ -233,7 +233,7 @@ function ProgressContent() {
           <CardContent>
             <div className="text-2xl font-black">{summaryStats.totalPracticeTime}</div>
           </CardContent>
-        </Card>
+        </div>
       </div>
       
       <Card>

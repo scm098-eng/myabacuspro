@@ -55,7 +55,6 @@ export default function DuelArenaPage() {
       (snap) => {
         if (snap.exists()) {
           const docData = snap.data() as Duel;
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { id: _, ...rest } = docData;
           setDuel({ id: snap.id, ...rest } as Duel);
           setLoading(false);
@@ -196,7 +195,7 @@ export default function DuelArenaPage() {
   if (loading) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /></div>;
   if (!duel) return null;
 
-  if (duel.status === 'waiting' && isChallenger) {
+  if (duel.status === 'waiting' && isChallenger && !hasStarted) {
     return (
       <div className="max-w-xl mx-auto space-y-8 animate-in fade-in duration-500">
         <Card className="rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
@@ -204,10 +203,13 @@ export default function DuelArenaPage() {
             <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-pulse">
               <Swords className="w-12 h-12" />
             </div>
-            <h2 className="text-3xl font-black uppercase italic tracking-tighter">Waiting for Opponent...</h2>
-            <p className="text-slate-400 font-bold mt-2">Send this match link to a friend or wait for a global challenger.</p>
+            <h2 className="text-3xl font-black uppercase italic tracking-tighter">Lobby Open!</h2>
+            <p className="text-slate-400 font-bold mt-2">Waiting for an opponent. You can start solo and others will join your match automatically from the lobby.</p>
           </div>
           <CardContent className="p-10 space-y-8">
+            <Button onClick={() => setHasStarted(true)} className="w-full h-20 text-2xl font-black uppercase tracking-widest rounded-3xl bg-green-600 hover:bg-green-700 shadow-2xl transition-all">
+                <PlayCircle className="mr-3 h-8 w-8" /> Start Battle Now
+            </Button>
             <div className="flex gap-2">
                <div className="bg-muted p-4 rounded-xl flex-1 font-mono text-sm break-all truncate h-12 flex items-center border">
                   {`${window.location.origin}/game/duels/${duelId}`}
@@ -216,9 +218,6 @@ export default function DuelArenaPage() {
                  <Copy className="h-5 w-5" />
                </Button>
             </div>
-            <Button onClick={copyDuelLink} className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl bg-orange-500 hover:bg-orange-600 shadow-xl">
-               <Share2 className="mr-2 w-6 h-6" /> Invite Friend
-            </Button>
           </CardContent>
         </Card>
       </div>
