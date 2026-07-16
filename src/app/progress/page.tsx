@@ -60,7 +60,7 @@ const ProgressReportSkeleton = () => {
       </Card>
     </div>
   );
-}
+};
 
 function ProgressContent() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -233,7 +233,7 @@ function ProgressContent() {
           <CardContent>
             <div className="text-2xl font-black">{summaryStats.totalPracticeTime}</div>
           </CardContent>
-        </div>
+        </Card>
       </div>
       
       <Card>

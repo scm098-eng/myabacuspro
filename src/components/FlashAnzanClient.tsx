@@ -154,6 +154,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     isFinishedRef.current = true;
     setIsFinished(true);
 
+    // Fixed: Added explicit type <number> to reduce to fix the 'acc is possibly null' build error
     const score = finalAnswers.reduce<number>((acc, ans, i) => (ans !== null && questions[i] && ans === questions[i].answer ? acc + 1 : acc), 0);
     const answeredCount = finalAnswers.filter(a => a !== null).length;
     let earnedPointsTotal = 0;
@@ -280,7 +281,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
                </div>
             </div>
           ) : isReadyForInput ? (
-            <div className="w-full max-w-sm space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="w-full max-sm mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                <div className="text-center">
                   <div className="bg-green-100 p-4 rounded-full w-fit mx-auto mb-4">
                     <ShieldCheck className="w-8 h-8 text-green-600" />

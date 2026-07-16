@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, deleteDoc, orderBy, limit, addDoc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
-import type { Duel, Question } from '@/types';
+import type { Duel } from '@/types';
 import { Swords, Loader2, PlayCircle, Trophy, Users, Plus, ShieldAlert, Share2, Copy, Zap, Clock, MonitorOff } from 'lucide-react';
 import { generateDuelQuestions } from '@/lib/questions';
 import { useToast } from '@/hooks/use-toast';
@@ -33,6 +33,8 @@ function DuelsLobbyContent() {
   useEffect(() => {
     if (!user) return;
     const db = getFirestore(firebaseApp);
+    // Modified query to ensure duels stay visible until someone joins, 
+    // even if the challenger has already finished.
     const q = query(
       collection(db, "duels"), 
       where("status", "==", "waiting"),

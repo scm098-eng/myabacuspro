@@ -55,6 +55,7 @@ export default function DuelArenaPage() {
       (snap) => {
         if (snap.exists()) {
           const docData = snap.data() as Duel;
+          // Destructure to avoid duplicate 'id' property assignment error
           const { id: _, ...rest } = docData;
           setDuel({ id: snap.id, ...rest } as Duel);
           setLoading(false);
@@ -154,7 +155,7 @@ export default function DuelArenaPage() {
     const payload: any = isChallenger ? {
       challengerScore: finalScore,
       challengerFinished: true,
-      status: duel.opponentFinished ? 'completed' : duel.status
+      status: (duel.opponentFinished && duel.opponentId) ? 'completed' : duel.status
     } : {
       opponentScore: finalScore,
       opponentFinished: true,
@@ -204,11 +205,11 @@ export default function DuelArenaPage() {
               <Swords className="w-12 h-12" />
             </div>
             <h2 className="text-3xl font-black uppercase italic tracking-tighter">Lobby Open!</h2>
-            <p className="text-slate-400 font-bold mt-2">Waiting for an opponent. You can start solo and others will join your match automatically from the lobby.</p>
+            <p className="text-slate-400 font-bold mt-2">Waiting for an opponent. You can start solving the challenge now—anyone who joins later will see your score once they finish.</p>
           </div>
           <CardContent className="p-10 space-y-8">
             <Button onClick={() => setHasStarted(true)} className="w-full h-20 text-2xl font-black uppercase tracking-widest rounded-3xl bg-green-600 hover:bg-green-700 shadow-2xl transition-all">
-                <PlayCircle className="mr-3 h-8 w-8" /> Start Battle Now
+                <PlayCircle className="mr-3 h-8 w-8" /> Start Battle Solo
             </Button>
             <div className="flex gap-2">
                <div className="bg-muted p-4 rounded-xl flex-1 font-mono text-sm break-all truncate h-12 flex items-center border">
@@ -264,6 +265,26 @@ export default function DuelArenaPage() {
         </CardContent>
       </Card>
     );
+  }
+
+  if (isFinished) {
+     return (
+        <div className="max-w-xl mx-auto py-12 animate-in fade-in duration-500">
+            <Card className="rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
+                <div className="bg-indigo-600 p-12 text-center text-white">
+                    <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6">
+                        <Loader2 className="w-12 h-12 animate-spin" />
+                    </div>
+                    <h2 className="text-3xl font-black uppercase italic tracking-tighter">Session Finished!</h2>
+                    <p className="text-indigo-100 font-bold mt-2 text-lg">My Score: {localScore}</p>
+                    <p className="text-white/60 text-xs mt-6 uppercase tracking-widest">Waiting for opponent to complete their turn...</p>
+                </div>
+                <CardContent className="p-10 text-center">
+                    <Button variant="outline" onClick={() => router.push('/game/duels')} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest border-2">Return to Lobby</Button>
+                </CardContent>
+            </Card>
+        </div>
+     );
   }
 
   if (!isFinished && !hasStarted) {
