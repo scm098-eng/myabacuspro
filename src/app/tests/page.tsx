@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -51,7 +50,7 @@ const testCategories = [
   {
     href: '/tests/practice',
     title: 'General Practice',
-    description: 'Master Addition, Subtraction, Multiplication, Division, Square, Square Root, Cube, and Cube Root with timed challenges.',
+    description: 'Master Addition, Subtraction, Multiplication, Division, Square, and Roots with timed challenges.',
     icon: BrainCircuit,
     iconBg: 'bg-green-100'
   },
@@ -65,7 +64,7 @@ const testCategories = [
   {
     href: '/tests/flash-anzan',
     title: 'Flash Card Anzan',
-    description: 'High-speed mental math training. Add flashing numbers sequentially.',
+    description: 'High-speed mental math training. Calculate sequences of rapid flashing numbers.',
     icon: Zap,
     iconBg: 'bg-orange-100'
   }
@@ -99,7 +98,9 @@ export default function TestsPage() {
   return (
     <div className="space-y-12">
       <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground font-headline sm:text-5xl uppercase">Practice Tests & Games</h1>
+        <h1 className="text-4xl font-bold tracking-tight text-foreground font-headline sm:text-5xl uppercase">
+          Master Your Skills on <span className="text-primary whitespace-nowrap">My Abacus Pro</span>
+        </h1>
         <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground font-medium">
           Select a category to begin your training. Each section focuses on different skills to help you master mental math.
         </p>

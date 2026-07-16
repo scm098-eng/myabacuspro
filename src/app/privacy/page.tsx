@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,7 +45,7 @@ export default function PrivacyPolicyPage() {
                         <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
                             <Lock className="w-6 h-6 text-primary" /> 3. Information We Collect
                         </h2>
-                        <p>We collect personal information that you voluntarily provide to us when you register on the website, such as name, email address, school details, and progress data. This information is used strictly to enhance your learning experience and manage your account.</p>
+                        <p>We collect personal information that you voluntarily provide to us when you register on <span className="whitespace-nowrap">My Abacus Pro</span>, such as name, email address, school details, and progress data. This information is used strictly to enhance your learning experience and manage your account.</p>
                     </section>
 
                     <section className="space-y-4">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,7 +40,7 @@ export default function TermsAndConditionsPage() {
                         <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
                             <AlertCircle className="w-6 h-6 text-primary" /> 3. User Accounts
                         </h2>
-                        <p>When you create an account, you must provide accurate and complete information. You are responsible for safeguarding the password that you use to access the Service and for any activities or actions under your password.</p>
+                        <p>When you create an account, you must provide accurate and complete information. You are responsible for safeguarding the password that you use to access the Service and for any activities or actions under your password on <span className="whitespace-nowrap">My Abacus Pro</span>.</p>
                     </section>
 
                     <section className="space-y-4">

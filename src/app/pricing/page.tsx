@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -103,14 +102,14 @@ const GLOBAL_PLANS = [
 ];
 
 const PRO_FEATURES = [
+  'High-Speed Flash Anzan (0.2s)',
+  '1v1 Duel Arena Matches',
+  'Matrix Memory Cognitive Drills',
   'Unlimited Practice Tests',
-  'Access All Difficulty Levels',
+  'All 1,000+ Bubble Game Levels',
+  'Official Certification & Ranks',
   'Advanced Progress Analytics',
-  'Full Bubble Game Access',
-  'Hall of Fame Placement',
-  'Official Grand Final Exams',
-  'Professional Certification & Ranks',
-  'Abacus Mastery Labs (Mult/Div)'
+  'Hall of Fame Placement'
 ];
 
 declare global {
@@ -158,13 +157,6 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, localEstimate,
     };
 
     const handleSubscribe = async () => {
-        console.log("PAYMENT_DEBUG: handleSubscribe triggered", { 
-            type: selectedPlan.type, 
-            planId: selectedPlan.planId, 
-            price: selectedPlan.price,
-            currency: selectedPlan.currency
-        });
-
         const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
         if (!user?.uid) {
@@ -191,7 +183,6 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, localEstimate,
 
             if (selectedPlan.type === 'recurring') {
                 const createSubscription = httpsCallable<any, any>(functions, 'createRazorpaySubscription');
-                console.log("PAYMENT_DEBUG: Calling createRazorpaySubscription", { planId: selectedPlan.planId });
                 result = await createSubscription({ 
                     planId: selectedPlan.planId,
                     amount: selectedPlan.price,
@@ -199,7 +190,6 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, localEstimate,
                 });
             } else {
                 const createOneTimeOrder = httpsCallable<any, any>(functions, 'createOneTimeOrder');
-                console.log("PAYMENT_DEBUG: Calling createOneTimeOrder", { amount: selectedPlan.price });
                 result = await createOneTimeOrder({ 
                     amount: selectedPlan.price,
                     currency: selectedPlan.currency,
@@ -243,7 +233,6 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, localEstimate,
             rzp.open();
 
         } catch (error: any) {
-            console.error("PAYMENT_DEBUG: handleSubscribe error", error);
             onError(error.message || 'Failed to start payment.');
             setIsProcessing(false); 
         }
@@ -291,7 +280,6 @@ export default function PricingPage() {
     useEffect(() => {
       if (!isMounted) return;
 
-      // 1. Priority check for URL override (Developer testing)
       const urlParams = new URLSearchParams(window.location.search);
       const urlCountry = urlParams.get('country');
       if (urlCountry && CURRENCY_MAP[urlCountry]) {
@@ -300,10 +288,8 @@ export default function PricingPage() {
       }
 
       if (profile?.country) {
-        // 2. If logged in, use their database profile selection
         setSelectedCountry(profile.country);
       } else {
-        // 3. For public visitors, check their true IP location
         const detectIpCountry = async () => {
           try {
             const res = await fetch('https://ipapi.co/json/');
@@ -319,8 +305,7 @@ export default function PricingPage() {
               }
             }
           } catch (err) {
-            console.error("IP-based geolocation detection failed:", err);
-            setSelectedCountry('India'); // Fallback default
+            setSelectedCountry('India'); 
           }
         };
         detectIpCountry();
@@ -575,6 +560,21 @@ export default function PricingPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
+                            <TableRow className="border-b-slate-100 bg-slate-50/30">
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">High-Speed Flash Anzan</TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">1-Digit Only</span></TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">All 4-Digits (0.2s)</span></TableCell>
+                            </TableRow>
+                            <TableRow className="border-b-slate-100">
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">1v1 Duel Arena Racing</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                            </TableRow>
+                            <TableRow className="border-b-slate-100 bg-slate-50/30">
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Matrix Memory Cognitive Drills</TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">Base Grid</span></TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">All Advanced Grills</span></TableCell>
+                            </TableRow>
                             <TableRow className="border-b-slate-100">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">Basic Add & Sub (Direct Movements)</TableCell>
                                 <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
@@ -604,21 +604,6 @@ export default function PricingPage() {
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">Professional Certification & Ranks</TableCell>
                                 <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
                                 <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
-                            </TableRow>
-                            <TableRow className="border-b-slate-100">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">Abacus Mastery Labs (Mult/Div)</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
-                            </TableRow>
-                            <TableRow className="border-b-slate-100 bg-slate-50/30">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">Global Hall of Fame Placement</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
-                            </TableRow>
-                            <TableRow className="bg-slate-50/30">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">Advanced Progress Analytics</TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">Basic Scores</span></TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">Full Performance Trends</span></TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>

@@ -1,4 +1,3 @@
-
 import React, { Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -150,7 +149,7 @@ export default function Home() {
 
       <section className="w-full" aria-labelledby="features-heading">
         <div className="text-center mb-12">
-            <h2 id="features-heading" className="text-3xl font-black font-headline uppercase tracking-tight">Why Choose <span className="text-primary">Our Platform</span>?</h2>
+            <h2 id="features-heading" className="text-3xl font-black font-headline uppercase tracking-tight">Why Choose <span className="text-primary whitespace-nowrap">My Abacus Pro</span>?</h2>
             <p className="mt-2 text-muted-foreground max-w-2xl mx-auto font-medium text-lg">Engaging, timed challenges for modern students.</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -173,7 +172,7 @@ export default function Home() {
       <section className="w-full bg-slate-900 text-white p-10 md:p-16 rounded-[3rem] shadow-2xl text-center relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2" />
         <div className="relative z-10 space-y-6">
-          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter italic">Join the Elite Race</h2>
+          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter italic text-white leading-none">Join the Elite Race</h2>
           <p className="text-slate-400 text-lg max-w-2xl mx-auto font-medium leading-relaxed">
             Our Hall of Fame celebrates the top students worldwide every week. Start your practice streak today.
           </p>

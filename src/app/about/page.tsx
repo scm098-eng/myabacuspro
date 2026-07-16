@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +24,7 @@ export default function AboutPage() {
         <div className="grid md:grid-cols-2 items-stretch">
             <div className="p-8 md:p-14 flex flex-col justify-center space-y-6">
               <div className="space-y-2">
-                <h2 className="text-3xl font-black text-primary font-headline uppercase tracking-tighter italic">Founded by Satish Mane</h2>
+                <h2 className="text-3xl font-black text-primary font-headline uppercase tracking-tighter italic leading-none">Founded by Satish Mane</h2>
                 <div className="h-1 w-20 bg-primary/20 rounded-full" />
               </div>
               <div className="space-y-4 text-slate-700 font-medium leading-relaxed">
@@ -93,13 +92,13 @@ export default function AboutPage() {
 
       <div className="bg-slate-900 text-white p-10 md:p-16 rounded-[3rem] shadow-2xl relative overflow-hidden text-center">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="relative z-10 space-y-6">
-          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter italic">Start Your Journey Today</h2>
+        <div className="relative z-10 space-y-6 text-white">
+          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter italic leading-none">Start Your Journey Today</h2>
           <p className="text-slate-400 text-lg max-w-2xl mx-auto font-medium leading-relaxed">
-            Join thousands of students who are transforming their cognitive abilities through focused abacus practice.
+            Join thousands of students on <span className="whitespace-nowrap">My Abacus Pro</span> who are transforming their cognitive abilities through focused abacus practice.
           </p>
           <div className="flex justify-center gap-4">
-             <div className="bg-white/10 px-6 py-2 rounded-full border border-white/10 text-xs font-black uppercase tracking-widest">
+             <div className="bg-white/10 px-6 py-2 rounded-full border border-white/10 text-xs font-black uppercase tracking-widest text-white/60">
                LEARN • PRACTICE • SUCCEED
              </div>
           </div>

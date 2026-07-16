@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -9,7 +8,7 @@ import {
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePageBackground } from '@/hooks/usePageBackground';
-import { HelpCircle, Trophy, Target, Users, BookOpen, Sparkles, Gift } from 'lucide-react';
+import { HelpCircle, Trophy, Target, Users, BookOpen, Sparkles, Gift, Zap, Swords, LayoutGrid } from 'lucide-react';
 import { RANK_CRITERIA } from '@/lib/constants';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -18,6 +17,18 @@ const faqs = [
     question: 'What is My Abacus Pro?',
     answer:
       'My Abacus Pro is an advanced digital training ground for mental math. We use timed challenges, visual bead recognition tests, and engaging games to help students master the Japanese Abacus (Soroban) techniques and achieve lightning-fast calculation speeds.',
+  },
+  {
+    category: 'Game Hub',
+    question: 'What is the Game Hub?',
+    answer:
+      'The Game Hub is our dedicated missions center. It currently features three distinct training modes: \n\n• **Bubble Path**: A 1,000-level formula mastery quest. \n• **Matrix Flash**: A spatial visualization drill to sharpen your "Mental Snapshot" ability. \n• **1v1 Duels**: A competitive arena where you can challenge friends or global opponents to real-time math races.',
+  },
+  {
+    category: 'Anzan',
+    question: 'What is Flash Card Anzan?',
+    answer:
+      'Flash Card Anzan is an elite mental arithmetic drill. Numbers flash sequentially on the screen at high speeds, and you must calculate the total mentally. Pro members can access the "Custom Lab" to practice with up to 50 rows of numbers at speeds as fast as 0.2 seconds per flash.',
   },
   {
     category: 'Eligibility',
@@ -29,19 +40,19 @@ const faqs = [
     category: 'Points',
     question: 'How exactly are Mastery Points and Rewards calculated?',
     answer:
-      'Your Mastery Points are earned through effort, speed, and precision: \n\n• **Consistency**: +25 points for your first practice session each day. \n• **Accuracy**: +1 point per right answer in Tests and Game. \n• **Completion**: +5 points for finishing any practice session. \n• **Speed Bonus**: Earn +5 points (Green Light) or +2 points (Yellow Light) in timed tests. \n• **Game Mastery**: +20 points for clearing Bubble Game levels with 90% accuracy.',
+      'Your Mastery Points are earned through effort, speed, and precision: \n\n• **Consistency**: +25 points for your first practice session each day. \n• **Accuracy**: +1 point per right answer in Tests and Game. \n• **Completion**: +5 points for finishing any practice session. \n• **Speed Bonus**: Earn up to +5 bonus points in timed tests based on your pace. \n• **Game Mastery**: +20 points for clearing Bubble Game levels or Matrix drills with high accuracy.',
   },
   {
     category: 'Rewards',
     question: 'What are the special Milestone & Birthday bonuses?',
     answer:
-      'We love celebrating your growth! These special rewards are prestigious additions to your Global career score: \n\n• **Rank-Up Bonus**: Reaching a new Title (like Math Ninja or Titan) awards a progressive point bonus (+50 to +5,000 pts). These are added directly to your Global score. \n• **Birthday Gift**: Log in on your birthday for an automatic +100 point Mastery boost (added to Global score only). \n• **Milestone Days**: Practice for 14 or 28 days straight to receive "Bonus Progress" days toward your training cycle.',
+      'We love celebrating your growth! These special rewards are prestigious additions to your Global career score: \n\n• **Rank-Up Bonus**: Reaching a new Title (like Math Ninja or Titan) awards a progressive point bonus (+50 to +5,000 pts). \n• **Birthday Gift**: Log in on your birthday for an automatic +100 point Mastery boost. \n• **Milestone Days**: Practice for 14 or 28 days straight to receive "Bonus Progress" days toward your training cycle.',
   },
   {
     category: 'Leaderboard',
     question: 'How do the Hall of Fame Leaderboards work?',
     answer:
-      'We maintain three distinct leaderboards to keep competition fresh: \n\n• Weekly: Tracks points from active practice (Sunday to Sunday). It resets every week, giving everyone a fresh chance to be #1. \n• Monthly: Tracks active performance within the calendar month. \n• Global: An all-time leaderboard showing total career progress, including all rank-up and birthday bonuses. \n\nNote: Rank-up and Birthday bonuses are added to Global score only, while practice points are added to all three.',
+      'We maintain three distinct leaderboards to keep competition fresh: \n\n• **Weekly**: Tracks active practice points from Sunday to Sunday. It resets every week, giving everyone a fresh chance to be #1. \n• **Monthly**: Tracks performance within the calendar month. \n• **Global**: An all-time leaderboard showing total career progress, including all bonuses.',
   },
   {
     question: 'Do I need a physical abacus to use this site?',
@@ -62,7 +73,7 @@ const faqs = [
   {
     question: 'What does the Pro Membership offer?',
     answer:
-      'Pro members get unlimited access to all 1,000+ game levels, all formula-specific practice tests, official final exams for certification, advanced progress analytics, and a completely ad-free experience.',
+      'Pro members get unlimited access to all 1,000+ game levels, high-speed Flash Anzan (0.2s), 1v1 Duel Arena matchmaking, official final exams for certification, and advanced progress analytics.',
   },
 ];
 
@@ -77,7 +88,7 @@ export default function FAQPage() {
                         <HelpCircle className="w-10 h-10 text-primary" />
                     </div>
                     <CardTitle className="text-4xl font-headline font-bold">Help & Support</CardTitle>
-                    <CardDescription className="text-lg">Master the rules of the road to become a Human Calculator.</CardDescription>
+                    <CardDescription className="text-lg">Master the rules of the road to become a Human Calculator on <span className="whitespace-nowrap">My Abacus Pro</span>.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Accordion type="single" collapsible className="w-full space-y-4">
@@ -90,6 +101,8 @@ export default function FAQPage() {
                                         {faq.category === 'Eligibility' && <Users className="w-5 h-5 text-blue-500" />}
                                         {faq.category === 'Ranks' && <BookOpen className="w-5 h-5 text-green-500" />}
                                         {faq.category === 'Rewards' && <Gift className="w-5 h-5 text-pink-500" />}
+                                        {faq.category === 'Game Hub' && <Swords className="w-5 h-5 text-orange-500" />}
+                                        {faq.category === 'Anzan' && <Zap className="w-5 h-5 text-yellow-500" />}
                                         <span className="leading-tight">{faq.question.replace('My Abacus Pro', 'My\u00A0Abacus\u00A0Pro')}</span>
                                     </div>
                                 </AccordionTrigger>

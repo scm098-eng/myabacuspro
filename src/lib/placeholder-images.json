@@ -34,5 +34,23 @@
     "width": 1200,
     "height": 800,
     "hint": "bubble game"
+  },
+  "flashAnzanFeature": {
+    "src": "https://picsum.photos/seed/flash/1200/800",
+    "width": 1200,
+    "height": 800,
+    "hint": "flash arithmetic"
+  },
+  "matrixFeature": {
+    "src": "https://picsum.photos/seed/matrix/1200/800",
+    "width": 1200,
+    "height": 800,
+    "hint": "memory grid"
+  },
+  "duelsFeature": {
+    "src": "https://picsum.photos/seed/duels/1200/800",
+    "width": 1200,
+    "height": 800,
+    "hint": "math competition"
   }
 }

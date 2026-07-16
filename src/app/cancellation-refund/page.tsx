@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +20,7 @@ export default function CancellationRefundPage() {
                 <CardContent className="space-y-6 text-muted-foreground">
                     <div className="space-y-2">
                         <h2 className="text-xl font-semibold text-foreground">1. Subscription Cancellation</h2>
-                        <p>You can cancel your "My Abacus Pro" Pro subscription at any time. When you cancel your subscription, you will continue to have access to Pro features until the end of your current billing period. After the billing period ends, your account will be downgraded to the free plan.</p>
+                        <p>You can cancel your <span className="whitespace-nowrap">My Abacus Pro</span> subscription at any time. When you cancel your subscription, you will continue to have access to Pro features until the end of your current billing period. After the billing period ends, your account will be downgraded to the free plan.</p>
                         <p>To cancel your subscription, please navigate to your profile settings on the Razorpay customer portal or contact our support team at <a href="mailto:myabacuspro@gmail.com" className="text-primary hover:underline">myabacuspro@gmail.com</a> for assistance.</p>
                     </div>
                     <div className="space-y-2">
@@ -35,7 +34,7 @@ export default function CancellationRefundPage() {
                     </div>
                     <div className="space-y-2">
                         <h2 className="text-xl font-semibold text-foreground">4. Changes to This Policy</h2>
-                        <p>We reserve the right to modify this cancellation and refund policy at any time. Any changes will be effective immediately upon posting the updated policy on our website. Your continued use of our service after any changes constitutes your acceptance of the new policy.</p>
+                        <p>We reserve the right to modify this cancellation and refund policy at any time. Any changes will be effective immediately upon posting the updated policy on our website. Your continued use of our service after any changes constitutes your acceptance of the new policy on <span className="whitespace-nowrap">My Abacus Pro</span>.</p>
                     </div>
                 </CardContent>
             </Card>

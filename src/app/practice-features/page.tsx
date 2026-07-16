@@ -1,13 +1,13 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { usePageBackground } from '@/hooks/usePageBackground';
-import { BrainCircuit, Zap, Target, Trophy, BookOpen, Layers, MousePointer2, Timer, Sparkles, Rocket } from 'lucide-react';
+import { BrainCircuit, Zap, Target, Trophy, BookOpen, Layers, MousePointer2, Timer, Sparkles, Rocket, Swords, LayoutGrid, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import placeholderImages from '@/lib/placeholder-images.json';
+import { Badge } from '@/components/ui/badge';
 
 export default function PracticeFeaturesPage() {
   usePageBackground('');
@@ -24,7 +24,7 @@ export default function PracticeFeaturesPage() {
         </p>
         <div className="flex justify-center gap-4">
           <Button asChild size="lg" className="h-14 px-10 text-lg font-black rounded-2xl shadow-xl">
-            <Link href="/signup">Get Started for Free</Link>
+            <Link href="/signup">Join 1,000+ Students</Link>
           </Button>
         </div>
       </section>
@@ -41,10 +41,10 @@ export default function PracticeFeaturesPage() {
               Speed is the ultimate test of abacus mastery. Our platform offers two distinct modes of practice to build your "concentration muscle," specifically tuned for competitive standards.
             </p>
             <p>
-              <strong>Foundation Mode:</strong> Perfect for beginners, this mode provides multiple-choice options, allowing students to build confidence and accuracy in Addition, Subtraction, Multiplication, and Division. It reduces math anxiety by providing a safety net while learning new formulas.
+              <strong>Foundation Mode:</strong> Perfect for beginners, this mode provides multiple-choice options, allowing students to build confidence and accuracy in Addition, Subtraction, Multiplication, and Division.
             </p>
             <p>
-              <strong>Mastery Mode:</strong> For the elite calculators. No hints, no options. Students must calculate the result mentally and input the answer directly. This develops high-speed information processing that rivals electronic calculators and prepares students for international abacus competitions.
+              <strong>Mastery Mode:</strong> For the elite calculators. No hints, no options. Students must calculate the result mentally and input the answer directly, preparing them for international abacus competitions.
             </p>
           </div>
         </div>
@@ -80,12 +80,104 @@ export default function PracticeFeaturesPage() {
               At the heart of our pedagogy is "Beads Value" mastery. We teach students to recognize the value of abacus beads at a glance, bypassing the need to count.
             </p>
             <p>
-              This visual training activates the right hemisphere of the brain, creating a permanent mental image of the abacus. Through our specialized <strong>Identify</strong> and <strong>Set</strong> modes, students practice from single digits to 4-digit complexity.
+              This visual training activates the right hemisphere of the brain, creating a permanent mental image of the abacus. By mastering visualization (Anzan), students can perform complex arithmetic entirely in their heads.
             </p>
             <p>
-              By mastering visualization (Anzan), students can perform complex arithmetic entirely in their heads—a skill that provides a lifelong cognitive edge in focus, memory retention, and spatial reasoning.
+              Our specialized <strong>Identify</strong> and <strong>Set</strong> modes provide a progressive roadmap from single digits to 4-digit complexity.
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* Feature 3: Flash Card Anzan */}
+      <section className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="space-y-6">
+          <div className="bg-orange-100 p-4 rounded-3xl w-fit">
+            <Zap className="h-10 w-10 text-orange-600" />
+          </div>
+          <h2 className="text-3xl font-black uppercase tracking-tight font-headline">Flash Card Anzan</h2>
+          <div className="space-y-4 text-muted-foreground font-medium leading-relaxed text-lg">
+            <p>
+              Build incredible mental calculation speed with our high-performance flashing engine. Numbers appear sequentially at rapid intervals, requiring total mental focus.
+            </p>
+            <p>
+              In our <strong>Custom Anzan Lab</strong>, Pro members can adjust the number of digits, sequence length (up to 50 rows), and intervals down to a lightning-fast 0.2 seconds.
+            </p>
+            <p>
+              This elite drill is designed to sharpen cognitive processing and ensure your mental abacus stays clear even under extreme pressure.
+            </p>
+          </div>
+        </div>
+        <div className="relative aspect-video rounded-[2.5rem] overflow-hidden border-4 border-muted shadow-2xl">
+          <Image 
+            src={placeholderImages.flashAnzanFeature.src}
+            alt="Flash Anzan sequence training"
+            fill
+            className="object-cover"
+            data-ai-hint={placeholderImages.flashAnzanFeature.hint}
+          />
+        </div>
+      </section>
+
+      {/* Feature 4: Matrix Memory Flash */}
+      <section className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="order-2 md:order-1 relative aspect-video rounded-[2.5rem] overflow-hidden border-4 border-muted shadow-2xl">
+          <Image 
+            src={placeholderImages.matrixFeature.src}
+            alt="Matrix memory grid drill"
+            fill
+            className="object-cover"
+            data-ai-hint={placeholderImages.matrixFeature.hint}
+          />
+        </div>
+        <div className="order-1 md:order-2 space-y-6">
+          <div className="bg-teal-100 p-4 rounded-3xl w-fit">
+            <LayoutGrid className="h-10 w-10 text-teal-600" />
+          </div>
+          <h2 className="text-3xl font-black uppercase tracking-tight font-headline">Matrix Memory Flash</h2>
+          <div className="space-y-4 text-muted-foreground font-medium leading-relaxed text-lg">
+            <p>
+              Master spatial visualization by reconstructing high-speed pattern matrices. This cognitive game trains the brain to take "mental snapshots" of information.
+            </p>
+            <p>
+              As you clear rounds, the grid expands from a 3x3 to a complex 5x5 matrix, challenging your short-term visual memory and spatial reasoning.
+            </p>
+            <p>
+              This technique is essential for building a rock-solid mental abacus that doesn't "fade" during long, complex calculations.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature 5: 1v1 Duels */}
+      <section className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="space-y-6">
+          <div className="bg-red-100 p-4 rounded-3xl w-fit">
+            <Swords className="h-10 w-10 text-red-600" />
+          </div>
+          <h2 className="text-3xl font-black uppercase tracking-tight font-headline">World Championship Duels</h2>
+          <div className="space-y-4 text-muted-foreground font-medium leading-relaxed text-lg">
+            <p>
+              The ultimate test of nerves and speed. Challenge your friends or wait for a global opponent in our real-time <strong>1v1 Duel Arena</strong>.
+            </p>
+            <p>
+              Both players face the exact same randomized sequence in either Standard Math or Flash Anzan modes. Every second counts in this high-stakes race to the top.
+            </p>
+            <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary" className="font-bold">REAL-TIME MATCHMAKING</Badge>
+                <Badge variant="secondary" className="font-bold">PRIVATE LOBBIES</Badge>
+                <Badge variant="secondary" className="font-bold">ANTI-CHEAT SYSTEM</Badge>
+            </div>
+          </div>
+        </div>
+        <div className="relative aspect-video rounded-[2.5rem] overflow-hidden border-4 border-muted shadow-2xl">
+          <Image 
+            src={placeholderImages.duelsFeature.src}
+            alt="Global 1v1 math duel arena"
+            fill
+            className="object-cover"
+            data-ai-hint={placeholderImages.duelsFeature.hint}
+          />
         </div>
       </section>
 
@@ -117,33 +209,6 @@ export default function PracticeFeaturesPage() {
               </p>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Gamified Learning Section */}
-      <section className="grid md:grid-cols-2 gap-12 items-center py-12">
-        <div className="space-y-6">
-          <div className="bg-pink-100 p-4 rounded-3xl w-fit">
-            <Rocket className="h-10 w-10 text-pink-600" />
-          </div>
-          <h2 className="text-3xl font-black uppercase tracking-tight font-headline">Gamified Engagement for All Ages</h2>
-          <div className="space-y-4 text-muted-foreground font-medium leading-relaxed text-lg">
-            <p>
-              Learning doesn't have to be a chore. Our <strong>Bubble Game</strong> integrates formula practice with fast-paced action. Students must "pop" the correct answer bubbles as they float across the screen, demanding rapid mental calculation and hand-eye coordination.
-            </p>
-            <p>
-              With over 1,000 levels of progressive difficulty, the game ensures that students are always challenged at the edge of their ability. Every cleared level contributes to their global <strong>Hall of Fame</strong> ranking, fostering a healthy sense of competition and achievement.
-            </p>
-          </div>
-        </div>
-        <div className="relative aspect-video rounded-[2.5rem] overflow-hidden border-4 border-muted shadow-2xl">
-          <Image 
-            src={placeholderImages.gameFeature.src}
-            alt="Interactive Bubble Game environment"
-            fill
-            className="object-cover"
-            data-ai-hint={placeholderImages.gameFeature.hint}
-          />
         </div>
       </section>
 
