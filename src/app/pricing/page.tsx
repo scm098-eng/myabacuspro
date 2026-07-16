@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -24,7 +25,6 @@ import { cn } from '@/lib/utils';
 import { CURRENCY_MAP } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// --- CONFIGURATION ---
 const INDIA_PLANS = [
     {
         id: 'monthly',
@@ -103,12 +103,10 @@ const GLOBAL_PLANS = [
 
 const PRO_FEATURES = [
   'High-Speed Flash Anzan (0.2s)',
-  '1v1 Duel Arena Matches',
-  'Matrix Memory Cognitive Drills',
-  'Unlimited Practice Tests',
-  'All 1,000+ Bubble Game Levels',
+  'Unlimited 1v1 World Duels',
+  'All Matrix Memory Patterns',
+  'Full Formula Mastery Levels',
   'Official Certification & Ranks',
-  'Advanced Progress Analytics',
   'Hall of Fame Placement'
 ];
 
@@ -158,47 +156,23 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, localEstimate,
 
     const handleSubscribe = async () => {
         const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-
-        if (!user?.uid) {
-            onError("Authentication failed. Please log in.");
+        if (!user?.uid || !RAZORPAY_KEY_ID) {
+            onError("Gateway configuration or auth missing.");
             return;
         }
-
-        if (!RAZORPAY_KEY_ID) {
-            onError("Razorpay Key ID is not configured. Please check your App Hosting secrets.");
-            return;
-        }
-
         setIsProcessing(true);
-
         try {
             await loadRazorpayScript();
-            
-            if (!window.Razorpay) {
-                throw new Error("Razorpay SDK not available.");
-            }
-            
             const functions = getFunctions(firebaseApp, 'us-central1');
             let result: any;
-
             if (selectedPlan.type === 'recurring') {
                 const createSubscription = httpsCallable<any, any>(functions, 'createRazorpaySubscription');
-                result = await createSubscription({ 
-                    planId: selectedPlan.planId,
-                    amount: selectedPlan.price,
-                    currency: selectedPlan.currency
-                });
+                result = await createSubscription({ planId: selectedPlan.planId, amount: selectedPlan.price, currency: selectedPlan.currency });
             } else {
                 const createOneTimeOrder = httpsCallable<any, any>(functions, 'createOneTimeOrder');
-                result = await createOneTimeOrder({ 
-                    amount: selectedPlan.price,
-                    currency: selectedPlan.currency,
-                    planDuration: selectedPlan.id === '6months' ? 6 : 12
-                });
+                result = await createOneTimeOrder({ amount: selectedPlan.price, currency: selectedPlan.currency, planDuration: selectedPlan.id === '6months' ? 6 : 12 });
             }
-            
             const { subscriptionId, orderId, amount } = result.data; 
-
             const options = {
                 key: RAZORPAY_KEY_ID,
                 order_id: orderId, 
@@ -209,29 +183,15 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, localEstimate,
                 description: localEstimate ? `${selectedPlan.name} (~${localEstimate})` : selectedPlan.name,
                 image: 'https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/logo_icon.png?alt=media',
                 handler: async function (response: any) {
-                    const auth = getAuth();
-                    if (auth.currentUser) {
-                        await auth.currentUser.getIdToken(true);
-                    }
                     onSuccess(response); 
                     router.push('/subscription-success'); 
                 },
-                modal: {
-                    ondismiss: function() {
-                        toast({ title: "Payment Canceled", description: "Process not completed." });
-                        setIsProcessing(false); 
-                    }
-                },
-                prefill: {
-                    email: user.email || '',
-                    name: profile?.firstName ? `${profile.firstName} ${profile.surname}` : 'Customer',
-                },
-                theme: { color: selectedPlan.isBestValue ? '#f97316' : '#2563EB' }
+                modal: { ondismiss: () => setIsProcessing(false) },
+                prefill: { email: user.email || '', name: profile?.firstName ? `${profile.firstName} ${profile.surname}` : 'Customer' },
+                theme: { color: '#f97316' }
             };
-            
             const rzp = new window.Razorpay(options);
             rzp.open();
-
         } catch (error: any) {
             onError(error.message || 'Failed to start payment.');
             setIsProcessing(false); 
@@ -239,20 +199,8 @@ const DynamicSubscriptionButton = ({ user, profile, selectedPlan, localEstimate,
     };
 
     return (
-        <Button 
-            onClick={handleSubscribe} 
-            className={`w-full text-lg py-6 font-bold tracking-wide transition-all ${
-                selectedPlan.isBestValue 
-                ? 'bg-orange-500 hover:bg-orange-600 shadow-lg hover:scale-[1.02]' 
-                : 'bg-primary hover:bg-primary/90'
-            }`}
-            disabled={isProcessing}
-        >
-            {isProcessing ? (
-                <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...</>
-            ) : (
-                `Get ${selectedPlan.name}`
-            )}
+        <Button onClick={handleSubscribe} className={cn("w-full text-lg py-6 font-bold rounded-xl shadow-lg transition-all", selectedPlan.isBestValue ? 'bg-orange-500 hover:bg-orange-600 hover:scale-[1.02]' : 'bg-primary')} disabled={isProcessing}>
+            {isProcessing ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...</> : `Get ${selectedPlan.name}`}
         </Button>
     );
 };
@@ -265,123 +213,46 @@ export default function PricingPage() {
 
     const [selectedCountry, setSelectedCountry] = useState('India');
     const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
-    const [isRatesLoading, setIsRatesLoading] = useState(true);
     const [isMounted, setIsMounted] = useState(false);
-    
     const [couponCode, setCouponCode] = useState('');
     const [isRedeeming, setIsRedeeming] = useState(false);
     const [redemptionSuccess, setRedemptionSuccess] = useState<{ days: number } | null>(null);
 
-    useEffect(() => {
-      setIsMounted(true);
-    }, []);
+    useEffect(() => { setIsMounted(true); }, []);
 
     useEffect(() => {
       if (!isMounted) return;
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlCountry = urlParams.get('country');
-      if (urlCountry && CURRENCY_MAP[urlCountry]) {
-        setSelectedCountry(urlCountry);
-        return;
-      }
-
-      if (profile?.country) {
-        setSelectedCountry(profile.country);
-      } else {
-        const detectIpCountry = async () => {
-          try {
-            const res = await fetch('https://ipapi.co/json/');
-            const data = await res.json();
-            
-            if (data.country_name) {
-              if (data.country_name === 'India') {
-                setSelectedCountry('India');
-              } else if (CURRENCY_MAP[data.country_name]) {
-                setSelectedCountry(data.country_name);
-              } else {
-                setSelectedCountry('Other');
-              }
-            }
-          } catch (err) {
-            setSelectedCountry('India'); 
-          }
-        };
-        detectIpCountry();
-      }
+      const urlCountry = new URLSearchParams(window.location.search).get('country');
+      if (urlCountry && CURRENCY_MAP[urlCountry]) { setSelectedCountry(urlCountry); return; }
+      if (profile?.country) { setSelectedCountry(profile.country); }
     }, [profile, isMounted]);
 
     useEffect(() => {
-      const fetchRates = async () => {
-        try {
-          const res = await fetch('https://open.er-api.com/v6/latest/USD');
-          const data = await res.json();
-          if (data.rates) {
-            setExchangeRates(data.rates);
-          }
-        } catch (err) {
-          console.error("Exchange rate fetch failed:", err);
-        } finally {
-          setIsRatesLoading(false);
-        }
-      };
-      fetchRates();
+      fetch('https://open.er-api.com/v6/latest/USD').then(res => res.json()).then(data => setExchangeRates(data.rates)).catch(console.error);
     }, []);
 
     const handleRedeemCoupon = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!couponCode.trim()) return;
-        if (!user) {
-            toast({ title: "Login Required", description: "Please log in to redeem a gift code.", variant: "destructive" });
-            return;
-        }
-
+        if (!couponCode.trim() || !user) return;
         setIsRedeeming(true);
         try {
-            const functions = getFunctions(firebaseApp, 'us-central1');
-            const redeemFn = httpsCallable<{ code: string }, any>(functions, 'redeemCoupon');
+            const redeemFn = httpsCallable<{ code: string }, any>(getFunctions(firebaseApp), 'redeemCoupon');
             const result = await redeemFn({ code: couponCode });
-            
-            confetti({
-                particleCount: 150,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#f97316', '#fbbf24', '#ffffff']
-            });
-
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             setRedemptionSuccess({ days: result.data.durationDays });
             setCouponCode('');
         } catch (error: any) {
-            toast({ 
-                title: "Redemption Failed", 
-                description: error.message || "Invalid or expired code.", 
-                variant: "destructive" 
-            });
-        } finally {
-            setIsRedeeming(false);
-        }
+            toast({ title: "Redemption Failed", description: error.message, variant: "destructive" });
+        } finally { setIsRedeeming(false); }
     };
 
-    if (isLoading || !isMounted) {
-        return (
-            <div className="max-w-6xl mx-auto p-4">
-                <Skeleton className="h-12 w-3/4 mx-auto mb-12" />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <Skeleton className="h-[500px] w-full" />
-                    <Skeleton className="h-[500px] w-full" />
-                    <Skeleton className="h-[500px] w-full" />
-                </div>
-            </div>
-        );
-    }
+    if (isLoading || !isMounted) return <div className="max-w-6xl mx-auto p-4"><Skeleton className="h-12 w-3/4 mx-auto mb-12" /><div className="grid grid-cols-1 md:grid-cols-3 gap-8"><Skeleton className="h-[500px] w-full" /><Skeleton className="h-[500px] w-full" /><Skeleton className="h-[500px] w-full" /></div></div>;
 
     const isAlreadyPro = profile?.subscriptionStatus === 'pro';
     const isIndiaPlan = selectedCountry === 'India';
     const currentPlans = isIndiaPlan ? INDIA_PLANS : GLOBAL_PLANS;
     const currencyInfo = CURRENCY_MAP[selectedCountry] || CURRENCY_MAP["Other"];
     
-    const isAdmin = profile?.role === 'admin';
-
     const getConvertedPrice = (usdPrice: number) => {
       if (isIndiaPlan) return null;
       const rate = exchangeRates[currencyInfo.code] || 1;
@@ -390,71 +261,24 @@ export default function PricingPage() {
 
     return (
         <div className="max-w-6xl mx-auto py-12 px-4 space-y-24">
-            {isAdmin && (
-              <section className="bg-slate-900 p-6 rounded-3xl border-4 border-primary/20 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500 relative z-50">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/20 p-2 rounded-lg"><Settings2 className="text-primary w-6 h-6" /></div>
-                    <div>
-                      <h3 className="text-white font-black uppercase tracking-widest text-xs">Admin Pricing Simulator</h3>
-                      <p className="text-slate-400 text-[10px] font-bold">Simulate region-specific pricing.</p>
-                    </div>
-                  </div>
-                  <div className="w-full md:w-64">
-                    <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-                      <SelectTrigger className="h-12 bg-white/10 border-white/20 text-white font-bold rounded-xl focus:ring-primary">
-                        <SelectValue placeholder="Select Country" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-80 rounded-2xl">
-                        {Object.keys(CURRENCY_MAP).map(country => (
-                          <SelectItem key={country} value={country}>{country}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </section>
-            )}
-
             <div className="text-center space-y-6">
-                <h1 className="text-4xl font-extrabold sm:text-6xl tracking-tight text-gray-900 font-headline uppercase"><span className="whitespace-nowrap">Upgrade to</span> <span className="text-primary whitespace-nowrap">My Abacus Pro</span></h1>
-                <p className="mt-4 text-xl text-muted-foreground max-w-2xl mx-auto font-medium">Unlock the full power of mental math training and join the global leaderboard.</p>
-                
-                {isTrialActive && !isAlreadyPro && (
-                  <Badge className="bg-blue-600 text-white px-6 py-2 rounded-full font-black uppercase tracking-[0.2em] shadow-lg animate-pulse border-none">
-                    TRIAL ACTIVE: UPGRADE TO KEEP YOUR RANK
-                  </Badge>
-                )}
+                <h1 className="text-4xl font-extrabold sm:text-6xl tracking-tight text-gray-900 font-headline uppercase">Upgrade to <span className="text-primary italic">My Abacus Pro</span></h1>
+                <p className="mt-4 text-xl text-muted-foreground max-w-2xl mx-auto font-medium">Unlock the full power of mental math training and join the elite global leaderboard.</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start relative">
                 {currentPlans.map((plan) => {
                     const convertedPrice = getConvertedPrice(plan.price);
                     const convertedOriginal = getConvertedPrice(plan.originalPrice);
-
                     return (
-                    <Card key={plan.id} className={`relative flex flex-col h-full transition-all duration-300 hover:shadow-2xl rounded-[2.5rem] overflow-hidden ${
-                        plan.isBestValue 
-                        ? 'border-orange-500 border-4 scale-105 z-10 bg-white' 
-                        : 'border-2 border-gray-100 bg-white/80'
-                    }`}>
-                        {plan.isBestValue && (
-                            <div className="absolute -top-5 left-1/2 -translate-x-1/2">
-                                <Badge className="bg-orange-500 text-white px-6 py-1 text-sm font-bold uppercase tracking-widest shadow-md border-none">
-                                    Best Value
-                                </Badge>
-                            </div>
-                        )}
-                        
+                    <Card key={plan.id} className={cn("relative flex flex-col h-full transition-all duration-300 hover:shadow-2xl rounded-[2.5rem] overflow-hidden", plan.isBestValue ? 'border-orange-500 border-4 scale-105 z-10' : 'border-2 border-gray-100')}>
+                        {plan.isBestValue && <div className="absolute -top-5 left-1/2 -translate-x-1/2"><Badge className="bg-orange-500 text-white px-6 py-1 text-sm font-bold uppercase tracking-widest shadow-md">Best Value</Badge></div>}
                         <CardHeader className="text-center pb-2">
                             <CardTitle className="text-2xl font-bold uppercase">{plan.name}</CardTitle>
                             <CardDescription className="min-h-[40px] mt-2 font-medium">{plan.description}</CardDescription>
-                            
                             <div className="mt-6 flex flex-col items-center">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-xl text-muted-foreground line-through">
-                                      {convertedOriginal || `${plan.currency === 'INR' ? '₹' : '$'}${plan.originalPrice}`}
-                                    </span>
+                                    <span className="text-xl text-muted-foreground line-through">{convertedOriginal || `${plan.currency === 'INR' ? '₹' : '$'}${plan.originalPrice}`}</span>
                                     <Badge variant="destructive" className="font-bold border-none">{plan.savings}</Badge>
                                 </div>
                                 <div className="flex flex-col items-center mt-2">
@@ -462,87 +286,31 @@ export default function PricingPage() {
                                       <span className="text-5xl font-black">{convertedPrice || `${plan.currency === 'INR' ? '₹' : '$'}${plan.price}`}</span>
                                       <span className="text-muted-foreground ml-1 font-semibold text-lg">{plan.durationLabel}</span>
                                     </div>
-                                    {!isIndiaPlan && (
-                                      <div className="mt-3 bg-muted/50 px-4 py-2 rounded-xl border border-border/50">
-                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                                          Securely billed as ${plan.price}.00 USD
-                                        </p>
-                                      </div>
-                                    )}
                                 </div>
                             </div>
                         </CardHeader>
-
                         <CardContent className="flex-grow pt-8 px-8">
                             <ul className="space-y-4">
-                                {PRO_FEATURES.map((feature) => (
-                                    <li key={feature} className="flex items-start gap-3">
-                                        <div className="mt-1 bg-green-100 p-1 rounded-full shrink-0">
-                                            <Check className="h-4 w-4 text-green-600" />
-                                        </div>
-                                        <span className="text-sm font-bold text-gray-700">{feature}</span>
+                                {PRO_FEATURES.map((f) => (
+                                    <li key={f} className="flex items-start gap-3">
+                                        <div className="mt-1 bg-green-100 p-1 rounded-full shrink-0"><Check className="h-4 w-4 text-green-600" /></div>
+                                        <span className="text-sm font-bold text-gray-700">{f}</span>
                                     </li>
                                 ))}
                             </ul>
                         </CardContent>
-
                         <CardFooter className="pt-6 pb-8 px-8">
-                            {isAlreadyPro ? (
-                                <Button className="w-full py-6 text-lg font-bold cursor-default rounded-xl" variant="secondary">
-                                    Current Plan Active
-                                </Button>
-                            ) : (
-                                <DynamicSubscriptionButton 
-                                    selectedPlan={plan}
-                                    localEstimate={convertedPrice ?? undefined}
-                                    user={user} 
-                                    profile={profile}
-                                    onSuccess={() => toast({ title: "Payment Successful", description: "Your Pro features are now active!" })} 
-                                    onError={(m) => toast({ title: "Payment Error", description: m, variant: "destructive" })} 
-                                />
-                            )}
+                            {isAlreadyPro ? <Button className="w-full py-6 text-lg font-bold rounded-xl" variant="secondary">Active</Button> : <DynamicSubscriptionButton selectedPlan={plan} localEstimate={convertedPrice ?? undefined} user={user} profile={profile} onSuccess={() => toast({ title: "Success!" })} onError={(m) => toast({ title: "Error", description: m, variant: "destructive" })} />}
                         </CardFooter>
                     </Card>
                 )})}
             </div>
 
-            {!isAlreadyPro && (
-                <section className="max-w-xl mx-auto animate-in slide-in-from-bottom-8 duration-700">
-                    <Card className="rounded-[2.5rem] border-2 border-dashed border-primary/20 bg-primary/5 p-2">
-                        <CardHeader className="text-center space-y-2">
-                            <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit mb-2">
-                                <Gift className="w-8 h-8 text-primary" />
-                            </div>
-                            <CardTitle className="text-2xl font-black uppercase tracking-tight">Got a Gift Code?</CardTitle>
-                            <CardDescription className="font-bold">Enter your coupon code below to unlock Pro access instantly.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <form onSubmit={handleRedeemCoupon} className="flex gap-2">
-                                <div className="relative flex-1">
-                                    <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                    <Input 
-                                        placeholder="Enter code (e.g. GIFT-30-XYZ)" 
-                                        value={couponCode} 
-                                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                                        className="h-12 pl-10 border-2 rounded-xl font-bold uppercase tracking-wider focus-visible:ring-primary"
-                                    />
-                                </div>
-                                <Button type="submit" disabled={isRedeeming || !couponCode.trim()} className="h-12 px-6 rounded-xl font-black uppercase tracking-widest shadow-lg">
-                                    {isRedeeming ? <Loader2 className="animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-                                    Redeem
-                                </Button>
-                            </form>
-                        </CardContent>
-                    </Card>
-                </section>
-            )}
-
             <section className="space-y-12">
                 <div className="text-center space-y-2">
-                    <h2 className="text-3xl sm:text-4xl font-black uppercase font-headline tracking-tight">Free vs Pro Comparison</h2>
-                    <p className="text-muted-foreground font-medium text-lg">Compare our training modules and unlock your full potential.</p>
+                    <h2 className="text-3xl sm:text-4xl font-black uppercase font-headline tracking-tight">Free vs <span className="text-primary">Pro</span> Comparison</h2>
                 </div>
-                <Card className="rounded-[2.5rem] overflow-hidden border-2 shadow-2xl bg-white/50 backdrop-blur-sm">
+                <Card className="rounded-[2.5rem] overflow-hidden border-2 shadow-2xl">
                     <Table>
                         <TableHeader className="bg-slate-900">
                             <TableRow className="hover:bg-slate-900 border-none">
@@ -559,8 +327,8 @@ export default function PricingPage() {
                             </TableRow>
                             <TableRow className="border-b-slate-100">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">Visualization Drills (Beads Value)</TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">LIMITED LEVELS</span></TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">ALL 12 MASTERY LEVELS</span></TableCell>
+                                <TableCell className="text-center font-black text-[9px] text-muted-foreground uppercase">LIMITED LEVELS</TableCell>
+                                <TableCell className="text-center font-black text-[9px] text-primary uppercase">ALL 12 LEVELS</TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100 bg-slate-50/30">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">Formula Mastery (Small/Big/Combi)</TableCell>
@@ -569,8 +337,8 @@ export default function PricingPage() {
                             </TableRow>
                             <TableRow className="border-b-slate-100">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">Bubble Game Experience</TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">FIRST 5 LEVELS</span></TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">ALL 1,000+ LEVELS</span></TableCell>
+                                <TableCell className="text-center font-black text-[9px] text-muted-foreground uppercase">FIRST 5 LEVELS</TableCell>
+                                <TableCell className="text-center font-black text-[9px] text-primary uppercase">ALL 1,000+ LEVELS</TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100 bg-slate-50/30">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">Official Grand Final Exams</TableCell>
@@ -578,34 +346,14 @@ export default function PricingPage() {
                                 <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">Professional Certification & Ranks</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
-                            </TableRow>
-                            <TableRow className="border-b-slate-100 bg-slate-50/30">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">Abacus Mastery Labs (Mult/Div)</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
-                            </TableRow>
-                            <TableRow className="border-b-slate-100">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">Global Hall of Fame Placement</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
-                            </TableRow>
-                            <TableRow className="border-b-slate-100 bg-slate-50/30">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">Advanced Progress Analytics</TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">BASIC SCORES</span></TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">FULL PERFORMANCE TRENDS</span></TableCell>
-                            </TableRow>
-                            <TableRow className="border-b-slate-100">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">High-Speed Flash Anzan (0.2s)</TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">1-DIGIT ONLY</span></TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Flash Card Anzan Lab</TableCell>
+                                <TableCell className="text-center font-black text-[9px] text-muted-foreground uppercase">1.5S MIN SPEED</TableCell>
+                                <TableCell className="text-center font-black text-[9px] text-primary uppercase">0.2S ELITE SPEED</TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100 bg-slate-50/30">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">Matrix Memory Cognitive Drills</TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">BASE GRID</span></TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                                <TableCell className="text-center font-black text-[9px] text-muted-foreground uppercase">3x3 GRID ONLY</TableCell>
+                                <TableCell className="text-center font-black text-[9px] text-primary uppercase">UP TO 5x5 GRID</TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">1v1 World Championship Duels</TableCell>
@@ -616,50 +364,6 @@ export default function PricingPage() {
                     </Table>
                 </Card>
             </section>
-
-            <div className="text-center space-y-10 pt-12 border-t">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-10">
-                    <div className="flex items-center gap-4 text-left">
-                        <div className="bg-blue-100 p-3 rounded-2xl"><ShieldCheck className="w-10 h-10 text-blue-600" /></div>
-                        <div>
-                            <p className="font-black uppercase tracking-tight text-slate-900 leading-none mb-1">100% Secure Payments</p>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Industry-Standard Encryption</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-4 text-left">
-                        <div className="bg-orange-100 p-3 rounded-2xl"><Globe className="w-10 h-10 text-orange-600" /></div>
-                        <div>
-                            <p className="font-black uppercase tracking-tight text-slate-900 leading-none mb-1">Global Training Ground</p>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Mastery for all countries</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-slate-100/50 p-6 rounded-2xl max-w-2xl mx-auto flex items-start gap-4">
-                  <Info className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
-                  <p className="text-left text-xs font-medium text-slate-500 leading-relaxed">
-                    Note: International payments are processed in USD. Your financial institution will automatically convert this to your local currency at their prevailing daily rate. Subscription prices shown in local currency are close estimates to help you understand the value in your region.
-                  </p>
-                </div>
-            </div>
-
-            <Dialog open={!!redemptionSuccess} onOpenChange={(open) => !open && setRedemptionSuccess(null)}>
-              <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden max-w-sm">
-                <div className="bg-green-600 p-8 text-center text-white">
-                  <div className="mx-auto bg-white/20 p-4 rounded-full w-fit mb-4">
-                    <CheckCircle2 className="w-12 h-12 text-white" />
-                  </div>
-                  <DialogTitle className="text-2xl font-black uppercase tracking-tight">Gift Redeemed!</DialogTitle>
-                </div>
-                <div className="p-8 text-center space-y-6">
-                  <DialogDescription className="text-lg font-bold text-slate-700 leading-relaxed">
-                    Congratulations! You now have <span className="text-green-600">{redemptionSuccess?.days} days</span> of Pro access.
-                  </DialogDescription>
-                  <Button asChild className="w-full h-12 rounded-xl font-black uppercase tracking-widest shadow-lg" onClick={() => setRedemptionSuccess(null)}>
-                    <Link href="/dashboard">Go to Dashboard</Link>
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
         </div>
     );
 }

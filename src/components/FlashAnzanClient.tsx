@@ -1,14 +1,15 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { generateTest } from '@/lib/questions';
-import type { Question, Difficulty, TestType, TestSettings } from '@/types';
+import type { Question, Difficulty, TestType, TestSettings, ProfileData } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Loader2, Check, PlayCircle, Zap, ShieldCheck, ChevronRight } from 'lucide-react';
+import { AlertTriangle, Loader2, Check, PlayCircle, Zap, ShieldCheck, ChevronRight, Swords, Users, User, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -33,19 +34,24 @@ import { PAGE_GUIDES } from '@/lib/constants';
 import { useSound } from '@/hooks/useSound';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { startMatchmaking, getRecentOpponents } from '@/lib/matchmaking';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 export default function FlashAnzanClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, recordDailyPractice, addPoints } = useAuth();
+  const { user, profile, recordDailyPractice, addPoints } = useAuth();
   const { playSound } = useSound();
+  const { toast } = useToast();
   
-  const [hasStarted, setHasStarted] = useState(false);
+  const [appState, setAppState] = useState<'lobby' | 'rules' | 'playing'>('lobby');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>([]);
   const [isFinished, setIsFinished] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [recentOpponents, setRecentOpponents] = useState<{uid: string, name: string, photo: string}[]>([]);
+  const [isMatchmaking, setIsMatchmaking] = useState(false);
 
   // Flashing State
   const [isFlashing, setIsFlashing] = useState(false);
@@ -57,6 +63,10 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
   const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const isFinishedRef = useRef(false);
+
+  useEffect(() => {
+    if (user) getRecentOpponents(user.uid).then(setRecentOpponents);
+  }, [user]);
 
   useEffect(() => {
     let generated: Question[] = [];
@@ -74,18 +84,22 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     questionButtonRefs.current = new Array(generated.length).fill(null);
 
     const skip = localStorage.getItem('skip_rules_flash_anzan') === 'true';
-    if (skip) setHasStarted(true);
+    if (skip) setAppState('playing');
+    else setAppState('lobby');
   }, [testId, difficulty, searchParams]);
-  
-  useEffect(() => {
-    if (questionButtonRefs.current[currentIdx]) {
-      questionButtonRefs.current[currentIdx]?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center'
-      });
+
+  const handleStartDuel = async () => {
+    if (!user || !profile) return;
+    setIsMatchmaking(true);
+    try {
+      const duelId = await startMatchmaking(user.uid, profile, 'flash', difficulty);
+      router.push(`/game/duels/${duelId}`);
+    } catch (e) {
+      toast({ title: "Matchmaking failed", variant: "destructive" });
+    } finally {
+      setIsMatchmaking(false);
     }
-  }, [currentIdx]);
+  };
 
   const startFlashing = useCallback(() => {
     if (!questions[currentIdx]?.sequence) return;
@@ -114,12 +128,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
       const num = sequence[idx];
       setActiveNumber(num);
       playSound('timerTick');
-      
-      // Hide number briefly between flashes
-      setTimeout(() => {
-        setActiveNumber(null);
-      }, delay * 0.8);
-
+      setTimeout(() => setActiveNumber(null), delay * 0.8);
       idx++;
       setSequenceIdx(idx);
     }, delay);
@@ -128,10 +137,10 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
   }, [questions, currentIdx, playSound]);
 
   useEffect(() => {
-    if (hasStarted && !isFinished && !isFlashing && !isReadyForInput) {
+    if (appState === 'playing' && !isFinished && !isFlashing && !isReadyForInput) {
       startFlashing();
     }
-  }, [hasStarted, isFinished, isFlashing, isReadyForInput, startFlashing]);
+  }, [appState, isFinished, isFlashing, isReadyForInput, startFlashing]);
 
   const handleAnswerSubmit = () => {
     const val = parseInt(inputValue, 10);
@@ -154,44 +163,24 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     isFinishedRef.current = true;
     setIsFinished(true);
 
-    // Fixed: Added explicit type <number> to reduce to fix the 'acc is possibly null' build error
     const score = finalAnswers.reduce<number>((acc, ans, i) => (ans !== null && questions[i] && ans === questions[i].answer ? acc + 1 : acc), 0);
     const answeredCount = finalAnswers.filter(a => a !== null).length;
     let earnedPointsTotal = 0;
 
     if (user) {
-      const accuracy = (score / (questions.length || 1)) * 100;
       const db = getFirestore(firebaseApp);
-      
       const { earnedPoints } = calculatePoints({
-        correct: score,
-        total: questions.length,
-        answered: answeredCount,
-        timeInSeconds: 0,
-        targetTime: 0,
+        correct: score, total: questions.length, answered: answeredCount, 
+        timeInSeconds: 0, targetTime: 0,
         level: difficulty === 'easy' ? 1 : (difficulty === 'medium' ? 2 : 3),
         isGame: false
       });
       
       earnedPointsTotal = earnedPoints;
-
-      const resultData = {
-        userId: user.uid,
-        testId,
-        difficulty: difficulty === 'custom' ? `Custom (${searchParams.get('d')}d, ${searchParams.get('r')}r)` : difficulty,
-        score,
-        totalQuestions: questions.length,
-        accuracy,
-        timeSpent: 0,
-        timeLeft: 0,
-        earnedPoints: earnedPointsTotal,
-        createdAt: serverTimestamp(),
-      };
-      
-      addDoc(collection(db, 'testResults'), resultData).catch((err) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'testResults', operation: 'create' }));
+      addDoc(collection(db, 'testResults'), {
+        userId: user.uid, testId, difficulty, score, totalQuestions: questions.length,
+        accuracy: (score/questions.length)*100, earnedPoints: earnedPointsTotal, createdAt: serverTimestamp()
       });
-
       recordDailyPractice(user.uid);
       addPoints(user.uid, earnedPointsTotal);
     }
@@ -202,45 +191,70 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     }));
 
     router.replace(`/results?score=${score}&total=${questions.length}&time=0&points=${earnedPointsTotal}`);
-  }, [questions, router, user, testId, difficulty, searchParams, recordDailyPractice, addPoints]);
+  }, [questions, router, user, testId, difficulty, recordDailyPractice, addPoints]);
 
   if (questions.length === 0) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /></div>;
 
-  if (!hasStarted) {
+  if (appState === 'lobby') {
     return (
-      <div className="flex flex-col max-w-xl mx-auto px-4">
-        <Card className="shadow-2xl border-none rounded-[2rem] overflow-hidden bg-card animate-in zoom-in-95 duration-500">
-          <CardHeader className="bg-primary text-white text-center py-6">
-            <CardTitle className="text-2xl sm:text-3xl font-black uppercase tracking-tighter font-headline">Flash Anzan</CardTitle>
-            <CardDescription className="text-white/80 font-bold">Mental Arithmetic Challenge</CardDescription>
-          </CardHeader>
-          <CardContent className="p-8 space-y-4">
-            {PAGE_GUIDES.flash_anzan.steps.map((step, i) => (
-              <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-muted/50 border">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-white text-xs font-black shadow-md">{i + 1}</div>
-                <p className="text-sm font-medium text-slate-700 leading-tight pt-1.5">{step}</p>
-              </div>
-            ))}
-          </CardContent>
-          <CardFooter className="p-8 pt-0 flex flex-col gap-4 border-t">
-            <div className="flex items-center space-x-2 py-2">
-              <Checkbox id="skip" checked={dontShowAgain} onCheckedChange={(val) => {
-                setDontShowAgain(!!val);
-                if (val) localStorage.setItem('skip_rules_flash_anzan', 'true');
-              }} />
-              <Label htmlFor="skip">Don't show rules again</Label>
-            </div>
-            <Button onClick={() => setHasStarted(true)} className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl bg-primary hover:bg-primary/90">
-              <PlayCircle className="mr-3 h-8 w-8" /> Start Practice
-            </Button>
-          </CardFooter>
-        </Card>
+      <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in duration-500 mt-10 px-4">
+        <div className="text-center space-y-4">
+          <Badge className="bg-primary/10 text-primary border-primary/20 px-6 py-1.5 rounded-full font-black uppercase text-xs tracking-widest">Anzan Mission</Badge>
+          <h1 className="text-4xl sm:text-6xl font-black font-headline uppercase tracking-tighter text-slate-900 leading-none">
+            Flash <span className="text-primary italic">Anzan</span>
+          </h1>
+          <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">Master mental arithmetic with sequential flashing numbers. Challenge your precision against the global community.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+           <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => setAppState('playing')}>
+              <CardHeader className="p-8 text-center bg-teal-50 rounded-t-[2.5rem] border-b">
+                 <div className="mx-auto bg-teal-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><User className="w-8 h-8 text-teal-600" /></div>
+                 <CardTitle className="text-2xl font-black uppercase tracking-tight">Train Alone</CardTitle>
+                 <CardDescription className="font-bold">Standard solo practice session.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-8 text-center"><Button variant="ghost" className="font-black text-teal-600">Start Session <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
+           </Card>
+
+           <Card className="rounded-[2.5rem] border-none shadow-2xl bg-slate-900 text-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={handleStartDuel}>
+              <CardHeader className="p-8 text-center bg-white/5 rounded-t-[2.5rem] border-b border-white/10">
+                 <div className="mx-auto bg-primary/20 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><Swords className="w-8 h-8 text-primary" /></div>
+                 <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Find Duel</CardTitle>
+                 <CardDescription className="text-slate-400 font-bold">Real-time Anzan race.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-8 text-center"><Button variant="ghost" className="font-black text-primary">Join Matchmaking <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
+           </Card>
+
+           <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all group overflow-hidden">
+              <CardHeader className="p-8 text-center bg-indigo-50 border-b">
+                 <div className="mx-auto bg-indigo-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><Users className="w-8 h-8 text-indigo-600" /></div>
+                 <CardTitle className="text-2xl font-black uppercase tracking-tight">Play Friend</CardTitle>
+                 <CardDescription className="font-bold">Challenge a teammate.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                 {recentOpponents.length > 0 ? (
+                   <div className="space-y-3">
+                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Recent Rivals</p>
+                     {recentOpponents.map(opp => (
+                       <Button key={opp.uid} variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl" onClick={handleStartDuel}>
+                         <Avatar className="h-6 w-6"><AvatarImage src={opp.photo}/><AvatarFallback>{opp.name[0]}</AvatarFallback></Avatar>
+                         <span className="font-bold text-xs truncate">{opp.name}</span>
+                       </Button>
+                     ))}
+                   </div>
+                 ) : (
+                   <p className="text-xs text-muted-foreground font-medium italic py-4 text-center">Challenge a friend to start a rivalry!</p>
+                 )}
+                 <Button onClick={handleStartDuel} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Share2 className="w-4 h-4 mr-2"/> Private Link</Button>
+              </CardContent>
+           </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col max-w-3xl mx-auto px-4">
+    <div className="flex flex-col max-w-3xl mx-auto px-4 mt-6">
       <Card className="shadow-2xl relative overflow-hidden flex flex-col flex-grow rounded-[2.5rem]">
         <CardHeader className="p-6 bg-muted/10">
           <div className="flex justify-between items-center mb-4">

@@ -111,8 +111,9 @@ export interface Duel {
   opponentId?: string;
   opponentName?: string;
   opponentPhoto?: string;
+  opponentType?: 'human' | 'bot';
   status: 'waiting' | 'active' | 'completed' | 'expired';
-  mode: 'standard' | 'flash';
+  mode: 'standard' | 'flash' | 'matrix';
   winnerId?: string | 'draw';
   questions: Question[];
   challengerScore: number;
@@ -121,6 +122,7 @@ export interface Duel {
   opponentFinished: boolean;
   createdAt: any;
   updatedAt?: any;
+  difficulty?: string;
 }
 
 export interface ExamApplication {
@@ -210,7 +212,7 @@ export type GameLevel =
 
 export type Difficulty = 'easy' | 'medium' | 'hard' | string;
 
-export type BeadQuestionType = 'identify' | 'set' | 'flash';
+export type BeadQuestionType = 'identify' | 'set' | 'flash' | 'matrix';
 
 export interface Question {
   text: string;
@@ -219,6 +221,7 @@ export interface Question {
   questionType?: BeadQuestionType;
   sequence?: number[]; // For Flash Anzan
   delay?: number; // For Flash Anzan (ms per number)
+  matrixPattern?: number[]; // For Matrix Memory Duel
 }
 
 export interface TestSettings {
