@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BrainCircuit, Trophy, Timer, Zap, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2, Heart, ShieldAlert, Star, Swords, Users, User, LayoutGrid, ChevronRight, Share2 } from 'lucide-react';
+import { BrainCircuit, Trophy, Timer, Zap, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2, Heart, Star, Swords, Users, User, LayoutGrid, ChevronRight, Share2 } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
@@ -100,7 +100,6 @@ export default function PatternMemoryPage() {
     }
   };
 
-  // Determine game parameters based on level
   const getLevelParams = useCallback((lvl: number) => {
     let size = 3;
     let tileCount = 3;
@@ -279,7 +278,7 @@ export default function PatternMemoryPage() {
 
   if (gameState === 'lobby') {
     return (
-      <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in duration-500 mt-10">
+      <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in duration-500 mt-10 px-4">
         <div className="text-center space-y-4">
           <Badge className="bg-primary/10 text-primary border-primary/20 px-6 py-1.5 rounded-full font-black uppercase text-xs tracking-widest">Cognitive Hub</Badge>
           <h1 className="text-4xl sm:text-6xl font-black font-headline uppercase tracking-tighter text-slate-900 leading-none">
@@ -326,10 +325,10 @@ export default function PatternMemoryPage() {
                    </div>
                  ) : (
                    <div className="text-center space-y-2 py-4">
-                     <p className="text-xs text-muted-foreground font-medium italic px-4">No recent opponents found. Share your lobby link to start a rivalry!</p>
+                     <p className="text-xs text-muted-foreground font-medium italic px-4">No recent opponents found. Start a rivalry today!</p>
                    </div>
                  )}
-                 <Button onClick={() => handleStartDuel('match')} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Share2 className="w-4 h-4 mr-2"/> Create Private Link</Button>
+                 <Button onClick={() => handleStartDuel('match')} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Share2 className="w-4 h-4 mr-2"/> Private Link</Button>
               </CardContent>
            </Card>
         </div>

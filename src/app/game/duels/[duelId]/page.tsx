@@ -19,7 +19,6 @@ import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
-import { Input } from '@/components/ui/input';
 import { spawnBotForDuel } from '@/lib/matchmaking';
 
 export default function DuelArenaPage() {
@@ -39,7 +38,6 @@ export default function DuelArenaPage() {
   const [hasStarted, setHasStarted] = useState(false);
   const [matchmakingTimer, setMatchmakingTimer] = useState(6);
 
-  // Bot Logic Refs
   const botIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -50,9 +48,8 @@ export default function DuelArenaPage() {
     const unsubscribe = onSnapshot(docRef, 
       (snap) => {
         if (snap.exists()) {
-          const docData = snap.data() as Duel;
-          const { id: _, ...rest } = docData;
-          setDuel({ id: snap.id, ...rest } as Duel);
+          const { id: _, ...data } = snap.data() as Duel;
+          setDuel({ id: snap.id, ...data } as Duel);
           setLoading(false);
         } else {
           toast({ title: "Duel not found", variant: "destructive" });
@@ -67,7 +64,6 @@ export default function DuelArenaPage() {
     return () => unsubscribe();
   }, [user, duelId, router, toast]);
 
-  // Hybrid Matchmaking Timer
   useEffect(() => {
     if (duel?.status === 'waiting' && matchmakingTimer > 0) {
       const t = setTimeout(() => setMatchmakingTimer(prev => prev - 1), 1000);
@@ -77,7 +73,6 @@ export default function DuelArenaPage() {
     }
   }, [duel?.status, matchmakingTimer, duelId]);
 
-  // Bot Behavior Simulator
   useEffect(() => {
     if (duel?.status === 'active' && duel.opponentType === 'bot' && !duel.opponentFinished) {
       let bScore = 0;
@@ -87,13 +82,12 @@ export default function DuelArenaPage() {
         const thinkingTime = 3000 + Math.random() * 4000;
         
         botIntervalRef.current = setTimeout(async () => {
-          const isCorrect = Math.random() > 0.15; // 85% Accuracy for bot
+          const isCorrect = Math.random() > 0.15;
           if (isCorrect) bScore++;
           bIdx++;
           
           const db = getFirestore(firebaseApp);
           const docRef = doc(db, "duels", duelId);
-
           const isFinal = bIdx >= duel.questions.length;
           
           const payload: any = {
@@ -113,16 +107,14 @@ export default function DuelArenaPage() {
           }
 
           await updateDoc(docRef, payload);
-
           if (!isFinal) simulateNextQuestion();
         }, thinkingTime);
       };
 
       simulateNextQuestion();
     }
-
     return () => { if (botIntervalRef.current) clearTimeout(botIntervalRef.current); };
-  }, [duel?.status, duel?.opponentType, duelId, duel?.challengerFinished]);
+  }, [duel?.status, duel?.opponentType, duelId, duel?.challengerFinished, duel?.questions.length, duel?.challengerScore, duel?.challengerId, duel?.opponentId]);
 
   const isChallenger = duel?.challengerId === user?.uid;
   const isFinished = isChallenger ? duel?.challengerFinished : duel?.opponentFinished;
@@ -198,31 +190,6 @@ export default function DuelArenaPage() {
   if (loading) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /></div>;
   if (!duel) return null;
 
-  if (duel.status === 'waiting') {
-    return (
-      <div className="max-w-xl mx-auto py-12 px-4 animate-in fade-in duration-500">
-        <Card className="rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
-          <div className="bg-slate-900 p-12 text-center text-white">
-            <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-pulse">
-              <Swords className="w-12 h-12" />
-            </div>
-            <h2 className="text-3xl font-black uppercase italic tracking-tighter">Searching...</h2>
-            <p className="text-slate-400 font-bold mt-2">Looking for a real online student...</p>
-            <div className="mt-8 flex justify-center gap-2">
-                {Array.from({length: 6}).map((_, i) => (
-                    <div key={i} className={cn("w-3 h-3 rounded-full transition-all duration-300", i < 6 - matchmakingTimer ? "bg-primary scale-110" : "bg-white/10")} />
-                ))}
-            </div>
-          </div>
-          <CardContent className="p-10 text-center">
-             <p className="text-sm text-muted-foreground font-medium mb-8 italic">"A true master is always ready for any challenger."</p>
-             <Button variant="outline" className="w-full h-14 rounded-xl font-bold border-2" onClick={() => router.push('/game/duels')}>Cancel Search</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   if (duel.status === 'completed') {
     const isWinner = duel.winnerId === user?.uid;
     const isDraw = duel.winnerId === 'draw';
@@ -262,6 +229,36 @@ export default function DuelArenaPage() {
            <Button onClick={() => router.push('/game')} className="w-full h-16 text-xl font-black rounded-2xl bg-slate-900 hover:bg-black text-white shadow-xl">Return to Hub</Button>
         </CardContent>
       </Card>
+    );
+  }
+
+  if (duel.status === 'waiting') {
+    return (
+      <div className="max-w-xl mx-auto py-12 px-4 animate-in fade-in duration-500">
+        <Card className="rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
+          <div className="bg-slate-900 p-12 text-center text-white">
+            <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-pulse">
+              <Swords className="w-12 h-12" />
+            </div>
+            <h2 className="text-3xl font-black uppercase italic tracking-tighter">Searching...</h2>
+            <p className="text-slate-400 font-bold mt-2">Looking for a real online student...</p>
+            <div className="mt-8 flex justify-center gap-2">
+                {Array.from({length: 6}).map((_, i) => (
+                    <div key={i} className={cn("w-3 h-3 rounded-full transition-all duration-300", i < 6 - matchmakingTimer ? "bg-primary scale-110" : "bg-white/10")} />
+                ))}
+            </div>
+          </div>
+          <CardContent className="p-10 text-center space-y-6">
+             {isChallenger && !isFinished && (
+               <Button onClick={() => setHasStarted(true)} className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl bg-primary hover:bg-primary/90 shadow-xl">
+                 Start Battle Solo
+               </Button>
+             )}
+             <p className="text-sm text-muted-foreground font-medium italic">"A true master is always ready for any challenger."</p>
+             <Button variant="outline" className="w-full h-14 rounded-xl font-bold border-2" onClick={() => router.push('/game/duels')}>Cancel Search</Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 

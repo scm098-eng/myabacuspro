@@ -49,7 +49,6 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
   const [recentOpponents, setRecentOpponents] = useState<{uid: string, name: string, photo: string}[]>([]);
   const [isMatchmaking, setIsMatchmaking] = useState(false);
 
-  // Flashing State
   const [isFlashing, setIsFlashing] = useState(false);
   const [activeNumber, setActiveNumber] = useState<number | null>(null);
   const [sequenceIdx, setSequenceIdx] = useState(0);
