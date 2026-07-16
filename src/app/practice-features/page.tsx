@@ -6,7 +6,7 @@ import { usePageBackground } from '@/hooks/usePageBackground';
 import { BrainCircuit, Zap, Target, Trophy, BookOpen, Layers, MousePointer2, Timer, Sparkles, Rocket, Swords, LayoutGrid, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import placeholderImages from '@/lib/placeholder-images.json';
+import placeholderImages from '@/app/lib/placeholder-images.json';
 import { Badge } from '@/components/ui/badge';
 
 export default function PracticeFeaturesPage() {

@@ -59,7 +59,7 @@ const ProgressReportSkeleton = () => {
         <CardContent>
           <Skeleton className="h-[300px] w-full rounded-xl" />
         </CardContent>
-      </div>
+      </Card>
     </div>
   );
 };

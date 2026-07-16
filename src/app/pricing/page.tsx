@@ -605,17 +605,15 @@ export default function PricingPage() {
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">BASIC SCORES</span></TableCell>
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">FULL PERFORMANCE TRENDS</span></TableCell>
                             </TableRow>
-
-                            {/* --- NEW POINTS ADDED AT LAST --- */}
                             <TableRow className="border-b-slate-100">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">High-Speed Flash Anzan</TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">1-Digit Only</span></TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">All 4-Digits (0.2s)</span></TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">1-DIGIT ONLY</span></TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">ALL 4-DIGITS (0.2S)</span></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100 bg-slate-50/30">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">Matrix Memory Cognitive Drills</TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">Base Grid</span></TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">All Advanced Grills</span></TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">BASE GRID</span></TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">ALL ADVANCED GRIDS</span></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">1v1 World Championship Duels</TableCell>
