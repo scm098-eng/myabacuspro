@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo, Suspense } from 'react';
@@ -41,10 +40,11 @@ function DuelsLobbyContent() {
       limit(10)
     );
 
-    return onSnapshot(q, 
+    const unsubscribe = onSnapshot(q, 
       (snap) => {
         setActiveDuels(snap.docs.map(doc => {
             const data = doc.data() as Duel;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { id: _, ...rest } = data;
             return { id: doc.id, ...rest } as Duel;
         }));
@@ -55,6 +55,8 @@ function DuelsLobbyContent() {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'duels', operation: 'list' }));
       }
     );
+
+    return () => unsubscribe();
   }, [user]);
 
   const handleCreateDuel = async () => {

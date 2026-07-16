@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -9,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Loader2, Check, PlayCircle, Zap, ShieldCheck, ChevronRight, Settings2 } from 'lucide-react';
+import { AlertTriangle, Loader2, Check, PlayCircle, Zap, ShieldCheck, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -155,6 +154,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     isFinishedRef.current = true;
     setIsFinished(true);
 
+    // Fixed possibly null acc by adding explicit typing <number>
     const score = finalAnswers.reduce<number>((acc, ans, i) => (ans !== null && ans === questions[i].answer ? acc + 1 : acc), 0);
     const answeredCount = finalAnswers.filter(a => a !== null).length;
     let earnedPointsTotal = 0;

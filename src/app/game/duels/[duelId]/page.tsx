@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
@@ -9,10 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { getFirestore, doc, onSnapshot, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
+import { getFirestore, doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
-import type { Duel, Question } from '@/types';
-import { Swords, Loader2, Timer, CheckCircle2, XCircle, Share2, Copy, ArrowRight, Trophy, Crown, UserX, AlertCircle, PlayCircle, Users, Clock, Zap } from 'lucide-react';
+import type { Duel } from '@/types';
+import { Swords, Loader2, PlayCircle, Trophy, Crown, AlertCircle, ArrowRight, UserX } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -20,7 +19,6 @@ import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 
 export default function DuelArenaPage() {
@@ -53,10 +51,12 @@ export default function DuelArenaPage() {
     const db = getFirestore(firebaseApp);
     const docRef = doc(db, "duels", duelId);
 
-    return onSnapshot(docRef, 
+    const unsubscribe = onSnapshot(docRef, 
       (snap) => {
         if (snap.exists()) {
           const docData = snap.data() as Duel;
+          // Correctly destructuring to avoid 'id' specified more than once
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { id: _, ...rest } = docData;
           setDuel({ id: snap.id, ...rest } as Duel);
           setLoading(false);
@@ -69,6 +69,8 @@ export default function DuelArenaPage() {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `duels/${duelId}`, operation: 'get' }));
       }
     );
+
+    return () => unsubscribe();
   }, [user, duelId, router, toast]);
 
   const isChallenger = duel?.challengerId === user?.uid;
@@ -201,7 +203,7 @@ export default function DuelArenaPage() {
         <Card className="rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
           <div className="bg-slate-900 p-12 text-center text-white">
             <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-pulse">
-              <Users className="w-12 h-12" />
+              <Swords className="w-12 h-12" />
             </div>
             <h2 className="text-3xl font-black uppercase italic tracking-tighter">Waiting for Opponent...</h2>
             <p className="text-slate-400 font-bold mt-2">Send this match link to a friend or wait for a global challenger.</p>
@@ -234,7 +236,7 @@ export default function DuelArenaPage() {
           isWinner ? "bg-green-600" : (isDraw ? "bg-blue-600" : "bg-slate-800")
         )}>
            <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6">
-             {isWinner ? <Crown className="w-12 h-12 text-yellow-300" /> : isDraw ? <Users className="w-12 h-12" /> : <Trophy className="w-12 h-12 opacity-50" />}
+             {isWinner ? <Crown className="w-12 h-12 text-yellow-300" /> : isDraw ? <Swords className="w-12 h-12" /> : <Trophy className="w-12 h-12 opacity-50" />}
            </div>
            <h2 className="text-4xl font-black uppercase tracking-tighter italic">
              {isWinner ? 'YOU WON!' : isDraw ? 'MATCH DRAW!' : 'GOOD GAME!'}

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -545,7 +544,7 @@ export default function PricingPage() {
                 </section>
             )}
 
-            {/* --- COMPREHENSIVE COMPARISON TABLE (SYNC WITH REQUESTED IMAGE) --- */}
+            {/* --- COMPREHENSIVE COMPARISON TABLE --- */}
             <section className="space-y-12">
                 <div className="text-center space-y-2">
                     <h2 className="text-3xl sm:text-4xl font-black uppercase font-headline tracking-tight">Free vs Pro Comparison</h2>
@@ -606,7 +605,7 @@ export default function PricingPage() {
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">BASIC SCORES</span></TableCell>
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">FULL PERFORMANCE TRENDS</span></TableCell>
                             </TableRow>
-                            {/* --- NEW POINTS APPENDED AT LAST --- */}
+                            {/* --- New Competitive and Cognitive training points --- */}
                             <TableRow className="border-b-slate-100">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">High-Speed Flash Anzan (0.2s)</TableCell>
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">1-DIGIT ONLY</span></TableCell>

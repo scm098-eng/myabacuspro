@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -17,7 +16,7 @@ export default function PracticeFeaturesPage() {
     <div className="max-w-6xl mx-auto space-y-16 pb-20">
       {/* Hero Section */}
       <section className="text-center space-y-6 pt-8">
-        <h1 className="text-4xl md:text-6xl font-black font-headline uppercase tracking-tighter text-foreground leading-tight whitespace-nowrap">
+        <h1 className="text-4xl md:text-6xl font-black font-headline uppercase tracking-tighter text-foreground leading-tight">
           Master the <span className="text-primary">Ancient Art</span> of Calculation
         </h1>
         <p className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground font-medium leading-relaxed">
@@ -25,7 +24,7 @@ export default function PracticeFeaturesPage() {
         </p>
         <div className="flex justify-center gap-4">
           <Button asChild size="lg" className="h-14 px-10 text-lg font-black rounded-2xl shadow-xl">
-            <Link href="/signup">Join 1,000+ Students</Link>
+            <Link href="/signup">Join 1,00,000+ Students</Link>
           </Button>
         </div>
       </section>
@@ -221,7 +220,7 @@ export default function PracticeFeaturesPage() {
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Button asChild size="lg" className="h-16 px-12 text-xl font-black rounded-2xl shadow-xl">
-            <Link href="/signup">Join 1,000+ Students</Link>
+            <Link href="/signup">Join 1,00,000+ Students</Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="h-16 px-12 text-xl font-black rounded-2xl">
             <Link href="/login">Login to Dashboard</Link>
