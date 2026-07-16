@@ -276,7 +276,6 @@ export default function PricingPage() {
       setIsMounted(true);
     }, []);
 
-    // Dynamic detection of country via Profile, IP Geolocation, or URL parameter
     useEffect(() => {
       if (!isMounted) return;
 
@@ -312,7 +311,6 @@ export default function PricingPage() {
       }
     }, [profile, isMounted]);
 
-    // Fetch exchange rates
     useEffect(() => {
       const fetchRates = async () => {
         try {
@@ -392,7 +390,6 @@ export default function PricingPage() {
 
     return (
         <div className="max-w-6xl mx-auto py-12 px-4 space-y-24">
-            {/* --- ADMIN PRICING SIMULATOR --- */}
             {isAdmin && (
               <section className="bg-slate-900 p-6 rounded-3xl border-4 border-primary/20 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500 relative z-50">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -400,7 +397,7 @@ export default function PricingPage() {
                     <div className="bg-primary/20 p-2 rounded-lg"><Settings2 className="text-primary w-6 h-6" /></div>
                     <div>
                       <h3 className="text-white font-black uppercase tracking-widest text-xs">Admin Pricing Simulator</h3>
-                      <p className="text-slate-400 text-[10px] font-bold">Simulate how pricing appears in different global regions.</p>
+                      <p className="text-slate-400 text-[10px] font-bold">Simulate region-specific pricing.</p>
                     </div>
                   </div>
                   <div className="w-full md:w-64">
@@ -420,7 +417,7 @@ export default function PricingPage() {
             )}
 
             <div className="text-center space-y-6">
-                <h1 className="text-4xl font-extrabold sm:text-6xl tracking-tight text-gray-900 font-headline uppercase whitespace-nowrap">Upgrade to <span className="text-primary">My Abacus Pro</span></h1>
+                <h1 className="text-4xl font-extrabold sm:text-6xl tracking-tight text-gray-900 font-headline uppercase"><span className="whitespace-nowrap">Upgrade to</span> <span className="text-primary whitespace-nowrap">My Abacus Pro</span></h1>
                 <p className="mt-4 text-xl text-muted-foreground max-w-2xl mx-auto font-medium">Unlock the full power of mental math training and join the global leaderboard.</p>
                 
                 {isTrialActive && !isAlreadyPro && (
@@ -470,9 +467,6 @@ export default function PricingPage() {
                                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                                           Securely billed as ${plan.price}.00 USD
                                         </p>
-                                        <p className="text-[8px] font-bold text-slate-400 uppercase mt-0.5">
-                                          Actual deduction depends on your bank
-                                        </p>
                                       </div>
                                     )}
                                 </div>
@@ -512,7 +506,6 @@ export default function PricingPage() {
                 )})}
             </div>
 
-            {/* --- GIFT COUPON SECTION --- */}
             {!isAlreadyPro && (
                 <section className="max-w-xl mx-auto animate-in slide-in-from-bottom-8 duration-700">
                     <Card className="rounded-[2.5rem] border-2 border-dashed border-primary/20 bg-primary/5 p-2">
@@ -544,11 +537,10 @@ export default function PricingPage() {
                 </section>
             )}
 
-            {/* --- COMPREHENSIVE COMPARISON TABLE --- */}
             <section className="space-y-12">
                 <div className="text-center space-y-2">
                     <h2 className="text-3xl sm:text-4xl font-black uppercase font-headline tracking-tight">Free vs Pro Comparison</h2>
-                    <p className="text-muted-foreground font-medium text-lg">Compare our training modules and unlock your full cognitive potential.</p>
+                    <p className="text-muted-foreground font-medium text-lg">Compare our training modules and unlock your full potential.</p>
                 </div>
                 <Card className="rounded-[2.5rem] overflow-hidden border-2 shadow-2xl bg-white/50 backdrop-blur-sm">
                     <Table>
@@ -605,7 +597,6 @@ export default function PricingPage() {
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">BASIC SCORES</span></TableCell>
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">FULL PERFORMANCE TRENDS</span></TableCell>
                             </TableRow>
-                            {/* --- New Competitive and Cognitive training points --- */}
                             <TableRow className="border-b-slate-100">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">High-Speed Flash Anzan (0.2s)</TableCell>
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">1-DIGIT ONLY</span></TableCell>
@@ -651,7 +642,6 @@ export default function PricingPage() {
                 </div>
             </div>
 
-            {/* --- SUCCESS DIALOG --- */}
             <Dialog open={!!redemptionSuccess} onOpenChange={(open) => !open && setRedemptionSuccess(null)}>
               <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden max-w-sm">
                 <div className="bg-green-600 p-8 text-center text-white">

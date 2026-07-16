@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { getFirestore, doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { Duel } from '@/types';
-import { Swords, Loader2, PlayCircle, Trophy, Crown, AlertCircle, ArrowRight, UserX } from 'lucide-react';
+import { Swords, Loader2, PlayCircle, Trophy, Crown, AlertCircle, ArrowRight, UserX, Copy, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -55,7 +55,6 @@ export default function DuelArenaPage() {
       (snap) => {
         if (snap.exists()) {
           const docData = snap.data() as Duel;
-          // Correctly destructuring to avoid 'id' specified more than once
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { id: _, ...rest } = docData;
           setDuel({ id: snap.id, ...rest } as Duel);

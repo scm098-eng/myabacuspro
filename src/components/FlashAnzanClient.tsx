@@ -154,7 +154,6 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     isFinishedRef.current = true;
     setIsFinished(true);
 
-    // Fixed possibly null acc by adding explicit typing <number>
     const score = finalAnswers.reduce<number>((acc, ans, i) => (ans !== null && ans === questions[i].answer ? acc + 1 : acc), 0);
     const answeredCount = finalAnswers.filter(a => a !== null).length;
     let earnedPointsTotal = 0;
@@ -228,7 +227,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
                 setDontShowAgain(!!val);
                 if (val) localStorage.setItem('skip_rules_flash_anzan', 'true');
               }} />
-              <Label htmlFor="skip" className="text-xs font-bold text-muted-foreground uppercase cursor-pointer">Do not show rules again</Label>
+              <Label htmlFor="skip">Don't show rules again</Label>
             </div>
             <Button onClick={() => setHasStarted(true)} className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl shadow-xl bg-primary hover:bg-primary/90">
               <PlayCircle className="mr-3 h-8 w-8" /> Start Practice

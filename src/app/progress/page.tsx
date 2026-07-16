@@ -36,22 +36,28 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-// Fixed ProgressReportSkeleton JSX parsing for Next.js 15
 function ProgressReportSkeleton() {
   return (
     <div className="space-y-8">
-      <Card>
+      <Card className="border-none shadow-md">
         <CardHeader>
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-4 w-80" />
         </CardHeader>
       </Card>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
-        <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="p-6 flex flex-col gap-2">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-8 w-full" />
+          </Card>
+        ))}
       </div>
+      <Card className="h-96">
+        <CardContent className="p-6">
+          <Skeleton className="h-full w-full rounded-xl" />
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -181,7 +187,7 @@ function ProgressContent() {
 
   return (
     <div className="space-y-8">
-      <Card>
+      <Card className="border-none shadow-md">
         <CardHeader>
           <CardTitle className="text-3xl font-headline flex items-center gap-2">
             <TrendingUp className="w-8 h-8 text-primary" />
@@ -227,7 +233,7 @@ function ProgressContent() {
           <CardContent>
             <div className="text-2xl font-black">{summaryStats.totalPracticeTime}</div>
           </CardContent>
-        </div>
+        </Card>
       </div>
       
       <Card>
