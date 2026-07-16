@@ -20,10 +20,8 @@ interface Level {
   isHard?: boolean;
 }
 
-// Generate 1000 levels dynamically
 const generateLevels = (): Level[] => {
   const levels: Level[] = [];
-  
   const titles = [
     'Small Sister: +4 Formula', 'Small Sister: +3 Formula', 'Small Sister: +2 Formula', 'Small Sister: +1 Formula',
     'Small Sister: -4 Formula', 'Small Sister: -3 Formula', 'Small Sister: -2 Formula', 'Small Sister: -1 Formula',
@@ -36,7 +34,6 @@ const generateLevels = (): Level[] => {
     'Combination Challenge', 'Final Challenge',
     'Mastery Mix 1', 'Mastery Mix 2', 'Mastery Mix 3', 'Mastery Mix 4', 'Mastery Mix 5', 'Mastery Mix 6', 'Mastery Mix 7', 'Mastery Mix 8', 'Mastery Mix 9', 'Mastery Mix 10', 'Mastery Mix 11', 'Mastery Mix 12'
   ];
-
   for (let i = 1; i <= 1000; i++) {
     if (i <= 50) {
       let category = 'Mastery Mix';
@@ -44,20 +41,9 @@ const generateLevels = (): Level[] => {
       else if (i <= 28) category = 'Big Brother';
       else if (i <= 37) category = 'Combination';
       else if (i === 38) category = 'Final Challenge';
-
-      levels.push({
-        id: i,
-        title: titles[i - 1],
-        category,
-        isHard: i % 9 === 0 || i === 38 || i === 50
-      });
+      levels.push({ id: i, title: titles[i - 1], category, isHard: i % 9 === 0 || i === 38 || i === 50 });
     } else {
-      levels.push({
-        id: i,
-        title: `Elite Mastery: Mix ${((i - 51) % 12) + 1}`,
-        category: 'Elite Mastery',
-        isHard: i % 10 === 0
-      });
+      levels.push({ id: i, title: `Elite Mastery: Mix ${((i - 51) % 12) + 1}`, category: 'Elite Mastery', isHard: i % 10 === 0 });
     }
   }
   return levels;
@@ -67,13 +53,7 @@ const gameLevels = generateLevels();
 
 const PathLine = ({ reverse = false, className }: { reverse?: boolean; className?: string }) => (
     <svg className={cn("h-full w-full", className)} viewBox="0 0 100 100" preserveAspectRatio="none">
-        <path
-            d={reverse ? "M 95 0 C 95 50, 5 50, 5 100" : "M 5 0 C 5 50, 95 50, 95 100"}
-            stroke="#8c5a2b"
-            strokeWidth="12"
-            fill="none"
-            strokeLinecap="round"
-        />
+        <path d={reverse ? "M 95 0 C 95 50, 5 50, 5 100" : "M 5 0 C 5 50, 95 50, 95 100"} stroke="#8c5a2b" strokeWidth="12" fill="none" strokeLinecap="round" />
     </svg>
 );
 
@@ -88,34 +68,12 @@ const LevelNode = ({ level, isLocked, isCompleted }: { level: Level; isLocked: b
       <div className="absolute inset-1 rounded-full bg-black/10"></div>
       <div className="absolute top-2 left-4 h-4 w-8 rounded-full bg-white/30 transform -rotate-45"></div>
         <span className="relative text-4xl font-bold [text-shadow:2px_2px_4px_rgba(0,0,0,0.4)]">{level.id}</span>
-        
-        {isCompleted && !isLocked && (
-            <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full p-1 border-2 border-white shadow-md">
-                <Check className="w-4 h-4 text-white" />
-            </div>
-        )}
-        {level.isHard && !isLocked && (
-             <div className="absolute -bottom-2 -right-2 bg-purple-700 rounded-full p-1 border-2 border-white shadow-md">
-                <Star className="w-4 h-4 text-yellow-300" />
-            </div>
-        )}
-         {isLocked && (
-            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center" />
-        )}
+        {isCompleted && !isLocked && (<div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full p-1 border-2 border-white shadow-md"><Check className="w-4 h-4 text-white" /></div>)}
+        {level.isHard && !isLocked && (<div className="absolute -bottom-2 -right-2 bg-purple-700 rounded-full p-1 border-2 border-white shadow-md"><Star className="w-4 h-4 text-yellow-300" /></div>)}
+        {isLocked && (<div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center" />)}
     </div>
   );
-
-  return (
-    isLocked ? (
-      <div className="tooltip" data-tip={`Complete level ${level.id-1} to unlock`}>
-        {linkContent}
-      </div>
-    ) : (
-      <Link href={`/game/level-${level.id}`} className="tooltip" data-tip={level.title}>
-        {linkContent}
-      </Link>
-    )
-  );
+  return isLocked ? (<div className="tooltip" data-tip={`Complete level ${level.id-1} to unlock`}>{linkContent}</div>) : (<Link href={`/game/level-${level.id}`} className="tooltip" data-tip={level.title}>{linkContent}</Link>);
 };
 
 export default function GameHomePage() {
@@ -126,39 +84,23 @@ export default function GameHomePage() {
 
   useEffect(() => {
     if (user) {
-      getCompletedGameLevels()
-        .then(levels => {
-          setCompletedLevels(levels);
-          setIsLoading(false);
-        });
-    } else {
-      setIsLoading(false);
-    }
+      getCompletedGameLevels().then(levels => { setCompletedLevels(levels); setIsLoading(false); });
+    } else { setIsLoading(false); }
   }, [user, getCompletedGameLevels]);
 
   const lastAttendedId = profile?.lastLevelAttended || 0;
 
-  // Auto-scroll to last attended level
   useEffect(() => {
     if (!isLoading && lastAttendedId > 0) {
       const timer = setTimeout(() => {
         const element = document.getElementById(`level-node-${lastAttendedId}`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if (element) { element.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
       }, 300);
       return () => clearTimeout(timer);
     }
   }, [isLoading, lastAttendedId]);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-12">
-        <Skeleton className="h-12 w-3/4 mx-auto" />
-        <Skeleton className="h-6 w-full" />
-      </div>
-    );
-  }
+  if (isLoading) return (<div className="space-y-12"><Skeleton className="h-12 w-3/4 mx-auto" /><Skeleton className="h-6 w-full" /></div>);
 
   const isAdmin = profile?.role === 'admin';
 
@@ -166,9 +108,7 @@ export default function GameHomePage() {
     <div className="space-y-12">
       <div className="text-center space-y-4">
         <h1 className="text-5xl font-extrabold tracking-tight text-pink-600 font-headline drop-shadow-lg sm:text-6xl uppercase">The Game Hub</h1>
-        <p className="max-w-2xl mx-auto text-lg text-pink-800/80 font-bold">
-          Challenge your mind with visualization drills, competitive duels, and bubble missions!
-        </p>
+        <p className="max-w-2xl mx-auto text-lg text-pink-800/80 font-bold">Challenge your mind with visualization drills, competitive duels, and bubble missions!</p>
       </div>
 
       <Tabs defaultValue="levels" className="w-full">
@@ -191,60 +131,32 @@ export default function GameHomePage() {
                   const isLocked = isAdmin ? false : (user ? level.id > 1 && !completedLevels.includes(level.id - 1) : level.id > 1);
                   const isCompleted = completedLevels.includes(level.id);
                   const isLeft = index % 2 === 0;
-
                   const maxCompleted = Math.max(...completedLevels, 0);
                   const maxReachable = Math.max(maxCompleted + 5, lastAttendedId + 3);
-                  
                   if (level.id > maxReachable && !isAdmin) return null;
-
                   return (
                       <div key={level.id} id={`level-node-${level.id}`} className="relative h-32 flex items-center">
-                          {index < gameLevels.length - 1 && (
-                              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-32 h-full z-0">
-                                  <PathLine reverse={!isLeft} />
-                              </div>
-                          )}
-
-                          <div className={cn("absolute z-10", isLeft ? "left-0" : "right-0")}>
-                              <LevelNode level={level} isLocked={isLocked} isCompleted={isCompleted} />
-                          </div>
+                          {index < gameLevels.length - 1 && (<div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-32 h-full z-0"><PathLine reverse={!isLeft} /></div>)}
+                          <div className={cn("absolute z-10", isLeft ? "left-0" : "right-0")}><LevelNode level={level} isLocked={isLocked} isCompleted={isCompleted} /></div>
                       </div>
                   )
               })}
-              {!isAdmin && (
-                <div className="text-center mt-12">
-                  <p className="text-muted-foreground font-medium italic">Complete current levels to reveal more of the road...</p>
-                </div>
-              )}
+              {!isAdmin && (<div className="text-center mt-12"><p className="text-muted-foreground font-medium italic">Complete current levels to reveal more of the road...</p></div>)}
             </div>
           </TabsContent>
 
           <TabsContent value="memory" className="animate-in fade-in slide-in-from-left-8 duration-500">
              <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
                <div className="bg-teal-600 p-12 text-white text-center">
-                  <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-pulse">
-                    <LayoutGrid className="w-12 h-12 text-white" />
-                  </div>
+                  <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-pulse"><LayoutGrid className="w-12 h-12 text-white" /></div>
                   <h2 className="text-4xl font-black uppercase tracking-tighter italic">Matrix Memory Flash</h2>
                   <p className="text-teal-100 font-bold mt-2 text-lg">Build perfect spatial visualization by reconstructing high-speed pattern matrices.</p>
                </div>
                <CardContent className="p-12 text-center space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-                     <div className="p-6 bg-teal-50 rounded-2xl border-2 border-teal-100">
-                        <Badge className="mb-2 bg-teal-600">Phase 1</Badge>
-                        <h4 className="font-bold text-teal-900">Observe</h4>
-                        <p className="text-xs text-teal-700/70 mt-1 font-medium">A unique pattern flashes on the grid. Observe the shape.</p>
-                     </div>
-                     <div className="p-6 bg-teal-50 rounded-2xl border-2 border-teal-100">
-                        <Badge className="mb-2 bg-teal-600">Phase 2</Badge>
-                        <h4 className="font-bold text-teal-900">Visualize</h4>
-                        <p className="text-xs text-teal-700/70 mt-1 font-medium">The tiles clear. Reconstruct the image from your mental "snapshot".</p>
-                     </div>
-                     <div className="p-6 bg-teal-50 rounded-2xl border-2 border-teal-100">
-                        <Badge className="mb-2 bg-teal-600">Phase 3</Badge>
-                        <h4 className="font-bold text-teal-900">Scale</h4>
-                        <p className="text-xs text-teal-700/70 mt-1 font-medium">Clear 5 rounds to level up. The grid grows as you improve.</p>
-                     </div>
+                     <div className="p-6 bg-teal-50 rounded-2xl border-2 border-teal-100"><Badge className="mb-2 bg-teal-600">Phase 1</Badge><h4 className="font-bold text-teal-900">Observe</h4><p className="text-xs text-teal-700/70 mt-1 font-medium">A unique pattern flashes on the grid. Observe the shape.</p></div>
+                     <div className="p-6 bg-teal-50 rounded-2xl border-2 border-teal-100"><Badge className="mb-2 bg-teal-600">Phase 2</Badge><h4 className="font-bold text-teal-900">Visualize</h4><p className="text-xs text-teal-700/70 mt-1 font-medium">The tiles clear. Reconstruct the image from your mental "snapshot".</p></div>
+                     <div className="p-6 bg-teal-50 rounded-2xl border-2 border-teal-100"><Badge className="mb-2 bg-teal-600">Phase 3</Badge><h4 className="font-bold text-teal-900">Scale</h4><p className="text-xs text-teal-700/70 mt-1 font-medium">Clear 5 rounds to level up. The grid grows as you improve.</p></div>
                   </div>
                   <Button asChild size="lg" className="h-16 px-12 text-xl font-black uppercase tracking-widest rounded-2xl bg-teal-600 hover:bg-teal-700 shadow-xl shadow-teal-200">
                     <Link href="/game/memory">Enter Memory Matrix</Link>
@@ -256,9 +168,7 @@ export default function GameHomePage() {
           <TabsContent value="duels" className="animate-in fade-in slide-in-from-right-8 duration-500">
              <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
                <div className="bg-orange-500 p-12 text-white text-center">
-                  <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-bounce">
-                    <Swords className="w-12 h-12" />
-                  </div>
+                  <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-bounce"><Swords className="w-12 h-12" /></div>
                   <h2 className="text-4xl font-black uppercase tracking-tighter italic">World Championship Duels</h2>
                   <p className="text-orange-100 font-bold mt-2 text-lg">Challenge other students worldwide in real-time or async math races.</p>
                </div>

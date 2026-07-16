@@ -68,7 +68,6 @@ export default function FlashAnzanLobbyPage() {
         </p>
       </div>
 
-      {/* --- PRESET MISSIONS --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
         {levels.map((level) => {
           const isLocked = !isPro && !isTrialActive && level.id !== 'easy';
@@ -111,7 +110,6 @@ export default function FlashAnzanLobbyPage() {
         })}
       </div>
 
-      {/* --- CUSTOM LAB SECTION --- */}
       <section className="max-w-4xl mx-auto space-y-8">
         <div className="flex items-center gap-3 border-b pb-4">
           <Settings2 className="w-8 h-8 text-primary" />
@@ -193,8 +191,11 @@ export default function FlashAnzanLobbyPage() {
                   <h3 className="text-2xl font-black uppercase tracking-tight text-slate-900">Training Profile</h3>
                   <p className="text-sm text-slate-500 font-medium leading-relaxed">Your mental visualization will process <span className="text-primary font-bold">{customSettings.rows}</span> sequential numbers, each with <span className="text-primary font-bold">{customSettings.digits}</span> digit complexity, every <span className="text-primary font-bold">{(customSettings.speed / 1000).toFixed(1)}s</span>.</p>
                 </div>
-                <Button onClick={handleStartCustom} className="h-20 text-base sm:text-lg font-black uppercase tracking-wide rounded-2xl shadow-xl shadow-orange-500/20">
-                  Launch Custom Mission <Zap className="ml-2 w-6 h-6 fill-white" />
+                <Button 
+                  onClick={handleStartCustom} 
+                  className="h-20 text-base sm:text-lg font-black uppercase tracking-wide rounded-2xl shadow-xl shadow-orange-500/20 whitespace-normal px-4 py-2 leading-tight"
+                >
+                  Launch Custom Mission <Zap className="ml-2 w-6 h-6 fill-white shrink-0" />
                 </Button>
              </div>
           </CardContent>
