@@ -90,7 +90,7 @@ export default function FAQPage() {
                                         {faq.category === 'Eligibility' && <Users className="w-5 h-5 text-blue-500" />}
                                         {faq.category === 'Ranks' && <BookOpen className="w-5 h-5 text-green-500" />}
                                         {faq.category === 'Rewards' && <Gift className="w-5 h-5 text-pink-500" />}
-                                        <span className="leading-tight">{faq.question}</span>
+                                        <span className="leading-tight">{faq.question.replace('My Abacus Pro', 'My\u00A0Abacus\u00A0Pro')}</span>
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="text-sm sm:text-base text-muted-foreground leading-relaxed whitespace-pre-wrap pb-6">
@@ -127,7 +127,7 @@ export default function FAQPage() {
                                                 </Table>
                                             </div>
                                         </div>
-                                    ) : faq.answer}
+                                    ) : faq.answer.replace('My Abacus Pro', 'My\u00A0Abacus\u00A0Pro')}
                                 </AccordionContent>
                             </AccordionItem>
                         ))}

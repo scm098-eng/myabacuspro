@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +24,7 @@ export default function TermsAndConditionsPage() {
                         <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
                             <ShieldCheck className="w-6 h-6 text-primary" /> 1. Agreement to Terms
                         </h2>
-                        <p>By accessing or using My Abacus Pro, you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, you are prohibited from using the service.</p>
+                        <p>By accessing or using <span className="whitespace-nowrap">My Abacus Pro</span>, you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, you are prohibited from using the service.</p>
                     </section>
 
                     <section className="space-y-4">
@@ -31,7 +32,7 @@ export default function TermsAndConditionsPage() {
                             <ExternalLink className="w-6 h-6 text-primary" /> 2. Third-Party Links & Ads
                         </h2>
                         <div className="bg-muted/30 p-6 rounded-2xl border border-primary/10">
-                            <p>Our website may contain links to third-party websites or services that are not owned or controlled by My Abacus Pro. We also display advertisements served by Google AdSense.</p>
+                            <p>Our website may contain links to third-party websites or services that are not owned or controlled by <span className="whitespace-nowrap">My Abacus Pro</span>. We also display advertisements served by Google AdSense.</p>
                             <p className="mt-2 font-bold text-foreground">We have no control over, and assume no responsibility for, the content, privacy policies, or practices of any third-party websites or services.</p>
                         </div>
                     </section>
@@ -45,7 +46,7 @@ export default function TermsAndConditionsPage() {
 
                     <section className="space-y-4">
                         <h2 className="text-2xl font-bold text-foreground">4. Intellectual Property</h2>
-                        <p>The Service and its original content (excluding content provided by users), features, and functionality are and will remain the exclusive property of My Abacus Pro and its licensors.</p>
+                        <p>The Service and its original content (excluding content provided by users), features, and functionality are and will remain the exclusive property of <span className="whitespace-nowrap">My Abacus Pro</span> and its licensors.</p>
                     </section>
 
                     <section className="space-y-4">

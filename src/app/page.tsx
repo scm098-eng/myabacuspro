@@ -118,7 +118,7 @@ export default function Home() {
       <section aria-labelledby="hero-heading">
         <div className="space-y-6 text-center">
           <h1 id="hero-heading" className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-foreground font-headline uppercase">
-            Master Mental Math with <span className="text-primary">My Abacus Pro</span>
+            Master Mental Math with <span className="text-primary whitespace-nowrap">My Abacus Pro</span>
           </h1>
           <p className="max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground font-medium leading-relaxed">
             Sharpen your mind and boost your calculation speed. The ultimate digital training ground for ancient math techniques.

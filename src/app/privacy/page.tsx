@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +24,7 @@ export default function PrivacyPolicyPage() {
                         <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
                             <Eye className="w-6 h-6 text-primary" /> 1. Introduction
                         </h2>
-                        <p>Welcome to My Abacus Pro. We are committed to protecting your personal information and your right to privacy. If you have any questions or concerns about our policy, or our practices with regards to your personal information, please contact us at myabacuspro@gmail.com.</p>
+                        <p>Welcome to <span className="whitespace-nowrap">My Abacus Pro</span>. We are committed to protecting your personal information and your right to privacy. If you have any questions or concerns about our policy, or our practices with regards to your personal information, please contact us at myabacuspro@gmail.com.</p>
                     </section>
 
                     <section className="space-y-4">

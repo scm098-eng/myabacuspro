@@ -435,7 +435,7 @@ export default function PricingPage() {
             )}
 
             <div className="text-center space-y-6">
-                <h1 className="text-4xl font-extrabold sm:text-6xl tracking-tight text-gray-900 font-headline uppercase">Upgrade to <span className="text-primary">My Abacus Pro</span></h1>
+                <h1 className="text-4xl font-extrabold sm:text-6xl tracking-tight text-gray-900 font-headline uppercase">Upgrade to <span className="text-primary whitespace-nowrap">My Abacus Pro</span></h1>
                 <p className="mt-4 text-xl text-muted-foreground max-w-2xl mx-auto font-medium">Unlock the full power of mental math training and join the global leaderboard.</p>
                 
                 {isTrialActive && !isAlreadyPro && (

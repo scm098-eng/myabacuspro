@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +17,7 @@ export default function AboutPage() {
           Mastery Through <span className="text-primary">Vision</span>
         </h1>
         <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground font-medium">
-          Modernizing ancient mental math techniques for the 2026 digital landscape.
+          Modernizing ancient mental math techniques for the <span className="whitespace-nowrap">My Abacus Pro</span> digital landscape.
         </p>
       </div>
 
@@ -29,7 +30,7 @@ export default function AboutPage() {
               </div>
               <div className="space-y-4 text-slate-700 font-medium leading-relaxed">
                 <p>
-                  Founded by <strong>Satish Mane</strong>, a dedicated educator and business leader based in India, My Abacus Pro is a specialized digital platform designed to modernize ancient mental math techniques.
+                  Founded by <strong>Satish Mane</strong>, a dedicated educator and business leader based in India, <span className="whitespace-nowrap">My Abacus Pro</span> is a specialized digital platform designed to modernize ancient mental math techniques.
                 </p>
                 <p>
                   With a deep background in abacus pedagogy and a passion for technology, Satish developed this platform to bridge the gap between traditional learning and the 2026 digital landscape.
@@ -55,7 +56,7 @@ export default function AboutPage() {
       <div className="grid md:grid-cols-3 gap-8">
         <Card className="border-none shadow-xl bg-white/50 backdrop-blur-sm hover:-translate-y-2 transition-all duration-300 rounded-3xl overflow-hidden">
           <CardHeader className="bg-primary/5 pb-6">
-            <div className="mx-auto bg-primary/10 p-4 rounded-2xl w-fit">
+            <div className="mx-auto bg-primary/10 p-4 rounded-2xl w-fit mb-4">
                 <Goal className="h-10 w-10 text-primary" />
             </div>
             <CardTitle className="mt-4 text-center font-black uppercase tracking-tight">Our Mission</CardTitle>
@@ -67,7 +68,7 @@ export default function AboutPage() {
 
         <Card className="border-none shadow-xl bg-white/50 backdrop-blur-sm hover:-translate-y-2 transition-all duration-300 rounded-3xl overflow-hidden">
           <CardHeader className="bg-orange-50 pb-6">
-            <div className="mx-auto bg-orange-100 p-4 rounded-2xl w-fit">
+            <div className="mx-auto bg-orange-100 p-4 rounded-2xl w-fit mb-4">
                 <Award className="h-10 w-10 text-orange-600" />
             </div>
             <CardTitle className="mt-4 text-center font-black uppercase tracking-tight">Professional Integrity</CardTitle>
@@ -79,7 +80,7 @@ export default function AboutPage() {
 
         <Card className="border-none shadow-xl bg-white/50 backdrop-blur-sm hover:-translate-y-2 transition-all duration-300 rounded-3xl overflow-hidden">
           <CardHeader className="bg-blue-50 pb-6">
-            <div className="mx-auto bg-blue-100 p-4 rounded-2xl w-fit">
+            <div className="mx-auto bg-blue-100 p-4 rounded-2xl w-fit mb-4">
                 <BrainCircuit className="h-10 w-10 text-blue-600" />
             </div>
             <CardTitle className="mt-4 text-center font-black uppercase tracking-tight">Scientific Edge</CardTitle>

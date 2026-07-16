@@ -21,13 +21,6 @@ const testCategories = [
     iconBg: 'bg-yellow-100'
   },
   {
-    href: '/tests/flash-anzan',
-    title: 'Flash Card Anzan',
-    description: 'High-speed mental math training. Add flashing numbers sequentially.',
-    icon: Zap,
-    iconBg: 'bg-orange-100'
-  },
-  {
     href: '/tests/basic',
     title: 'Basic Add & Subtract',
     description: 'Simple calculation training using direct movements. No formulas, no timer.',
@@ -68,6 +61,13 @@ const testCategories = [
     description: 'A dedicated missions center for Bubble missions, Matrix drills, and 1v1 competitive Duels.',
     icon: Gamepad2,
     iconBg: 'bg-pink-100'
+  },
+  {
+    href: '/tests/flash-anzan',
+    title: 'Flash Card Anzan',
+    description: 'High-speed mental math training. Add flashing numbers sequentially.',
+    icon: Zap,
+    iconBg: 'bg-orange-100'
   }
 ];
 
