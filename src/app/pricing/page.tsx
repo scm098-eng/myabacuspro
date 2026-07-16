@@ -328,7 +328,7 @@ export default function PricingPage() {
                             <TableRow className="border-b-slate-100">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">Visualization Drills (Beads Value)</TableCell>
                                 <TableCell className="text-center font-black text-[9px] text-muted-foreground uppercase">LIMITED LEVELS</TableCell>
-                                <TableCell className="text-center font-black text-[9px] text-primary uppercase">ALL 12 LEVELS</TableCell>
+                                <TableCell className="text-center font-black text-[9px] text-primary uppercase">ALL 12 MASTERY LEVELS</TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100 bg-slate-50/30">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">Formula Mastery (Small/Big/Combi)</TableCell>
