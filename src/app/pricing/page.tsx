@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -545,7 +544,7 @@ export default function PricingPage() {
                 </section>
             )}
 
-            {/* --- COMPREHENSIVE COMPARISON TABLE --- */}
+            {/* --- COMPREHENSIVE COMPARISON TABLE (SYNCED WITH IMAGE) --- */}
             <section className="space-y-12">
                 <div className="text-center space-y-2">
                     <h2 className="text-3xl sm:text-4xl font-black uppercase font-headline tracking-tight">Free vs Pro Comparison</h2>
@@ -562,14 +561,56 @@ export default function PricingPage() {
                         </TableHeader>
                         <TableBody>
                             <TableRow className="border-b-slate-100 bg-slate-50/30">
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Basic Add & Sub (Direct Movements)</TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                            </TableRow>
+                            <TableRow className="border-b-slate-100">
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Visualization Drills (Beads Value)</TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">LIMITED LEVELS</span></TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">ALL 12 MASTERY LEVELS</span></TableCell>
+                            </TableRow>
+                            <TableRow className="border-b-slate-100 bg-slate-50/30">
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Formula Mastery (Small/Big/Combi)</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                            </TableRow>
+                            <TableRow className="border-b-slate-100">
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Bubble Game Experience</TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">FIRST 5 LEVELS</span></TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">ALL 1,000+ LEVELS</span></TableCell>
+                            </TableRow>
+                            <TableRow className="border-b-slate-100 bg-slate-50/30">
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Official Grand Final Exams</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                            </TableRow>
+                            <TableRow className="border-b-slate-100">
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Professional Certification & Ranks</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                            </TableRow>
+                            <TableRow className="border-b-slate-100 bg-slate-50/30">
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Abacus Mastery Labs (Mult/Div)</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                            </TableRow>
+                            <TableRow className="border-b-slate-100">
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Global Hall of Fame Placement</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                            </TableRow>
+                            <TableRow className="border-b-slate-100 bg-slate-50/30">
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Advanced Progress Analytics</TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">BASIC SCORES</span></TableCell>
+                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">FULL PERFORMANCE TRENDS</span></TableCell>
+                            </TableRow>
+
+                            {/* --- NEW POINTS ADDED AT LAST --- */}
+                            <TableRow className="border-b-slate-100">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">High-Speed Flash Anzan</TableCell>
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">1-Digit Only</span></TableCell>
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">All 4-Digits (0.2s)</span></TableCell>
-                            </TableRow>
-                            <TableRow className="border-b-slate-100">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">1v1 Duel Arena Racing</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100 bg-slate-50/30">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">Matrix Memory Cognitive Drills</TableCell>
@@ -577,32 +618,7 @@ export default function PricingPage() {
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">All Advanced Grills</span></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">Basic Add & Sub (Direct Movements)</TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
-                            </TableRow>
-                            <TableRow className="border-b-slate-100 bg-slate-50/30">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">Visualization Drills (Beads Value)</TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">Limited Levels</span></TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">All 12 Mastery Levels</span></TableCell>
-                            </TableRow>
-                            <TableRow className="border-b-slate-100">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">Formula Mastery (Small/Big/Combi)</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
-                            </TableRow>
-                            <TableRow className="border-b-slate-100 bg-slate-50/30">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">Bubble Game Experience</TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">First 5 Levels</span></TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">All 1,000+ Levels</span></TableCell>
-                            </TableRow>
-                            <TableRow className="border-b-slate-100">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">Official Grand Final Exams</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
-                            </TableRow>
-                            <TableRow className="border-b-slate-100 bg-slate-50/30">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">Professional Certification & Ranks</TableCell>
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">1v1 World Championship Duels</TableCell>
                                 <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
                                 <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                             </TableRow>
