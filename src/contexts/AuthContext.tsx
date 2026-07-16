@@ -287,7 +287,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           lastAwardedRank: 'Math Beginner',
           lastRankAchievedAt: serverTimestamp(),
           lastWeeklyReset: getUTCMondayKey(),
-          lastMonthlyReset: getUTCMonthKey()
+          lastMonthlyReset: getUTCMonthKey(),
+          lastMemoryLevel: 1,
+          dailyMemoryLevelsSolved: 0,
+          lastMemoryDate: null
       };
       delete (rawData as any).password;
       delete (rawData as any).confirmPassword;
@@ -319,7 +322,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         subscriptionStatus: isAdmin ? 'pro' : 'free',
         role: isAdmin ? 'admin' : 'student',
         teacherId: null,
-        referralCode: null, // Default to null, will be generated if they switch to teacher
+        referralCode: null, 
         isSuspended: false,
         isAdminRead: false,
         status: isAdmin ? 'approved' : null,
@@ -331,7 +334,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastAwardedRank: 'Math Beginner',
         lastRankAchievedAt: serverTimestamp(),
         lastWeeklyReset: getUTCMondayKey(),
-        lastMonthlyReset: getUTCMonthKey()
+        lastMonthlyReset: getUTCMonthKey(),
+        lastMemoryLevel: 1,
+        dailyMemoryLevelsSolved: 0,
+        lastMemoryDate: null
       };
 
       await setDoc(userDocRef, sanitizeForFirestore(rawData));
@@ -495,7 +501,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const bonus = nextRank.bonusPoints || 0;
       updateData.lastAwardedRank = nextRank.name;
       updateData.totalPoints = increment(earnedPoints + bonus);
-      // New: Record exact historical timestamp for rank achieved
       updateData.lastRankAchievedAt = serverTimestamp();
       
       triggerAutoEmail('achievement', data.email, data.firstName, { 

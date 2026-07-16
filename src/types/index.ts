@@ -99,7 +99,7 @@ export type TestType =
   | 'mastery-mix-11'
   | 'mastery-mix-12'
   | 'bubble-game'
-  | 'flash-anzan';
+  | 'matrix-flash';
 
 export type ExamGroup = 'A' | 'B' | 'C' | 'D' | 'E';
 
@@ -327,6 +327,9 @@ export interface ProfileData {
   marketingCampaignClicked?: boolean;
   lastCampaignClicked?: string | null;
   lastLevelAttended?: number;
+  lastMemoryLevel?: number;
+  dailyMemoryLevelsSolved?: number;
+  lastMemoryDate?: string | null;
 }
 
 export interface Coupon {
@@ -374,6 +377,9 @@ export type UpdateProfilePayload = {
   trialStartDate?: any | null;
   emailVerified?: boolean;
   lastLevelAttended?: number;
+  lastMemoryLevel?: number;
+  dailyMemoryLevelsSolved?: number;
+  lastMemoryDate?: string | null;
 };
 
 

@@ -351,8 +351,8 @@ function ProgressContent() {
                         <TableCell className="font-bold text-pink-700">{TEST_NAME_MAP[result.testId] || result.difficulty}</TableCell>
                         <TableCell className="font-black text-foreground">{result.accuracy.toFixed(1)}%</TableCell>
                         <TableCell className="pr-6 text-right">
-                          <Badge className={cn("rounded-lg px-4 font-black text-[10px]", result.accuracy >= 90 ? "bg-green-600" : "bg-muted text-muted-foreground")}>
-                            {result.accuracy >= 90 ? 'CLEARED' : 'ATTEMPTED'}
+                          <Badge className={cn("rounded-lg px-4 font-black text-[10px]", result.accuracy >= 80 ? "bg-green-600" : "bg-muted text-muted-foreground")}>
+                            {result.accuracy >= 80 ? 'CLEARED' : 'ATTEMPTED'}
                           </Badge>
                         </TableCell>
                       </TableRow>

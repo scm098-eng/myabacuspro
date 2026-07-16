@@ -50,6 +50,7 @@ export default function DuelArenaPage() {
       (snap) => {
         if (snap.exists()) {
           const rawData = snap.data() as Duel;
+          // Destructure to avoid duplicate id property assignment
           const { id: _, ...data } = rawData;
           setDuel({ id: snap.id, ...data } as Duel);
           setLoading(false);
@@ -90,7 +91,7 @@ export default function DuelArenaPage() {
           bIdx++;
           
           const db = getFirestore(firebaseApp);
-          const docRef = doc(db, "duels", duelId);
+          const docRef = db.doc(`duels/${duelId}`);
           const isFinal = bIdx >= duel.questions.length;
           
           const payload: any = {

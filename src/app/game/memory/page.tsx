@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -8,11 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BrainCircuit, Trophy, Timer, Zap, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2, Heart, Star, Swords, Users, User, LayoutGrid, ChevronRight, Share2 } from 'lucide-react';
+import { BrainCircuit, Trophy, Timer, Zap, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2, Heart, Star, Swords, Users, User, LayoutGrid, ChevronRight, Share2, Clock } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
@@ -22,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const ROUNDS_PER_LEVEL = 5;
 const INITIAL_LIVES = 3;
+const MAX_DAILY_LEVELS = 5;
 
 const FloatingParticle = ({ index }: { index: number }) => {
   const [style, setStyle] = useState<React.CSSProperties>({ opacity: 0 });
@@ -69,7 +71,7 @@ export default function PatternMemoryPage() {
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(INITIAL_LIVES);
-  const [gameState, setGameState] = useState<'lobby' | 'idle' | 'memorizing' | 'playing' | 'feedback' | 'complete' | 'fail'>('lobby');
+  const [gameState, setGameState] = useState<'lobby' | 'ready' | 'memorizing' | 'playing' | 'feedback' | 'complete' | 'fail' | 'limit_reached'>('lobby');
   
   const [gridSize, setGridSize] = useState(3);
   const [pattern, setPattern] = useState<number[]>([]);
@@ -81,11 +83,19 @@ export default function PatternMemoryPage() {
   const [showSubmissionAnim, setShowSubmissionAnim] = useState(false);
   const [recentOpponents, setRecentOpponents] = useState<{uid: string, name: string, photo: string}[]>([]);
 
+  // Load persistence and daily limit logic
   useEffect(() => {
+    if (profile) {
+      setLevel(profile.lastMemoryLevel || 1);
+      const today = new Date().toISOString().split('T')[0];
+      if (profile.lastMemoryDate === today && (profile.dailyMemoryLevelsSolved || 0) >= MAX_DAILY_LEVELS) {
+        setGameState('limit_reached');
+      }
+    }
     if (user) {
       getRecentOpponents(user.uid).then(setRecentOpponents);
     }
-  }, [user]);
+  }, [profile, user]);
 
   const handleStartDuel = async (type: 'match' | 'friend', friendId?: string) => {
     if (!user || !profile) return;
@@ -105,6 +115,8 @@ export default function PatternMemoryPage() {
     let tileCount = 3;
     let memorizeTime = 2500;
     let playTime = 5000;
+    let colorClass = "bg-teal-400 border-teal-500";
+    let shapeClass = "rounded-2xl";
 
     if (lvl <= 5) {
       size = 3;
@@ -116,18 +128,24 @@ export default function PatternMemoryPage() {
       tileCount = 5 + Math.floor((lvl - 5) / 3);
       memorizeTime = 3000 - ((lvl - 5) * 150);
       playTime = 8000 + ((lvl - 5) * 400);
+      colorClass = "bg-indigo-400 border-indigo-500";
+      shapeClass = "rounded-3xl";
     } else {
       size = 5;
       tileCount = 8 + Math.floor((lvl - 15) / 5);
       memorizeTime = 3500 - ((lvl - 15) * 100);
       playTime = 12000 + ((lvl - 15) * 300);
+      colorClass = lvl > 25 ? "bg-rose-400 border-rose-500" : "bg-amber-400 border-amber-500";
+      shapeClass = lvl > 25 ? "rounded-full" : "rounded-xl rotate-45 scale-75";
     }
 
     return { 
       size, 
       tileCount, 
       memorizeTime: Math.max(800, memorizeTime), 
-      playTime: Math.max(3000, playTime) 
+      playTime: Math.max(3000, playTime),
+      colorClass,
+      shapeClass
     };
   }, []);
 
@@ -139,7 +157,7 @@ export default function PatternMemoryPage() {
       if (next <= 0) {
         setGameState('fail');
       } else {
-        setGameState('idle'); 
+        setGameState('ready'); 
       }
       return next;
     });
@@ -191,8 +209,8 @@ export default function PatternMemoryPage() {
   }, [level, getLevelParams]);
 
   useEffect(() => {
-    if (gameState === 'idle') {
-      const t = setTimeout(() => generatePattern(), 1000);
+    if (gameState === 'ready') {
+      const t = setTimeout(() => generatePattern(), 1500);
       return () => clearTimeout(t);
     }
   }, [gameState, generatePattern]);
@@ -207,13 +225,13 @@ export default function PatternMemoryPage() {
 
       if (newSelection.length === pattern.length) {
         setGameState('feedback');
-        setScore(s => s + 1);
+        setScore(s => s + 10); // +10 points per round
         setTimeout(() => {
           if (round < ROUNDS_PER_LEVEL) {
             setRound(r => r + 1);
-            setGameState('idle');
+            setGameState('ready');
           } else {
-            finishGame(score + 1);
+            finishGame(score + 10);
           }
         }, 1000);
       }
@@ -241,26 +259,41 @@ export default function PatternMemoryPage() {
 
   const finishGame = async (finalScore: number) => {
     setIsSubmitting(true);
-    const accuracy = (finalScore / ROUNDS_PER_LEVEL) * 100;
+    const correctRounds = finalScore / 10;
+    const accuracy = (correctRounds / ROUNDS_PER_LEVEL) * 100;
     
     if (accuracy >= 80) {
       if (user) {
-        const bonus = level * 10;
-        setFinalMasteryPoints(bonus);
-        await addPoints(user.uid, bonus);
+        const bonus = 20; // Matches Bubble Game clear bonus
+        const totalEarned = finalScore + bonus;
+        setFinalMasteryPoints(totalEarned);
+        
+        await addPoints(user.uid, totalEarned);
         await recordDailyPractice(user.uid);
 
         const db = getFirestore(firebaseApp);
+        const today = new Date().toISOString().split('T')[0];
+        const userRef = doc(db, "users", user.uid);
+        
+        // Persist level progress and daily limit
+        const dailySolved = (profile?.lastMemoryDate === today ? profile.dailyMemoryLevelsSolved || 0 : 0) + 1;
+        await updateDoc(userRef, {
+            lastMemoryLevel: level + 1,
+            dailyMemoryLevelsSolved: dailySolved,
+            lastMemoryDate: today,
+            updatedAt: serverTimestamp()
+        });
+
         const resultData = {
           userId: user.uid,
           testId: 'matrix-flash' as any,
           difficulty: `Level ${level}`,
-          score: finalScore,
+          score: correctRounds,
           totalQuestions: ROUNDS_PER_LEVEL,
           accuracy,
           timeSpent: 0,
           timeLeft: 0,
-          earnedPoints: bonus,
+          earnedPoints: totalEarned,
           createdAt: serverTimestamp(),
           isGame: true
         };
@@ -268,7 +301,7 @@ export default function PatternMemoryPage() {
       }
       setGameState('complete');
       playSound('success');
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 10001 });
       setTimeout(() => setShowSubmissionAnim(true), 600);
     } else {
       setGameState('fail');
@@ -276,7 +309,7 @@ export default function PatternMemoryPage() {
     setIsSubmitting(false);
   };
 
-  if (gameState === 'lobby') {
+  if (gameState === 'lobby' || gameState === 'limit_reached') {
     return (
       <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in duration-500 mt-10 px-4">
         <div className="text-center space-y-4">
@@ -284,82 +317,90 @@ export default function PatternMemoryPage() {
           <h1 className="text-4xl sm:text-6xl font-black font-headline uppercase tracking-tighter text-slate-900 leading-none">
             Matrix <span className="text-primary italic">Flash</span>
           </h1>
-          <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">Master spatial visualization and short-term memory through high-speed pattern drills.</p>
+          <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">Master spatial visualization and photographic memory. Training starts from Level {level}.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
-           <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => setGameState('idle')}>
-              <CardHeader className="p-8 text-center bg-teal-50 rounded-t-[2.5rem] border-b">
-                 <div className="mx-auto bg-teal-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><User className="w-8 h-8 text-teal-600" /></div>
-                 <CardTitle className="text-2xl font-black uppercase tracking-tight">Train Alone</CardTitle>
-                 <CardDescription className="font-bold">Standard single-player progression.</CardDescription>
-              </CardHeader>
-              <CardContent className="p-8 text-center"><Button variant="ghost" className="font-black text-teal-600">Start Session <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
-           </Card>
+        {gameState === 'limit_reached' ? (
+          <Card className="max-w-md mx-auto rounded-[2.5rem] border-4 border-orange-200 bg-orange-50/30 p-10 text-center shadow-xl">
+             <div className="mx-auto bg-orange-100 p-5 rounded-full w-fit mb-6">
+                <Clock className="w-12 h-12 text-orange-600 animate-pulse" />
+             </div>
+             <h2 className="text-2xl font-black uppercase tracking-tight text-orange-900 leading-none">Daily Limit Reached</h2>
+             <p className="mt-4 font-bold text-orange-700 leading-relaxed">
+                You've solved {MAX_DAILY_LEVELS} levels today! Your brain needs rest to cement the new patterns. Return tomorrow to continue your journey from Level {level}.
+             </p>
+             <Button asChild variant="outline" className="mt-8 border-orange-300 text-orange-800 hover:bg-orange-100 rounded-xl font-bold">
+                <Link href="/game">Return to Hub</Link>
+             </Button>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
+             <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => setGameState('ready')}>
+                <CardHeader className="p-8 text-center bg-teal-50 rounded-t-[2.5rem] border-b">
+                   <div className="mx-auto bg-teal-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><User className="w-8 h-8 text-teal-600" /></div>
+                   <CardTitle className="text-2xl font-black uppercase tracking-tight">Train Alone</CardTitle>
+                   <CardDescription className="font-bold">Progress from Level {level}.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-8 text-center"><Button variant="ghost" className="font-black text-teal-600">Start Session <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
+             </Card>
 
-           <Card className="rounded-[2.5rem] border-none shadow-2xl bg-slate-900 text-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => handleStartDuel('match')}>
-              <CardHeader className="p-8 text-center bg-white/5 rounded-t-[2.5rem] border-b border-white/10">
-                 <div className="mx-auto bg-primary/20 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><Swords className="w-8 h-8 text-primary" /></div>
-                 <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Find Duel</CardTitle>
-                 <CardDescription className="text-slate-400 font-bold">Battle anyone online instantly.</CardDescription>
-              </CardHeader>
-              <CardContent className="p-8 text-center"><Button variant="ghost" className="font-black text-primary">Join Matchmaking <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
-           </Card>
+             <Card className="rounded-[2.5rem] border-none shadow-2xl bg-slate-900 text-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => handleStartDuel('match')}>
+                <CardHeader className="p-8 text-center bg-white/5 rounded-t-[2.5rem] border-b border-white/10">
+                   <div className="mx-auto bg-primary/20 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><Swords className="w-8 h-8 text-primary" /></div>
+                   <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Find Duel</CardTitle>
+                   <CardDescription className="text-slate-400 font-bold">Battle anyone online instantly.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-8 text-center"><Button variant="ghost" className="font-black text-primary">Join Matchmaking <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
+             </Card>
 
-           <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all group overflow-hidden">
-              <CardHeader className="p-8 text-center bg-indigo-50 border-b">
-                 <div className="mx-auto bg-indigo-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><Users className="w-8 h-8 text-indigo-600" /></div>
-                 <CardTitle className="text-2xl font-black uppercase tracking-tight">Play Friend</CardTitle>
-                 <CardDescription className="font-bold">Challenge a specific teammate.</CardDescription>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                 {recentOpponents.length > 0 ? (
-                   <div className="space-y-3">
-                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Recent Rivals</p>
-                     {recentOpponents.map(opp => (
-                       <Button key={opp.uid} variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl" onClick={() => handleStartDuel('friend', opp.uid)}>
-                         <Avatar className="h-6 w-6"><AvatarImage src={opp.photo}/><AvatarFallback>{opp.name[0]}</AvatarFallback></Avatar>
-                         <span className="font-bold text-xs truncate">{opp.name}</span>
-                       </Button>
-                     ))}
-                   </div>
-                 ) : (
-                   <div className="text-center space-y-2 py-4">
-                     <p className="text-xs text-muted-foreground font-medium italic px-4">No recent opponents found. Start a rivalry today!</p>
-                   </div>
-                 )}
-                 <Button onClick={() => handleStartDuel('match')} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Share2 className="w-4 h-4 mr-2"/> Private Link</Button>
-              </CardContent>
-           </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (gameState === 'idle') {
-    return (
-      <div className="flex flex-col items-center justify-center p-20 gap-6">
-        <Loader2 className="w-16 h-16 animate-spin text-teal-500" />
-        <h2 className="text-2xl font-black uppercase italic tracking-widest text-slate-800">Constructing Level {level}...</h2>
+             <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all group overflow-hidden">
+                <CardHeader className="p-8 text-center bg-indigo-50 border-b">
+                   <div className="mx-auto bg-indigo-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><Users className="w-8 h-8 text-indigo-600" /></div>
+                   <CardTitle className="text-2xl font-black uppercase tracking-tight">Play Friend</CardTitle>
+                   <CardDescription className="font-bold">Challenge a specific teammate.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                   {recentOpponents.length > 0 ? (
+                     <div className="space-y-3">
+                       <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Recent Rivals</p>
+                       {recentOpponents.map(opp => (
+                         <Button key={opp.uid} variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl" onClick={() => handleStartDuel('friend', opp.uid)}>
+                           <Avatar className="h-6 w-6"><AvatarImage src={opp.photo}/><AvatarFallback>{opp.name[0]}</AvatarFallback></Avatar>
+                           <span className="font-bold text-xs truncate">{opp.name}</span>
+                         </Button>
+                       ))}
+                     </div>
+                   ) : (
+                     <div className="text-center space-y-2 py-4">
+                       <p className="text-xs text-muted-foreground font-medium italic px-4">No recent rivals found. Start a rivalry today!</p>
+                     </div>
+                   )}
+                   <Button onClick={() => handleStartDuel('match')} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Share2 className="w-4 h-4 mr-2"/> Private Link</Button>
+                </CardContent>
+             </Card>
+          </div>
+        )}
       </div>
     );
   }
 
   if (gameState === 'complete' || gameState === 'fail') {
     const isWin = gameState === 'complete';
+    const canContinue = level < 1000 && (!isWin || (profile?.dailyMemoryLevelsSolved || 0) < MAX_DAILY_LEVELS);
+
     return (
       <Card className="max-w-md mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden animate-in zoom-in-95 mt-10">
         <div className={cn("p-12 text-center text-white", isWin ? "bg-teal-600" : "bg-red-600")}>
           <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6">
             {isWin ? <Trophy className="w-12 h-12 text-yellow-300" /> : <XCircle className="w-12 h-12" />}
           </div>
-          <h2 className="text-4xl font-black uppercase tracking-tighter italic">{isWin ? 'Perfect Memory!' : 'Grid Failure'}</h2>
-          <p className="font-bold opacity-80 mt-2">{score}/{ROUNDS_PER_LEVEL} Patterns Matched</p>
+          <h2 className="text-4xl font-black uppercase tracking-tighter italic">{isWin ? 'Level Mastered!' : 'Grid Failure'}</h2>
+          <p className="font-bold opacity-80 mt-2">{round-1}/{ROUNDS_PER_LEVEL} Patterns Matched</p>
         </div>
         <CardContent className="p-10 space-y-8">
           <div className="text-center space-y-6">
             <div className="space-y-1 relative">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Mastery Points Earned</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Points Earned</p>
                 <div className="relative inline-block">
                   <p className="text-5xl font-black text-primary drop-shadow-sm">{isWin ? finalMasteryPoints : 0}</p>
                   {showSubmissionAnim && Array.from({ length: 20 }).map((_, i) => (
@@ -369,10 +410,12 @@ export default function PatternMemoryPage() {
             </div>
           </div>
           <div className="grid gap-4">
-            {isWin ? (
-               <Button onClick={() => { setLevel(l => l + 1); setRound(1); setScore(0); setLives(INITIAL_LIVES); setGameState('idle'); }} className="h-16 rounded-2xl text-xl font-black uppercase tracking-widest shadow-xl bg-teal-600 hover:bg-teal-700">Next Level <ArrowRight className="ml-2 w-6 h-6" /></Button>
+            {isWin && canContinue ? (
+               <Button onClick={() => { setLevel(l => l + 1); setRound(1); setScore(0); setLives(INITIAL_LIVES); setGameState('ready'); }} className="h-16 rounded-2xl text-xl font-black uppercase tracking-widest shadow-xl bg-teal-600 hover:bg-teal-700">Next Level <ArrowRight className="ml-2 w-6 h-6" /></Button>
+            ) : isWin ? (
+               <Button onClick={() => setGameState('limit_reached')} className="h-16 rounded-2xl text-xl font-black uppercase tracking-widest shadow-xl bg-slate-900 text-white">Daily Limit Reached</Button>
             ) : (
-               <Button onClick={() => { setRound(1); setScore(0); setLives(INITIAL_LIVES); setGameState('idle'); }} className="h-16 rounded-2xl text-xl font-black uppercase tracking-widest shadow-xl bg-slate-900 hover:bg-black text-white"><RotateCcw className="mr-2 w-6 h-6" /> Retry Matrix</Button>
+               <Button onClick={() => { setRound(1); setScore(0); setLives(INITIAL_LIVES); setGameState('ready'); }} className="h-16 rounded-2xl text-xl font-black uppercase tracking-widest shadow-xl bg-slate-900 hover:bg-black text-white"><RotateCcw className="mr-2 w-6 h-6" /> Retry Level {level}</Button>
             )}
             <Button variant="ghost" onClick={() => setGameState('lobby')} className="font-black uppercase tracking-widest text-[10px] h-12 text-slate-400">Back to Hub</Button>
           </div>
@@ -381,7 +424,7 @@ export default function PatternMemoryPage() {
     );
   }
 
-  const { playTime } = getLevelParams(level);
+  const { playTime, colorClass, shapeClass } = getLevelParams(level);
 
   return (
     <div className="max-w-4xl mx-auto space-y-10 pb-20 mt-10 px-4">
@@ -389,8 +432,8 @@ export default function PatternMemoryPage() {
          <div className="space-y-1">
             <h1 className="text-3xl font-black uppercase tracking-tight text-slate-900 italic">Matrix Flash</h1>
             <div className="flex gap-2">
-              <Badge className="bg-teal-600 text-white border-none font-black text-[10px] px-3">LEVEL {level}</Badge>
-              <Badge variant="outline" className="font-black text-[10px] px-3 border-teal-200 text-teal-700">ROUND {round}/{ROUNDS_PER_LEVEL}</Badge>
+              <Badge className="bg-slate-900 text-white border-none font-black text-[10px] px-3">LEVEL {level}</Badge>
+              <Badge variant="outline" className="font-black text-[10px] px-3 border-slate-200 text-slate-700">ROUND {round}/{ROUNDS_PER_LEVEL}</Badge>
             </div>
          </div>
          <div className="flex items-center gap-3 bg-white/50 backdrop-blur-md px-6 py-3 rounded-2xl border-2 border-white shadow-sm">
@@ -409,6 +452,15 @@ export default function PatternMemoryPage() {
           <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
           
           <div className="relative z-10 w-full flex flex-col items-center">
+            {gameState === 'ready' && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm">
+                 <div className="text-center space-y-4 animate-in zoom-in-50 duration-300">
+                    <h2 className="text-4xl font-black text-white uppercase italic tracking-widest">Get Ready!</h2>
+                    <p className="text-primary font-black uppercase text-xs tracking-[0.3em]">Round {round} incoming...</p>
+                 </div>
+              </div>
+            )}
+
             {gameState === 'memorizing' && (
               <div className="mb-10 animate-in fade-in duration-300 text-teal-400 flex items-center gap-3">
                  <Zap className="w-5 h-5 fill-teal-400 animate-pulse" />
@@ -447,13 +499,14 @@ export default function PatternMemoryPage() {
                     key={i}
                     onClick={() => handleTileClick(i)}
                     className={cn(
-                      "aspect-square rounded-2xl transition-all duration-300 cursor-pointer shadow-lg",
+                      "aspect-square transition-all duration-300 cursor-pointer shadow-lg",
                       "border-b-4 border-r-4 active:border-0 active:translate-y-1",
+                      shapeClass,
                       !showHint && !isSelected && !isWrong && "bg-slate-700 border-slate-800 hover:bg-slate-600",
-                      showHint && isCorrectPattern && "bg-teal-400 border-teal-500 scale-[0.98] ring-8 ring-teal-400/20",
+                      showHint && isCorrectPattern && cn(colorClass, "scale-[0.98] ring-8 ring-white/20"),
                       showHint && !isCorrectPattern && "bg-slate-800 border-slate-900 opacity-40",
-                      gameState === 'playing' && isSelected && "bg-teal-400 border-teal-500 scale-[0.98] ring-8 ring-teal-400/20 animate-in zoom-in-90",
-                      isWrong && "bg-red-500 border-red-600 ring-8 ring-red-500/20 animate-shake"
+                      gameState === 'playing' && isSelected && cn(colorClass, "scale-[0.98] ring-8 ring-white/20 animate-in zoom-in-90"),
+                      isWrong && "bg-red-500 border-red-600 ring-8 ring-red-500/20"
                     )}
                   />
                 );
