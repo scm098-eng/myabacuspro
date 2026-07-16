@@ -51,15 +51,6 @@ const ProgressReportSkeleton = () => {
         <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
         <Card className="p-6"><Skeleton className="h-16 w-full" /></Card>
       </div>
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-72" />
-          <Skeleton className="h-4 w-96" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-[300px] w-full rounded-xl" />
-        </CardContent>
-      </Card>
     </div>
   );
 };
@@ -235,7 +226,7 @@ function ProgressContent() {
           <CardContent>
             <div className="text-2xl font-black">{summaryStats.totalPracticeTime}</div>
           </CardContent>
-        </div>
+        </Card>
       </div>
       
       <Card>

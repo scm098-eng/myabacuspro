@@ -5,7 +5,7 @@ import { getAuth } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import type { ProfileData } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Loader2, Zap, ShieldCheck, Gift, Ticket, Send, CheckCircle2, Globe, Landmark, Settings2, Info, X, Crown } from 'lucide-react';
+import { Check, Star, Loader2, Zap, ShieldCheck, Gift, Ticket, Send, CheckCircle2, Globe, Landmark, Settings2, Info, X, Crown, Swords, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Badge } from '@/components/ui/badge';
@@ -605,15 +605,16 @@ export default function PricingPage() {
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">BASIC SCORES</span></TableCell>
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">FULL PERFORMANCE TRENDS</span></TableCell>
                             </TableRow>
+                            {/* --- NEW PERFORMANCE MODULES --- */}
                             <TableRow className="border-b-slate-100">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">High-Speed Flash Anzan</TableCell>
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">High-Speed Flash Anzan (0.2s)</TableCell>
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">1-DIGIT ONLY</span></TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">ALL 4-DIGITS (0.2S)</span></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100 bg-slate-50/30">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">Matrix Memory Cognitive Drills</TableCell>
                                 <TableCell className="text-center"><span className="text-[10px] font-black text-slate-400 uppercase">BASE GRID</span></TableCell>
-                                <TableCell className="text-center"><span className="text-[10px] font-black text-primary uppercase">ALL ADVANCED GRIDS</span></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">1v1 World Championship Duels</TableCell>

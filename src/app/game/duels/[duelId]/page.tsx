@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
@@ -56,7 +56,7 @@ export default function DuelArenaPage() {
       (snap) => {
         if (snap.exists()) {
           const docData = snap.data() as Duel;
-          // Resolve redundant id property conflict by ensuring snap.id overrides any stored id
+          // Destructure to prevent 'id' overwrite warning
           const { id: _, ...rest } = docData;
           setDuel({ id: snap.id, ...rest } as Duel);
           setLoading(false);
@@ -229,7 +229,7 @@ export default function DuelArenaPage() {
     const isDraw = duel.winnerId === 'draw';
     return (
       <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden animate-in zoom-in-95">
-        <div className={cn("p-12 text-center text-white", isWinner ? "bg-green-600" : "bg-blue-600" : "bg-slate-800")}>
+        <div className={cn("p-12 text-center text-white", isWinner ? "bg-green-600" : isDraw ? "bg-blue-600" : "bg-slate-800")}>
            <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6">
              {isWinner ? <Crown className="w-12 h-12 text-yellow-300" /> : isDraw ? <Users className="w-12 h-12" /> : <Trophy className="w-12 h-12 opacity-50" />}
            </div>
@@ -240,7 +240,7 @@ export default function DuelArenaPage() {
         <CardContent className="p-12">
            <div className="flex items-center justify-center gap-8 sm:gap-20 mb-12">
               <div className="text-center space-y-4">
-                 <Avatar className="h-24 w-24 ring-4 ring-slate-100"><AvatarImage src={duel.challengerPhoto}/><AvatarFallback className="font-black text-2xl">{duel.challengerName?.[0]}</AvatarFallback></Avatar>
+                 <Avatar className="h-24 w-24 ring-4 ring-slate-100"><AvatarImage src={duel.challengerPhoto || ''}/><AvatarFallback className="font-black text-2xl">{duel.challengerName?.[0]}</AvatarFallback></Avatar>
                  <div className="space-y-1">
                     <p className="text-sm font-black uppercase tracking-widest text-slate-400">Challenger</p>
                     <p className="text-lg font-black">{duel.challengerName}</p>
@@ -249,7 +249,7 @@ export default function DuelArenaPage() {
               </div>
               <div className="text-5xl font-black text-slate-200 italic">VS</div>
               <div className="text-center space-y-4">
-                 <Avatar className="h-24 w-24 ring-4 ring-slate-100"><AvatarImage src={duel.opponentPhoto}/><AvatarFallback className="font-black text-2xl">{duel.opponentName?.[0]}</AvatarFallback></Avatar>
+                 <Avatar className="h-24 w-24 ring-4 ring-slate-100"><AvatarImage src={duel.opponentPhoto || ''}/><AvatarFallback className="font-black text-2xl">{duel.opponentName?.[0]}</AvatarFallback></Avatar>
                  <div className="space-y-1">
                     <p className="text-sm font-black uppercase tracking-widest text-slate-400">Opponent</p>
                     <p className="text-lg font-black">{duel.opponentName}</p>
@@ -348,7 +348,7 @@ export default function DuelArenaPage() {
         
         <CardFooter className="bg-slate-50 p-6 border-t flex justify-center">
            <div className="flex items-center gap-3 opacity-30">
-              <ShieldAlert className="w-4 h-4" />
+              <AlertCircle className="w-4 h-4" />
               <p className="text-[9px] font-black uppercase tracking-[0.3em]">Anti-Cheat Active • Duel Mode</p>
            </div>
         </CardFooter>
