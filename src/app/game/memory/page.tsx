@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -9,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BrainCircuit, Trophy, Timer, Zap, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2, Heart, ShieldAlert, Star, Swords, Users, User, LayoutGrid } from 'lucide-react';
+import { BrainCircuit, Trophy, Timer, Zap, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2, Heart, ShieldAlert, Star, Swords, Users, User, LayoutGrid, ChevronRight, Share2 } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
@@ -19,6 +18,7 @@ import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { startMatchmaking, getRecentOpponents } from '@/lib/matchmaking';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
 
 const ROUNDS_PER_LEVEL = 5;
 const INITIAL_LIVES = 3;
@@ -63,6 +63,7 @@ export default function PatternMemoryPage() {
   const { user, profile, addPoints, recordDailyPractice } = useAuth();
   const router = useRouter();
   const { playSound } = useSound();
+  const { toast } = useToast();
 
   const [level, setLevel] = useState(1);
   const [round, setRound] = useState(1);
@@ -287,7 +288,7 @@ export default function PatternMemoryPage() {
           <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">Master spatial visualization and short-term memory through high-speed pattern drills.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
            <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => setGameState('idle')}>
               <CardHeader className="p-8 text-center bg-teal-50 rounded-t-[2.5rem] border-b">
                  <div className="mx-auto bg-teal-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><User className="w-8 h-8 text-teal-600" /></div>
@@ -317,7 +318,7 @@ export default function PatternMemoryPage() {
                    <div className="space-y-3">
                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Recent Rivals</p>
                      {recentOpponents.map(opp => (
-                       <Button key={opp.uid} variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl" onClick={() => handleStartDuel('match', opp.uid)}>
+                       <Button key={opp.uid} variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl" onClick={() => handleStartDuel('friend', opp.uid)}>
                          <Avatar className="h-6 w-6"><AvatarImage src={opp.photo}/><AvatarFallback>{opp.name[0]}</AvatarFallback></Avatar>
                          <span className="font-bold text-xs truncate">{opp.name}</span>
                        </Button>

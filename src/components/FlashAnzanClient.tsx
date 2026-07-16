@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -30,12 +29,10 @@ import { Input } from './ui/input';
 import { calculatePoints } from '@/lib/scoring';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
-import { PAGE_GUIDES } from '@/lib/constants';
 import { useSound } from '@/hooks/useSound';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { startMatchmaking, getRecentOpponents } from '@/lib/matchmaking';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
 
 export default function FlashAnzanClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
@@ -44,12 +41,11 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
   const { playSound } = useSound();
   const { toast } = useToast();
   
-  const [appState, setAppState] = useState<'lobby' | 'rules' | 'playing'>('lobby');
+  const [appState, setAppState] = useState<'lobby' | 'playing'>('lobby');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>([]);
   const [isFinished, setIsFinished] = useState(false);
-  const [dontShowAgain, setDontShowAgain] = useState(false);
   const [recentOpponents, setRecentOpponents] = useState<{uid: string, name: string, photo: string}[]>([]);
   const [isMatchmaking, setIsMatchmaking] = useState(false);
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -65,7 +64,7 @@ export default function FAQPage() {
                 <CardHeader className="text-center">
                     <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4"><HelpCircle className="w-10 h-10 text-primary" /></div>
                     <CardTitle className="text-4xl font-headline font-bold">Help & Support</CardTitle>
-                    <CardDescription className="text-lg font-medium">Master the rules of the road to become a Human Calculator on <span className="whitespace-nowrap">My Abacus Pro</span>.</CardDescription>
+                    <CardDescription className="text-lg font-medium">Master the rules of the road to become a Human Calculator on My Abacus Pro.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Accordion type="single" collapsible className="w-full space-y-4">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { getFirestore, collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';

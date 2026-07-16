@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
@@ -12,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { getFirestore, doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { Duel, Question } from '@/types';
-import { Swords, Loader2, PlayCircle, Trophy, Crown, AlertCircle, ArrowRight, UserX, Copy, Share2, Zap, Timer } from 'lucide-react';
+import { Swords, Loader2, PlayCircle, Trophy, Crown, AlertCircle, ArrowRight, UserX, Copy, Share2, Zap, Timer, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -42,19 +41,6 @@ export default function DuelArenaPage() {
 
   // Bot Logic Refs
   const botIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Game Specific States
-  const [isFlashing, setIsFlashing] = useState(false);
-  const [activeNumber, setActiveNumber] = useState<number | null>(null);
-  const [sequenceIdx, setSequenceIdx] = useState(0);
-  const [inputValue, setInputValue] = useState('');
-  const [isReadyForInput, setIsReadyForInput] = useState(false);
-
-  // Matrix State
-  const [matrixState, setMatrixState] = useState<'memorize' | 'reconstruct'>('memorize');
-  const [matrixSelection, setMatrixSelection] = useState<number[]>([]);
-
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user || !duelId) return;
@@ -162,10 +148,6 @@ export default function DuelArenaPage() {
     setTimeout(() => {
       if (currentIdx < duel.questions.length - 1) {
         setCurrentIdx(p => p + 1);
-        setIsReadyForInput(false);
-        setInputValue('');
-        setMatrixState('memorize');
-        setMatrixSelection([]);
       } else {
         submitDuel(isCorrect ? localScore + 1 : localScore);
       }
@@ -248,10 +230,10 @@ export default function DuelArenaPage() {
       <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden animate-in zoom-in-95 mt-10">
         <div className={cn(
           "p-12 text-center text-white", 
-          isWinner ? "bg-green-600" : (isDraw ? "bg-blue-600" : "bg-slate-800")
+          isWinner ? "bg-green-600" : isDraw ? "bg-blue-600" : "bg-slate-800"
         )}>
            <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6">
-             {isWinner ? <Crown className="w-12 h-12 text-yellow-300" /> : isDraw ? <Swords className="w-12 h-12" /> : <Trophy className="w-12 h-12 opacity-50" />}
+             {isWinner ? <Crown className="w-12 h-12 text-yellow-300" /> : isDraw ? <Users className="w-12 h-12" /> : <Trophy className="w-12 h-12 opacity-50" />}
            </div>
            <h2 className="text-4xl font-black uppercase tracking-tighter italic">
              {isWinner ? 'CHAMPION!' : isDraw ? 'MATCH DRAW!' : 'GOOD GAME!'}
