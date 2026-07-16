@@ -20,10 +20,7 @@ const BOT_IDENTITIES = [
 
 /**
  * Intelligent Hybrid Matchmaking
- * 1. Look for waiting human duel of same mode/difficulty
- * 2. If found, join it
- * 3. If not found, create one and wait 6 seconds
- * 4. If still no joiner after 6s, spawn a bot
+ * Searches for a real opponent for 6s before failing over to a bot.
  */
 export async function startMatchmaking(
   userId: string, 
@@ -34,25 +31,25 @@ export async function startMatchmaking(
   const db = getFirestore(firebaseApp);
   const duelsRef = collection(db, "duels");
 
-  // 1. Try to find an existing human waiting lobby
+  // 1. Try to find an existing human waiting lobby (Lobby visible index compatible)
   const q = query(
     duelsRef, 
     where("status", "==", "waiting"),
-    where("mode", "==", mode),
-    where("difficulty", "==", difficulty),
-    orderBy("createdAt", "asc"),
-    limit(1)
+    orderBy("createdAt", "desc"),
+    limit(20)
   );
 
   const snap = await getDocs(q);
   
   if (!snap.empty) {
-    const existingDuel = snap.docs[0];
-    const data = existingDuel.data();
-    
-    // Don't join your own lobby
-    if (data.challengerId !== userId) {
-      await updateDoc(doc(db, "duels", existingDuel.id), {
+    // Find the first match that isn't ours and matches our criteria in memory to avoid complex indices
+    const match = snap.docs.find(doc => {
+      const d = doc.data();
+      return d.challengerId !== userId && d.mode === mode && d.difficulty === difficulty;
+    });
+
+    if (match) {
+      await updateDoc(doc(db, "duels", match.id), {
         opponentId: userId,
         opponentName: `${profile.firstName} ${profile.surname}`,
         opponentPhoto: profile.profilePhoto || '',
@@ -60,7 +57,7 @@ export async function startMatchmaking(
         status: 'active',
         updatedAt: serverTimestamp()
       });
-      return existingDuel.id;
+      return match.id;
     }
   }
 

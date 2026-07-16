@@ -13,7 +13,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Activity, CheckCircle, Target, Clock, Star, Gamepad2, BookOpen, FileCheck, FileEdit } from 'lucide-react';
+import { TrendingUp, Activity, Target, Clock, Star, Gamepad2, BookOpen, FileCheck } from 'lucide-react';
 import { getTestSettings } from '@/lib/questions';
 import { TEST_NAME_MAP } from '@/lib/constants';
 import { FirestorePermissionError } from '@/lib/errors';
@@ -163,8 +163,8 @@ function ProgressContent() {
       return { totalActivities: 0, averageAccuracy: 0, bestAccuracy: 0, totalPracticeTime: '0m 0s' };
     }
     const totalAccuracy = allActivities.reduce((acc, r) => acc + r.accuracy, 0);
-    const averageAccuracy = totalAccuracy / allActivities.length;
-    const bestAccuracy = Math.max(...allActivities.map(r => r.accuracy));
+    const averageAccuracy = totalAccuracy / (allActivities.length || 1);
+    const bestAccuracy = Math.max(...allActivities.map(r => r.accuracy), 0);
     
     const totalSeconds = testHistory.reduce((acc, r) => acc + (r.timeSpent || 0), 0);
     const minutes = Math.floor(totalSeconds / 60);
@@ -395,10 +395,7 @@ function ProgressContent() {
                           <Badge className="bg-indigo-600 font-black">Group {r.group}</Badge>
                         </TableCell>
                         <TableCell className="font-bold text-slate-700">
-                          <div className="flex items-center gap-2">
-                            {r.isFinal ? <FileCheck className="w-3 h-3 text-orange-500" /> : <FileEdit className="w-3 h-3 text-slate-400" />}
-                            {r.paperId === 'final' ? 'Official Final' : `Practice Paper #${r.paperId.split('-')[1]}`}
-                          </div>
+                          {r.paperId === 'final' ? 'Official Final' : `Practice Paper #${r.paperId.split('-')[1]}`}
                         </TableCell>
                         <TableCell className="font-black text-indigo-700">
                           {r.isFinal && !r.resultDeclared ? "---" : `${r.accuracy.toFixed(1)}%`}
