@@ -201,7 +201,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
           <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">Master mental arithmetic with sequential flashing numbers. Challenge your precision against the global community.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
            <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => setAppState('playing')}>
               <CardHeader className="p-8 text-center bg-teal-50 rounded-t-[2.5rem] border-b">
                  <div className="mx-auto bg-teal-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><User className="w-8 h-8 text-teal-600" /></div>
@@ -238,7 +238,9 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
                      ))}
                    </div>
                  ) : (
-                   <p className="text-xs text-muted-foreground font-medium italic py-4 text-center">Challenge a friend to start a rivalry!</p>
+                   <div className="text-center space-y-2 py-4">
+                     <p className="text-xs text-muted-foreground font-medium italic px-4">Challenge a friend to start a rivalry!</p>
+                   </div>
                  )}
                  <Button onClick={handleStartDuel} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Share2 className="w-4 h-4 mr-2"/> Private Link</Button>
               </CardContent>
