@@ -51,6 +51,7 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
     easy: { numQuestions: 10, timeLimit: 0, title: 'Flash Anzan (Easy)', icon: 'zap' },
     medium: { numQuestions: 15, timeLimit: 0, title: 'Flash Anzan (Medium)', icon: 'zap' },
     hard: { numQuestions: 20, timeLimit: 0, title: 'Flash Anzan (Hard)', icon: 'zap' },
+    custom: { numQuestions: 10, timeLimit: 0, title: 'Anzan Custom Lab', icon: 'zap' },
   },
   'basic-add-sub-l1': {
     easy: { numQuestions: 30, timeLimit: 0, title: 'Basic Add/Sub: Level 1 (Direct)', icon: 'brain-circuit' },
@@ -483,17 +484,19 @@ export function generateGameQuestions(level: GameLevel, levelId?: number): Quest
     return deDuplicateQuestions(positiveOnlyQuestions).slice(0, 20); 
 }
 
-export function generateTest(testId: TestType, difficulty: Difficulty): Question[] {
+export function generateTest(testId: TestType, difficulty: Difficulty, customSettings?: { rows?: number, digits?: number, delay?: number }): Question[] {
   const settings = getTestSettings(testId, difficulty);
-  if (!settings) return [];
+  if (!settings && difficulty !== 'custom') return [];
 
   if (testId === 'flash-anzan') {
     const questions: Question[] = [];
-    const rows = difficulty === 'easy' ? 5 : (difficulty === 'medium' ? 8 : 12);
-    const delay = difficulty === 'easy' ? 1500 : (difficulty === 'medium' ? 1000 : 600);
-    const digits = difficulty === 'easy' ? 1 : (difficulty === 'medium' ? 2 : 2); // 3 digits for hard might be too much for now
+    const rows = customSettings?.rows || (difficulty === 'easy' ? 5 : (difficulty === 'medium' ? 8 : 12));
+    const delay = customSettings?.delay || (difficulty === 'easy' ? 1500 : (difficulty === 'medium' ? 1000 : 600));
+    const digits = customSettings?.digits || (difficulty === 'easy' ? 1 : (difficulty === 'medium' ? 2 : 2));
 
-    for (let i = 0; i < settings.numQuestions; i++) {
+    const numQs = settings?.numQuestions || 10;
+
+    for (let i = 0; i < numQs; i++) {
       const sequence: number[] = [];
       let total = 0;
       const min = Math.pow(10, digits - 1);
@@ -501,7 +504,6 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
 
       for (let r = 0; r < rows; r++) {
         const val = getRandomInt(min, max);
-        // Ensure no negative total
         if (total - val < 0) {
           sequence.push(val);
           total += val;
@@ -521,13 +523,13 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
         delay
       });
     }
-    return questions; // No need to de-duplicate sequences
+    return questions;
   }
 
   if (testId === 'basic-add-sub-l1' || testId === 'basic-add-sub-l2') {
     const max = testId === 'basic-add-sub-l1' ? 9 : 99;
     const questions: Question[] = [];
-    for (let i = 0; i < settings.numQuestions; i++) {
+    for (let i = 0; i < settings!.numQuestions; i++) {
       const numTerms = getRandomInt(4, 5);
       questions.push(generateDirectQuestion(max, numTerms));
     }
@@ -537,7 +539,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
   const coreTestId = testId.replace('-input', '');
   if (preDefinedQuestions[coreTestId]) {
       const allQuestions = preDefinedQuestions[coreTestId].filter(q => q.answer >= 0);
-      return deDuplicateQuestions([...allQuestions]).slice(0, settings.numQuestions);
+      return deDuplicateQuestions([...allQuestions]).slice(0, settings!.numQuestions);
   }
 
   const questions: Question[] = [];
@@ -546,7 +548,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
     const questionType = testId === 'beads-identify' ? 'identify' : 'set';
     const levelNum = difficulty.startsWith('level-') ? parseInt(difficulty.replace('level-', ''), 10) : 1;
     
-    for(let i=0; i<settings.numQuestions; i++) {
+    for(let i=0; i<settings!.numQuestions; i++) {
       let maxDigits = 1;
       if (levelNum <= 2) maxDigits = 1; 
       else if (levelNum <= 4) maxDigits = 2;
@@ -575,7 +577,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty): Question
     return deDuplicateQuestions(questions);
   }
 
-  for (let i = 0; i < settings.numQuestions; i++) {
+  for (let i = 0; i < settings!.numQuestions; i++) {
       let questionText: string;
       let answer: number;
 

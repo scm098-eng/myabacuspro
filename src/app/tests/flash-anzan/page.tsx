@@ -1,18 +1,20 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Zap, ShieldCheck, Lock, Sparkles, ChevronRight } from 'lucide-react';
+import { Zap, ShieldCheck, Lock, Sparkles, ChevronRight, Settings2, Sliders } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 const levels = [
   { id: 'easy', title: 'Novice Flash', description: '1-Digit numbers, 5 rows, 1.5s interval.', color: 'bg-green-100 text-green-700', icon: Zap },
@@ -24,6 +26,12 @@ export default function FlashAnzanLobbyPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/practice_bg.jpg?alt=media');
   const { user, profile, isLoading, isTrialActive } = useAuth();
   const router = useRouter();
+
+  const [customSettings, setCustomSettings] = useState({
+    digits: 2,
+    rows: 10,
+    speed: 1000 // ms
+  });
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -42,8 +50,17 @@ export default function FlashAnzanLobbyPage() {
 
   const isPro = profile?.subscriptionStatus === 'pro' || profile?.role === 'admin' || profile?.role === 'teacher';
 
+  const handleStartCustom = () => {
+    const params = new URLSearchParams({
+      d: customSettings.digits.toString(),
+      r: customSettings.rows.toString(),
+      s: customSettings.speed.toString()
+    });
+    router.push(`/tests/flash-anzan/custom?${params.toString()}`);
+  };
+
   return (
-    <div className="max-w-6xl mx-auto space-y-12 py-8 px-4">
+    <div className="max-w-6xl mx-auto space-y-16 py-8 px-4">
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-black tracking-tight text-foreground font-headline sm:text-6xl uppercase">Flash Card <span className="text-primary italic">Anzan</span></h1>
         <p className="max-w-2xl mx-auto text-lg text-muted-foreground font-medium">
@@ -51,6 +68,7 @@ export default function FlashAnzanLobbyPage() {
         </p>
       </div>
 
+      {/* --- PRESET MISSIONS --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
         {levels.map((level) => {
           const isLocked = !isPro && !isTrialActive && level.id !== 'easy';
@@ -92,6 +110,96 @@ export default function FlashAnzanLobbyPage() {
           );
         })}
       </div>
+
+      {/* --- CUSTOM LAB SECTION --- */}
+      <section className="max-w-4xl mx-auto space-y-8">
+        <div className="flex items-center gap-3 border-b pb-4">
+          <Settings2 className="w-8 h-8 text-primary" />
+          <h2 className="text-3xl font-black uppercase tracking-tight font-headline">Anzan Custom <span className="text-primary italic">Lab</span></h2>
+          <Badge className="ml-auto bg-primary text-white font-black px-4 py-1">PRO FEATURE</Badge>
+        </div>
+
+        <Card className={cn("rounded-[2.5rem] border-4 border-dashed border-primary/20 overflow-hidden relative", !isPro && !isTrialActive && "opacity-60 grayscale cursor-not-allowed")}>
+          {!isPro && !isTrialActive && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/40 backdrop-blur-sm p-6 text-center">
+               <Card className="max-w-xs shadow-2xl border-none p-6 space-y-4">
+                  <Lock className="w-12 h-12 mx-auto text-primary" />
+                  <p className="font-bold text-slate-700">Custom Lab is exclusive to Pro members. Customize your digits, rows, and speed!</p>
+                  <Button asChild className="w-full font-black uppercase"><Link href="/pricing">Get Pro Access</Link></Button>
+               </Card>
+            </div>
+          )}
+          <CardContent className="p-8 sm:p-12 grid grid-cols-1 md:grid-cols-2 gap-12">
+             <div className="space-y-10">
+                <div className="space-y-4">
+                   <div className="flex justify-between items-center">
+                     <Label className="text-xs font-black uppercase tracking-widest text-slate-500">Number of Digits</Label>
+                     <Badge variant="outline" className="font-black text-primary border-primary/20">{customSettings.digits} Digit(s)</Badge>
+                   </div>
+                   <div className="grid grid-cols-4 gap-2">
+                     {[1, 2, 3, 4].map(num => (
+                       <Button 
+                         key={num} 
+                         variant={customSettings.digits === num ? 'default' : 'outline'} 
+                         className="font-black"
+                         onClick={() => setCustomSettings(p => ({ ...p, digits: num }))}
+                        >
+                         {num}
+                       </Button>
+                     ))}
+                   </div>
+                </div>
+
+                <div className="space-y-4">
+                   <div className="flex justify-between items-center">
+                     <Label className="text-xs font-black uppercase tracking-widest text-slate-500">Sequence Length (Rows)</Label>
+                     <Badge variant="outline" className="font-black text-primary border-primary/20">{customSettings.rows} Rows</Badge>
+                   </div>
+                   <Slider 
+                     value={[customSettings.rows]} 
+                     min={3} 
+                     max={50} 
+                     step={1} 
+                     onValueChange={([val]) => setCustomSettings(p => ({ ...p, rows: val }))}
+                   />
+                   <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                     <span>Easy (3)</span>
+                     <span>Expert (20)</span>
+                     <span>Legend (50)</span>
+                   </div>
+                </div>
+
+                <div className="space-y-4">
+                   <div className="flex justify-between items-center">
+                     <Label className="text-xs font-black uppercase tracking-widest text-slate-500">Flash Interval (Speed)</Label>
+                     <Badge variant="outline" className="font-black text-primary border-primary/20">{(customSettings.speed / 1000).toFixed(1)} Seconds</Badge>
+                   </div>
+                   <Slider 
+                     value={[customSettings.speed]} 
+                     min={200} 
+                     max={3000} 
+                     step={100} 
+                     onValueChange={([val]) => setCustomSettings(p => ({ ...p, speed: val }))}
+                   />
+                   <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                     <span>Instant (0.2s)</span>
+                     <span>Slow (3.0s)</span>
+                   </div>
+                </div>
+             </div>
+
+             <div className="flex flex-col justify-center text-center space-y-8 bg-slate-50 p-8 rounded-3xl border-2 shadow-inner">
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black uppercase tracking-tight text-slate-900">Training Profile</h3>
+                  <p className="text-sm text-slate-500 font-medium leading-relaxed">Your mental visualization will process <span className="text-primary font-bold">{customSettings.rows}</span> sequential numbers, each with <span className="text-primary font-bold">{customSettings.digits}</span> digit complexity, every <span className="text-primary font-bold">{(customSettings.speed / 1000).toFixed(1)}s</span>.</p>
+                </div>
+                <Button onClick={handleStartCustom} className="h-20 text-2xl font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-orange-500/20">
+                  Launch Custom Mission <Zap className="ml-2 w-6 h-6 fill-white" />
+                </Button>
+             </div>
+          </CardContent>
+        </Card>
+      </section>
 
       <div className="max-w-3xl mx-auto bg-slate-900 text-white p-10 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />

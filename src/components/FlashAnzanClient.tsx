@@ -1,14 +1,15 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { generateTest } from '@/lib/questions';
 import type { Question, Difficulty, TestType, TestSettings } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Loader2, Check, PlayCircle, Zap, ShieldCheck, ChevronRight } from 'lucide-react';
+import { AlertTriangle, Loader2, Check, PlayCircle, Zap, ShieldCheck, ChevronRight, Settings2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -36,6 +37,7 @@ import { Label } from '@/components/ui/label';
 
 export default function FlashAnzanClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, recordDailyPractice, addPoints } = useAuth();
   const { playSound } = useSound();
   
@@ -58,14 +60,23 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
   const isFinishedRef = useRef(false);
 
   useEffect(() => {
-    const generated = generateTest(testId, difficulty);
+    let generated: Question[] = [];
+    if (difficulty === 'custom') {
+      const d = parseInt(searchParams.get('d') || '2', 10);
+      const r = parseInt(searchParams.get('r') || '10', 10);
+      const s = parseInt(searchParams.get('s') || '1000', 10);
+      generated = generateTest(testId, 'custom', { digits: d, rows: r, delay: s });
+    } else {
+      generated = generateTest(testId, difficulty);
+    }
+    
     setQuestions(generated);
     setUserAnswers(new Array(generated.length).fill(null));
     questionButtonRefs.current = new Array(generated.length).fill(null);
 
     const skip = localStorage.getItem('skip_rules_flash_anzan') === 'true';
     if (skip) setHasStarted(true);
-  }, [testId, difficulty]);
+  }, [testId, difficulty, searchParams]);
   
   useEffect(() => {
     if (questionButtonRefs.current[currentIdx]) {
@@ -149,7 +160,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     let earnedPointsTotal = 0;
 
     if (user) {
-      const accuracy = (score / questions.length) * 100;
+      const accuracy = (score / (questions.length || 1)) * 100;
       const db = getFirestore(firebaseApp);
       
       const { earnedPoints } = calculatePoints({
@@ -167,7 +178,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
       const resultData = {
         userId: user.uid,
         testId,
-        difficulty,
+        difficulty: difficulty === 'custom' ? `Custom (${searchParams.get('d')}d, ${searchParams.get('r')}r)` : difficulty,
         score,
         totalQuestions: questions.length,
         accuracy,
@@ -191,7 +202,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     }));
 
     router.replace(`/results?score=${score}&total=${questions.length}&time=0&points=${earnedPointsTotal}`);
-  }, [questions, router, user, testId, difficulty, recordDailyPractice, addPoints]);
+  }, [questions, router, user, testId, difficulty, searchParams, recordDailyPractice, addPoints]);
 
   if (questions.length === 0) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /></div>;
 
@@ -237,7 +248,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
               <Zap className="w-5 h-5 text-yellow-500 fill-yellow-500" /> Flash Card Anzan
             </CardTitle>
             <Badge className="bg-primary font-black uppercase text-[10px] tracking-widest">
-              {difficulty.toUpperCase()}
+              {difficulty === 'custom' ? 'CUSTOM LAB' : difficulty.toUpperCase()}
             </Badge>
           </div>
           <ScrollArea className="w-full whitespace-nowrap bg-white/50 p-2 rounded-xl border border-muted-foreground/10 mb-4 shadow-inner">
