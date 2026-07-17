@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
@@ -69,7 +70,8 @@ export default function DuelArenaPage() {
       (snap) => {
         if (snap.exists()) {
           const rawData = snap.data();
-          const duelData = { id: snap.id, ...rawData } as Duel;
+          const { id: _, ...rest } = rawData;
+          const duelData = { id: snap.id, ...rest } as Duel;
           setDuel(duelData);
           setLoading(false);
           
@@ -88,7 +90,7 @@ export default function DuelArenaPage() {
           }
         } else {
           toast({ title: "Duel not found", variant: "destructive" });
-          router.push('/game/duels');
+          router.push('/game');
         }
       },
       async (err) => {
@@ -401,7 +403,7 @@ export default function DuelArenaPage() {
                <Loader2 className="h-8 w-8 animate-spin text-primary" />
                <p className="text-sm font-medium text-slate-500 italic">"Global matchmaking ensures you always find a worthy opponent."</p>
              </div>
-             <Button variant="outline" className="w-full h-14 rounded-xl font-bold" onClick={() => router.push('/game/duels')}>Cancel Search</Button>
+             <Button variant="outline" className="w-full h-14 rounded-xl font-bold" onClick={() => router.push('/game')}>Cancel Search</Button>
           </CardContent>
         </Card>
       </div>
@@ -522,3 +524,4 @@ export default function DuelArenaPage() {
     </div>
   );
 }
+
