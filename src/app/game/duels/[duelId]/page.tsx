@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
@@ -60,7 +60,6 @@ export default function DuelArenaPage() {
   const botIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const botTriggerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Status Listener
   useEffect(() => {
     if (!user || !duelId) return;
     const db = getFirestore(firebaseApp);
@@ -70,12 +69,10 @@ export default function DuelArenaPage() {
       (snap) => {
         if (snap.exists()) {
           const rawData = snap.data();
-          const { id: _, ...rest } = rawData;
-          const duelData = { id: snap.id, ...rest } as Duel;
+          const duelData = { id: snap.id, ...rawData } as Duel;
           setDuel(duelData);
           setLoading(false);
           
-          // AUTO-START logic
           if (duelData.status === 'active' && !hasStarted && duelData.opponentId) {
              setShowMatchTransition(true);
              setTimeout(() => {
@@ -84,7 +81,6 @@ export default function DuelArenaPage() {
              }, 3000);
           }
 
-          // Rematch Logic
           if (duelData.rematchChallenger && duelData.rematchOpponent) {
             startRematch();
           }
@@ -99,7 +95,6 @@ export default function DuelArenaPage() {
     );
   }, [user, duelId, router, toast, hasStarted]);
 
-  // Bot Trigger
   useEffect(() => {
     if (duel?.status === 'waiting' && user?.uid === duel.challengerId && !botTriggerTimeoutRef.current) {
         botTriggerTimeoutRef.current = setTimeout(() => {
@@ -114,7 +109,6 @@ export default function DuelArenaPage() {
     };
   }, [duel?.status, duel?.challengerId, user?.uid, duelId]);
 
-  // Bot Gameplay Simulation
   useEffect(() => {
     if (duel?.status === 'active' && duel.opponentType === 'bot' && !duel.opponentFinished && hasStarted) {
       let bScore = duel.opponentScore || 0;
@@ -161,7 +155,6 @@ export default function DuelArenaPage() {
     return () => { if (botIntervalRef.current) clearTimeout(botIntervalRef.current); };
   }, [duel?.status, duel?.opponentType, duelId, duel?.challengerFinished, duel?.questions.length, duel?.challengerScore, duel?.challengerId, duel?.opponentId, duel?.mode, hasStarted]);
 
-  // Matrix State Handling
   useEffect(() => {
     if (duel?.mode === 'matrix' && hasStarted && duel.status !== 'completed') {
       setMatrixState('memorizing');
@@ -305,7 +298,7 @@ export default function DuelArenaPage() {
            <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6">
              {isWinner ? <Crown className="w-12 h-12 text-yellow-300" /> : (isDraw ? <Users className="w-12 h-12" /> : <Trophy className="w-12 h-12 opacity-50" />)}
            </div>
-           <h2 className="text-4xl font-black uppercase tracking-tighter italic whitespace-nowrap">
+           <h2 className="text-4xl font-black uppercase tracking-tighter italic">
              {isWinner ? 'MATCH WON!' : (isDraw ? 'MATCH DRAW!' : 'MATCH LOST')}
            </h2>
         </div>
@@ -524,4 +517,3 @@ export default function DuelArenaPage() {
     </div>
   );
 }
-

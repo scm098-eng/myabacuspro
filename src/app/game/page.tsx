@@ -85,7 +85,6 @@ export default function GameHomePage() {
   const [completedLevels, setCompletedLevels] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [scrollTop, setScrollOfset] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -103,10 +102,6 @@ export default function GameHomePage() {
       }
     }
   }, [isLoading, lastAttendedId]);
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    setScrollOfset(e.currentTarget.scrollTop);
-  };
 
   if (isLoading) return (<div className="space-y-12"><Skeleton className="h-12 w-3/4 mx-auto" /><Skeleton className="h-6 w-full" /></div>);
 
@@ -136,19 +131,40 @@ export default function GameHomePage() {
 
         <div className="flex-1 min-h-0">
           <TabsContent value="levels" className="h-full m-0 animate-in fade-in duration-500 outline-none">
-            <div className="relative h-[600px] overflow-hidden bg-slate-900 rounded-[3rem] border-8 border-slate-800 shadow-2xl mt-8 mx-auto max-w-lg">
+            <div className="relative h-[600px] overflow-hidden bg-gradient-to-b from-sky-400 via-blue-600 to-indigo-900 rounded-[3rem] border-8 border-white/20 shadow-2xl mt-8 mx-auto max-w-lg">
+              
+              {/* Light Rays Effect */}
+              <div className="absolute top-0 left-0 right-0 h-full opacity-30 pointer-events-none" 
+                   style={{ background: 'radial-gradient(circle at 50% 0%, white 0%, transparent 70%)' }} />
+
+              {/* Decorative Rising Bubbles */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {[...Array(15)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute bg-white/20 rounded-full animate-[bubble-rise-bg_linear_infinite]"
+                    style={{
+                      width: `${Math.random() * 8 + 2}px`,
+                      height: `${Math.random() * 8 + 2}px`,
+                      left: `${Math.random() * 100}%`,
+                      bottom: "-20px",
+                      animationDuration: `${Math.random() * 5 + 5}s`,
+                      animationDelay: `${Math.random() * 10}s`,
+                    }}
+                  />
+                ))}
+              </div>
+
               <div 
                 ref={scrollContainerRef}
-                onScroll={handleScroll}
                 className="absolute inset-0 overflow-y-auto scrollbar-none py-[250px] px-8"
                 style={{ perspective: '1000px' }}
               >
                 <div className="relative flex flex-col items-center gap-20">
-                  {gameLevels.map((level, index) => {
+                  {gameLevels.map((level) => {
                     const isLocked = isAdmin ? false : (user ? level.id > 1 && !completedLevels.includes(level.id - 1) : level.id > 1);
                     const isCompleted = completedLevels.includes(level.id);
                     
-                    // We only show a window of levels for performance in the spool
                     const maxCompleted = Math.max(...completedLevels, 0);
                     if (level.id > maxCompleted + 20 && !isAdmin) return null;
 
@@ -166,16 +182,15 @@ export default function GameHomePage() {
                       </div>
                     );
                   })}
-                  {!isAdmin && <p className="text-slate-500 font-bold uppercase tracking-[0.3em] text-[10px] pb-20">Keep popping to unlock more</p>}
                 </div>
               </div>
               
-              {/* Spool Overlays for 3D depth effect */}
-              <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-slate-950 to-transparent z-10 pointer-events-none" />
-              <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-950 to-transparent z-10 pointer-events-none" />
+              {/* Spool Overlays */}
+              <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-sky-400/80 to-transparent z-10 pointer-events-none" />
+              <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-indigo-950/80 to-transparent z-10 pointer-events-none" />
               
               {/* Spool Frame Highlight */}
-              <div className="absolute top-1/2 left-0 right-0 h-32 -translate-y-1/2 border-y-2 border-white/5 bg-white/5 pointer-events-none" />
+              <div className="absolute top-1/2 left-0 right-0 h-32 -translate-y-1/2 border-y-4 border-white/20 bg-white/5 pointer-events-none" />
             </div>
           </TabsContent>
 
@@ -232,4 +247,3 @@ export default function GameHomePage() {
     </div>
   );
 }
-

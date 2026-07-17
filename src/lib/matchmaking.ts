@@ -1,3 +1,4 @@
+
 'use client';
 
 import { getFirestore, collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
@@ -52,7 +53,6 @@ export async function startMatchmaking(
   const snap = await getDocs(q);
   
   if (!snap.empty) {
-    // Find the first match that isn't ours and matches our criteria
     const match = snap.docs.find(doc => {
       const d = doc.data();
       return d.challengerId !== userId && d.mode === mode && d.difficulty === difficulty;
@@ -96,7 +96,6 @@ export async function startMatchmaking(
 
 export async function spawnBotForDuel(duelId: string) {
   const db = getFirestore(firebaseApp);
-  // Pick a random bot from the pool
   const bot = BOT_IDENTITIES[Math.floor(Math.random() * BOT_IDENTITIES.length)];
   
   await updateDoc(doc(db, "duels", duelId), {

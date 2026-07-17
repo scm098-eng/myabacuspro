@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
@@ -47,21 +48,6 @@ const AVATAR_OPTIONS = [
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Willow"
 ];
 
-const countryCodes: Record<string, string> = {
-  "India": "+91 ",
-  "United States": "+1 ",
-  "United Kingdom": "+44 ",
-  "United Arab Emirates": "+971 ",
-  "Australia": "+61 ",
-  "Canada": "+1 ",
-  "Singapore": "+65 ",
-  "Malaysia": "+60 ",
-  "Japan": "+81 ",
-  "Germany": "+49 ",
-  "France": "+33 ",
-  "Other": ""
-};
-
 const profileSchema = z.object({
   firstName: z.string().min(1, { message: "First name is required." }),
   middleName: z.string().optional(),
@@ -79,14 +65,6 @@ const profileSchema = z.object({
   mobileNo: z.string().min(5, { message: "Mobile number is required." }),
   whatsappNo: z.string().min(5, { message: "WhatsApp number is required." }),
   teacherId: z.string().min(1, { message: "Teacher assignment is required." }),
-  instituteName: z.string().optional(),
-  instituteCountry: z.string().optional(),
-  instituteAddressLine1: z.string().optional(),
-  instituteCity: z.string().optional(),
-  instituteTaluka: z.string().optional(),
-  instituteDistrict: z.string().optional(),
-  instituteState: z.string().optional(),
-  institutePincode: z.string().optional(),
 });
 
 function calculateAge(dob: Date | undefined) {
@@ -140,21 +118,16 @@ export default function ProfilePage() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       firstName: '', middleName: '', surname: '', country: 'India', addressLine1: '', city: '', 
-      taluka: '', district: '', state: '', pincode: '', schoolName: '', mobileNo: '', whatsappNo: '', grade: '', teacherId: '',
-      instituteName: '', instituteCountry: 'India', instituteAddressLine1: '', instituteCity: '', instituteTaluka: '', instituteDistrict: '', instituteState: '', institutePincode: ''
+      taluka: '', district: '', state: '', pincode: '', schoolName: '', mobileNo: '', whatsappNo: '', grade: '', teacherId: ''
     },
   });
 
-  const { watch, setValue: setFormValue } = form;
-  const dobValue = watch('dob');
-  const age = calculateAge(dobValue);
-
+  const { watch } = form;
+  const age = calculateAge(watch('dob'));
   const isProfileEmpty = profile && !profile.grade && !profile.schoolName;
 
   useEffect(() => {
-    if (isProfileEmpty && !isEditing) {
-      setIsEditing(true);
-    }
+    if (isProfileEmpty && !isEditing) setIsEditing(true);
   }, [isProfileEmpty, isEditing]);
 
   const fetchTeachers = useCallback(async () => {
@@ -193,14 +166,6 @@ export default function ProfilePage() {
         mobileNo: profile.mobileNo || '',
         whatsappNo: profile.whatsappNo || '',
         teacherId: profile.teacherId || '',
-        instituteName: profile.instituteName || '',
-        instituteCountry: profile.instituteCountry || 'India',
-        instituteAddressLine1: profile.instituteAddressLine1 || '',
-        instituteCity: profile.instituteCity || '',
-        instituteTaluka: profile.instituteTaluka || '',
-        instituteDistrict: profile.instituteDistrict || '',
-        instituteState: profile.instituteState || '',
-        institutePincode: profile.institutePincode || '',
       });
       if(profile.profilePhoto) setAvatarPreview(profile.profilePhoto);
     }
@@ -211,22 +176,12 @@ export default function ProfilePage() {
     setIsSubmitting(true);
     try {
       const payload: UpdateProfilePayload = { ...values, dob: values.dob.toISOString() };
-      
-      if (croppedImageFile) {
-        payload.profilePhoto = croppedImageFile;
-      } else if (avatarPreview && avatarPreview.startsWith('http')) {
-        // If it's a selected avatar URL, we need to pass it differently
-        // but for now let's assume it's handled by the avatarPreview state
-        // In a real app, you might want to fetch the image and convert it to a file
-      }
-
+      if (croppedImageFile) payload.profilePhoto = croppedImageFile;
       await updateUserProfile(user.uid, payload);
       await fetchProfile(user); 
-      toast({ title: "Profile Updated", description: "Your details have been saved successfully." });
+      toast({ title: "Profile Updated" });
       setIsEditing(false);
-      if (isProfileEmpty) {
-        router.push('/dashboard');
-      }
+      if (isProfileEmpty) router.push('/dashboard');
     } catch (error: any) {
       toast({ title: "Update Failed", description: error.message, variant: "destructive" });
     } finally { setIsSubmitting(false); }
@@ -259,21 +214,10 @@ export default function ProfilePage() {
     setIsAvatarGalleryOpen(false);
   };
 
-  const handleCancelEdit = () => {
-      if (isProfileEmpty) {
-        toast({ title: "Profile Incomplete", description: "Please fulfill your profile details to continue.", variant: "destructive" });
-        return;
-      }
-      setIsEditing(false);
-  }
+  if (isLoading || !user || !profile) return <div className="max-w-4xl mx-auto"><Skeleton className="h-96 w-full" /></div>;
 
-  if (isLoading || !user || !profile || (profile.role === 'student' && teachers.length === 0)) return <div className="max-w-4xl mx-auto"><Skeleton className="h-96 w-full" /></div>;
-
-  const currentDisplayName = `${watch('firstName')} ${watch('surname')}`;
-  const isStudentWithoutTeacher = profile.role === 'student' && (!watch('teacherId') || watch('teacherId') === 'unassigned');
   const teacherObj = teachers.find(t => t.uid === watch('teacherId'));
   const teacherName = teacherObj ? `${teacherObj.firstName} ${teacherObj.surname}` : 'Not Assigned';
-  const roleName = profile.role === 'teacher' ? 'teacher' : 'student';
 
   return (
     <>
@@ -283,18 +227,14 @@ export default function ProfilePage() {
             <div className="flex justify-between items-start">
                 <div>
                     <CardTitle className="text-3xl font-black uppercase tracking-tight flex items-center gap-2 font-headline">
-                        My Profile
-                        {profile.emailVerified ? <BadgeCheck className="w-8 h-8 text-green-500" /> : <ShieldAlert className="w-8 h-8 text-orange-500" />}
+                        My Profile {profile.emailVerified ? <BadgeCheck className="w-8 h-8 text-green-500" /> : <ShieldAlert className="w-8 h-8 text-orange-500" />}
                     </CardTitle>
-                    <CardDescription className="text-sm font-bold mt-1">
-                      {isProfileEmpty ? `Welcome! Please complete your ${roleName} profile details first.` : (profile.emailVerified ? 'Verified Account' : 'Action Required: Verification Pending')}
-                    </CardDescription>
+                    <CardDescription className="text-sm font-bold mt-1">{isProfileEmpty ? `Complete your profile to continue.` : 'Manage your training identity.'}</CardDescription>
                 </div>
                 {!isEditing && !isProfileEmpty && <Button onClick={() => setIsEditing(true)} className="rounded-xl font-bold h-11 px-6"><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>}
             </div>
         </CardHeader>
         <CardContent className="p-8">
-            {isStudentWithoutTeacher && <Alert variant="destructive" className="mb-6 rounded-2xl border-2"><ShieldAlert className="h-4 w-4" /><AlertTitle className="font-bold">Action Required</AlertTitle><AlertDescription className="font-medium">Please select a teacher to complete your profile.</AlertDescription></Alert>}
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                     <div className="flex flex-col sm:flex-row items-center gap-8 bg-slate-50 p-6 rounded-3xl border border-slate-100">
@@ -312,7 +252,7 @@ export default function ProfilePage() {
                             <input type="file" ref={fileInputRef} onChange={onFileSelect} accept="image/*" className="hidden" />
                         </div>
                         <div className="text-center sm:text-left space-y-1">
-                          <h2 className="text-3xl font-black uppercase tracking-tight italic">{currentDisplayName}</h2>
+                          <h2 className="text-3xl font-black uppercase tracking-tight italic">{`${watch('firstName')} ${watch('surname')}`}</h2>
                           <p className="text-slate-500 font-bold">{user.email}</p>
                           <Badge className="bg-primary/10 text-primary border-none font-black text-[10px] uppercase tracking-widest px-4">{profile.role}</Badge>
                         </div>
@@ -321,9 +261,7 @@ export default function ProfilePage() {
                     <div className="space-y-6">
                       <div className="flex items-center gap-2 text-primary border-b-2 pb-2 border-primary/10">
                         <User className="w-5 h-5" />
-                        <h3 className="text-xl font-headline font-black uppercase tracking-tight">
-                          {profile.role === 'teacher' ? 'Staff Details' : 'Student Details'}
-                        </h3>
+                        <h3 className="text-xl font-headline font-black uppercase tracking-tight">Account Details</h3>
                       </div>
 
                       {isEditing ? (
@@ -356,7 +294,7 @@ export default function ProfilePage() {
                         </>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <ReadOnlyField label="Full Name" value={currentDisplayName} />
+                          <ReadOnlyField label="Full Name" value={`${watch('firstName')} ${watch('surname')}`} />
                           <ReadOnlyField label="Age" value={age ? `${age} years` : 'Not set'} />
                         </div>
                       )}
@@ -381,60 +319,13 @@ export default function ProfilePage() {
                           </div>
                         )
                       )}
-
-                      {isEditing && profile.role === 'student' && (
-                        <FormField control={form.control} name="schoolName" render={({ field }) => (
-                            <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground">School Name *</FormLabel><FormControl><Input placeholder="Name of your school" {...field} className="h-11 rounded-xl border-2 font-bold" /></FormControl><FormMessage /></FormItem>
-                        )} />
-                      )}
-
-                      {!isEditing && profile.role === 'student' && <ReadOnlyField label="School Name" value={watch('schoolName')} />}
                     </div>
-
-                    {isEditing ? (
-                      <>
-                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground pt-4 border-b pb-2">Location & Address</h3>
-                        <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground">Country *</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 rounded-xl border-2 font-bold"><SelectValue /></SelectTrigger></FormControl><SelectContent className="rounded-xl">{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <FormField control={form.control} name="state" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground">State</FormLabel>
-                              {watch('country') === 'India' ? (
-                                <Select onValueChange={field.onChange} value={field.value || ''}>
-                                  <FormControl><SelectTrigger className="h-11 rounded-xl border-2 font-bold"><SelectValue /></SelectTrigger></FormControl>
-                                  <SelectContent className="rounded-xl max-h-60 overflow-y-auto">{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                                </Select>
-                              ) : (
-                                <FormControl><Input {...field} className="h-11 rounded-xl border-2 font-bold" /></FormControl>
-                              )}
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground">City *</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl border-2 font-bold" /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                        <FormField control={form.control} name="addressLine1" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground">Full Address *</FormLabel>
-                            <FormControl>
-                              <Textarea placeholder="Enter your full house address..." {...field} rows={3} className="rounded-2xl border-2 font-bold p-4" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground pt-4 border-b pb-2">Contact Channels</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <FormField control={form.control} name="mobileNo" render={({ field }) => (<FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground">Mobile No. *</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl border-2 font-bold" /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="whatsappNo" render={({ field }) => (<FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground">WhatsApp No. *</FormLabel><FormControl><Input {...field} className="h-11 rounded-xl border-2 font-bold" /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                      </>
-                    ) : <ReadOnlyField label="Full Address" value={`${watch('addressLine1') || ''}, ${watch('city') || ''}, ${watch('state') || ''}, ${watch('country') || ''}`} />}
 
                     {isEditing && (
                         <div className="flex justify-end gap-4 pt-8">
-                            {!isProfileEmpty && <Button type="button" variant="ghost" onClick={handleCancelEdit} className="h-12 px-8 font-bold">Cancel</Button>}
+                            {!isProfileEmpty && <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} className="h-12 px-8 font-bold">Cancel</Button>}
                             <Button type="submit" disabled={isSubmitting} className="h-14 px-10 text-lg font-black uppercase tracking-widest rounded-2xl shadow-xl">
-                              {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShieldAlert className="mr-2 h-5 w-5" />}
-                              Save & Secure Profile
+                              {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShieldAlert className="mr-2 h-5 w-5" />} Save Profile
                             </Button>
                         </div>
                     )}
@@ -446,11 +337,11 @@ export default function ProfilePage() {
 
     <Dialog open={isPhotoDialogOpen} onOpenChange={setIsPhotoDialogOpen}>
         <DialogContent className="max-w-md rounded-[2rem]">
-            <DialogHeader><DialogTitle className="font-black uppercase tracking-tight">Crop Profile Photo</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle className="font-black uppercase tracking-tight">Crop Photo</DialogTitle></DialogHeader>
             <div className="flex justify-center p-4">
                 {imgSrc && <ReactCrop crop={crop} onChange={(_, p) => setCrop(p)} onComplete={(c) => setCompletedCrop(c)} aspect={1} circularCrop><img ref={imgRef} src={imgSrc} alt="Crop" className="max-h-[60vh] rounded-lg" /></ReactCrop>}
             </div>
-             <DialogFooter className="p-4"><Button variant="outline" onClick={() => setIsPhotoDialogOpen(false)} className="rounded-xl">Cancel</Button><Button onClick={handleCropConfirm} className="rounded-xl">Set as Profile Photo</Button></DialogFooter>
+             <DialogFooter className="p-4"><Button variant="outline" onClick={() => setIsPhotoDialogOpen(false)} className="rounded-xl">Cancel</Button><Button onClick={handleCropConfirm} className="rounded-xl">Use Photo</Button></DialogFooter>
         </DialogContent>
     </Dialog>
 
@@ -460,10 +351,7 @@ export default function ProfilePage() {
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-6 p-6">
           {AVATAR_OPTIONS.map((url, i) => (
             <button key={i} onClick={() => selectAvatar(url)} className="relative group rounded-full overflow-hidden border-4 border-transparent hover:border-primary transition-all shadow-md hover:shadow-xl">
-              <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
-                <AvatarImage src={url} />
-                <AvatarFallback>AV</AvatarFallback>
-              </Avatar>
+              <Avatar className="h-20 w-20 sm:h-24 sm:w-24"><AvatarImage src={url}/><AvatarFallback>AV</AvatarFallback></Avatar>
               <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
           ))}
