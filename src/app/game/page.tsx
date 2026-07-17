@@ -119,7 +119,7 @@ export default function GameHomePage() {
         <div className="sticky top-16 z-[60] bg-background/95 backdrop-blur-md py-4 border-b shrink-0">
           <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto h-14 sm:h-16 p-1 bg-pink-100/50 rounded-2xl border-2 border-pink-200">
             <TabsTrigger value="levels" className="text-xs sm:text-lg font-black flex items-center gap-2 rounded-xl data-[state=active]:bg-pink-500 data-[state=active]:text-white">
-              <Gamepad2 className="w-4 h-4 sm:w-5 sm:h-5" /> Path
+              <Gamepad2 className="w-4 h-4 sm:w-5 sm:h-5" /> Bubble Game
             </TabsTrigger>
             <TabsTrigger value="memory" className="text-xs sm:text-lg font-black flex items-center gap-2 rounded-xl data-[state=active]:bg-teal-500 data-[state=active]:text-white">
               <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" /> Matrix
@@ -156,13 +156,15 @@ export default function GameHomePage() {
                 ))}
               </div>
 
-              {/* Animated Fish Decorations */}
+              {/* Animated Fish Decorations - Orientations Fixed */}
               <div className="absolute inset-0 pointer-events-none opacity-40">
                   <div className="absolute top-[30%] animate-[swimRight_20s_linear_infinite]">
-                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={80} height={50} className="scale-x-[-1]" />
+                    {/* Swim Right needs fish to face RIGHT */}
+                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={80} height={50} />
                   </div>
                   <div className="absolute top-[60%] animate-[swimLeft_25s_linear_infinite]">
-                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={100} height={60} />
+                    {/* Swim Left needs fish to face LEFT */}
+                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={100} height={60} className="scale-x-[-1]" />
                   </div>
               </div>
 
@@ -254,4 +256,3 @@ export default function GameHomePage() {
     </div>
   );
 }
-
