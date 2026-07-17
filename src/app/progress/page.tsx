@@ -98,21 +98,184 @@ function ProgressContent() {
 
   return (
     <div className="space-y-8">
-      <Card><CardHeader><CardTitle className="text-3xl font-headline flex items-center gap-2"><TrendingUp className="w-8 h-8 text-primary" />Progress Report</CardTitle><CardDescription>Your performance summary.</CardDescription></CardHeader></Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-3xl font-headline flex items-center gap-2">
+            <TrendingUp className="w-8 h-8 text-primary" /> Progress Report
+          </CardTitle>
+          <CardDescription>Your performance summary.</CardDescription>
+        </CardHeader>
+      </Card>
+      
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-[10px] sm:text-sm font-black uppercase tracking-widest text-muted-foreground">Activities</CardTitle><Activity className="w-4 h-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-black">{summaryStats.totalActivities}</div></CardContent></Card>
-        <Card><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-[10px] sm:text-sm font-black uppercase tracking-widest text-muted-foreground">Avg Acc</CardTitle><Target className="w-4 h-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-black text-primary">{summaryStats.averageAccuracy}%</div></CardContent></Card>
-        <Card><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-[10px] sm:text-sm font-black uppercase tracking-widest text-muted-foreground">Best Score</CardTitle><Star className="w-4 h-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-black text-yellow-500">{summaryStats.bestAccuracy}%</div></CardContent></Card>
-        <Card><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-[10px] sm:text-sm font-black uppercase tracking-widest text-muted-foreground">Training Time</CardTitle><Clock className="w-4 h-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-black">{summaryStats.totalPracticeTime}</div></CardContent></Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-[10px] sm:text-sm font-black uppercase tracking-widest text-muted-foreground">Activities</CardTitle>
+            <Activity className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-black">{summaryStats.totalActivities}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-[10px] sm:text-sm font-black uppercase tracking-widest text-muted-foreground">Avg Acc</CardTitle>
+            <Target className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-black text-primary">{summaryStats.averageAccuracy}%</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-[10px] sm:text-sm font-black uppercase tracking-widest text-muted-foreground">Best Score</CardTitle>
+            <Star className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-black text-yellow-500">{summaryStats.bestAccuracy}%</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-[10px] sm:text-sm font-black uppercase tracking-widest text-muted-foreground">Training Time</CardTitle>
+            <Clock className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-black">{summaryStats.totalPracticeTime}</div>
+          </CardContent>
+        </Card>
       </div>
-      <Card><CardHeader><CardTitle className="text-xl font-black uppercase tracking-tight">Performance Trend</CardTitle></CardHeader><CardContent>
-        {chartData.length > 0 ? (<div className="h-[300px] w-full"><ResponsiveContainer width="100%" height="100%"><LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" /><XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} /><YAxis unit="%" domain={[0, 100]} stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} /><Tooltip content={<CustomTooltip />} /><Legend wrapperStyle={{ paddingTop: '20px' }} /><ReferenceLine y={90} stroke="hsl(var(--primary))" strokeOpacity={0.2} strokeDasharray="3 3" /><Line name="Accuracy Trend" type="monotone" dataKey="Accuracy" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 4, fill: "hsl(var(--primary))", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 6 }} /></LineChart></ResponsiveContainer></div>) : (<div className="h-[300px] flex items-center justify-center text-muted-foreground italic font-medium">No trend data yet.</div>)}
-      </CardContent></Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl font-black uppercase tracking-tight">Performance Trend</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {chartData.length > 0 ? (
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis unit="%" domain={[0, 100]} stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                  <ReferenceLine y={90} stroke="hsl(var(--primary))" strokeOpacity={0.2} strokeDasharray="3 3" />
+                  <Line name="Accuracy Trend" type="monotone" dataKey="Accuracy" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 4, fill: "hsl(var(--primary))", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-[300px] flex items-center justify-center text-muted-foreground italic font-medium">No trend data yet.</div>
+          )}
+        </CardContent>
+      </Card>
+
       <Tabs defaultValue="tests" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto mb-8 bg-muted/50 p-1 rounded-2xl h-auto"><TabsTrigger value="tests" className="flex items-center gap-2 rounded-xl font-black uppercase text-[10px] py-3"><BookOpen className="w-3 h-3" /> Practice</TabsTrigger><TabsTrigger value="games" className="flex items-center gap-2 rounded-xl font-black uppercase text-[10px] py-3"><Gamepad2 className="w-3 h-3" /> Games</TabsTrigger><TabsTrigger value="exams" className="flex items-center gap-2 rounded-xl font-black uppercase text-[10px] py-3"><FileCheck className="w-3 h-3" /> Exams</TabsTrigger></TabsList>
-        <TabsContent value="tests"><Card className="border-none shadow-lg overflow-hidden rounded-[2rem]"><CardHeader className="bg-muted/30"><CardTitle className="font-black uppercase tracking-tight">Practice Log</CardTitle></CardHeader><CardContent className="p-0"><Table><TableHeader className="bg-muted/10"><TableRow><TableHead className="pl-6">Date</TableHead><TableHead>Activity</TableHead><TableHead>Accuracy</TableHead><TableHead className="pr-6">Time</TableHead></TableRow></TableHeader><TableBody>{practiceTests.length > 0 ? practiceTests.map(r => (<TableRow key={r.id} className="hover:bg-muted/50 transition-colors"><TableCell className="pl-6 text-xs font-medium">{format(r.createdAt, 'MMM d, p')}</TableCell><TableCell className="font-bold">{TEST_NAME_MAP[r.testId] || r.testId}</TableCell><TableCell className="font-black text-primary">{r.accuracy.toFixed(1)}%</TableCell><TableCell className="pr-6 text-xs text-muted-foreground">{Math.floor(r.timeSpent / 60)}m {r.timeSpent % 60}s</TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">No history found.</TableCell></TableRow>}</TableBody></Table></CardContent></Card></TabsContent>
-        <TabsContent value="games"><Card className="border-none shadow-lg overflow-hidden rounded-[2rem]"><CardHeader className="bg-pink-500/5"><CardTitle className="font-black uppercase tracking-tight text-pink-600">Game Activity</CardTitle></CardHeader><CardContent className="p-0"><Table><TableHeader className="bg-pink-500/10"><TableRow><TableHead className="pl-6">Date</TableHead><TableHead>Activity</TableHead><TableHead>Accuracy</TableHead><TableHead className="pr-6 text-right">Result</TableHead></TableRow></TableHeader><TableBody>{gameResults.length > 0 ? gameResults.map(r => (<TableRow key={r.id} className="hover:bg-pink-50/50 transition-colors"><TableCell className="pl-6 text-xs font-medium">{format(r.createdAt, 'MMM d, p')}</TableCell><TableCell className="font-bold text-pink-700">{TEST_NAME_MAP[r.testId] || r.difficulty}</TableCell><TableCell className="font-black">{r.accuracy.toFixed(1)}%</TableCell><TableCell className="pr-6 text-right"><Badge className={cn("rounded-lg px-4 font-black text-[10px]", r.accuracy >= 80 ? "bg-green-600" : "bg-muted text-muted-foreground")}>{r.accuracy >= 80 ? 'CLEARED' : 'ATTEMPTED'}</Badge></TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">No gaming data found.</TableCell></TableRow>}</TableBody></Table></CardContent></Card></TabsContent>
-        <TabsContent value="exams"><Card className="border-none shadow-lg overflow-hidden rounded-[2rem]"><CardHeader className="bg-indigo-600/5"><CardTitle className="font-black uppercase tracking-tight text-indigo-700">Official Exam Audit</CardTitle></CardHeader><CardContent className="p-0"><Table><TableHeader className="bg-indigo-600/10"><TableRow><TableHead className="pl-6">Submitted</TableHead><TableHead>Type</TableHead><TableHead>Accuracy</TableHead><TableHead className="pr-6 text-right">Score</TableHead></TableRow></TableHeader><TableBody>{examHistory.length > 0 ? examHistory.map(r => (<TableRow key={r.id} className="hover:bg-indigo-50/50 transition-colors"><TableCell className="pl-6 text-xs font-medium">{format(r.submittedAt?.toDate ? r.submittedAt.toDate() : new Date(), 'MMM d, p')}</TableCell><TableCell className="font-bold text-slate-700">{r.paperId === 'final' ? 'Official Final' : `Paper #${r.paperId.split('-')[1]}`}</TableCell><TableCell className="font-black text-indigo-700">{r.isFinal && !r.resultDeclared ? "---" : `${r.accuracy.toFixed(1)}%`}</TableCell><TableCell className="pr-6 text-right font-black">{r.isFinal && !r.resultDeclared ? <span className="text-[10px] text-orange-600 italic">Awaiting Result</span> : <>{r.score} / {r.totalQuestions}</>}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">No exam records found.</TableCell></TableRow>}</TableBody></Table></CardContent></Card></TabsContent>
+        <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto mb-8 bg-muted/50 p-1 rounded-2xl h-auto">
+          <TabsTrigger value="tests" className="flex items-center gap-2 rounded-xl font-black uppercase text-[10px] py-3">
+            <BookOpen className="w-3 h-3" /> Practice
+          </TabsTrigger>
+          <TabsTrigger value="games" className="flex items-center gap-2 rounded-xl font-black uppercase text-[10px] py-3">
+            <Gamepad2 className="w-3 h-3" /> Games
+          </TabsTrigger>
+          <TabsTrigger value="exams" className="flex items-center gap-2 rounded-xl font-black uppercase text-[10px] py-3">
+            <FileCheck className="w-3 h-3" /> Exams
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="tests">
+          <Card className="border-none shadow-lg overflow-hidden rounded-[2rem]">
+            <CardHeader className="bg-muted/30">
+              <CardTitle className="font-black uppercase tracking-tight">Practice Log</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-muted/10">
+                  <TableRow>
+                    <TableHead className="pl-6">Date</TableHead>
+                    <TableHead>Activity</TableHead>
+                    <TableHead>Accuracy</TableHead>
+                    <TableHead className="pr-6">Time</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {practiceTests.length > 0 ? practiceTests.map(r => (
+                    <TableRow key={r.id} className="hover:bg-muted/50 transition-colors">
+                      <TableCell className="pl-6 text-xs font-medium">{format(r.createdAt, 'MMM d, p')}</TableCell>
+                      <TableCell className="font-bold">{TEST_NAME_MAP[r.testId] || r.testId}</TableCell>
+                      <TableCell className="font-black text-primary">{r.accuracy.toFixed(1)}%</TableCell>
+                      <TableCell className="pr-6 text-xs text-muted-foreground">{Math.floor(r.timeSpent / 60)}m {r.timeSpent % 60}s</TableCell>
+                    </TableRow>
+                  )) : <TableRow><TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">No history found.</TableCell></TableRow>}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="games">
+          <Card className="border-none shadow-lg overflow-hidden rounded-[2rem]">
+            <CardHeader className="bg-pink-500/5">
+              <CardTitle className="font-black uppercase tracking-tight text-pink-600">Game Activity</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-pink-500/10">
+                  <TableRow>
+                    <TableHead className="pl-6">Date</TableHead>
+                    <TableHead>Activity</TableHead>
+                    <TableHead>Accuracy</TableHead>
+                    <TableHead className="pr-6 text-right">Result</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {gameResults.length > 0 ? gameResults.map(r => (
+                    <TableRow key={r.id} className="hover:bg-pink-50/50 transition-colors">
+                      <TableCell className="pl-6 text-xs font-medium">{format(r.createdAt, 'MMM d, p')}</TableCell>
+                      <TableCell className="font-bold text-pink-700">{TEST_NAME_MAP[r.testId] || r.difficulty}</TableCell>
+                      <TableCell className="font-black">{r.accuracy.toFixed(1)}%</TableCell>
+                      <TableCell className="pr-6 text-right">
+                        <Badge className={cn("rounded-lg px-4 font-black text-[10px]", r.accuracy >= 80 ? "bg-green-600" : "bg-muted text-muted-foreground")}>
+                          {r.accuracy >= 80 ? 'CLEARED' : 'ATTEMPTED'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  )) : <TableRow><TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">No gaming data found.</TableCell></TableRow>}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="exams">
+          <Card className="border-none shadow-lg overflow-hidden rounded-[2rem]">
+            <CardHeader className="bg-indigo-600/5">
+              <CardTitle className="font-black uppercase tracking-tight text-indigo-700">Official Exam Audit</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-indigo-600/10">
+                  <TableRow>
+                    <TableHead className="pl-6">Submitted</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Accuracy</TableHead>
+                    <TableHead className="pr-6 text-right">Score</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {examHistory.length > 0 ? examHistory.map(r => (
+                    <TableRow key={r.id} className="hover:bg-indigo-50/50 transition-colors">
+                      <TableCell className="pl-6 text-xs font-medium">{format(r.submittedAt?.toDate ? r.submittedAt.toDate() : new Date(), 'MMM d, p')}</TableCell>
+                      <TableCell className="font-bold text-slate-700">{r.paperId === 'final' ? 'Official Final' : `Paper #${r.paperId.split('-')[1]}`}</TableCell>
+                      <TableCell className="font-black text-indigo-700">{r.isFinal && !r.resultDeclared ? "---" : `${r.accuracy.toFixed(1)}%`}</TableCell>
+                      <TableCell className="pr-6 text-right font-black">
+                        {r.isFinal && !r.resultDeclared ? <span className="text-[10px] text-orange-600 italic">Awaiting Result</span> : <>{r.score} / {r.totalQuestions}</>}
+                      </TableCell>
+                    </TableRow>
+                  )) : <TableRow><TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">No exam records found.</TableCell></TableRow>}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );

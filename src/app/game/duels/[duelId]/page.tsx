@@ -10,11 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { getFirestore, doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
-import type { Duel, Question } from '@/types';
+import type { Duel } from '@/types';
 import { Swords, Loader2, PlayCircle, Trophy, Crown, AlertCircle, ArrowRight, UserX, Copy, Share2, Zap, Timer, Users, LayoutGrid } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/Avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import confetti from 'canvas-confetti';
@@ -53,7 +53,8 @@ export default function DuelArenaPage() {
       (snap) => {
         if (snap.exists()) {
           const rawData = snap.data();
-          setDuel({ id: snap.id, ...rawData } as Duel);
+          const { id: _, ...rest } = rawData;
+          setDuel({ id: snap.id, ...rest } as Duel);
           setLoading(false);
         } else {
           toast({ title: "Duel not found", variant: "destructive" });
@@ -85,7 +86,7 @@ export default function DuelArenaPage() {
       let bIdx = 0;
       
       const simulateNextQuestion = () => {
-        // Human-like thinking time: 1.5s - 3.5s per question
+        // Faster, more realistic thinking time: 1.5s - 3.5s per question
         const thinkingTime = 1500 + Math.random() * 2000;
         
         botIntervalRef.current = setTimeout(async () => {
@@ -243,13 +244,13 @@ export default function DuelArenaPage() {
       <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden animate-in zoom-in-95 mt-10">
         <div className={cn(
           "p-12 text-center text-white", 
-          isWinner ? "bg-green-600" : isDraw ? "bg-blue-600" : "bg-slate-800"
+          isWinner ? "bg-green-600" : (isDraw ? "bg-blue-600" : "bg-slate-800")
         )}>
            <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6">
-             {isWinner ? <Crown className="w-12 h-12 text-yellow-300" /> : isDraw ? <Users className="w-12 h-12" /> : <Trophy className="w-12 h-12 opacity-50" />}
+             {isWinner ? <Crown className="w-12 h-12 text-yellow-300" /> : (isDraw ? <Users className="w-12 h-12" /> : <Trophy className="w-12 h-12 opacity-50" />)}
            </div>
            <h2 className="text-4xl font-black uppercase tracking-tighter italic">
-             {isWinner ? 'MATCH WON!' : isDraw ? 'MATCH DRAW!' : 'MATCH LOST'}
+             {isWinner ? 'MATCH WON!' : (isDraw ? 'MATCH DRAW!' : 'MATCH LOST')}
            </h2>
         </div>
         <CardContent className="p-12">

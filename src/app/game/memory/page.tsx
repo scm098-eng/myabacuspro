@@ -246,7 +246,7 @@ export default function PatternMemoryPage() {
                 <CardHeader className="p-8 text-center bg-teal-50 rounded-t-[2.5rem] border-b">
                    <div className="mx-auto bg-teal-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><User className="w-8 h-8 text-teal-600" /></div>
                    <CardTitle className="text-2xl font-black uppercase tracking-tight">Train Alone</CardTitle>
-                   <CardDescription className="font-bold text-xs uppercase tracking-widest opacity-60">Level {level} Entry</CardDescription>
+                   <CardDescription className="font-bold">Level {level} Entry</CardDescription>
                 </CardHeader>
                 <CardContent className="p-8 text-center"><Button variant="ghost" className="font-black text-teal-600">Start Session <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
              </Card>
@@ -335,7 +335,7 @@ export default function PatternMemoryPage() {
             {/* Fixed height container for status messages to prevent layout shift */}
             <div className="h-24 flex flex-col items-center justify-center mb-6 w-full relative">
               {gameState === 'ready' && (
-                <div className="animate-in zoom-in-50 duration-300">
+                <div className="animate-in zoom-in-50 duration-300 text-center">
                   <h2 className="text-4xl font-black text-white uppercase italic tracking-widest">Get Ready!</h2>
                   <p className="text-primary font-black uppercase text-xs tracking-[0.3em] mt-2">Round {round} incoming...</p>
                 </div>
