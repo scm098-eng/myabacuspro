@@ -85,6 +85,7 @@ export default function GameHomePage() {
   const { user, profile, getCompletedGameLevels } = useAuth();
   const [completedLevels, setCompletedLevels] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("levels");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -95,14 +96,19 @@ export default function GameHomePage() {
 
   const lastAttendedId = profile?.lastLevelAttended || 1;
 
+  // Scroll to current level when loading finishes OR when switching back to the "levels" tab
   useEffect(() => {
-    if (!isLoading && scrollContainerRef.current) {
-      const node = document.getElementById(`level-node-${lastAttendedId}`);
-      if (node) {
-        node.scrollIntoView({ block: 'center' });
-      }
+    if (!isLoading && activeTab === "levels" && scrollContainerRef.current) {
+      // Use a small timeout to ensure the tab content is fully rendered and visible
+      const timer = setTimeout(() => {
+        const node = document.getElementById(`level-node-${lastAttendedId}`);
+        if (node) {
+          node.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [isLoading, lastAttendedId]);
+  }, [isLoading, lastAttendedId, activeTab]);
 
   if (isLoading) return (<div className="space-y-12"><Skeleton className="h-12 w-3/4 mx-auto" /><Skeleton className="h-6 w-full" /></div>);
 
@@ -115,7 +121,7 @@ export default function GameHomePage() {
         <p className="max-w-2xl mx-auto text-sm sm:text-lg text-pink-800/80 font-bold">Challenge your mind with visualization drills, competitive duels, and bubble missions!</p>
       </div>
 
-      <Tabs defaultValue="levels" className="w-full flex-1 flex flex-col">
+      <Tabs defaultValue="levels" value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col">
         <div className="sticky top-16 z-[60] bg-background/95 backdrop-blur-md py-4 border-b shrink-0">
           <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto h-14 sm:h-16 p-1 bg-pink-100/50 rounded-2xl border-2 border-pink-200">
             <TabsTrigger value="levels" className="text-xs sm:text-lg font-black flex items-center gap-2 rounded-xl data-[state=active]:bg-pink-500 data-[state=active]:text-white">
@@ -156,14 +162,14 @@ export default function GameHomePage() {
                 ))}
               </div>
 
-              {/* Animated Fish Decorations - Orientations Fixed */}
+              {/* Animated Fish Decorations */}
               <div className="absolute inset-0 pointer-events-none opacity-40">
                   <div className="absolute top-[30%] animate-[swimRight_20s_linear_infinite]">
-                    {/* Swim Right needs fish to face RIGHT */}
+                    {/* Swim Right faces right */}
                     <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={80} height={50} />
                   </div>
                   <div className="absolute top-[60%] animate-[swimLeft_25s_linear_infinite]">
-                    {/* Swim Left needs fish to face LEFT */}
+                    {/* Swim Left needs to face LEFT - flip right-facing original */}
                     <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={100} height={60} className="scale-x-[-1]" />
                   </div>
               </div>
