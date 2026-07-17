@@ -14,7 +14,7 @@ import type { Duel, Question } from '@/types';
 import { Swords, Loader2, PlayCircle, Trophy, Crown, AlertCircle, ArrowRight, UserX, Copy, Share2, Zap, Timer, Users, LayoutGrid } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/Avatar';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import confetti from 'canvas-confetti';
@@ -52,9 +52,8 @@ export default function DuelArenaPage() {
     const unsubscribe = onSnapshot(docRef, 
       (snap) => {
         if (snap.exists()) {
-          const rawData = snap.data() as Duel;
-          const { id: _, ...data } = rawData;
-          setDuel({ id: snap.id, ...data } as Duel);
+          const rawData = snap.data();
+          setDuel({ id: snap.id, ...rawData } as Duel);
           setLoading(false);
         } else {
           toast({ title: "Duel not found", variant: "destructive" });
@@ -86,13 +85,11 @@ export default function DuelArenaPage() {
       let bIdx = 0;
       
       const simulateNextQuestion = () => {
-        // Base delay: 2.5s. Adjusted by bot's speed trait.
-        const baseDelay = 2500;
-        const botSpeed = duel.botSpeed || 1.0;
-        const thinkingTime = (baseDelay * botSpeed) + Math.random() * 1500;
+        // Human-like thinking time: 1.5s - 3.5s per question
+        const thinkingTime = 1500 + Math.random() * 2000;
         
         botIntervalRef.current = setTimeout(async () => {
-          const accuracy = duel.botAccuracy || 0.9;
+          const accuracy = duel.botAccuracy || 0.85;
           const isCorrect = Math.random() < accuracy;
           if (isCorrect) bScore++;
           bIdx++;
@@ -263,8 +260,10 @@ export default function DuelArenaPage() {
                       <AvatarImage src={duel.challengerPhoto}/>
                       <AvatarFallback className="font-black text-2xl">{duel.challengerName?.[0]}</AvatarFallback>
                     </Avatar>
-                    {challengerIsWinner && (
+                    {challengerIsWinner ? (
                       <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 border-none font-black text-[10px] px-3 uppercase tracking-widest shadow-md">CHAMPION</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="absolute -top-3 left-1/2 -translate-x-1/2 bg-slate-200 text-slate-700 border-none font-black text-[10px] px-3 uppercase tracking-widest shadow-md">RUNNER UP</Badge>
                     )}
                  </div>
                  <div className="space-y-1">
@@ -280,8 +279,10 @@ export default function DuelArenaPage() {
                       <AvatarImage src={duel.opponentPhoto}/>
                       <AvatarFallback className="font-black text-2xl">{duel.opponentName?.[0]}</AvatarFallback>
                     </Avatar>
-                    {opponentIsWinner && (
+                    {opponentIsWinner ? (
                       <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 border-none font-black text-[10px] px-3 uppercase tracking-widest shadow-md">CHAMPION</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="absolute -top-3 left-1/2 -translate-x-1/2 bg-slate-200 text-slate-700 border-none font-black text-[10px] px-3 uppercase tracking-widest shadow-md">RUNNER UP</Badge>
                     )}
                  </div>
                  <div className="space-y-1">
@@ -313,7 +314,7 @@ export default function DuelArenaPage() {
           </div>
           <CardContent className="p-10 text-center space-y-6">
              <Button onClick={() => setHasStarted(true)} className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl bg-primary shadow-xl">
-               Start Solo Turn
+               {isChallenger ? 'Start Solo Turn' : 'Enter Arena'}
              </Button>
              <Button variant="outline" className="w-full h-14 rounded-xl font-bold" onClick={() => router.push('/game/duels')}>Cancel</Button>
           </CardContent>
@@ -323,6 +324,7 @@ export default function DuelArenaPage() {
   }
 
   const question = duel.questions[currentIdx];
+  if (!question) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /><p className="mt-4 font-bold uppercase">Preparing Arena...</p></div>;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-20 px-4 mt-6">
@@ -361,7 +363,7 @@ export default function DuelArenaPage() {
         <CardContent className="p-8 text-center flex-grow flex flex-col justify-center overflow-hidden bg-white">
           {duel.mode === 'matrix' ? (
             <div className="flex flex-col items-center">
-               <div className="mb-6 flex items-center gap-2 text-teal-600 font-black uppercase tracking-widest text-sm">
+               <div className="h-12 mb-6 flex items-center gap-2 text-teal-600 font-black uppercase tracking-widest text-sm">
                   <LayoutGrid className="w-5 h-5" />
                   {matrixState === 'memorizing' ? 'Memorize Pattern' : 'Reconstruct Grid'}
                </div>
@@ -377,7 +379,7 @@ export default function DuelArenaPage() {
                       className={cn(
                         "w-16 h-16 sm:w-20 sm:h-20 rounded-2xl transition-all cursor-pointer shadow-sm",
                         matrixState === 'memorizing' && isPattern ? "bg-teal-400 scale-95" : "bg-slate-200",
-                        matrixState === 'playing' && isSelected && "bg-teal-400 animate-in zoom-in-75",
+                        matrixState === 'playing' && isSelected && "bg-teal-400 animate-in zoom-in-90",
                         isWrong && "bg-red-500 animate-shake"
                       )} 
                      />

@@ -175,7 +175,7 @@ export default function PatternMemoryPage() {
       playSound('correct');
       if (newSelection.length === pattern.length) {
         setGameState('feedback');
-        setScore(s => s + 1); // Point alignment (+1 per round)
+        setScore(s => s + 1); 
         setTimeout(() => {
           if (round < ROUNDS_PER_LEVEL) {
             setRound(r => r + 1);
@@ -230,7 +230,7 @@ export default function PatternMemoryPage() {
       <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in duration-500 mt-10 px-4">
         <div className="text-center space-y-4">
           <Badge className="bg-primary/10 text-primary border-primary/20 px-6 py-1.5 rounded-full font-black uppercase text-xs tracking-widest">Cognitive Hub</Badge>
-          <h1 className="text-4xl sm:text-6xl font-black font-headline uppercase tracking-tighter text-slate-900 leading-none">Matrix <span className="text-primary italic">Flash</span></h1>
+          <h1 className="text-4xl sm:text-6xl font-black font-headline uppercase tracking-tighter text-slate-900 leading-none">Matrix <span className="text-primary italic whitespace-nowrap">Flash</span></h1>
           <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">Master spatial visualization. Training starts from Level {level}.</p>
         </div>
         {gameState === 'limit_reached' ? (
@@ -332,12 +332,34 @@ export default function PatternMemoryPage() {
         <div className="bg-white/5 p-4 shrink-0 border-b border-white/5"><Progress value={(round / ROUNDS_PER_LEVEL) * 100} className="h-1.5 bg-white/10" /></div>
         <CardContent className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
           <div className="relative z-10 w-full flex flex-col items-center">
-            {gameState === 'ready' && (<div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm">
-                 <div className="text-center space-y-4 animate-in zoom-in-50 duration-300"><h2 className="text-4xl font-black text-white uppercase italic tracking-widest">Get Ready!</h2><p className="text-primary font-black uppercase text-xs tracking-[0.3em]">Round {round} incoming...</p></div></div>)}
-            {gameState === 'memorizing' && (<div className="mb-10 animate-in fade-in duration-300 text-teal-400 flex items-center gap-3"><Zap className="w-5 h-5 fill-teal-400 animate-pulse" /><p className="text-sm font-black uppercase tracking-[0.3em]">Memorize Pattern</p></div>)}
-            {gameState === 'playing' && (<div className="mb-10 animate-in fade-in duration-300 flex flex-col items-center gap-2"><div className="flex items-center gap-3 text-sky-400"><Timer className="w-5 h-5 animate-pulse" /><p className="text-sm font-black uppercase tracking-[0.3em]">Reconstruct Matrix</p></div>
-                 <div className={cn("text-3xl font-black tabular-nums transition-colors", timeLeft <= 3000 ? "text-red-500 animate-pulse" : "text-white")}>{(timeLeft / 1000).toFixed(1)}s</div></div>)}
-            <div className="grid gap-3 sm:gap-4 p-4 bg-white/5 rounded-[2.5rem] border-4 border-white/10 shadow-inner mt-4" style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, width: '100%', maxWidth: gridSize === 3 ? '320px' : gridSize === 4 ? '400px' : '500px' }}>
+            {/* Fixed height container for status messages to prevent layout shift */}
+            <div className="h-24 flex flex-col items-center justify-center mb-6 w-full relative">
+              {gameState === 'ready' && (
+                <div className="animate-in zoom-in-50 duration-300">
+                  <h2 className="text-4xl font-black text-white uppercase italic tracking-widest">Get Ready!</h2>
+                  <p className="text-primary font-black uppercase text-xs tracking-[0.3em] mt-2">Round {round} incoming...</p>
+                </div>
+              )}
+              {gameState === 'memorizing' && (
+                <div className="animate-in fade-in duration-300 text-teal-400 flex items-center gap-3">
+                  <Zap className="w-5 h-5 fill-teal-400 animate-pulse" />
+                  <p className="text-sm font-black uppercase tracking-[0.3em]">Memorize Pattern</p>
+                </div>
+              )}
+              {gameState === 'playing' && (
+                <div className="animate-in fade-in duration-300 flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-3 text-sky-400">
+                    <Timer className="w-5 h-5 animate-pulse" />
+                    <p className="text-sm font-black uppercase tracking-[0.3em]">Reconstruct Matrix</p>
+                  </div>
+                  <div className={cn("text-3xl font-black tabular-nums transition-colors", timeLeft <= 3000 ? "text-red-500 animate-pulse" : "text-white")}>
+                    {(timeLeft / 1000).toFixed(1)}s
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="grid gap-3 sm:gap-4 p-4 bg-white/5 rounded-[2.5rem] border-4 border-white/10 shadow-inner" style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, width: '100%', maxWidth: gridSize === 3 ? '320px' : gridSize === 4 ? '400px' : '500px' }}>
               {Array.from({ length: gridSize * gridSize }).map((_, i) => {
                 const isCorrectPattern = pattern.includes(i);
                 const isSelected = userSelection.includes(i);
