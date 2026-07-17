@@ -269,7 +269,7 @@ export default function PatternMemoryPage() {
                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Recent Rivals</p>
                        {recentOpponents.map(opp => (
                          <Button key={opp.uid} variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl" onClick={() => handleStartDuel('friend')}>
-                           <Avatar className="h-6 w-6"><AvatarImage src={opp.photo}/><AvatarFallback>{opp.name[0]}</AvatarFallback></Avatar>
+                           <Avatar className="h-6 w-6"><AvatarImage src={opp.photo || undefined}/><AvatarFallback>{opp.name[0]}</AvatarFallback></Avatar>
                            <span className="font-bold text-xs truncate">{opp.name}</span>
                          </Button>
                        ))}

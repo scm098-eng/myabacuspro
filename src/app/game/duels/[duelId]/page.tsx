@@ -18,6 +18,7 @@ import { useSound } from '@/hooks/useSound';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
+import { spawnBotForDuel } from '@/lib/matchmaking';
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
 
@@ -56,6 +57,7 @@ export default function DuelArenaPage() {
   const [matrixState, setMatrixState] = useState<'memorizing' | 'playing' | 'feedback'>('memorizing');
 
   const botIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const botTriggerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Status Listener
   useEffect(() => {
@@ -91,6 +93,21 @@ export default function DuelArenaPage() {
     );
   }, [user, duelId, router, toast, hasStarted]);
 
+  // Bot Trigger: Auto-spawn bot after 12s if waiting
+  useEffect(() => {
+    if (duel?.status === 'waiting' && user?.uid === duel.challengerId && !botTriggerTimeoutRef.current) {
+        botTriggerTimeoutRef.current = setTimeout(() => {
+            spawnBotForDuel(duelId);
+        }, 12000);
+    }
+    return () => {
+        if (botTriggerTimeoutRef.current) {
+            clearTimeout(botTriggerTimeoutRef.current);
+            botTriggerTimeoutRef.current = null;
+        }
+    };
+  }, [duel?.status, duel?.challengerId, user?.uid, duelId]);
+
   // Bot Gameplay Simulation
   useEffect(() => {
     if (duel?.status === 'active' && duel.opponentType === 'bot' && !duel.opponentFinished && hasStarted) {
@@ -98,7 +115,6 @@ export default function DuelArenaPage() {
       let bIdx = duel.mode === 'matrix' ? Math.floor(bScore) : Math.floor(bScore / 10);
 
       const simulateNextQuestion = () => {
-        // Human-like speed matching player's potential
         const thinkingTime = 1500 + Math.random() * 2000;
         
         botIntervalRef.current = setTimeout(async () => {
@@ -324,7 +340,7 @@ export default function DuelArenaPage() {
                 <AvatarFallback>{duel.challengerName?.[0]}</AvatarFallback>
               </Avatar>
               <div className="text-4xl font-black text-white italic animate-in zoom-in-50 duration-700">VS</div>
-              <Avatar className="h-32 w-32 border-4 border-orange-50 border-orange-500 shadow-2xl animate-in slide-in-from-right-8 duration-700">
+              <Avatar className="h-32 w-32 border-4 border-orange-500 shadow-2xl animate-in slide-in-from-right-8 duration-700">
                 <AvatarImage src={duel.opponentPhoto}/>
                 <AvatarFallback>{duel.opponentName?.[0]}</AvatarFallback>
               </Avatar>
