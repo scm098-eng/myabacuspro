@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
 
 interface Level {
   id: number;
@@ -55,7 +56,7 @@ const LevelNode = ({ level, isLocked, isCompleted, style }: { level: Level; isLo
   const linkContent = (
     <div 
       className={cn(
-        "relative w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 transform",
+        "relative w-20 h-20 sm:w-28 sm:h-28 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 transform",
         isLocked ? "bg-gray-400 grayscale cursor-not-allowed" : "bg-gradient-to-br from-pink-400 to-pink-600 hover:scale-110",
         isCompleted && !isLocked && "from-green-400 to-green-600",
         level.isHard && !isLocked && "ring-4 ring-yellow-400 ring-offset-4 ring-offset-transparent",
@@ -63,10 +64,10 @@ const LevelNode = ({ level, isLocked, isCompleted, style }: { level: Level; isLo
       )}
     >
         <div className="absolute inset-1 rounded-full bg-black/10"></div>
-        <span className="relative text-2xl sm:text-4xl font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.4)]">{level.id}</span>
-        {isCompleted && !isLocked && (<div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1 border-2 border-white shadow-md"><Check className="w-3 h-3 text-white stroke-[4px]" /></div>)}
-        {level.isHard && !isLocked && (<div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-1 border-2 border-white shadow-md"><Star className="w-3 h-3 text-yellow-900 fill-yellow-900" /></div>)}
-        {isLocked && (<div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center"><Check className="w-6 h-6 text-white/20" /></div>)}
+        <span className="relative text-3xl sm:text-5xl font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.4)]">{level.id}</span>
+        {isCompleted && !isLocked && (<div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1.5 border-2 border-white shadow-md"><Check className="w-4 h-4 text-white stroke-[4px]" /></div>)}
+        {level.isHard && !isLocked && (<div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-1.5 border-2 border-white shadow-md"><Star className="w-4 h-4 text-yellow-900 fill-yellow-900" /></div>)}
+        {isLocked && (<div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center"><Check className="w-8 h-8 text-white/20" /></div>)}
     </div>
   );
   
@@ -80,7 +81,7 @@ const LevelNode = ({ level, isLocked, isCompleted, style }: { level: Level; isLo
 };
 
 export default function GameHomePage() {
-  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/game_bg.jpg?alt=media');
+  usePageBackground('');
   const { user, profile, getCompletedGameLevels } = useAuth();
   const [completedLevels, setCompletedLevels] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,7 +111,7 @@ export default function GameHomePage() {
   return (
     <div className="relative min-h-[80vh] flex flex-col">
       <div className="text-center space-y-4 mb-8 shrink-0">
-        <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-pink-600 font-headline drop-shadow-sm uppercase">The Game Hub</h1>
+        <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-pink-600 font-headline drop-shadow-sm uppercase">Bubble Game</h1>
         <p className="max-w-2xl mx-auto text-sm sm:text-lg text-pink-800/80 font-bold">Challenge your mind with visualization drills, competitive duels, and bubble missions!</p>
       </div>
 
@@ -118,49 +119,58 @@ export default function GameHomePage() {
         <div className="sticky top-16 z-[60] bg-background/95 backdrop-blur-md py-4 border-b shrink-0">
           <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto h-14 sm:h-16 p-1 bg-pink-100/50 rounded-2xl border-2 border-pink-200">
             <TabsTrigger value="levels" className="text-xs sm:text-lg font-black flex items-center gap-2 rounded-xl data-[state=active]:bg-pink-500 data-[state=active]:text-white">
-              <Gamepad2 className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden xs:inline">Bubble Path</span><span className="xs:hidden">Path</span>
+              <Gamepad2 className="w-4 h-4 sm:w-5 sm:h-5" /> Path
             </TabsTrigger>
             <TabsTrigger value="memory" className="text-xs sm:text-lg font-black flex items-center gap-2 rounded-xl data-[state=active]:bg-teal-500 data-[state=active]:text-white">
-              <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden xs:inline">Matrix Flash</span><span className="xs:hidden">Matrix</span>
+              <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" /> Matrix
             </TabsTrigger>
             <TabsTrigger value="duels" className="text-xs sm:text-lg font-black flex items-center gap-2 rounded-xl data-[state=active]:bg-orange-500 data-[state=active]:text-white">
-              <Swords className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden xs:inline">1v1 Duels</span><span className="xs:hidden">Duels</span>
+              <Swords className="w-4 h-4 sm:w-5 sm:h-5" /> Duels
             </TabsTrigger>
           </TabsList>
         </div>
 
         <div className="flex-1 min-h-0">
           <TabsContent value="levels" className="h-full m-0 animate-in fade-in duration-500 outline-none">
-            <div className="relative h-[600px] overflow-hidden bg-gradient-to-b from-sky-400 via-blue-600 to-indigo-900 rounded-[3rem] border-8 border-white/20 shadow-2xl mt-8 mx-auto max-w-lg">
+            <div className="relative h-[650px] overflow-hidden bg-gradient-to-b from-sky-400 via-blue-600 to-indigo-950 rounded-[3.5rem] border-8 border-white/20 shadow-2xl mt-8 mx-auto max-w-2xl">
               
               {/* Light Rays Effect */}
-              <div className="absolute top-0 left-0 right-0 h-full opacity-30 pointer-events-none" 
-                   style={{ background: 'radial-gradient(circle at 50% 0%, white 0%, transparent 70%)' }} />
+              <div className="absolute top-0 left-0 right-0 h-full opacity-40 pointer-events-none" 
+                   style={{ background: 'radial-gradient(circle at 50% 10%, white 0%, transparent 60%)' }} />
 
               {/* Decorative Rising Bubbles */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                {[...Array(15)].map((_, i) => (
+                {[...Array(25)].map((_, i) => (
                   <div
                     key={i}
                     className="absolute bg-white/20 rounded-full animate-[bubble-rise-bg_linear_infinite]"
                     style={{
-                      width: `${Math.random() * 8 + 2}px`,
-                      height: `${Math.random() * 8 + 2}px`,
+                      width: `${Math.random() * 12 + 4}px`,
+                      height: `${Math.random() * 12 + 4}px`,
                       left: `${Math.random() * 100}%`,
                       bottom: "-20px",
-                      animationDuration: `${Math.random() * 5 + 5}s`,
-                      animationDelay: `${Math.random() * 10}s`,
+                      animationDuration: `${Math.random() * 7 + 7}s`,
+                      animationDelay: `${Math.random() * 15}s`,
                     }}
                   />
                 ))}
               </div>
 
+              {/* Animated Fish Decorations */}
+              <div className="absolute inset-0 pointer-events-none opacity-40">
+                  <div className="absolute top-[30%] animate-[swimRight_20s_linear_infinite]">
+                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={80} height={50} className="scale-x-[-1]" />
+                  </div>
+                  <div className="absolute top-[60%] animate-[swimLeft_25s_linear_infinite]">
+                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={100} height={60} />
+                  </div>
+              </div>
+
               <div 
                 ref={scrollContainerRef}
-                className="absolute inset-0 overflow-y-auto scrollbar-none py-[250px] px-8"
-                style={{ perspective: '1000px' }}
+                className="absolute inset-0 overflow-y-auto scrollbar-none py-[280px] px-8"
               >
-                <div className="relative flex flex-col items-center gap-20">
+                <div className="relative flex flex-col items-center gap-24">
                   {gameLevels.map((level) => {
                     const isLocked = isAdmin ? false : (user ? level.id > 1 && !completedLevels.includes(level.id - 1) : level.id > 1);
                     const isCompleted = completedLevels.includes(level.id);
@@ -185,12 +195,9 @@ export default function GameHomePage() {
                 </div>
               </div>
               
-              {/* Spool Overlays */}
-              <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-sky-400/80 to-transparent z-10 pointer-events-none" />
-              <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-indigo-950/80 to-transparent z-10 pointer-events-none" />
-              
-              {/* Spool Frame Highlight */}
-              <div className="absolute top-1/2 left-0 right-0 h-32 -translate-y-1/2 border-y-4 border-white/20 bg-white/5 pointer-events-none" />
+              {/* Fog/Atmosphere Overlays */}
+              <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-sky-400 to-transparent z-10 pointer-events-none" />
+              <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-indigo-950 to-transparent z-10 pointer-events-none" />
             </div>
           </TabsContent>
 
@@ -247,3 +254,4 @@ export default function GameHomePage() {
     </div>
   );
 }
+
