@@ -405,6 +405,7 @@ function generateDirectQuestion(max: number, numTerms: number = 3, prng: () => n
           numbers.push(delta);
           currentVal = nextVal;
           foundOp = true;
+          attempts = 50;
           successCount++;
           break;
         }

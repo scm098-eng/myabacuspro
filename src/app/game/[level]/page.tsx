@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
-import { Swords, User, Users, ChevronRight } from 'lucide-react';
+import { Swords, User, Users, ChevronRight, Share2 } from 'lucide-react';
 import { startMatchmaking, getRecentOpponents } from '@/lib/matchmaking';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -177,7 +177,7 @@ export default function GamePage() {
                                 navigator.clipboard.writeText(link);
                                 toast({ title: "Link Copied!", description: "Invite a friend to the arena." });
                             }} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest">
-                                Share Invite Link
+                                <Share2 className="w-4 h-4 mr-2" /> Share Invite Link
                             </Button>
                         </CardContent>
                     </Card>

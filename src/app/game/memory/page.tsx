@@ -245,7 +245,7 @@ export default function PatternMemoryPage() {
                 <CardHeader className="p-8 text-center bg-teal-50 rounded-t-[2.5rem] border-b">
                    <div className="mx-auto bg-teal-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><User className="w-8 h-8 text-teal-600" /></div>
                    <CardTitle className="text-2xl font-black uppercase tracking-tight">Train Alone</CardTitle>
-                   <CardDescription className="font-bold">Level {level} Entry</CardDescription>
+                   <CardDescription className="font-bold">Standard single-player progression.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-8 text-center"><Button variant="ghost" className="font-black text-teal-600">Start Session <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
              </Card>

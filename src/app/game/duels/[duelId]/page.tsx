@@ -21,6 +21,19 @@ import { FirestorePermissionError } from '@/lib/errors';
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
 
+const DOTS_ANIMATION = `
+  @keyframes dots {
+    0% { content: "."; }
+    33% { content: ".."; }
+    66% { content: "..."; }
+    100% { content: "."; }
+  }
+  .animate-dots::after {
+    content: ".";
+    animation: dots 1.5s infinite;
+  }
+`;
+
 export default function DuelArenaPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
   const { duelId } = useParams() as { duelId: string };
@@ -36,6 +49,7 @@ export default function DuelArenaPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localScore, setLocalScore] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
+  const [showMatchTransition, setShowMatchTransition] = useState(false);
 
   const [wrongSelection, setWrongSelection] = useState<number | null>(null);
   const [userSelection, setUserSelection] = useState<number[]>([]);
@@ -53,13 +67,18 @@ export default function DuelArenaPage() {
       (snap) => {
         if (snap.exists()) {
           const rawData = snap.data();
-          const duelData = { id: snap.id, ...rawData } as Duel;
+          const { id: _, ...rest } = rawData;
+          const duelData = { id: snap.id, ...rest } as Duel;
           setDuel(duelData);
           setLoading(false);
           
           // AUTO-START logic: Trigger game when opponent is found
           if (duelData.status === 'active' && !hasStarted && duelData.opponentId) {
-             setHasStarted(true);
+             setShowMatchTransition(true);
+             setTimeout(() => {
+                setShowMatchTransition(false);
+                setHasStarted(true);
+             }, 3000);
           }
         } else {
           toast({ title: "Duel not found", variant: "destructive" });
@@ -74,12 +93,12 @@ export default function DuelArenaPage() {
 
   // Bot Gameplay Simulation
   useEffect(() => {
-    if (duel?.status === 'active' && duel.opponentType === 'bot' && !duel.opponentFinished) {
+    if (duel?.status === 'active' && duel.opponentType === 'bot' && !duel.opponentFinished && hasStarted) {
       let bScore = duel.opponentScore || 0;
       let bIdx = duel.mode === 'matrix' ? Math.floor(bScore) : Math.floor(bScore / 10);
 
       const simulateNextQuestion = () => {
-        // Human-like speed: 1.5s to 3.5s per question
+        // Human-like speed matching player's potential
         const thinkingTime = 1500 + Math.random() * 2000;
         
         botIntervalRef.current = setTimeout(async () => {
@@ -118,7 +137,7 @@ export default function DuelArenaPage() {
       simulateNextQuestion();
     }
     return () => { if (botIntervalRef.current) clearTimeout(botIntervalRef.current); };
-  }, [duel?.status, duel?.opponentType, duelId, duel?.challengerFinished, duel?.questions.length, duel?.challengerScore, duel?.challengerId, duel?.opponentId, duel?.mode]);
+  }, [duel?.status, duel?.opponentType, duelId, duel?.challengerFinished, duel?.questions.length, duel?.challengerScore, duel?.challengerId, duel?.opponentId, duel?.mode, hasStarted]);
 
   // Matrix State Handling
   useEffect(() => {
@@ -295,25 +314,50 @@ export default function DuelArenaPage() {
     );
   }
 
+  if (showMatchTransition) {
+    return (
+      <div className="fixed inset-0 z-[10000] bg-slate-900 flex flex-col items-center justify-center p-4 animate-in fade-in duration-500">
+        <div className="max-w-md w-full text-center space-y-12">
+           <div className="flex items-center justify-center gap-8">
+              <Avatar className="h-32 w-32 border-4 border-primary shadow-2xl animate-in slide-in-from-left-8 duration-700">
+                <AvatarImage src={duel.challengerPhoto}/>
+                <AvatarFallback>{duel.challengerName?.[0]}</AvatarFallback>
+              </Avatar>
+              <div className="text-4xl font-black text-white italic animate-in zoom-in-50 duration-700">VS</div>
+              <Avatar className="h-32 w-32 border-4 border-orange-50 border-orange-500 shadow-2xl animate-in slide-in-from-right-8 duration-700">
+                <AvatarImage src={duel.opponentPhoto}/>
+                <AvatarFallback>{duel.opponentName?.[0]}</AvatarFallback>
+              </Avatar>
+           </div>
+           <div className="space-y-4">
+              <h2 className="text-5xl font-black text-white uppercase tracking-tighter italic animate-pulse">Match Found!</h2>
+              <p className="text-xl font-bold text-primary uppercase tracking-widest">Entering Arena in 3...</p>
+           </div>
+        </div>
+      </div>
+    );
+  }
+
   const isChallenger = duel.challengerId === user?.uid;
 
   if (!hasStarted) {
     return (
       <div className="max-w-xl mx-auto py-12 px-4 animate-in fade-in duration-500 mt-10">
+        <style>{DOTS_ANIMATION}</style>
         <Card className="rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
           <div className="p-12 text-center text-white bg-slate-900">
             <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-pulse">
               <Swords className="w-12 h-12" />
             </div>
-            <h2 className="text-3xl font-black uppercase italic tracking-tighter">Searching...</h2>
+            <h2 className="text-3xl font-black uppercase italic tracking-tighter animate-dots">Searching</h2>
             <p className="text-slate-200 font-bold mt-2">Looking for online students...</p>
           </div>
           <CardContent className="p-10 text-center space-y-6">
              <div className="flex flex-col items-center gap-4">
                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-               <p className="text-sm font-medium text-slate-500">A smart opponent will join in a few seconds if no one is active.</p>
+               <p className="text-sm font-medium text-slate-500 italic">"Global matchmaking ensures you always find a worthy opponent."</p>
              </div>
-             <Button variant="outline" className="w-full h-14 rounded-xl font-bold" onClick={() => router.push('/game/duels')}>Cancel</Button>
+             <Button variant="outline" className="w-full h-14 rounded-xl font-bold" onClick={() => router.push('/game/duels')}>Cancel Search</Button>
           </CardContent>
         </Card>
       </div>
@@ -330,7 +374,7 @@ export default function DuelArenaPage() {
           <div className="flex justify-between items-center">
              <div className="flex items-center gap-4">
                <Avatar className="h-12 w-12 border-2 border-primary">
-                 <AvatarImage src={(isChallenger ? duel.opponentPhoto : duel.challengerPhoto) || undefined}/>
+                 <AvatarImage src={(isChallenger ? (duel.opponentPhoto || '') : (duel.challengerPhoto || '')) || undefined}/>
                  <AvatarFallback>{(isChallenger ? duel.opponentName : duel.challengerName)?.[0]}</AvatarFallback>
                </Avatar>
                <div>
@@ -363,7 +407,7 @@ export default function DuelArenaPage() {
         <CardContent className="p-8 text-center flex-grow flex flex-col justify-center overflow-hidden bg-white">
           {duel.mode === 'matrix' ? (
             <div className="flex flex-col items-center">
-               <div className="h-12 mb-6 flex flex-col items-center justify-center">
+               <div className="h-24 flex flex-col items-center justify-center mb-6 w-full relative">
                   {matrixState === 'memorizing' ? (
                     <div className="flex items-center gap-2 text-teal-600 font-black uppercase tracking-widest text-sm animate-in fade-in duration-300">
                       <Zap className="w-5 h-5 fill-teal-600 animate-pulse" /> Memorize Pattern
@@ -418,7 +462,7 @@ export default function DuelArenaPage() {
       <div className="flex justify-between items-center px-4 py-2 opacity-50">
         <div className="flex items-center gap-2">
            <Avatar className="h-8 w-8 border border-white">
-             <AvatarImage src={duel.challengerPhoto} />
+             <AvatarImage src={duel.challengerPhoto || undefined} />
              <AvatarFallback>{duel.challengerName?.[0]}</AvatarFallback>
            </Avatar>
            <span className="text-[10px] font-black uppercase text-slate-500">{duel.challengerName}</span>
@@ -426,7 +470,7 @@ export default function DuelArenaPage() {
         <div className="flex items-center gap-2">
            <span className="text-[10px] font-black uppercase text-slate-500">{duel.opponentName}</span>
            <Avatar className="h-8 w-8 border border-white">
-             <AvatarImage src={duel.opponentPhoto} />
+             <AvatarImage src={duel.opponentPhoto || undefined} />
              <AvatarFallback>{duel.opponentName?.[0]}</AvatarFallback>
            </Avatar>
         </div>
