@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -9,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Loader2, Check, PlayCircle, Zap, ShieldCheck, ChevronRight, Swords, Users, User, Share2 } from 'lucide-react';
+import { AlertTriangle, Loader2, Check, PlayCircle, Zap, ShieldCheck, ChevronRight, Swords, Users, User, Share2, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -84,7 +83,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     else setAppState('lobby');
   }, [testId, difficulty, searchParams]);
 
-  const handleStartDuel = async () => {
+  const handleStartDuel = async (type: 'match' | 'friend') => {
     if (!user || !profile) return;
     setIsMatchmaking(true);
     try {
@@ -95,6 +94,12 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     } finally {
       setIsMatchmaking(false);
     }
+  };
+
+  const handleCopyInviteLink = () => {
+    const link = `${window.location.origin}/game/duels`;
+    navigator.clipboard.writeText(link);
+    toast({ title: "Invite Link Copied!", description: "Share this link with a friend to join the lobby." });
   };
 
   const startFlashing = useCallback(() => {
@@ -159,7 +164,11 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     isFinishedRef.current = true;
     setIsFinished(true);
 
-    const score = finalAnswers.reduce<number>((acc, ans, i) => (ans !== null && questions[i] && ans === questions[i].answer ? acc + 1 : acc), 0);
+    const score = finalAnswers.reduce<number>((acc, ans, i) => {
+        if (ans !== null && questions[i] && ans === questions[i].answer) return acc + 1;
+        return acc;
+    }, 0);
+    
     const answeredCount = finalAnswers.filter(a => a !== null).length;
     let earnedPointsTotal = 0;
 
@@ -212,7 +221,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
               <CardContent className="p-8 text-center"><Button variant="ghost" className="font-black text-teal-600">Start Session <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
            </Card>
 
-           <Card className="rounded-[2.5rem] border-none shadow-2xl bg-slate-900 text-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={handleStartDuel}>
+           <Card className="rounded-[2.5rem] border-none shadow-2xl bg-slate-900 text-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => handleStartDuel('match')}>
               <CardHeader className="p-8 text-center bg-white/5 rounded-t-[2.5rem] border-b border-white/10">
                  <div className="mx-auto bg-primary/20 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><Swords className="w-8 h-8 text-primary" /></div>
                  <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Find Duel</CardTitle>
@@ -232,7 +241,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
                    <div className="space-y-3">
                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Recent Rivals</p>
                      {recentOpponents.map(opp => (
-                       <Button key={opp.uid} variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl" onClick={handleStartDuel}>
+                       <Button key={opp.uid} variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl" onClick={() => handleStartDuel('friend')}>
                          <Avatar className="h-6 w-6"><AvatarImage src={opp.photo}/><AvatarFallback>{opp.name[0]}</AvatarFallback></Avatar>
                          <span className="font-bold text-xs truncate">{opp.name}</span>
                        </Button>
@@ -243,7 +252,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
                      <p className="text-xs text-muted-foreground font-medium italic px-4">Challenge a friend to start a rivalry!</p>
                    </div>
                  )}
-                 <Button onClick={handleStartDuel} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Share2 className="w-4 h-4 mr-2"/> Private Link</Button>
+                 <Button onClick={handleCopyInviteLink} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Copy className="w-4 h-4 mr-2"/> Copy Invite Link</Button>
               </CardContent>
            </Card>
         </div>

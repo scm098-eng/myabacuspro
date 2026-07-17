@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
@@ -12,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { getFirestore, doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { Duel, Question } from '@/types';
-import { Swords, Loader2, PlayCircle, Trophy, Crown, AlertCircle, ArrowRight, UserX, Copy, Share2, Zap, Timer, Users } from 'lucide-react';
+import { Swords, Loader2, PlayCircle, Trophy, Crown, AlertCircle, ArrowRight, UserX, Copy, Share2, Zap, Timer, Users, LayoutGrid } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -39,6 +38,10 @@ export default function DuelArenaPage() {
   const [hasStarted, setHasStarted] = useState(false);
   const [matchmakingTimer, setMatchmakingTimer] = useState(6);
 
+  const [wrongSelection, setWrongSelection] = useState<number | null>(null);
+  const [userSelection, setUserSelection] = useState<number[]>([]);
+  const [matrixState, setMatrixState] = useState<'memorizing' | 'playing' | 'feedback'>('memorizing');
+
   const botIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -50,7 +53,6 @@ export default function DuelArenaPage() {
       (snap) => {
         if (snap.exists()) {
           const rawData = snap.data() as Duel;
-          // Destructure to avoid duplicate id property assignment
           const { id: _, ...data } = rawData;
           setDuel({ id: snap.id, ...data } as Duel);
           setLoading(false);
@@ -67,6 +69,7 @@ export default function DuelArenaPage() {
     return () => unsubscribe();
   }, [user, duelId, router, toast]);
 
+  // Matchmaking delayed failover
   useEffect(() => {
     if (duel?.status === 'waiting' && matchmakingTimer > 0) {
       const t = setTimeout(() => setMatchmakingTimer(prev => prev - 1), 1000);
@@ -76,22 +79,26 @@ export default function DuelArenaPage() {
     }
   }, [duel?.status, matchmakingTimer, duelId]);
 
+  // Bot Simulation Logic
   useEffect(() => {
     if (duel?.status === 'active' && duel.opponentType === 'bot' && !duel.opponentFinished) {
       let bScore = 0;
       let bIdx = 0;
       
       const simulateNextQuestion = () => {
-        // Optimized thinking time: 1.5s to 3.5s per question
-        const thinkingTime = 1500 + Math.random() * 2000;
+        // Base delay: 2.5s. Adjusted by bot's speed trait.
+        const baseDelay = 2500;
+        const botSpeed = duel.botSpeed || 1.0;
+        const thinkingTime = (baseDelay * botSpeed) + Math.random() * 1500;
         
         botIntervalRef.current = setTimeout(async () => {
-          const isCorrect = Math.random() > 0.15;
+          const accuracy = duel.botAccuracy || 0.9;
+          const isCorrect = Math.random() < accuracy;
           if (isCorrect) bScore++;
           bIdx++;
           
           const db = getFirestore(firebaseApp);
-          const docRef = db.doc(`duels/${duelId}`);
+          const docRef = doc(db, `duels/${duelId}`);
           const isFinal = bIdx >= duel.questions.length;
           
           const payload: any = {
@@ -100,8 +107,8 @@ export default function DuelArenaPage() {
           };
 
           if (isFinal) {
-            payload.status = duel.challengerFinished ? 'completed' : 'active';
-            if (payload.status === 'completed') {
+            if (duel.challengerFinished) {
+              payload.status = 'completed';
               const p1 = duel.challengerScore;
               const p2 = bScore;
               if (p1 > p2) payload.winnerId = duel.challengerId;
@@ -122,6 +129,42 @@ export default function DuelArenaPage() {
 
   const isChallenger = duel?.challengerId === user?.uid;
   const isFinished = isChallenger ? duel?.challengerFinished : duel?.opponentFinished;
+
+  // Matrix Handling
+  useEffect(() => {
+    if (duel?.mode === 'matrix' && hasStarted && !isFinished) {
+      setMatrixState('memorizing');
+      const timer = setTimeout(() => {
+        setMatrixState('playing');
+        setUserSelection([]);
+        setWrongSelection(null);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [currentIdx, duel?.mode, hasStarted, isFinished]);
+
+  const handleMatrixTileClick = (idx: number) => {
+    if (matrixState !== 'playing' || isFinished || !duel) return;
+    const q = duel.questions[currentIdx];
+    if (!q.matrixPattern) return;
+
+    if (q.matrixPattern.includes(idx)) {
+      const newSelection = [...userSelection, idx];
+      setUserSelection(newSelection);
+      playSound('correct');
+      if (newSelection.length === q.matrixPattern.length) {
+        setMatrixState('feedback');
+        setTimeout(() => processTurn(true, 1), 600);
+      }
+    } else {
+      setWrongSelection(idx);
+      playSound('wrong');
+      setTimeout(() => {
+        setWrongSelection(null);
+        processTurn(false, 0);
+      }, 600);
+    }
+  };
 
   const handleStandardAnswer = (val: number) => {
     if (isFinished || !duel) return;
@@ -160,22 +203,21 @@ export default function DuelArenaPage() {
     const payload: any = isChallenger ? {
       challengerScore: finalScore,
       challengerFinished: true,
-      status: duel.opponentFinished ? 'completed' : 'active'
     } : {
       opponentScore: finalScore,
       opponentFinished: true,
-      status: duel.challengerFinished ? 'completed' : 'active'
     };
 
-    if (payload.status === 'completed') {
-      const p1 = isChallenger ? finalScore : duel.challengerScore;
-      const p2 = isChallenger ? duel.opponentScore : finalScore;
-      if (p1 > p2) payload.winnerId = duel.challengerId;
-      else if (p2 > p1) payload.winnerId = duel.opponentId;
-      else payload.winnerId = 'draw';
+    if ((isChallenger && duel.opponentFinished) || (!isChallenger && duel.challengerFinished)) {
+        payload.status = 'completed';
+        const p1 = isChallenger ? finalScore : duel.challengerScore;
+        const p2 = isChallenger ? duel.opponentScore : finalScore;
+        if (p1 > p2) payload.winnerId = duel.challengerId;
+        else if (p2 > p1) payload.winnerId = duel.opponentId;
+        else payload.winnerId = 'draw';
 
-      if (payload.winnerId === user.uid) await addPoints(user.uid, 50);
-      else if (payload.winnerId === 'draw') await addPoints(user.uid, 20);
+        if (payload.winnerId === user.uid) await addPoints(user.uid, 50);
+        else if (payload.winnerId === 'draw') await addPoints(user.uid, 20);
     }
 
     try {
@@ -210,7 +252,7 @@ export default function DuelArenaPage() {
              {isWinner ? <Crown className="w-12 h-12 text-yellow-300" /> : isDraw ? <Users className="w-12 h-12" /> : <Trophy className="w-12 h-12 opacity-50" />}
            </div>
            <h2 className="text-4xl font-black uppercase tracking-tighter italic">
-             {isWinner ? 'CHAMPION!' : isDraw ? 'MATCH DRAW!' : 'MATCH LOST'}
+             {isWinner ? 'MATCH WON!' : isDraw ? 'MATCH DRAW!' : 'MATCH LOST'}
            </h2>
         </div>
         <CardContent className="p-12">
@@ -222,10 +264,7 @@ export default function DuelArenaPage() {
                       <AvatarFallback className="font-black text-2xl">{duel.challengerName?.[0]}</AvatarFallback>
                     </Avatar>
                     {challengerIsWinner && (
-                      <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 border-none font-black text-[10px] px-3 uppercase tracking-widest shadow-md">WINNER</Badge>
-                    )}
-                    {!challengerIsWinner && !isDraw && (
-                      <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-slate-200 text-slate-600 border-none font-black text-[10px] px-3 uppercase tracking-widest">RUNNER UP</Badge>
+                      <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 border-none font-black text-[10px] px-3 uppercase tracking-widest shadow-md">CHAMPION</Badge>
                     )}
                  </div>
                  <div className="space-y-1">
@@ -234,9 +273,7 @@ export default function DuelArenaPage() {
                     <p className="text-5xl font-black text-slate-900">{duel.challengerScore}</p>
                  </div>
               </div>
-
               <div className="text-5xl font-black text-slate-200 italic">VS</div>
-
               <div className="text-center space-y-4">
                  <div className="relative">
                     <Avatar className={cn("h-24 w-24 ring-4", opponentIsWinner ? "ring-yellow-400" : "ring-slate-100")}>
@@ -244,10 +281,7 @@ export default function DuelArenaPage() {
                       <AvatarFallback className="font-black text-2xl">{duel.opponentName?.[0]}</AvatarFallback>
                     </Avatar>
                     {opponentIsWinner && (
-                      <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 border-none font-black text-[10px] px-3 uppercase tracking-widest shadow-md">WINNER</Badge>
-                    )}
-                    {!opponentIsWinner && !isDraw && (
-                      <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-slate-200 text-slate-600 border-none font-black text-[10px] px-3 uppercase tracking-widest">RUNNER UP</Badge>
+                      <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 border-none font-black text-[10px] px-3 uppercase tracking-widest shadow-md">CHAMPION</Badge>
                     )}
                  </div>
                  <div className="space-y-1">
@@ -263,73 +297,26 @@ export default function DuelArenaPage() {
     );
   }
 
-  if (duel.status === 'waiting') {
+  if (!hasStarted) {
+    const isWaiting = duel.status === 'waiting';
     return (
-      <div className="max-w-xl mx-auto py-12 px-4 animate-in fade-in duration-500">
+      <div className="max-w-xl mx-auto py-12 px-4 animate-in fade-in duration-500 mt-10">
         <Card className="rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
-          <div className="bg-slate-900 p-12 text-center text-white">
-            <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-pulse">
+          <div className={cn("p-12 text-center text-white", isWaiting ? "bg-slate-900" : "bg-orange-500")}>
+            <div className={cn("mx-auto bg-white/20 p-5 rounded-full w-fit mb-6", isWaiting && "animate-pulse")}>
               <Swords className="w-12 h-12" />
             </div>
-            <h2 className="text-3xl font-black uppercase italic tracking-tighter">Searching...</h2>
-            <p className="text-slate-400 font-bold mt-2">Looking for a real online student...</p>
-            <div className="mt-8 flex justify-center gap-2">
-                {Array.from({length: 6}).map((_, i) => (
-                    <div key={i} className={cn("w-3 h-3 rounded-full transition-all duration-300", i < 6 - matchmakingTimer ? "bg-primary scale-110" : "bg-white/10")} />
-                ))}
-            </div>
+            <h2 className="text-3xl font-black uppercase italic tracking-tighter">{isWaiting ? 'Searching...' : 'Duel Ready!'}</h2>
+            <p className="text-slate-200 font-bold mt-2">
+              {isWaiting ? 'Looking for online students...' : `Opponent: ${isChallenger ? duel.opponentName : duel.challengerName}`}
+            </p>
           </div>
           <CardContent className="p-10 text-center space-y-6">
-             {isChallenger && !isFinished && (
-               <Button onClick={() => setHasStarted(true)} className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl bg-primary hover:bg-primary/90 shadow-xl">
-                 Start Battle Solo
-               </Button>
-             )}
-             <p className="text-sm text-muted-foreground font-medium italic">"A true master is always ready for any challenger."</p>
-             <Button variant="outline" className="w-full h-14 rounded-xl font-bold border-2" onClick={() => router.push('/game/duels')}>Cancel Search</Button>
+             <Button onClick={() => setHasStarted(true)} className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl bg-primary shadow-xl">
+               Start Solo Turn
+             </Button>
+             <Button variant="outline" className="w-full h-14 rounded-xl font-bold" onClick={() => router.push('/game/duels')}>Cancel</Button>
           </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (isFinished) {
-    return (
-       <div className="max-w-xl mx-auto py-12 animate-in fade-in duration-500">
-           <Card className="rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
-               <div className="bg-indigo-600 p-12 text-center text-white">
-                   <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6">
-                       <Loader2 className="w-12 h-12 animate-spin" />
-                   </div>
-                   <h2 className="text-3xl font-black uppercase italic tracking-tighter">Turn Finished!</h2>
-                   <p className="text-indigo-100 font-bold mt-2 text-lg">My Score: {localScore}</p>
-                   <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.3em] mt-6">Waiting for opponent to finish their race...</p>
-               </div>
-               <CardContent className="p-10 text-center">
-                   <Button variant="outline" onClick={() => router.push('/game')} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest border-2">Return to Hub</Button>
-               </CardContent>
-           </Card>
-       </div>
-    );
- }
-
-  if (!isFinished && !hasStarted) {
-    return (
-      <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 mt-10">
-        <Card className="rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
-           <div className="bg-orange-500 p-12 text-center text-white">
-              <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-bounce">
-                <Swords className="w-12 h-12" />
-              </div>
-              <h2 className="text-4xl font-black uppercase italic tracking-tighter">Duel Ready!</h2>
-              <p className="text-orange-100 font-bold mt-2 text-lg">Opponent: <span className="underline">{isChallenger ? duel.opponentName : duel.challengerName}</span></p>
-              <Badge className="mt-4 bg-white/20 text-white border-none uppercase font-black px-4 tracking-widest">MODE: {duel.mode?.toUpperCase()}</Badge>
-           </div>
-           <CardContent className="p-10 space-y-8 text-center">
-              <Button onClick={() => setHasStarted(true)} className="w-full h-20 text-2xl font-black uppercase tracking-widest rounded-3xl bg-orange-500 hover:bg-orange-600 shadow-2xl transition-all">
-                <PlayCircle className="mr-3 h-8 w-8" /> ENTER ARENA
-              </Button>
-           </CardContent>
         </Card>
       </div>
     );
@@ -372,26 +359,47 @@ export default function DuelArenaPage() {
         </CardHeader>
         
         <CardContent className="p-8 text-center flex-grow flex flex-col justify-center overflow-hidden bg-white">
-          <div className="space-y-12">
-             <div className="py-12 bg-muted/20 rounded-[2.5rem] border-4 border-dashed border-primary/10 shadow-inner">
-                <p className="text-5xl sm:text-7xl font-black tracking-tighter text-slate-900 animate-in zoom-in-50 duration-300" key={currentIdx}>
-                    {question.text} = ?
-                </p>
-             </div>
-             <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
-               {question.options.map((opt, i) => (
-                 <Button key={i} variant="outline" className="h-20 text-3xl font-black rounded-2xl border-4 transition-all hover:scale-105 shadow-md" onClick={() => handleStandardAnswer(opt)}>{opt}</Button>
-               ))}
-             </div>
-          </div>
+          {duel.mode === 'matrix' ? (
+            <div className="flex flex-col items-center">
+               <div className="mb-6 flex items-center gap-2 text-teal-600 font-black uppercase tracking-widest text-sm">
+                  <LayoutGrid className="w-5 h-5" />
+                  {matrixState === 'memorizing' ? 'Memorize Pattern' : 'Reconstruct Grid'}
+               </div>
+               <div className="grid grid-cols-3 gap-3 p-4 bg-muted/20 rounded-[2rem] border-4 border-dashed border-primary/10">
+                 {Array.from({length: 9}).map((_, i) => {
+                   const isPattern = question.matrixPattern?.includes(i);
+                   const isSelected = userSelection.includes(i);
+                   const isWrong = wrongSelection === i;
+                   return (
+                     <div 
+                      key={i} 
+                      onClick={() => handleMatrixTileClick(i)}
+                      className={cn(
+                        "w-16 h-16 sm:w-20 sm:h-20 rounded-2xl transition-all cursor-pointer shadow-sm",
+                        matrixState === 'memorizing' && isPattern ? "bg-teal-400 scale-95" : "bg-slate-200",
+                        matrixState === 'playing' && isSelected && "bg-teal-400 animate-in zoom-in-75",
+                        isWrong && "bg-red-500 animate-shake"
+                      )} 
+                     />
+                   );
+                 })}
+               </div>
+            </div>
+          ) : (
+            <div className="space-y-12">
+               <div className="py-12 bg-muted/20 rounded-[2.5rem] border-4 border-dashed border-primary/10 shadow-inner">
+                  <p className="text-5xl sm:text-7xl font-black tracking-tighter text-slate-900 animate-in zoom-in-50 duration-300" key={currentIdx}>
+                      {question.text} = ?
+                  </p>
+               </div>
+               <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+                 {question.options.map((opt, i) => (
+                   <Button key={i} variant="outline" className="h-20 text-3xl font-black rounded-2xl border-4 transition-all hover:scale-105 shadow-md" onClick={() => handleStandardAnswer(opt)}>{opt}</Button>
+                 ))}
+               </div>
+            </div>
+          )}
         </CardContent>
-        
-        <CardFooter className="bg-slate-50 p-6 border-t flex justify-center">
-           <div className="flex items-center gap-3 opacity-30">
-              <Zap className="w-4 h-4" />
-              <p className="text-[9px] font-black uppercase tracking-[0.3em]">Smart Matchmaking Active • Bot Detection Secure</p>
-           </div>
-        </CardFooter>
       </Card>
     </div>
   );

@@ -6,16 +6,27 @@ import type { Duel, Question, ProfileData } from '@/types';
 import { generateDuelQuestions } from '@/lib/questions';
 
 const BOT_IDENTITIES = [
-  { name: "Arjun K.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun", level: 3 },
-  { name: "Neha S.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Neha", level: 2 },
-  { name: "Vihaan P.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Vihaan", level: 4 },
-  { name: "Ananya R.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya", level: 1 },
-  { name: "Aarav M.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aarav", level: 5 },
-  { name: "Ishani T.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ishani", level: 3 },
-  { name: "Kabir L.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kabir", level: 2 },
-  { name: "Saanvi D.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Saanvi", level: 4 },
-  { name: "Reyansh C.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Reyansh", level: 1 },
-  { name: "Myra G.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Myra", level: 5 },
+  { name: "Arjun K.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun", speed: 1.0, accuracy: 0.9 },
+  { name: "Neha S.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Neha", speed: 1.2, accuracy: 0.85 },
+  { name: "Vihaan P.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Vihaan", speed: 0.8, accuracy: 0.95 },
+  { name: "Ananya R.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya", speed: 1.5, accuracy: 0.8 },
+  { name: "Aarav M.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aarav", speed: 0.9, accuracy: 0.92 },
+  { name: "Ishani T.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ishani", speed: 1.1, accuracy: 0.88 },
+  { name: "Kabir L.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kabir", speed: 1.3, accuracy: 0.82 },
+  { name: "Saanvi D.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Saanvi", speed: 0.85, accuracy: 0.94 },
+  { name: "Reyansh C.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Reyansh", speed: 1.4, accuracy: 0.78 },
+  { name: "Myra G.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Myra", speed: 0.95, accuracy: 0.91 },
+  // Adding more diverse identities
+  { name: "Advik R.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Advik", speed: 1.0, accuracy: 0.89 },
+  { name: "Inaya M.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Inaya", speed: 1.1, accuracy: 0.87 },
+  { name: "Rishi V.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rishi", speed: 0.75, accuracy: 0.96 },
+  { name: "Zara Q.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Zara", speed: 1.25, accuracy: 0.84 },
+  { name: "Dev P.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Dev", speed: 1.05, accuracy: 0.93 },
+  { name: "Sia J.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sia", speed: 0.88, accuracy: 0.9 },
+  { name: "Aryan B.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aryan", speed: 1.35, accuracy: 0.81 },
+  { name: "Kiara S.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kiara", speed: 0.92, accuracy: 0.95 },
+  { name: "Yuvraj D.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Yuvraj", speed: 1.15, accuracy: 0.86 },
+  { name: "Pari T.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Pari", speed: 0.8, accuracy: 0.98 },
 ];
 
 /**
@@ -42,7 +53,7 @@ export async function startMatchmaking(
   const snap = await getDocs(q);
   
   if (!snap.empty) {
-    // Find the first match that isn't ours and matches our criteria in memory to avoid complex indices
+    // Find the first match that isn't ours and matches our criteria in memory
     const match = snap.docs.find(doc => {
       const d = doc.data();
       return d.challengerId !== userId && d.mode === mode && d.difficulty === difficulty;
@@ -86,6 +97,7 @@ export async function startMatchmaking(
 
 export async function spawnBotForDuel(duelId: string) {
   const db = getFirestore(firebaseApp);
+  // Pick a random bot from the expanded pool
   const bot = BOT_IDENTITIES[Math.floor(Math.random() * BOT_IDENTITIES.length)];
   
   await updateDoc(doc(db, "duels", duelId), {
@@ -93,6 +105,8 @@ export async function spawnBotForDuel(duelId: string) {
     opponentName: bot.name,
     opponentPhoto: bot.avatar,
     opponentType: 'bot',
+    botSpeed: bot.speed,
+    botAccuracy: bot.accuracy,
     status: 'active',
     updatedAt: serverTimestamp()
   });
