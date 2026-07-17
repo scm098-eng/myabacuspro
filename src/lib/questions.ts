@@ -505,7 +505,7 @@ export function generateFlashSequence(digits: number, rows: number, prng: () => 
   return { sequence, answer: total };
 }
 
-export function generateDuelQuestions(mode: 'standard' | 'flash', seed: string): Question[] {
+export function generateDuelQuestions(mode: 'standard' | 'flash' | 'matrix', seed: string): Question[] {
     const prng = createPRNG(seed);
     const count = mode === 'flash' ? 10 : 20;
     const questions: Question[] = [];
@@ -520,6 +520,21 @@ export function generateDuelQuestions(mode: 'standard' | 'flash', seed: string):
                 questionType: 'flash',
                 sequence,
                 delay: 1000
+            });
+        } else if (mode === 'matrix') {
+            const size = 3;
+            const tileCount = 3 + Math.floor(i / 4);
+            const pattern: number[] = [];
+            while (pattern.length < tileCount) {
+              const rand = Math.floor(prng() * (size * size));
+              if (!pattern.includes(rand)) pattern.push(rand);
+            }
+            questions.push({
+                text: `Matrix Round ${i+1}`,
+                answer: 1, // binary score
+                options: [],
+                questionType: 'matrix',
+                matrixPattern: pattern
             });
         } else {
             const num1 = getRandomInt(10, 50, prng);

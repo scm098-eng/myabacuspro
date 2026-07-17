@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
@@ -11,7 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { getFirestore, doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { Duel } from '@/types';
-import { Swords, Loader2, PlayCircle, Trophy, Crown, AlertCircle, ArrowRight, UserX, Copy, Share2, Zap, Timer, Users, LayoutGrid } from 'lucide-react';
+import { Swords, Loader2, Trophy, Crown, Zap, Timer, Users, LayoutGrid } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -19,7 +20,6 @@ import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
-import { spawnBotForDuel } from '@/lib/matchmaking';
 
 export default function DuelArenaPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
@@ -36,7 +36,6 @@ export default function DuelArenaPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localScore, setLocalScore] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
-  const [matchmakingTimer, setMatchmakingTimer] = useState(6);
 
   const [wrongSelection, setWrongSelection] = useState<number | null>(null);
   const [userSelection, setUserSelection] = useState<number[]>([]);
@@ -53,9 +52,14 @@ export default function DuelArenaPage() {
       (snap) => {
         if (snap.exists()) {
           const rawData = snap.data();
-          const { id: _, ...rest } = rawData;
-          setDuel({ id: snap.id, ...rest } as Duel);
+          const duelData = { id: snap.id, ...rawData } as Duel;
+          setDuel(duelData);
           setLoading(false);
+          
+          // Auto-start transition if opponent joins while you are on waiting screen
+          if (duelData.status === 'active' && !hasStarted && duelData.opponentId) {
+             setHasStarted(true);
+          }
         } else {
           toast({ title: "Duel not found", variant: "destructive" });
           router.push('/game/duels');
@@ -67,32 +71,24 @@ export default function DuelArenaPage() {
     );
 
     return () => unsubscribe();
-  }, [user, duelId, router, toast]);
-
-  // Matchmaking delayed failover
-  useEffect(() => {
-    if (duel?.status === 'waiting' && matchmakingTimer > 0) {
-      const t = setTimeout(() => setMatchmakingTimer(prev => prev - 1), 1000);
-      return () => clearTimeout(t);
-    } else if (duel?.status === 'waiting' && matchmakingTimer === 0) {
-      spawnBotForDuel(duelId);
-    }
-  }, [duel?.status, matchmakingTimer, duelId]);
+  }, [user, duelId, router, toast, hasStarted]);
 
   // Bot Simulation Logic
   useEffect(() => {
     if (duel?.status === 'active' && duel.opponentType === 'bot' && !duel.opponentFinished) {
-      let bScore = 0;
-      let bIdx = 0;
-      
+      let bScore = duel.opponentScore || 0;
+      let bIdx = Math.floor(bScore / 10); // Approximation if score is used as idx
+      if (duel.mode === 'matrix') bIdx = duel.opponentScore; // 1 pt per round
+
       const simulateNextQuestion = () => {
-        // Faster, more realistic thinking time: 1.5s - 3.5s per question
         const thinkingTime = 1500 + Math.random() * 2000;
         
         botIntervalRef.current = setTimeout(async () => {
           const accuracy = duel.botAccuracy || 0.85;
           const isCorrect = Math.random() < accuracy;
-          if (isCorrect) bScore++;
+          const pointsPerCorrect = duel.mode === 'matrix' ? 1 : 10;
+          
+          if (isCorrect) bScore += pointsPerCorrect;
           bIdx++;
           
           const db = getFirestore(firebaseApp);
@@ -123,10 +119,7 @@ export default function DuelArenaPage() {
       simulateNextQuestion();
     }
     return () => { if (botIntervalRef.current) clearTimeout(botIntervalRef.current); };
-  }, [duel?.status, duel?.opponentType, duelId, duel?.challengerFinished, duel?.questions.length, duel?.challengerScore, duel?.challengerId, duel?.opponentId]);
-
-  const isChallenger = duel?.challengerId === user?.uid;
-  const isFinished = isChallenger ? duel?.challengerFinished : duel?.opponentFinished;
+  }, [duel?.status, duel?.opponentType, duelId, duel?.challengerFinished, duel?.questions.length, duel?.challengerScore, duel?.challengerId, duel?.opponentId, duel?.mode, duel?.opponentScore]);
 
   // Matrix Handling
   useEffect(() => {
@@ -139,12 +132,12 @@ export default function DuelArenaPage() {
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [currentIdx, duel?.mode, hasStarted, isFinished]);
+  }, [currentIdx, duel?.mode, hasStarted]);
 
   const handleMatrixTileClick = (idx: number) => {
     if (matrixState !== 'playing' || isFinished || !duel) return;
     const q = duel.questions[currentIdx];
-    if (!q.matrixPattern) return;
+    if (!q || !q.matrixPattern) return;
 
     if (q.matrixPattern.includes(idx)) {
       const newSelection = [...userSelection, idx];
@@ -175,18 +168,21 @@ export default function DuelArenaPage() {
     newAnswers[currentIdx] = answer;
     setAnswers(newAnswers);
 
+    const pointsPerCorrect = duel?.mode === 'matrix' ? 1 : 10;
+    const increment = isCorrect ? pointsPerCorrect : 0;
+    
     if (isCorrect) {
-      setLocalScore(s => s + 1);
+      setLocalScore(s => s + pointsPerCorrect);
       playSound('correct');
     } else {
       playSound('wrong');
     }
 
     setTimeout(() => {
-      if (currentIdx < duel.questions.length - 1) {
+      if (currentIdx < (duel?.questions.length || 0) - 1) {
         setCurrentIdx(p => p + 1);
       } else {
-        submitDuel(isCorrect ? localScore + 1 : localScore);
+        submitDuel(isCorrect ? localScore + pointsPerCorrect : localScore);
       }
     }, 500);
   };
@@ -198,6 +194,7 @@ export default function DuelArenaPage() {
     const db = getFirestore(firebaseApp);
     const docRef = doc(db, "duels", duelId);
 
+    const isChallenger = duel.challengerId === user.uid;
     const payload: any = isChallenger ? {
       challengerScore: finalScore,
       challengerFinished: true,
@@ -249,7 +246,7 @@ export default function DuelArenaPage() {
            <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6">
              {isWinner ? <Crown className="w-12 h-12 text-yellow-300" /> : (isDraw ? <Users className="w-12 h-12" /> : <Trophy className="w-12 h-12 opacity-50" />)}
            </div>
-           <h2 className="text-4xl font-black uppercase tracking-tighter italic">
+           <h2 className="text-4xl font-black uppercase tracking-tighter italic whitespace-nowrap">
              {isWinner ? 'MATCH WON!' : (isDraw ? 'MATCH DRAW!' : 'MATCH LOST')}
            </h2>
         </div>
@@ -258,7 +255,7 @@ export default function DuelArenaPage() {
               <div className="text-center space-y-4">
                  <div className="relative">
                     <Avatar className={cn("h-24 w-24 ring-4", challengerIsWinner ? "ring-yellow-400" : "ring-slate-100")}>
-                      <AvatarImage src={duel.challengerPhoto}/>
+                      <AvatarImage src={duel.challengerPhoto || undefined}/>
                       <AvatarFallback className="font-black text-2xl">{duel.challengerName?.[0]}</AvatarFallback>
                     </Avatar>
                     {challengerIsWinner ? (
@@ -269,7 +266,7 @@ export default function DuelArenaPage() {
                  </div>
                  <div className="space-y-1">
                     <p className="text-sm font-black uppercase tracking-widest text-slate-400">Challenger</p>
-                    <p className="text-lg font-black">{duel.challengerName}</p>
+                    <p className="text-lg font-black truncate max-w-[150px]">{duel.challengerName}</p>
                     <p className="text-5xl font-black text-slate-900">{duel.challengerScore}</p>
                  </div>
               </div>
@@ -277,7 +274,7 @@ export default function DuelArenaPage() {
               <div className="text-center space-y-4">
                  <div className="relative">
                     <Avatar className={cn("h-24 w-24 ring-4", opponentIsWinner ? "ring-yellow-400" : "ring-slate-100")}>
-                      <AvatarImage src={duel.opponentPhoto}/>
+                      <AvatarImage src={duel.opponentPhoto || undefined}/>
                       <AvatarFallback className="font-black text-2xl">{duel.opponentName?.[0]}</AvatarFallback>
                     </Avatar>
                     {opponentIsWinner ? (
@@ -288,16 +285,19 @@ export default function DuelArenaPage() {
                  </div>
                  <div className="space-y-1">
                     <p className="text-sm font-black uppercase tracking-widest text-slate-400">Opponent</p>
-                    <p className="text-lg font-black">{duel.opponentName}</p>
+                    <p className="text-lg font-black truncate max-w-[150px]">{duel.opponentName}</p>
                     <p className="text-5xl font-black text-slate-900">{duel.opponentScore}</p>
                  </div>
               </div>
            </div>
-           <Button onClick={() => router.push('/game')} className="w-full h-16 text-xl font-black rounded-2xl bg-slate-900 hover:bg-black text-white shadow-xl">Return to Hub</Button>
+           <Button onClick={() => router.push('/game')} className="w-full h-16 text-xl font-black rounded-2xl bg-slate-900 hover:bg-black text-white shadow-xl uppercase tracking-widest">Return to Hub</Button>
         </CardContent>
       </Card>
     );
   }
+
+  const isChallenger = duel.challengerId === user?.uid;
+  const isFinished = isChallenger ? duel.challengerFinished : duel.opponentFinished;
 
   if (!hasStarted) {
     const isWaiting = duel.status === 'waiting';
@@ -310,7 +310,7 @@ export default function DuelArenaPage() {
             </div>
             <h2 className="text-3xl font-black uppercase italic tracking-tighter">{isWaiting ? 'Searching...' : 'Duel Ready!'}</h2>
             <p className="text-slate-200 font-bold mt-2">
-              {isWaiting ? 'Looking for online students...' : `Opponent: ${isChallenger ? duel.opponentName : duel.challengerName}`}
+              {isWaiting ? 'Looking for online students...' : `Opponent Found: ${isChallenger ? duel.opponentName : duel.challengerName}`}
             </p>
           </div>
           <CardContent className="p-10 text-center space-y-6">
@@ -333,7 +333,10 @@ export default function DuelArenaPage() {
         <CardHeader className="bg-slate-900 text-white p-6 border-b shrink-0">
           <div className="flex justify-between items-center">
              <div className="flex items-center gap-4">
-               <Avatar className="h-12 w-12 border-2 border-primary"><AvatarImage src={isChallenger ? duel.challengerPhoto : duel.opponentPhoto}/></Avatar>
+               <Avatar className="h-12 w-12 border-2 border-primary">
+                 <AvatarImage src={(isChallenger ? duel.challengerPhoto : duel.opponentPhoto) || undefined}/>
+                 <AvatarFallback>{(isChallenger ? duel.challengerName : duel.opponentName)?.[0]}</AvatarFallback>
+               </Avatar>
                <div>
                   <CardTitle className="text-lg font-black uppercase flex items-center gap-2 italic">
                     <Swords className="w-4 h-4 text-orange-500" /> Duel Arena
@@ -364,7 +367,7 @@ export default function DuelArenaPage() {
         <CardContent className="p-8 text-center flex-grow flex flex-col justify-center overflow-hidden bg-white">
           {duel.mode === 'matrix' ? (
             <div className="flex flex-col items-center">
-               <div className="h-12 mb-6 flex items-center gap-2 text-teal-600 font-black uppercase tracking-widest text-sm">
+               <div className="h-12 mb-6 flex items-center justify-center gap-2 text-teal-600 font-black uppercase tracking-widest text-sm w-full">
                   <LayoutGrid className="w-5 h-5" />
                   {matrixState === 'memorizing' ? 'Memorize Pattern' : 'Reconstruct Grid'}
                </div>

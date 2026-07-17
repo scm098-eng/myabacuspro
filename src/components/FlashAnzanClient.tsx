@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -164,7 +165,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     isFinishedRef.current = true;
     setIsFinished(true);
 
-    const score = finalAnswers.reduce<number>((acc, ans, i) => {
+    const score = finalAnswers.reduce<number>((acc: number, ans, i) => {
         if (ans !== null && questions[i] && ans === questions[i].answer) return acc + 1;
         return acc;
     }, 0);
@@ -205,7 +206,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
       <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in duration-500 mt-10 px-4">
         <div className="text-center space-y-4">
           <Badge className="bg-primary/10 text-primary border-primary/20 px-6 py-1.5 rounded-full font-black uppercase text-xs tracking-widest">Anzan Mission</Badge>
-          <h1 className="text-4xl sm:text-6xl font-black font-headline uppercase tracking-tighter text-slate-900 leading-none">
+          <h1 className="text-4xl sm:text-6xl font-black font-headline uppercase tracking-tighter text-slate-900 leading-none italic">
             Flash <span className="text-primary italic">Anzan</span>
           </h1>
           <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">Master mental arithmetic with sequential flashing numbers. Challenge your precision against the global community.</p>
@@ -252,7 +253,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
                      <p className="text-xs text-muted-foreground font-medium italic px-4">Challenge a friend to start a rivalry!</p>
                    </div>
                  )}
-                 <Button onClick={handleCopyInviteLink} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Copy className="w-4 h-4 mr-2"/> Copy Invite Link</Button>
+                 <Button onClick={handleCopyInviteLink} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Share2 className="w-4 h-4 mr-2"/> Copy Invite Link</Button>
               </CardContent>
            </Card>
         </div>

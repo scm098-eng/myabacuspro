@@ -1,16 +1,17 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { BubbleGame } from '@/components/BubbleGame';
-import type { GameLevel, ExamGroup } from '@/types';
+import type { GameLevel } from '@/types';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
-import { Swords, User, Users, Zap, Trophy, Brain, ChevronRight, Lock } from 'lucide-react';
+import { Swords, User, Users, ChevronRight } from 'lucide-react';
 import { startMatchmaking, getRecentOpponents } from '@/lib/matchmaking';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -63,7 +64,7 @@ const getLevelInfo = (levelSlug: string): { type: GameLevel, name: string } | nu
 };
 
 export default function GamePage() {
-    usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/game_bg.jpg?alt=media');
+    usePageBackground('');
     const params = useParams();
     const router = useRouter();
     const { toast } = useToast();
@@ -116,7 +117,7 @@ export default function GamePage() {
 
     if (mode === 'selection') {
         return (
-            <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in duration-500">
+            <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in duration-500 mt-6 px-4">
                 <div className="text-center space-y-4">
                     <Badge className="bg-primary/10 text-primary border-primary/20 px-6 py-1.5 rounded-full font-black uppercase text-xs tracking-widest">Mission Prep</Badge>
                     <h1 className="text-4xl sm:text-6xl font-black font-headline uppercase tracking-tighter text-slate-900 leading-none">
@@ -163,7 +164,7 @@ export default function GamePage() {
                                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Recent Rivals</p>
                                     {recentOpponents.map(opp => (
                                         <Button key={opp.uid} variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl" onClick={() => handleStartDuel('friend')}>
-                                            <Avatar className="h-6 w-6"><AvatarImage src={opp.photo}/><AvatarFallback>{opp.name[0]}</AvatarFallback></Avatar>
+                                            <Avatar className="h-6 w-6"><AvatarImage src={opp.photo || undefined}/><AvatarFallback>{opp.name?.[0]}</AvatarFallback></Avatar>
                                             <span className="font-bold text-xs truncate">{opp.name}</span>
                                         </Button>
                                     ))}

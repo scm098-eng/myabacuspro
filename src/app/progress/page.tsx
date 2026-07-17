@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
@@ -14,7 +15,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Activity, Target, Clock, Star, Gamepad2, BookOpen, FileCheck } from 'lucide-react';
-import { getTestSettings } from '@/lib/questions';
 import { TEST_NAME_MAP } from '@/lib/constants';
 import { FirestorePermissionError } from '@/lib/errors';
 import { errorEmitter } from '@/lib/error-emitter';
@@ -39,13 +39,25 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 const ProgressReportSkeleton = () => {
   return (
     <div className="space-y-8">
-      <Card><CardHeader><Skeleton className="h-8 w-64" /><Skeleton className="h-4 w-80" /></CardHeader></Card>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-80" />
+        </CardHeader>
+      </Card>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
-          <Card key={i} className="p-6"><Skeleton className="h-4 w-20" /><Skeleton className="h-8 w-full mt-2" /></Card>
+          <Card key={i} className="p-6">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-8 w-full mt-2" />
+          </Card>
         ))}
       </div>
-      <Card className="h-96"><CardContent className="p-6"><Skeleton className="h-full w-full rounded-xl" /></CardContent></Card>
+      <Card className="h-96">
+        <CardContent className="p-6">
+          <Skeleton className="h-full w-full rounded-xl" />
+        </CardContent>
+      </Card>
     </div>
   );
 };
@@ -282,5 +294,9 @@ function ProgressContent() {
 }
 
 export default function ProgressReportPage() {
-  return (<Suspense fallback={<ProgressReportSkeleton />}><ProgressContent /></Suspense>);
+  return (
+    <Suspense fallback={<ProgressReportSkeleton />}>
+      <ProgressContent />
+    </Suspense>
+  );
 }
