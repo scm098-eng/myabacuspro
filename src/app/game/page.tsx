@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
@@ -96,10 +95,9 @@ export default function GameHomePage() {
 
   const lastAttendedId = profile?.lastLevelAttended || 1;
 
-  // Scroll to current level when loading finishes OR when switching back to the "levels" tab
+  // Persistent Scroll Logic: Triggers whenever "levels" tab is selected or load finishes
   useEffect(() => {
     if (!isLoading && activeTab === "levels" && scrollContainerRef.current) {
-      // Use a small timeout to ensure the tab content is fully rendered and visible
       const timer = setTimeout(() => {
         const node = document.getElementById(`level-node-${lastAttendedId}`);
         if (node) {
@@ -165,11 +163,9 @@ export default function GameHomePage() {
               {/* Animated Fish Decorations */}
               <div className="absolute inset-0 pointer-events-none opacity-40">
                   <div className="absolute top-[30%] animate-[swimRight_20s_linear_infinite]">
-                    {/* Swim Right faces right */}
                     <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={80} height={50} />
                   </div>
                   <div className="absolute top-[60%] animate-[swimLeft_25s_linear_infinite]">
-                    {/* Swim Left needs to face LEFT - flip right-facing original */}
                     <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={100} height={60} className="scale-x-[-1]" />
                   </div>
               </div>
@@ -209,7 +205,7 @@ export default function GameHomePage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="memory" className="animate-in slide-in-from-left-8 duration-500 pt-8">
+          <TabsContent value="memory" className="animate-in slide-in-from-left-8 duration-500 pt-8 outline-none">
              <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
                <div className="bg-teal-600 p-8 sm:p-12 text-white text-center">
                   <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-pulse"><LayoutGrid className="w-10 h-10 sm:w-12 sm:h-12 text-white" /></div>
@@ -229,7 +225,7 @@ export default function GameHomePage() {
              </Card>
           </TabsContent>
 
-          <TabsContent value="duels" className="animate-in slide-in-from-right-8 duration-500 pt-8">
+          <TabsContent value="duels" className="animate-in slide-in-from-right-8 duration-500 pt-8 outline-none">
              <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
                <div className="bg-orange-500 p-8 sm:p-12 text-white text-center">
                   <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-bounce"><Swords className="w-10 h-10 sm:w-12 sm:h-12" /></div>

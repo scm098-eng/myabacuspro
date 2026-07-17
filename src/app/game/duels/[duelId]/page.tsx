@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
@@ -517,4 +516,3 @@ export default function DuelArenaPage() {
     </div>
   );
 }
-

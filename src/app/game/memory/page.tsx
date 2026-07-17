@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -331,7 +330,7 @@ export default function PatternMemoryPage() {
         <div className="bg-white/5 p-4 shrink-0 border-b border-white/5"><Progress value={(round / ROUNDS_PER_LEVEL) * 100} className="h-1.5 bg-white/10" /></div>
         <CardContent className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
           <div className="relative z-10 w-full flex flex-col items-center">
-            {/* Fixed height container for status messages to prevent layout shift */}
+            {/* Status container with fixed height to prevent layout shift */}
             <div className="h-24 flex flex-col items-center justify-center mb-6 w-full relative">
               {gameState === 'ready' && (
                 <div className="animate-in zoom-in-50 duration-300 text-center">
