@@ -91,6 +91,10 @@ export default function DuelArenaPage() {
   const botIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const botTriggerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Scope critical variables
+  const isChallenger = duel?.challengerId === user?.uid;
+  const gameState = duel?.status === 'active' ? 'playing' : 'intro';
+
   useEffect(() => {
     if (!user || !duelId) return;
     const db = getFirestore(firebaseApp);
@@ -126,55 +130,59 @@ export default function DuelArenaPage() {
     );
   }, [user, duelId, router, toast, hasStarted]);
 
-  // Bubble logic (Deterministic)
+  const config = useMemo(() => {
+    return {
+      speed: 8,
+      answerRange: [15, 35, 65, 85],
+      qDelay: 1.2,
+      variance: 2
+    };
+  }, []);
+
   const generateBubbles = useCallback(() => {
-    if (!duel || duel.mode !== 'standard' || !hasStarted || duel.status === 'completed') return;
+    if (!duel || duel.mode !== 'standard' || !hasStarted || duel.status !== 'active') return;
     
     if (questionTimeoutRef.current) clearTimeout(questionTimeoutRef.current);
     
     const q = duel.questions[currentIdx];
     if (!q) return;
 
-    const baseSpeed = 8;
     const batchId = `${duel.id}-${currentIdx}`;
     const newBubbles: Bubble[] = [];
 
-    // Question bubble
     newBubbles.push({
       id: `q-${batchId}`,
       value: -1,
       isCorrect: false,
       isQuestion: true,
       left: 50,
-      duration: baseSpeed,
+      duration: config.speed,
       delay: 0
     });
 
-    // Answer bubbles
-    const positions = [15, 35, 65, 85];
     q.options.forEach((opt, i) => {
       newBubbles.push({
         id: `a-${batchId}-${i}`,
         value: opt,
         isCorrect: opt === q.answer,
-        left: positions[i],
-        duration: baseSpeed + 2,
-        delay: 1.2 + (i * 0.2)
+        left: config.answerRange[i],
+        duration: config.speed + 2 + Math.random() * config.variance,
+        delay: config.qDelay + (i * 0.2)
       });
     });
 
     setBubbles(newBubbles);
 
-    // Timeout if user misses all bubbles
+    const maxTime = (config.speed + 4) * 1000;
     questionTimeoutRef.current = setTimeout(() => {
-        if (duel.status !== 'completed' && !isSubmitting) {
+        if (duel.status === 'active' && !isSubmitting) {
           setLives(l => l - 1);
           playSound('wrong');
           processTurn(false, null);
         }
-    }, (baseSpeed + 4) * 1000);
+    }, maxTime);
 
-  }, [duel, currentIdx, hasStarted, playSound, isSubmitting]);
+  }, [duel, currentIdx, hasStarted, playSound, isSubmitting, config]);
 
   useEffect(() => {
     if (duel?.mode === 'standard' && hasStarted && duel.status === 'active') {
@@ -184,10 +192,10 @@ export default function DuelArenaPage() {
   }, [currentIdx, duel?.mode, duel?.status, hasStarted, generateBubbles]);
 
   useEffect(() => {
-    if (lives <= 0 && hasStarted && duel?.status === 'active') {
+    if (lives <= 0 && hasStarted && duel?.status === 'active' && !isSubmitting) {
       submitDuel(localScore);
     }
-  }, [lives, hasStarted, duel?.status, localScore]);
+  }, [lives, hasStarted, duel?.status, localScore, isSubmitting]);
 
   useEffect(() => {
     if (duel?.status === 'waiting' && user?.uid === duel.challengerId && !botTriggerTimeoutRef.current) {
@@ -268,8 +276,13 @@ export default function DuelArenaPage() {
   const handleBubbleClick = (bubble: Bubble) => {
     if (gameState !== 'playing' || bubble.isQuestion || isSubmitting) return;
     if (questionTimeoutRef.current) clearTimeout(questionTimeoutRef.current);
-    const isCorrect = bubble.isCorrect;
-    processTurn(isCorrect, bubble.value);
+    processTurn(bubble.isCorrect, bubble.value);
+  };
+
+  const handleStandardAnswer = (val: number) => {
+    if (gameState !== 'playing' || isSubmitting) return;
+    const isCorrect = val === duel?.questions[currentIdx].answer;
+    processTurn(isCorrect, val);
   };
 
   const processTurn = (isCorrect: boolean, answer: number | null) => {
@@ -281,8 +294,11 @@ export default function DuelArenaPage() {
     else playSound('wrong');
 
     setTimeout(() => {
-      if (currentIdx < (duel?.questions.length || 0) - 1) setCurrentIdx(p => p + 1);
-      else submitDuel(isCorrect ? localScore + pts : localScore);
+      if (currentIdx < (duel?.questions.length || 0) - 1) {
+        setCurrentIdx(p => p + 1);
+      } else {
+        submitDuel(isCorrect ? localScore + pts : localScore);
+      }
     }, 500);
   };
 
@@ -291,8 +307,9 @@ export default function DuelArenaPage() {
     setIsSubmitting(true);
     const db = getFirestore(firebaseApp);
     const docRef = doc(db, "duels", duelId);
-    const isChallenger = duel.challengerId === user.uid;
+    
     const payload: any = isChallenger ? { challengerScore: finalScore, challengerFinished: true } : { opponentScore: finalScore, opponentFinished: true };
+    
     if ((isChallenger && duel.opponentFinished) || (!isChallenger && duel.challengerFinished)) {
         payload.status = 'completed';
         const p1 = isChallenger ? finalScore : duel.challengerScore;
@@ -300,9 +317,11 @@ export default function DuelArenaPage() {
         if (p1 > p2) payload.winnerId = duel.challengerId;
         else if (p2 > p1) payload.winnerId = duel.opponentId;
         else payload.winnerId = 'draw';
+        
         if (payload.winnerId === user.uid) await addPoints(user.uid, 50);
         else if (payload.winnerId === 'draw') await addPoints(user.uid, 20);
     }
+    
     try {
       await updateDoc(docRef, { ...payload, updatedAt: serverTimestamp() });
       playSound('success');
@@ -314,7 +333,6 @@ export default function DuelArenaPage() {
   const handleRematch = async () => {
     if (!duel || !user) return;
     const db = getFirestore(firebaseApp);
-    const isChallenger = duel.challengerId === user.uid;
     setRematchRequested(true);
     const payload = isChallenger ? { rematchChallenger: true } : { rematchOpponent: true };
     await updateDoc(doc(db, "duels", duelId), payload);
@@ -414,7 +432,6 @@ export default function DuelArenaPage() {
   }
 
   const question = duel.questions[currentIdx];
-  const gameState = duel.status === 'active' ? 'playing' : 'intro';
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20 px-4 mt-6">
@@ -461,7 +478,7 @@ export default function DuelArenaPage() {
           <div className="relative z-10 w-full h-full flex items-center justify-center">
             {duel.mode === 'matrix' ? (
               <div className="flex flex-col items-center">
-                 <div className="h-24 flex flex-col items-center justify-center mb-6 w-full relative">
+                 <div className="h-24 flex flex-col items-center justify-center mb-6 w-full relative text-white">
                     {matrixState === 'memorizing' ? (
                       <div className="flex items-center gap-2 text-teal-400 font-black uppercase tracking-widest text-sm animate-in fade-in duration-300">
                         <Zap className="w-5 h-5 fill-teal-400 animate-pulse" /> Memorize Pattern
