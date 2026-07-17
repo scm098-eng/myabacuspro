@@ -66,7 +66,7 @@ export default function PatternMemoryPage() {
       const duelId = await startMatchmaking(user.uid, profile, 'matrix', `Level ${level}`);
       router.push(`/game/duels/${duelId}`);
     } catch (e) {
-      toast({ title: "Failed to start duel", variant: "destructive" });
+      toast({ title: "Matchmaking failed", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -100,11 +100,11 @@ export default function PatternMemoryPage() {
       shapeClass = "rounded-3xl";
     } else {
       size = 5;
-      tileCount = 8 + Math.floor((lvl - 15) / 5);
-      memorizeTime = 3500 - ((lvl - 15) * 100);
-      playTime = 12000 + ((lvl - 15) * 300);
-      colorClass = lvl > 25 ? "bg-rose-400 border-rose-500" : "bg-amber-400 border-amber-500";
-      shapeClass = lvl > 25 ? "rounded-full" : "rounded-xl rotate-45 scale-75";
+      tileCount = 8 + Math.floor(lvl / 10);
+      memorizeTime = 2000;
+      playTime = 12000;
+      colorClass = "bg-rose-400 border-rose-500";
+      shapeClass = "rounded-full";
     }
 
     return { size, tileCount, memorizeTime: Math.max(800, memorizeTime), playTime: Math.max(3000, playTime), colorClass, shapeClass };

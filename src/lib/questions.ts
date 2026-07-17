@@ -701,7 +701,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
           let root: number;
           if (difficulty === 'easy') root = getRandomInt(1, 5);
           else if (difficulty === 'medium') root = getRandomInt(6, 15);
-          else root = getRandomInt(16, 30);
+          else num = getRandomInt(16, 30);
           answer = root;
           questionText = `³√${root * root * root}`;
           break;

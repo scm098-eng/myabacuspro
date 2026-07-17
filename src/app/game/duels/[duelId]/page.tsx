@@ -12,7 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { getFirestore, doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { Duel } from '@/types';
-import { Swords, Loader2, Trophy, Crown, Zap, Timer, Users, LayoutGrid } from 'lucide-react';
+import { Swords, Loader2, Trophy, Crown, Zap, Timer, Users, LayoutGrid, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -43,12 +43,13 @@ export default function DuelArenaPage() {
 
   const botIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Status Listener
   useEffect(() => {
     if (!user || !duelId) return;
     const db = getFirestore(firebaseApp);
     const docRef = doc(db, "duels", duelId);
 
-    const unsubscribe = onSnapshot(docRef, 
+    return onSnapshot(docRef, 
       (snap) => {
         if (snap.exists()) {
           const rawData = snap.data();
@@ -56,7 +57,7 @@ export default function DuelArenaPage() {
           setDuel(duelData);
           setLoading(false);
           
-          // Auto-start transition if opponent joins while you are on waiting screen
+          // AUTO-START logic: Trigger game when opponent is found
           if (duelData.status === 'active' && !hasStarted && duelData.opponentId) {
              setHasStarted(true);
           }
@@ -69,18 +70,16 @@ export default function DuelArenaPage() {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `duels/${duelId}`, operation: 'get' }));
       }
     );
-
-    return () => unsubscribe();
   }, [user, duelId, router, toast, hasStarted]);
 
-  // Bot Simulation Logic
+  // Bot Gameplay Simulation
   useEffect(() => {
     if (duel?.status === 'active' && duel.opponentType === 'bot' && !duel.opponentFinished) {
       let bScore = duel.opponentScore || 0;
-      let bIdx = Math.floor(bScore / 10); // Approximation if score is used as idx
-      if (duel.mode === 'matrix') bIdx = duel.opponentScore; // 1 pt per round
+      let bIdx = duel.mode === 'matrix' ? Math.floor(bScore) : Math.floor(bScore / 10);
 
       const simulateNextQuestion = () => {
+        // Human-like speed: 1.5s to 3.5s per question
         const thinkingTime = 1500 + Math.random() * 2000;
         
         botIntervalRef.current = setTimeout(async () => {
@@ -119,11 +118,11 @@ export default function DuelArenaPage() {
       simulateNextQuestion();
     }
     return () => { if (botIntervalRef.current) clearTimeout(botIntervalRef.current); };
-  }, [duel?.status, duel?.opponentType, duelId, duel?.challengerFinished, duel?.questions.length, duel?.challengerScore, duel?.challengerId, duel?.opponentId, duel?.mode, duel?.opponentScore]);
+  }, [duel?.status, duel?.opponentType, duelId, duel?.challengerFinished, duel?.questions.length, duel?.challengerScore, duel?.challengerId, duel?.opponentId, duel?.mode]);
 
-  // Matrix Handling
+  // Matrix State Handling
   useEffect(() => {
-    if (duel?.mode === 'matrix' && hasStarted && !isFinished) {
+    if (duel?.mode === 'matrix' && hasStarted && duel.status !== 'completed') {
       setMatrixState('memorizing');
       const timer = setTimeout(() => {
         setMatrixState('playing');
@@ -132,10 +131,10 @@ export default function DuelArenaPage() {
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [currentIdx, duel?.mode, hasStarted]);
+  }, [currentIdx, duel?.mode, hasStarted, duel?.status]);
 
   const handleMatrixTileClick = (idx: number) => {
-    if (matrixState !== 'playing' || isFinished || !duel) return;
+    if (matrixState !== 'playing' || !duel || duel.status === 'completed') return;
     const q = duel.questions[currentIdx];
     if (!q || !q.matrixPattern) return;
 
@@ -158,7 +157,7 @@ export default function DuelArenaPage() {
   };
 
   const handleStandardAnswer = (val: number) => {
-    if (isFinished || !duel) return;
+    if (!duel || duel.status === 'completed') return;
     const isCorrect = val === duel.questions[currentIdx].answer;
     processTurn(isCorrect, val);
   };
@@ -297,26 +296,23 @@ export default function DuelArenaPage() {
   }
 
   const isChallenger = duel.challengerId === user?.uid;
-  const isFinished = isChallenger ? duel.challengerFinished : duel.opponentFinished;
 
   if (!hasStarted) {
-    const isWaiting = duel.status === 'waiting';
     return (
       <div className="max-w-xl mx-auto py-12 px-4 animate-in fade-in duration-500 mt-10">
         <Card className="rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
-          <div className={cn("p-12 text-center text-white", isWaiting ? "bg-slate-900" : "bg-orange-500")}>
-            <div className={cn("mx-auto bg-white/20 p-5 rounded-full w-fit mb-6", isWaiting && "animate-pulse")}>
+          <div className="p-12 text-center text-white bg-slate-900">
+            <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-pulse">
               <Swords className="w-12 h-12" />
             </div>
-            <h2 className="text-3xl font-black uppercase italic tracking-tighter">{isWaiting ? 'Searching...' : 'Duel Ready!'}</h2>
-            <p className="text-slate-200 font-bold mt-2">
-              {isWaiting ? 'Looking for online students...' : `Opponent Found: ${isChallenger ? duel.opponentName : duel.challengerName}`}
-            </p>
+            <h2 className="text-3xl font-black uppercase italic tracking-tighter">Searching...</h2>
+            <p className="text-slate-200 font-bold mt-2">Looking for online students...</p>
           </div>
           <CardContent className="p-10 text-center space-y-6">
-             <Button onClick={() => setHasStarted(true)} className="w-full h-16 text-xl font-black uppercase tracking-widest rounded-2xl bg-primary shadow-xl">
-               {isChallenger ? 'Start Solo Turn' : 'Enter Arena'}
-             </Button>
+             <div className="flex flex-col items-center gap-4">
+               <Loader2 className="h-8 w-8 animate-spin text-primary" />
+               <p className="text-sm font-medium text-slate-500">A smart opponent will join in a few seconds if no one is active.</p>
+             </div>
              <Button variant="outline" className="w-full h-14 rounded-xl font-bold" onClick={() => router.push('/game/duels')}>Cancel</Button>
           </CardContent>
         </Card>
@@ -325,7 +321,7 @@ export default function DuelArenaPage() {
   }
 
   const question = duel.questions[currentIdx];
-  if (!question) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /><p className="mt-4 font-bold uppercase">Preparing Arena...</p></div>;
+  if (!question) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /></div>;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-20 px-4 mt-6">
@@ -334,8 +330,8 @@ export default function DuelArenaPage() {
           <div className="flex justify-between items-center">
              <div className="flex items-center gap-4">
                <Avatar className="h-12 w-12 border-2 border-primary">
-                 <AvatarImage src={(isChallenger ? duel.challengerPhoto : duel.opponentPhoto) || undefined}/>
-                 <AvatarFallback>{(isChallenger ? duel.challengerName : duel.opponentName)?.[0]}</AvatarFallback>
+                 <AvatarImage src={(isChallenger ? duel.opponentPhoto : duel.challengerPhoto) || undefined}/>
+                 <AvatarFallback>{(isChallenger ? duel.opponentName : duel.challengerName)?.[0]}</AvatarFallback>
                </Avatar>
                <div>
                   <CardTitle className="text-lg font-black uppercase flex items-center gap-2 italic">
@@ -367,24 +363,35 @@ export default function DuelArenaPage() {
         <CardContent className="p-8 text-center flex-grow flex flex-col justify-center overflow-hidden bg-white">
           {duel.mode === 'matrix' ? (
             <div className="flex flex-col items-center">
-               <div className="h-12 mb-6 flex items-center justify-center gap-2 text-teal-600 font-black uppercase tracking-widest text-sm w-full">
-                  <LayoutGrid className="w-5 h-5" />
-                  {matrixState === 'memorizing' ? 'Memorize Pattern' : 'Reconstruct Grid'}
+               <div className="h-12 mb-6 flex flex-col items-center justify-center">
+                  {matrixState === 'memorizing' ? (
+                    <div className="flex items-center gap-2 text-teal-600 font-black uppercase tracking-widest text-sm animate-in fade-in duration-300">
+                      <Zap className="w-5 h-5 fill-teal-600 animate-pulse" /> Memorize Pattern
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sky-600 font-black uppercase tracking-widest text-sm animate-in fade-in duration-300">
+                      <LayoutGrid className="w-5 h-5" /> Reconstruct Matrix
+                    </div>
+                  )}
                </div>
-               <div className="grid grid-cols-3 gap-3 p-4 bg-muted/20 rounded-[2rem] border-4 border-dashed border-primary/10">
+               <div className="grid grid-cols-3 gap-3 p-4 bg-slate-900 rounded-[2rem] border-4 border-white/10 shadow-2xl">
                  {Array.from({length: 9}).map((_, i) => {
                    const isPattern = question.matrixPattern?.includes(i);
                    const isSelected = userSelection.includes(i);
                    const isWrong = wrongSelection === i;
+                   const showHint = matrixState === 'memorizing' || matrixState === 'feedback';
+                   
                    return (
                      <div 
                       key={i} 
                       onClick={() => handleMatrixTileClick(i)}
                       className={cn(
-                        "w-16 h-16 sm:w-20 sm:h-20 rounded-2xl transition-all cursor-pointer shadow-sm",
-                        matrixState === 'memorizing' && isPattern ? "bg-teal-400 scale-95" : "bg-slate-200",
-                        matrixState === 'playing' && isSelected && "bg-teal-400 animate-in zoom-in-90",
-                        isWrong && "bg-red-500 animate-shake"
+                        "w-16 h-16 sm:w-20 sm:h-20 rounded-2xl transition-all cursor-pointer shadow-lg border-b-4 border-r-4 active:border-0 active:translate-y-1",
+                        !showHint && !isSelected && !isWrong && "bg-slate-700 border-slate-800 hover:bg-slate-600",
+                        showHint && isPattern && "bg-teal-400 border-teal-500 scale-[0.98] ring-8 ring-white/10",
+                        showHint && !isPattern && "bg-slate-800 border-slate-900 opacity-40",
+                        matrixState === 'playing' && isSelected && "bg-teal-400 border-teal-500 scale-[0.98] ring-8 ring-white/10 animate-in zoom-in-90",
+                        isWrong && "bg-red-500 border-red-600 ring-8 ring-red-500/20"
                       )} 
                      />
                    );
@@ -407,6 +414,23 @@ export default function DuelArenaPage() {
           )}
         </CardContent>
       </Card>
+      
+      <div className="flex justify-between items-center px-4 py-2 opacity-50">
+        <div className="flex items-center gap-2">
+           <Avatar className="h-8 w-8 border border-white">
+             <AvatarImage src={duel.challengerPhoto} />
+             <AvatarFallback>{duel.challengerName?.[0]}</AvatarFallback>
+           </Avatar>
+           <span className="text-[10px] font-black uppercase text-slate-500">{duel.challengerName}</span>
+        </div>
+        <div className="flex items-center gap-2">
+           <span className="text-[10px] font-black uppercase text-slate-500">{duel.opponentName}</span>
+           <Avatar className="h-8 w-8 border border-white">
+             <AvatarImage src={duel.opponentPhoto} />
+             <AvatarFallback>{duel.opponentName?.[0]}</AvatarFallback>
+           </Avatar>
+        </div>
+      </div>
     </div>
   );
 }
