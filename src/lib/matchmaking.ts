@@ -2,7 +2,7 @@
 
 import { getFirestore, collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
-import type { Duel, Question, ProfileData } from '@/types';
+import type { Duel, ProfileData } from '@/types';
 import { generateDuelQuestions } from '@/lib/questions';
 
 const BOT_IDENTITIES = [
@@ -26,6 +26,16 @@ const BOT_IDENTITIES = [
   { name: "Kiara S.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kiara", gender: 'female', speed: 0.92, accuracy: 0.95 },
   { name: "Yuvraj D.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Yuvraj", gender: 'male', speed: 1.15, accuracy: 0.86 },
   { name: "Pari T.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Pari", gender: 'female', speed: 0.8, accuracy: 0.98 },
+  { name: "Rahul V.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul", gender: 'male', speed: 1.0, accuracy: 0.9 },
+  { name: "Shruti M.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Shruti", gender: 'female', speed: 1.2, accuracy: 0.88 },
+  { name: "Manan J.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Manan", gender: 'male', speed: 0.9, accuracy: 0.94 },
+  { name: "Tanya K.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Tanya", gender: 'female', speed: 1.1, accuracy: 0.86 },
+  { name: "Varun R.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Varun", gender: 'male', speed: 1.05, accuracy: 0.91 },
+  { name: "Esha P.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Esha", gender: 'female', speed: 0.95, accuracy: 0.93 },
+  { name: "Karan T.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Karan", gender: 'male', speed: 1.25, accuracy: 0.84 },
+  { name: "Pooja D.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Pooja", gender: 'female', speed: 0.8, accuracy: 0.97 },
+  { name: "Amol S.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Amol", gender: 'male', speed: 1.4, accuracy: 0.79 },
+  { name: "Divya L.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Divya", gender: 'female', speed: 1.15, accuracy: 0.85 },
 ];
 
 /**

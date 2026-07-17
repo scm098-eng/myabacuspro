@@ -95,7 +95,7 @@ export default function GameHomePage() {
 
   const lastAttendedId = profile?.lastLevelAttended || 1;
 
-  // Persistent Scroll Logic: Triggers whenever "levels" tab is selected or load finishes
+  // Persistent Tab-Aware Scroll Engine
   useEffect(() => {
     if (!isLoading && activeTab === "levels" && scrollContainerRef.current) {
       const timer = setTimeout(() => {
@@ -108,7 +108,7 @@ export default function GameHomePage() {
     }
   }, [isLoading, lastAttendedId, activeTab]);
 
-  if (isLoading) return (<div className="space-y-12"><Skeleton className="h-12 w-3/4 mx-auto" /><Skeleton className="h-6 w-full" /></div>);
+  if (isLoading) return (<div className="space-y-12 p-8"><Skeleton className="h-12 w-3/4 mx-auto" /><Skeleton className="h-96 w-full mt-8 rounded-[3rem]" /></div>);
 
   const isAdmin = profile?.role === 'admin';
 
@@ -144,7 +144,7 @@ export default function GameHomePage() {
 
               {/* Decorative Rising Bubbles */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                {[...Array(25)].map((_, i) => (
+                {[...Array(30)].map((_, i) => (
                   <div
                     key={i}
                     className="absolute bg-white/20 rounded-full animate-[bubble-rise-bg_linear_infinite]"
@@ -161,12 +161,15 @@ export default function GameHomePage() {
               </div>
 
               {/* Animated Fish Decorations */}
-              <div className="absolute inset-0 pointer-events-none opacity-40">
-                  <div className="absolute top-[30%] animate-[swimRight_20s_linear_infinite]">
-                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={80} height={50} />
+              <div className="absolute inset-0 pointer-events-none opacity-50">
+                  <div className="absolute top-[20%] animate-[swimRight_20s_linear_infinite]">
+                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={80} height={50} className="scale-x-[-1]" />
                   </div>
-                  <div className="absolute top-[60%] animate-[swimLeft_25s_linear_infinite]">
-                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={100} height={60} className="scale-x-[-1]" />
+                  <div className="absolute top-[45%] animate-[swimLeft_25s_linear_infinite]">
+                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={100} height={60} />
+                  </div>
+                   <div className="absolute top-[75%] animate-[swimRight_18s_linear_infinite]">
+                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={70} height={45} className="scale-x-[-1]" />
                   </div>
               </div>
 
@@ -180,7 +183,7 @@ export default function GameHomePage() {
                     const isCompleted = completedLevels.includes(level.id);
                     
                     const maxCompleted = Math.max(...completedLevels, 0);
-                    if (level.id > maxCompleted + 20 && !isAdmin) return null;
+                    if (level.id > maxCompleted + 25 && !isAdmin) return null;
 
                     return (
                       <div 
