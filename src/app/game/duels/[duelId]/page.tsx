@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
@@ -12,13 +11,13 @@ import { Progress } from '@/components/ui/progress';
 import { getFirestore, doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { Duel } from '@/types';
-import { Swords, Loader2, Trophy, Crown, Zap, Timer, Users, LayoutGrid, X } from 'lucide-react';
+import { Swords, Loader2, Trophy, Crown, Zap, Timer, Users, LayoutGrid, X, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
-import { spawnBotForDuel } from '@/lib/matchmaking';
+import { spawnBotForDuel, startMatchmaking } from '@/lib/matchmaking';
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
 
@@ -51,6 +50,7 @@ export default function DuelArenaPage() {
   const [localScore, setLocalScore] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
   const [showMatchTransition, setShowMatchTransition] = useState(false);
+  const [rematchRequested, setRematchRequested] = useState(false);
 
   const [wrongSelection, setWrongSelection] = useState<number | null>(null);
   const [userSelection, setUserSelection] = useState<number[]>([]);
@@ -69,18 +69,22 @@ export default function DuelArenaPage() {
       (snap) => {
         if (snap.exists()) {
           const rawData = snap.data();
-          const { id: _, ...rest } = rawData;
-          const duelData = { id: snap.id, ...rest } as Duel;
+          const duelData = { id: snap.id, ...rawData } as Duel;
           setDuel(duelData);
           setLoading(false);
           
-          // AUTO-START logic: Trigger game when opponent is found
+          // AUTO-START logic
           if (duelData.status === 'active' && !hasStarted && duelData.opponentId) {
              setShowMatchTransition(true);
              setTimeout(() => {
                 setShowMatchTransition(false);
                 setHasStarted(true);
              }, 3000);
+          }
+
+          // Rematch Logic
+          if (duelData.rematchChallenger && duelData.rematchOpponent) {
+            startRematch();
           }
         } else {
           toast({ title: "Duel not found", variant: "destructive" });
@@ -93,7 +97,7 @@ export default function DuelArenaPage() {
     );
   }, [user, duelId, router, toast, hasStarted]);
 
-  // Bot Trigger: Auto-spawn bot after 12s if waiting
+  // Bot Trigger
   useEffect(() => {
     if (duel?.status === 'waiting' && user?.uid === duel.challengerId && !botTriggerTimeoutRef.current) {
         botTriggerTimeoutRef.current = setTimeout(() => {
@@ -203,7 +207,6 @@ export default function DuelArenaPage() {
     setAnswers(newAnswers);
 
     const pointsPerCorrect = duel?.mode === 'matrix' ? 1 : 10;
-    const increment = isCorrect ? pointsPerCorrect : 0;
     
     if (isCorrect) {
       setLocalScore(s => s + pointsPerCorrect);
@@ -260,6 +263,26 @@ export default function DuelArenaPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleRematch = async () => {
+    if (!duel || !user) return;
+    const db = getFirestore(firebaseApp);
+    const isChallenger = duel.challengerId === user.uid;
+    setRematchRequested(true);
+    
+    const payload = isChallenger ? { rematchChallenger: true } : { rematchOpponent: true };
+    await updateDoc(doc(db, "duels", duelId), payload);
+
+    if (duel.opponentType === 'bot') {
+      await startRematch();
+    }
+  };
+
+  const startRematch = async () => {
+    if (!duel || !user || !profile) return;
+    const newDuelId = await startMatchmaking(user.uid, profile, duel.mode, duel.difficulty);
+    router.push(`/game/duels/${newDuelId}`);
   };
 
   if (loading) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /></div>;
@@ -324,7 +347,12 @@ export default function DuelArenaPage() {
                  </div>
               </div>
            </div>
-           <Button onClick={() => router.push('/game')} className="w-full h-16 text-xl font-black rounded-2xl bg-slate-900 hover:bg-black text-white shadow-xl uppercase tracking-widest">Return to Hub</Button>
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+             <Button onClick={handleRematch} disabled={rematchRequested} className="h-16 text-xl font-black rounded-2xl bg-primary text-white shadow-xl uppercase tracking-widest">
+               {rematchRequested ? 'Waiting...' : <><RotateCcw className="mr-2" /> Rematch</>}
+             </Button>
+             <Button onClick={() => router.push('/game')} variant="outline" className="h-16 text-xl font-black rounded-2xl border-slate-200 uppercase tracking-widest">Return to Hub</Button>
+           </div>
         </CardContent>
       </Card>
     );
