@@ -47,7 +47,7 @@ interface Bubble {
 }
 
 export default function DuelArenaPage() {
-  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
+  usePageBackground('');
   const { duelId } = useParams() as { duelId: string };
   const { user, profile, addPoints } = useAuth();
   const router = useRouter();
@@ -72,7 +72,7 @@ export default function DuelArenaPage() {
   const botTriggerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const answersRef = useRef<(number | null)[]>([]);
 
-  // Correct Scoping for Component Logic
+  // Core scope variables
   const isChallenger = useMemo(() => duel?.challengerId === user?.uid, [duel, user]);
   const gameState = useMemo(() => {
     if (duel?.status === 'completed') return 'completed';
@@ -80,6 +80,13 @@ export default function DuelArenaPage() {
     return 'searching';
   }, [duel]);
   const currentQuestion = useMemo(() => duel?.questions[currentIdx], [duel, currentIdx]);
+
+  const config = useMemo(() => ({
+    speed: 8,
+    answerRange: [12, 37, 63, 88], 
+    qDelay: 1.2,
+    variance: 1.5 
+  }), []);
 
   useEffect(() => {
     setMounted(true);
@@ -113,12 +120,9 @@ export default function DuelArenaPage() {
     );
   }, [user, duelId, hasStarted]);
 
-  const config = useMemo(() => ({
-    speed: 8,
-    answerRange: [15, 35, 65, 85],
-    qDelay: 1.2,
-    variance: 2
-  }), []);
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
 
   const submitDuel = useCallback(async (finalScore: number) => {
     if (!duel || !user || isSubmitting) return;
@@ -152,10 +156,9 @@ export default function DuelArenaPage() {
   }, [duel, user, duelId, isSubmitting, addPoints, playSound]);
 
   const processTurn = useCallback((isCorrect: boolean, answer: number | null) => {
-    const newAnswers = [...answers];
+    const newAnswers = [...answersRef.current];
     newAnswers[currentIdx] = answer;
     setAnswers(newAnswers);
-    answersRef.current = newAnswers;
     
     const pts = 10;
     let nextScore = localScore;
@@ -168,7 +171,7 @@ export default function DuelArenaPage() {
       const nextLives = lives - 1;
       setLives(nextLives);
       playSound('wrong'); 
-      if (nextLives <= 0 && !isSubmitting) {
+      if (nextLives <= 0) {
         submitDuel(nextScore);
         return;
       }
@@ -181,7 +184,7 @@ export default function DuelArenaPage() {
         submitDuel(nextScore);
       }
     }, 500);
-  }, [answers, currentIdx, duel, localScore, playSound, submitDuel, isSubmitting, lives]);
+  }, [currentIdx, duel, localScore, playSound, submitDuel, lives]);
 
   const generateBubbles = useCallback(() => {
     if (!duel || !hasStarted || duel.status !== 'active') return;
@@ -280,6 +283,13 @@ export default function DuelArenaPage() {
     return `${baseUrl}&eyes=happy&mouth=smile`;
   };
 
+  const getQuestionFontSize = (text: string) => {
+    if (text.length > 35) return "text-sm sm:text-base";
+    if (text.length > 25) return "text-base sm:text-xl";
+    if (text.length > 15) return "text-lg sm:text-3xl";
+    return "text-xl sm:text-4xl";
+  };
+
   if (!mounted) return null;
   if (loading) return <div className="fixed inset-0 bg-slate-900 z-[10000] flex items-center justify-center"><Loader2 className="animate-spin w-12 h-12 text-primary" /></div>;
 
@@ -290,8 +300,7 @@ export default function DuelArenaPage() {
     const opponentIsWinner = duel.winnerId === duel.opponentId;
 
     return createPortal(
-      <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[10001] overflow-y-auto">
-        <div className="min-h-full flex flex-col items-center justify-center p-4">
+      <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[10001] overflow-y-auto flex items-center justify-center p-4">
           <Card className="w-full max-w-4xl rounded-[2.5rem] border-none shadow-2xl overflow-hidden animate-in zoom-in-95">
             <div className={cn("p-12 text-center text-white", isWinner ? "bg-green-600" : (isDraw ? "bg-blue-600" : "bg-slate-800"))}>
               <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6">
@@ -329,7 +338,6 @@ export default function DuelArenaPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
       </div>,
       document.body
     );
@@ -337,8 +345,7 @@ export default function DuelArenaPage() {
 
   if (showMatchTransition) {
     return createPortal(
-      <div className="fixed inset-0 z-[10001] bg-slate-900 overflow-y-auto">
-        <div className="min-h-full flex flex-col items-center justify-center p-4">
+      <div className="fixed inset-0 z-[10001] bg-slate-900 overflow-hidden flex flex-col items-center justify-center p-4">
           <div className="max-w-md w-full text-center space-y-12">
              <div className="flex items-center justify-center gap-8">
                 <Avatar className="h-32 w-32 border-4 border-primary shadow-2xl animate-in slide-in-from-left-8 duration-700">
@@ -353,7 +360,6 @@ export default function DuelArenaPage() {
              </div>
              <div className="space-y-4"><h2 className="text-5xl font-black text-white uppercase italic animate-pulse">Match Found!</h2><p className="text-xl font-bold text-primary uppercase tracking-widest">Entering Arena in 3...</p></div>
           </div>
-        </div>
       </div>,
       document.body
     );
@@ -361,8 +367,7 @@ export default function DuelArenaPage() {
 
   if (duel?.status === 'waiting') {
     return createPortal(
-      <div className="fixed inset-0 z-[10001] bg-slate-900 overflow-y-auto">
-        <div className="min-h-full flex flex-col items-center justify-center p-4">
+      <div className="fixed inset-0 z-[10001] bg-slate-900 overflow-hidden flex flex-col items-center justify-center p-4">
           <style>{DOTS_ANIMATION}</style>
           <Card className="w-full max-w-xl rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
             <div className="p-12 text-center text-white bg-slate-900 border-b border-white/5">
@@ -375,24 +380,40 @@ export default function DuelArenaPage() {
                <Button variant="outline" className="w-full h-14 rounded-xl font-bold border-2" onClick={() => router.push('/game')}>Cancel Search</Button>
             </CardContent>
           </Card>
-        </div>
       </div>,
       document.body
     );
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[10000] bg-slate-900 flex flex-col overflow-hidden animate-in fade-in duration-700">
+    <div className="fixed inset-0 z-[10000] bg-slate-900 flex flex-col overflow-hidden animate-in fade-in duration-700 h-screen">
       <style>{DOTS_ANIMATION}</style>
       
-      {/* Background Layer - ALWAYS FULL SCREEN */}
+      {/* Immersive Underwater Background */}
       <div className="absolute inset-0 z-0">
           <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Game%20Background.webp?alt=media" alt="Arena" fill className="object-cover" priority />
           <div className="absolute inset-0 bg-black/10" />
+          
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {[...Array(20)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute bg-white/20 rounded-full animate-[bubble-rise-bg_linear_infinite]"
+                style={{
+                  width: `${Math.random() * 10 + 4}px`,
+                  height: `${Math.random() * 10 + 4}px`,
+                  left: `${Math.random() * 100}%`,
+                  bottom: "-50px",
+                  animationDuration: `${Math.random() * 6 + 6}s`,
+                  animationDelay: `${Math.random() * 12}s`,
+                }}
+              />
+            ))}
+          </div>
       </div>
 
-      {/* HUD Header - Transparent Overlay */}
-      <div className="relative bg-black/20 backdrop-blur-md p-4 sm:p-6 border-b border-white/10 flex justify-between items-center z-50">
+      {/* Semi-Transparent HUD Header */}
+      <div className="relative bg-black/20 backdrop-blur-md p-4 sm:p-6 border-b border-white/10 flex justify-between items-center z-50 shrink-0">
           <div className="flex items-center gap-4 text-white min-w-0 flex-1">
              <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-primary shrink-0">
                <AvatarImage src={getAvatarUrl(isChallenger ? duel?.opponentPhoto : duel?.challengerPhoto, false, true)}/>
@@ -423,15 +444,17 @@ export default function DuelArenaPage() {
 
       <Progress value={(currentIdx / (duel?.questions.length || 1)) * 100} className="relative h-1 bg-white/5 rounded-none z-50" />
 
-      {/* Main Playing Arena - Transparent Grid */}
-      <div className="relative flex-grow flex flex-col justify-center overflow-hidden z-10">
+      {/* Main Playing Arena */}
+      <div className="relative flex-1 flex flex-col justify-center overflow-hidden z-10">
           <div className="relative w-full h-full">
                 {bubbles.map(bubble => (
                     <div 
                       key={bubble.id} 
                       className={cn(
                         "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-2xl transition-all active:scale-95", 
-                        bubble.isQuestion ? 'w-max px-6 sm:px-10 h-16 sm:h-24 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20' : 'w-20 h-20 sm:w-32 sm:h-32 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
+                        bubble.isQuestion 
+                          ? 'w-max max-w-[90vw] px-6 sm:px-10 h-16 sm:h-24 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20' 
+                          : 'w-20 h-20 sm:w-32 sm:h-32 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
                       )} 
                       style={{ 
                         left: `${bubble.left}%`, 
@@ -442,8 +465,8 @@ export default function DuelArenaPage() {
                       onClick={() => handleBubbleClick(bubble)}
                     >
                         <span className={cn(
-                          "text-white font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none whitespace-nowrap", 
-                          bubble.isQuestion ? "text-xl sm:text-4xl" : "text-xl sm:text-4xl"
+                          "text-white font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none whitespace-nowrap text-center", 
+                          bubble.isQuestion ? getQuestionFontSize(currentQuestion?.text || "") : "text-xl sm:text-4xl"
                         )}>
                             {bubble.isQuestion ? currentQuestion?.text : bubble.value}
                         </span>
@@ -452,8 +475,8 @@ export default function DuelArenaPage() {
           </div>
       </div>
 
-      {/* Footer - Transparent Overlay */}
-      <div className="relative bg-black/20 backdrop-blur-md p-4 border-t border-white/10 flex justify-between items-center text-white z-50">
+      {/* Semi-Transparent Footer */}
+      <div className="relative bg-black/20 backdrop-blur-md p-4 border-t border-white/10 flex justify-between items-center text-white z-50 shrink-0">
          <div className="flex items-center gap-3">
             <Badge variant="outline" className="border-white/20 text-white font-black text-[10px]">{duel?.mode.toUpperCase()}</Badge>
             <span className="text-[10px] font-black opacity-40 uppercase tracking-widest">{duel?.difficulty || 'Normal'} Race</span>

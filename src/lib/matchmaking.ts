@@ -6,41 +6,31 @@ import type { Duel, ProfileData } from '@/types';
 import { generateDuelQuestions } from '@/lib/questions';
 
 const BOT_IDENTITIES = [
-  { name: "Arjun K.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun", gender: 'male', speed: 1.0, accuracy: 0.9 },
-  { name: "Neha S.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Neha", gender: 'female', speed: 1.2, accuracy: 0.85 },
-  { name: "Vihaan P.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Vihaan", gender: 'male', speed: 0.8, accuracy: 0.95 },
-  { name: "Ananya R.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya", gender: 'female', speed: 1.5, accuracy: 0.8 },
-  { name: "Aarav M.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aarav", gender: 'male', speed: 0.9, accuracy: 0.92 },
-  { name: "Ishani T.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ishani", gender: 'female', speed: 1.1, accuracy: 0.88 },
-  { name: "Kabir L.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kabir", gender: 'male', speed: 1.3, accuracy: 0.82 },
-  { name: "Saanvi D.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Saanvi", gender: 'female', speed: 0.85, accuracy: 0.94 },
-  { name: "Reyansh C.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Reyansh", gender: 'male', speed: 1.4, accuracy: 0.78 },
-  { name: "Myra G.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Myra", gender: 'female', speed: 0.95, accuracy: 0.91 },
-  { name: "Advik R.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Advik", gender: 'male', speed: 1.0, accuracy: 0.89 },
-  { name: "Inaya M.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Inaya", gender: 'female', speed: 1.1, accuracy: 0.87 },
-  { name: "Rishi V.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rishi", gender: 'male', speed: 0.75, accuracy: 0.96 },
-  { name: "Zara Q.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Zara", gender: 'female', speed: 1.25, accuracy: 0.84 },
-  { name: "Dev P.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Dev", gender: 'male', speed: 1.05, accuracy: 0.93 },
-  { name: "Sia J.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sia", gender: 'female', speed: 0.88, accuracy: 0.9 },
-  { name: "Aryan B.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aryan", gender: 'male', speed: 1.35, accuracy: 0.81 },
-  { name: "Kiara S.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kiara", gender: 'female', speed: 0.92, accuracy: 0.95 },
-  { name: "Yuvraj D.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Yuvraj", gender: 'male', speed: 1.15, accuracy: 0.86 },
-  { name: "Pari T.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Pari", gender: 'female', speed: 0.8, accuracy: 0.98 },
-  { name: "Rahul V.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul", gender: 'male', speed: 1.0, accuracy: 0.9 },
-  { name: "Shruti M.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Shruti", gender: 'female', speed: 1.2, accuracy: 0.88 },
-  { name: "Manan J.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Manan", gender: 'male', speed: 0.9, accuracy: 0.94 },
-  { name: "Tanya K.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Tanya", gender: 'female', speed: 1.1, accuracy: 0.86 },
-  { name: "Varun R.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Varun", gender: 'male', speed: 1.05, accuracy: 0.91 },
-  { name: "Esha P.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Esha", gender: 'female', speed: 0.95, accuracy: 0.93 },
-  { name: "Karan T.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Karan", gender: 'male', speed: 1.25, accuracy: 0.84 },
-  { name: "Pooja D.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Pooja", gender: 'female', speed: 0.8, accuracy: 0.97 },
-  { name: "Amol S.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Amol", gender: 'male', speed: 1.4, accuracy: 0.79 },
-  { name: "Divya L.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Divya", gender: 'female', speed: 1.15, accuracy: 0.85 },
+  { name: "Arjun K.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun", speed: 1.0, accuracy: 0.9 },
+  { name: "Neha S.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Neha", speed: 1.2, accuracy: 0.85 },
+  { name: "Vihaan P.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Vihaan", speed: 0.8, accuracy: 0.95 },
+  { name: "Ananya R.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya", speed: 1.5, accuracy: 0.8 },
+  { name: "Aarav M.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aarav", speed: 0.9, accuracy: 0.92 },
+  { name: "Ishani T.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ishani", speed: 1.1, accuracy: 0.88 },
+  { name: "Kabir L.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kabir", speed: 1.3, accuracy: 0.82 },
+  { name: "Saanvi D.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Saanvi", speed: 0.85, accuracy: 0.94 },
+  { name: "Reyansh C.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Reyansh", speed: 1.4, accuracy: 0.78 },
+  { name: "Myra G.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Myra", speed: 0.95, accuracy: 0.91 },
+  { name: "Advik R.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Advik", speed: 1.0, accuracy: 0.89 },
+  { name: "Inaya M.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Inaya", speed: 1.1, accuracy: 0.87 },
+  { name: "Rishi V.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rishi", speed: 0.75, accuracy: 0.96 },
+  { name: "Zara Q.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Zara", speed: 1.25, accuracy: 0.84 },
+  { name: "Dev P.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Dev", speed: 1.05, accuracy: 0.93 },
+  { name: "Sia J.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sia", speed: 0.88, accuracy: 0.9 },
+  { name: "Aryan B.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aryan", speed: 1.35, accuracy: 0.81 },
+  { name: "Kiara S.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kiara", speed: 0.92, accuracy: 0.95 },
+  { name: "Yuvraj D.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Yuvraj", speed: 1.15, accuracy: 0.86 },
+  { name: "Pari T.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Pari", speed: 0.8, accuracy: 0.98 },
 ];
 
 /**
  * Intelligent Hybrid Matchmaking
- * Searches for a real opponent for 6s before failing over to a bot.
+ * Searches for a real opponent for 12s before failing over to a bot.
  */
 export async function startMatchmaking(
   userId: string, 
@@ -71,7 +61,7 @@ export async function startMatchmaking(
       await updateDoc(doc(db, "duels", match.id), {
         opponentId: userId,
         opponentName: `${profile.firstName} ${profile.surname}`,
-        opponentPhoto: profile.profilePhoto || '',
+        opponentPhoto: profile.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.firstName}`,
         opponentType: 'human',
         status: 'active',
         updatedAt: serverTimestamp()
@@ -87,7 +77,7 @@ export async function startMatchmaking(
   const newDuel: Partial<Duel> = {
     challengerId: userId,
     challengerName: `${profile.firstName} ${profile.surname}`,
-    challengerPhoto: profile.profilePhoto || '',
+    challengerPhoto: profile.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.firstName}`,
     status: 'waiting',
     mode,
     difficulty,

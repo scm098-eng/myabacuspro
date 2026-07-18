@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -102,7 +102,7 @@ export default function GameHomePage() {
         if (node) {
           node.scrollIntoView({ block: 'center', behavior: 'smooth' });
         }
-      }, 100);
+      }, 150);
       return () => clearTimeout(timer);
     }
   }, [isLoading, lastAttendedId, activeTab]);
@@ -135,7 +135,7 @@ export default function GameHomePage() {
 
         <div className="flex-1 min-h-0">
           <TabsContent value="levels" className="h-full m-0 animate-in fade-in duration-500 outline-none">
-            <div className="relative h-[650px] overflow-hidden bg-gradient-to-b from-sky-400 via-blue-600 to-indigo-950 rounded-[3.5rem] border-8 border-white/20 shadow-2xl mt-8 mx-auto max-w-2xl">
+            <div className="relative h-[650px] overflow-hidden bg-gradient-to-b from-sky-400 via-blue-600 to-indigo-950 rounded-[3.5rem] border-8 border-white/20 shadow-2xl mt-8 mx-auto max-w-3xl">
               
               <div className="absolute top-0 left-0 right-0 h-full opacity-40 pointer-events-none" 
                    style={{ background: 'radial-gradient(circle at 50% 10%, white 0%, transparent 60%)' }} />
@@ -158,14 +158,14 @@ export default function GameHomePage() {
               </div>
 
               <div className="absolute inset-0 pointer-events-none opacity-50">
-                  <div className="absolute top-[20%] animate-[swimRight_20s_linear_infinite] left-0">
-                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={80} height={50} />
+                  <div className="absolute top-[20%] animate-[swimRight_20s_linear_infinite] left-[-200px]">
+                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={80} height={50} className="scale-x-[-1]" />
                   </div>
-                  <div className="absolute top-[45%] animate-[swimLeft_25s_linear_infinite] left-0">
-                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={100} height={60} className="scale-x-[-1]" />
+                  <div className="absolute top-[45%] animate-[swimLeft_25s_linear_infinite] right-[-200px]">
+                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={100} height={60} />
                   </div>
-                   <div className="absolute top-[75%] animate-[swimRight_18s_linear_infinite] left-0">
-                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={70} height={45} />
+                   <div className="absolute top-[75%] animate-[swimRight_18s_linear_infinite] left-[-200px]">
+                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={70} height={45} className="scale-x-[-1]" />
                   </div>
               </div>
 
