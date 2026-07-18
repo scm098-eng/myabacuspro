@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
@@ -160,7 +161,7 @@ export default function GameHomePage() {
                 ))}
               </div>
 
-              {/* Animated Fish Decorations */}
+              {/* Animated Fish Decorations - Corrected directions */}
               <div className="absolute inset-0 pointer-events-none opacity-50">
                   <div className="absolute top-[20%] animate-[swimRight_20s_linear_infinite]">
                     <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={80} height={50} />

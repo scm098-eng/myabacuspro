@@ -1,7 +1,9 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
@@ -33,21 +35,6 @@ const DOTS_ANIMATION = `
     content: ".";
     animation: dots 1.5s infinite;
   }
-  @keyframes bubble-rise {
-    from { transform: translate(-50%, 0); }
-    to { transform: translate(-50%, -130vh); }
-  }
-  .animate-bubble-rise {
-    animation: bubble-rise linear forwards;
-  }
-  @keyframes swimRight {
-    0% { transform: translateX(-300px); }
-    100% { transform: translateX(calc(100vw + 300px)); }
-  }
-  @keyframes swimLeft {
-    0% { transform: translateX(calc(100vw + 300px)); }
-    100% { transform: translateX(-300px); }
-  }
 `;
 
 interface Bubble {
@@ -78,6 +65,7 @@ export default function DuelArenaPage() {
   const [hasStarted, setHasStarted] = useState(false);
   const [showMatchTransition, setShowMatchTransition] = useState(false);
   const [rematchRequested, setRematchRequested] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   // Bubble specific state
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
@@ -111,6 +99,7 @@ export default function DuelArenaPage() {
   };
 
   useEffect(() => {
+    setMounted(true);
     if (!user || !duelId) return;
     const db = getFirestore(firebaseApp);
     const docRef = doc(db, "duels", duelId);
@@ -340,6 +329,7 @@ export default function DuelArenaPage() {
     return "text-xl sm:text-4xl";
   };
 
+  if (!mounted) return null;
   if (loading) return <div className="fixed inset-0 bg-slate-900 z-[10000] flex items-center justify-center"><Loader2 className="animate-spin w-12 h-12 text-primary" /></div>;
   if (!duel) return null;
 
@@ -349,7 +339,7 @@ export default function DuelArenaPage() {
     const challengerIsWinner = duel.winnerId === duel.challengerId;
     const opponentIsWinner = duel.winnerId === duel.opponentId;
 
-    return (
+    return createPortal(
       <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[10000] flex flex-col items-center justify-center p-4">
         <Card className="w-full max-w-4xl rounded-[2.5rem] border-none shadow-2xl overflow-hidden animate-in zoom-in-95">
           <div className={cn("p-12 text-center text-white", isWinner ? "bg-green-600" : (isDraw ? "bg-blue-600" : "bg-slate-800"))}>
@@ -388,12 +378,13 @@ export default function DuelArenaPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div>,
+      document.body
     );
   }
 
   if (showMatchTransition) {
-    return (
+    return createPortal(
       <div className="fixed inset-0 z-[10000] bg-slate-900 flex flex-col items-center justify-center p-4">
         <div className="max-w-md w-full text-center space-y-12">
            <div className="flex items-center justify-center gap-8">
@@ -409,12 +400,13 @@ export default function DuelArenaPage() {
            </div>
            <div className="space-y-4"><h2 className="text-5xl font-black text-white uppercase italic animate-pulse">Match Found!</h2><p className="text-xl font-bold text-primary uppercase tracking-widest">Entering Arena in 3...</p></div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
   if (duel.status === 'waiting') {
-    return (
+    return createPortal(
       <div className="fixed inset-0 z-[10000] bg-slate-900 flex flex-col items-center justify-center p-4">
         <style>{DOTS_ANIMATION}</style>
         <Card className="w-full max-w-xl rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
@@ -428,11 +420,12 @@ export default function DuelArenaPage() {
              <Button variant="outline" className="w-full h-14 rounded-xl font-bold border-2" onClick={() => router.push('/game')}>Cancel Search</Button>
           </CardContent>
         </Card>
-      </div>
+      </div>,
+      document.body
     );
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[10000] bg-slate-900 flex flex-col overflow-hidden animate-in fade-in duration-700">
       <style>{DOTS_ANIMATION}</style>
       
@@ -473,14 +466,6 @@ export default function DuelArenaPage() {
         <div className="absolute inset-0 z-0">
           <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Game%20Background.webp?alt=media" alt="Arena" fill className="object-cover" priority />
           <div className="absolute inset-0 bg-black/20" />
-          
-          {/* Ambient Marine Life */}
-          <div className="absolute top-[20%] left-[-100px] animate-[swimRight_20s_linear_infinite] opacity-30">
-            <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="fish" width={60} height={40} />
-          </div>
-          <div className="absolute top-[50%] right-[-100px] animate-[swimLeft_25s_linear_infinite] opacity-30 scale-x-[-1]">
-            <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="fish" width={80} height={50} />
-          </div>
         </div>
 
         <div className="relative z-10 w-full h-full flex items-center justify-center">
@@ -521,6 +506,7 @@ export default function DuelArenaPage() {
             <X className="w-4 h-4 mr-2" /> Forfeit
          </Button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
