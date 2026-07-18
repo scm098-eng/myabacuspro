@@ -87,7 +87,7 @@ export default function DuelArenaPage() {
   const botIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const botTriggerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Scope critical variables at component level to resolve ReferenceErrors
+  // Scope critical variables at component level
   const isChallenger = useMemo(() => duel?.challengerId === user?.uid, [duel, user]);
   const gameState = useMemo(() => {
     if (duel?.status === 'completed') return 'completed';
@@ -335,6 +335,13 @@ export default function DuelArenaPage() {
     router.push(`/game/duels/${newDuelId}`);
   };
 
+  const getQuestionFontSize = (text: string) => {
+    if (text.length > 35) return "text-sm sm:text-base";
+    if (text.length > 25) return "text-base sm:text-xl";
+    if (text.length > 15) return "text-lg sm:text-3xl";
+    return "text-xl sm:text-4xl";
+  };
+
   if (loading) return <div className="fixed inset-0 bg-slate-900 z-[10000] flex items-center justify-center"><Loader2 className="animate-spin w-12 h-12 text-primary" /></div>;
   if (!duel) return null;
 
@@ -497,7 +504,7 @@ export default function DuelArenaPage() {
                     >
                         <span className={cn(
                           "text-white font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none whitespace-nowrap text-center", 
-                          bubble.isQuestion ? 'text-lg sm:text-4xl' : 'text-xl sm:text-4xl'
+                          bubble.isQuestion ? getQuestionFontSize(currentQuestion?.text || "") : 'text-xl sm:text-4xl'
                         )}>
                             {bubble.isQuestion ? currentQuestion?.text : bubble.value}
                         </span>
