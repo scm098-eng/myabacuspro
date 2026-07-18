@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -72,7 +72,7 @@ export default function DuelArenaPage() {
   const botTriggerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const answersRef = useRef<(number | null)[]>([]);
 
-  // Core scope variables
+  // Fixed scoping for build stability
   const isChallenger = useMemo(() => duel?.challengerId === user?.uid, [duel, user]);
   const gameState = useMemo(() => {
     if (duel?.status === 'completed') return 'completed';
@@ -300,41 +300,41 @@ export default function DuelArenaPage() {
     const opponentIsWinner = duel.winnerId === duel.opponentId;
 
     return createPortal(
-      <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[10001] overflow-y-auto flex items-center justify-center p-4">
-          <Card className="w-full max-w-4xl rounded-[2.5rem] border-none shadow-2xl overflow-hidden animate-in zoom-in-95">
-            <div className={cn("p-12 text-center text-white", isWinner ? "bg-green-600" : (isDraw ? "bg-blue-600" : "bg-slate-800"))}>
-              <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6">
-                {isWinner ? <Crown className="w-12 h-12 text-yellow-300" /> : (isDraw ? <Users className="w-12 h-12" /> : <Trophy className="w-12 h-12 opacity-50" />)}
+      <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[10001] flex items-center justify-center p-4 overflow-hidden h-screen">
+          <Card className="w-full max-w-2xl rounded-[2.5rem] border-none shadow-2xl overflow-hidden animate-in zoom-in-95 bg-white">
+            <div className={cn("p-8 text-center text-white", isWinner ? "bg-green-600" : (isDraw ? "bg-blue-600" : "bg-slate-800"))}>
+              <div className="mx-auto bg-white/20 p-4 rounded-full w-fit mb-4">
+                {isWinner ? <Crown className="w-10 h-10 text-yellow-300" /> : (isDraw ? <Users className="w-10 h-10" /> : <Trophy className="w-10 h-10 opacity-50" />)}
               </div>
-              <h2 className="text-4xl font-black uppercase tracking-tighter italic">{isWinner ? 'MATCH WON!' : (isDraw ? 'MATCH DRAW!' : 'MATCH LOST')}</h2>
+              <h2 className="text-3xl font-black uppercase tracking-tighter italic leading-none">{isWinner ? 'MATCH WON!' : (isDraw ? 'MATCH DRAW!' : 'MATCH LOST')}</h2>
             </div>
-            <CardContent className="p-12">
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-12 sm:gap-24 mb-12">
-                  <div className="text-center space-y-4">
+            <CardContent className="p-8">
+              <div className="flex items-center justify-around mb-8">
+                  <div className="text-center space-y-3">
                     <div className="relative">
-                        <Avatar className={cn("h-24 w-24 ring-4", challengerIsWinner ? "ring-yellow-400" : "ring-slate-100")}>
+                        <Avatar className={cn("h-20 w-20 ring-4", challengerIsWinner ? "ring-yellow-400" : "ring-slate-100")}>
                           <AvatarImage src={getAvatarUrl(duel.challengerPhoto, challengerIsWinner, isDraw, true)} />
-                          <AvatarFallback className="font-black text-2xl">{duel.challengerName?.[0]}</AvatarFallback>
+                          <AvatarFallback className="font-black text-xl">{duel.challengerName?.[0]}</AvatarFallback>
                         </Avatar>
-                        <Badge className={cn("absolute -top-3 left-1/2 -translate-x-1/2 border-none font-black text-[10px] px-3 uppercase shadow-md", challengerIsWinner ? "bg-yellow-400 text-yellow-900" : "bg-slate-200 text-slate-700")}>{challengerIsWinner ? 'CHAMPION' : 'RUNNER UP'}</Badge>
+                        <Badge className={cn("absolute -top-3 left-1/2 -translate-x-1/2 border-none font-black text-[8px] px-2 uppercase shadow-md", challengerIsWinner ? "bg-yellow-400 text-yellow-900" : "bg-slate-200 text-slate-700")}>{challengerIsWinner ? 'CHAMPION' : 'RUNNER UP'}</Badge>
                     </div>
-                    <div className="space-y-1"><p className="text-sm font-black uppercase tracking-widest text-slate-400">Challenger</p><p className="text-lg font-black truncate max-w-[150px]">{duel.challengerName}</p><p className="text-5xl font-black text-slate-900">{duel.challengerScore || 0}</p></div>
+                    <div className="space-y-0.5"><p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Challenger</p><p className="text-sm font-black truncate max-w-[120px]">{duel.challengerName}</p><p className="text-4xl font-black text-slate-900">{duel.challengerScore || 0}</p></div>
                   </div>
-                  <div className="text-5xl font-black text-slate-200 italic">VS</div>
-                  <div className="text-center space-y-4">
+                  <div className="text-3xl font-black text-slate-200 italic">VS</div>
+                  <div className="text-center space-y-3">
                     <div className="relative">
-                        <Avatar className={cn("h-24 w-24 ring-4", opponentIsWinner ? "ring-yellow-400" : "ring-slate-100")}>
+                        <Avatar className={cn("h-20 w-20 ring-4", opponentIsWinner ? "ring-yellow-400" : "ring-slate-100")}>
                           <AvatarImage src={getAvatarUrl(duel.opponentPhoto, opponentIsWinner, isDraw, true)} />
-                          <AvatarFallback className="font-black text-2xl">{duel.opponentName?.[0]}</AvatarFallback>
+                          <AvatarFallback className="font-black text-xl">{duel.opponentName?.[0]}</AvatarFallback>
                         </Avatar>
-                        <Badge className={cn("absolute -top-3 left-1/2 -translate-x-1/2 border-none font-black text-[10px] px-3 uppercase shadow-md", opponentIsWinner ? "bg-yellow-400 text-yellow-900" : "bg-slate-200 text-slate-700")}>{opponentIsWinner ? 'CHAMPION' : 'RUNNER UP'}</Badge>
+                        <Badge className={cn("absolute -top-3 left-1/2 -translate-x-1/2 border-none font-black text-[8px] px-2 uppercase shadow-md", opponentIsWinner ? "bg-yellow-400 text-yellow-900" : "bg-slate-200 text-slate-700")}>{opponentIsWinner ? 'CHAMPION' : 'RUNNER UP'}</Badge>
                     </div>
-                    <div className="space-y-1"><p className="text-sm font-black uppercase tracking-widest text-slate-400">Opponent</p><p className="text-lg font-black truncate max-w-[150px]">{duel.opponentName}</p><p className="text-5xl font-black text-slate-900">{duel.opponentScore || 0}</p></div>
+                    <div className="space-y-0.5"><p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Opponent</p><p className="text-sm font-black truncate max-w-[120px]">{duel.opponentName}</p><p className="text-4xl font-black text-slate-900">{duel.opponentScore || 0}</p></div>
                   </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Button onClick={handleRematch} disabled={rematchRequested} className="h-16 text-xl font-black rounded-2xl bg-primary text-white shadow-xl uppercase">{rematchRequested ? 'Waiting...' : <><RotateCcw className="mr-2" /> Rematch</>}</Button>
-                <Button onClick={() => router.push('/game')} variant="outline" className="h-16 text-xl font-black rounded-2xl uppercase">Return to Hub</Button>
+              <div className="flex flex-col gap-3">
+                <Button onClick={handleRematch} disabled={rematchRequested} className="h-14 text-lg font-black rounded-2xl bg-primary text-white shadow-xl uppercase w-full">{rematchRequested ? 'Waiting...' : <><RotateCcw className="mr-2 h-5 w-5" /> Rematch</>}</Button>
+                <Button onClick={() => router.push('/game')} variant="outline" className="h-12 text-sm font-black rounded-xl uppercase w-full border-2">Return to Hub</Button>
               </div>
             </CardContent>
           </Card>
@@ -345,20 +345,20 @@ export default function DuelArenaPage() {
 
   if (showMatchTransition) {
     return createPortal(
-      <div className="fixed inset-0 z-[10001] bg-slate-900 overflow-hidden flex flex-col items-center justify-center p-4">
-          <div className="max-w-md w-full text-center space-y-12">
-             <div className="flex items-center justify-center gap-8">
-                <Avatar className="h-32 w-32 border-4 border-primary shadow-2xl animate-in slide-in-from-left-8 duration-700">
+      <div className="fixed inset-0 z-[10001] bg-slate-900 overflow-hidden flex flex-col items-center justify-center p-4 h-screen">
+          <div className="max-w-md w-full text-center space-y-8">
+             <div className="flex items-center justify-center gap-6">
+                <Avatar className="h-24 w-24 border-4 border-primary shadow-2xl animate-in slide-in-from-left-8 duration-700">
                   <AvatarImage src={getAvatarUrl(duel?.challengerPhoto, false, true)} />
                   <AvatarFallback>{duel?.challengerName?.[0]}</AvatarFallback>
                 </Avatar>
-                <div className="text-4xl font-black text-white italic animate-in zoom-in-50 duration-700">VS</div>
-                <Avatar className="h-32 w-32 border-4 border-orange-500 shadow-2xl animate-in slide-in-from-right-8 duration-700">
+                <div className="text-3xl font-black text-white italic animate-in zoom-in-50 duration-700">VS</div>
+                <Avatar className="h-24 w-24 border-4 border-orange-500 shadow-2xl animate-in slide-in-from-right-8 duration-700">
                   <AvatarImage src={getAvatarUrl(duel?.opponentPhoto, false, true)} />
                   <AvatarFallback>{duel?.opponentName?.[0]}</AvatarFallback>
                 </Avatar>
              </div>
-             <div className="space-y-4"><h2 className="text-5xl font-black text-white uppercase italic animate-pulse">Match Found!</h2><p className="text-xl font-bold text-primary uppercase tracking-widest">Entering Arena in 3...</p></div>
+             <div className="space-y-3"><h2 className="text-4xl font-black text-white uppercase italic animate-pulse">Match Found!</h2><p className="text-lg font-bold text-primary uppercase tracking-widest">Arena entering in 3...</p></div>
           </div>
       </div>,
       document.body
@@ -367,17 +367,17 @@ export default function DuelArenaPage() {
 
   if (duel?.status === 'waiting') {
     return createPortal(
-      <div className="fixed inset-0 z-[10001] bg-slate-900 overflow-hidden flex flex-col items-center justify-center p-4">
+      <div className="fixed inset-0 z-[10001] bg-slate-900 overflow-hidden flex flex-col items-center justify-center p-4 h-screen">
           <style>{DOTS_ANIMATION}</style>
-          <Card className="w-full max-w-xl rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
-            <div className="p-12 text-center text-white bg-slate-900 border-b border-white/5">
-              <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-pulse"><Swords className="w-12 h-12 text-primary" /></div>
-              <h2 className="text-3xl font-black uppercase italic animate-dots">Searching</h2>
-              <p className="text-slate-200 font-bold mt-2">Looking for online students...</p>
+          <Card className="w-full max-w-md rounded-[2.5rem] border-none shadow-2xl overflow-hidden bg-white">
+            <div className="p-10 text-center text-white bg-slate-900 border-b border-white/5">
+              <div className="mx-auto bg-white/20 p-4 rounded-full w-fit mb-4 animate-pulse"><Swords className="w-10 h-10 text-primary" /></div>
+              <h2 className="text-2xl font-black uppercase italic animate-dots leading-none">Searching</h2>
+              <p className="text-slate-200 font-bold mt-2 text-sm">Looking for online students...</p>
             </div>
-            <CardContent className="p-10 text-center space-y-6 bg-white">
-               <div className="flex flex-col items-center gap-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="text-sm font-medium text-slate-500 italic">"Global matchmaking ensures you always find a worthy opponent."</p></div>
-               <Button variant="outline" className="w-full h-14 rounded-xl font-bold border-2" onClick={() => router.push('/game')}>Cancel Search</Button>
+            <CardContent className="p-8 text-center space-y-6">
+               <div className="flex flex-col items-center gap-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="text-xs font-medium text-slate-500 italic">"Global matchmaking ensures you always find a worthy opponent."</p></div>
+               <Button variant="outline" className="w-full h-12 rounded-xl font-bold border-2" onClick={() => router.push('/game')}>Cancel Search</Button>
             </CardContent>
           </Card>
       </div>,
@@ -386,74 +386,73 @@ export default function DuelArenaPage() {
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[10000] bg-slate-900 flex flex-col overflow-hidden animate-in fade-in duration-700 h-screen">
+    <div className="fixed inset-0 z-[10000] bg-slate-900 flex flex-col overflow-hidden animate-in fade-in duration-700 h-screen w-screen">
       <style>{DOTS_ANIMATION}</style>
       
-      {/* Immersive Underwater Background */}
-      <div className="absolute inset-0 z-0">
+      {/* Full-Screen Immersive Marine Environment */}
+      <div className="absolute inset-0 z-0 h-full w-full">
           <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Game%20Background.webp?alt=media" alt="Arena" fill className="object-cover" priority />
           <div className="absolute inset-0 bg-black/10" />
-          
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             {[...Array(20)].map((_, i) => (
               <div
                 key={i}
                 className="absolute bg-white/20 rounded-full animate-[bubble-rise-bg_linear_infinite]"
                 style={{
-                  width: `${Math.random() * 10 + 4}px`,
-                  height: `${Math.random() * 10 + 4}px`,
+                  width: `${Math.random() * 8 + 4}px`,
+                  height: `${Math.random() * 8 + 4}px`,
                   left: `${Math.random() * 100}%`,
                   bottom: "-50px",
-                  animationDuration: `${Math.random() * 6 + 6}s`,
-                  animationDelay: `${Math.random() * 12}s`,
+                  animationDuration: `${Math.random() * 5 + 5}s`,
+                  animationDelay: `${Math.random() * 10}s`,
                 }}
               />
             ))}
           </div>
       </div>
 
-      {/* Semi-Transparent HUD Header */}
-      <div className="relative bg-black/20 backdrop-blur-md p-4 sm:p-6 border-b border-white/10 flex justify-between items-center z-50 shrink-0">
-          <div className="flex items-center gap-4 text-white min-w-0 flex-1">
-             <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-primary shrink-0">
+      {/* Immersive HUD (Fit to screen) */}
+      <div className="relative bg-black/20 backdrop-blur-md p-4 sm:p-5 border-b border-white/10 flex justify-between items-center z-50 shrink-0">
+          <div className="flex items-center gap-3 text-white min-w-0 flex-1">
+             <Avatar className="h-10 w-10 border-2 border-primary shrink-0">
                <AvatarImage src={getAvatarUrl(isChallenger ? duel?.opponentPhoto : duel?.challengerPhoto, false, true)}/>
                <AvatarFallback>{(isChallenger ? duel?.opponentName : duel?.challengerName)?.[0]}</AvatarFallback>
              </Avatar>
              <div className="min-w-0 flex-1">
-                <CardTitle className="text-sm sm:text-lg font-black uppercase flex items-center gap-2 italic truncate">
-                  <Swords className="w-4 h-4 text-orange-500 shrink-0" /> Duel Arena
+                <CardTitle className="text-xs sm:text-base font-black uppercase flex items-center gap-1.5 italic truncate">
+                  <Swords className="w-3 h-3 text-orange-500 shrink-0" /> Duel Arena
                 </CardTitle>
-                <CardDescription className="text-sky-300 font-bold text-[10px] sm:text-xs">Round {currentIdx + 1} of {duel?.questions.length}</CardDescription>
+                <CardDescription className="text-sky-300 font-bold text-[9px] sm:text-[10px]">Round {currentIdx + 1} of {duel?.questions.length}</CardDescription>
              </div>
           </div>
           
-          <div className="flex items-center gap-3">
-             <div className="hidden sm:flex items-center gap-1 bg-white/10 p-2 rounded-xl border border-white/5 mr-4">
-                {Array.from({length: 5}).map((_, i) => (<Heart key={i} className={cn("w-4 h-4 transition-all", i < lives ? "text-red-500 fill-red-500" : "text-white/10")} />))}
+          <div className="flex items-center gap-2">
+             <div className="hidden sm:flex items-center gap-1 bg-white/10 p-1.5 rounded-xl border border-white/5 mr-2">
+                {Array.from({length: 5}).map((_, i) => (<Heart key={i} className={cn("w-3.5 h-3.5 transition-all", i < lives ? "text-red-500 fill-red-500" : "text-white/10")} />))}
              </div>
              <div className="text-right">
-                <p className="text-[8px] font-black uppercase text-sky-200 leading-none mb-1">Score</p>
-                <div className="flex items-baseline justify-end gap-2">
-                   <p className="text-xl sm:text-3xl font-black text-orange-500 leading-none">{localScore}</p>
-                   <p className="text-xs sm:text-lg font-black text-white/20 leading-none">VS</p>
-                   <p className="text-base sm:text-2xl font-black text-slate-400 leading-none">{isChallenger ? (duel?.opponentScore || 0) : (duel?.challengerScore || 0)}</p>
+                <p className="text-[7px] font-black uppercase text-sky-200 leading-none mb-0.5">Score</p>
+                <div className="flex items-baseline justify-end gap-1.5">
+                   <p className="text-xl sm:text-2xl font-black text-orange-500 leading-none">{localScore}</p>
+                   <p className="text-[10px] sm:text-sm font-black text-white/20 leading-none">VS</p>
+                   <p className="text-sm sm:text-xl font-black text-slate-400 leading-none">{isChallenger ? (duel?.opponentScore || 0) : (duel?.challengerScore || 0)}</p>
                 </div>
              </div>
           </div>
       </div>
 
-      <Progress value={(currentIdx / (duel?.questions.length || 1)) * 100} className="relative h-1 bg-white/5 rounded-none z-50" />
+      <Progress value={(currentIdx / (duel?.questions.length || 1)) * 100} className="relative h-0.5 bg-white/5 rounded-none z-50" />
 
-      {/* Main Playing Arena */}
-      <div className="relative flex-1 flex flex-col justify-center overflow-hidden z-10">
+      {/* Viewport-Fitting Playing Field */}
+      <div className="relative flex-1 flex flex-col justify-center overflow-hidden z-10 w-full h-full">
           <div className="relative w-full h-full">
                 {bubbles.map(bubble => (
                     <div 
                       key={bubble.id} 
                       className={cn(
-                        "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-2xl transition-all active:scale-95", 
+                        "absolute bottom-[-150px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-2xl transition-all active:scale-95", 
                         bubble.isQuestion 
-                          ? 'w-max max-w-[90vw] px-6 sm:px-10 h-16 sm:h-24 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20' 
+                          ? 'w-max max-w-[95vw] px-6 sm:px-8 h-14 sm:h-20 bg-yellow-400 border-yellow-500 rounded-2xl ring-4 ring-yellow-400/20' 
                           : 'w-20 h-20 sm:w-32 sm:h-32 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
                       )} 
                       style={{ 
@@ -465,7 +464,7 @@ export default function DuelArenaPage() {
                       onClick={() => handleBubbleClick(bubble)}
                     >
                         <span className={cn(
-                          "text-white font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none whitespace-nowrap text-center", 
+                          "text-white font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none whitespace-nowrap text-center px-2", 
                           bubble.isQuestion ? getQuestionFontSize(currentQuestion?.text || "") : "text-xl sm:text-4xl"
                         )}>
                             {bubble.isQuestion ? currentQuestion?.text : bubble.value}
@@ -475,14 +474,14 @@ export default function DuelArenaPage() {
           </div>
       </div>
 
-      {/* Semi-Transparent Footer */}
-      <div className="relative bg-black/20 backdrop-blur-md p-4 border-t border-white/10 flex justify-between items-center text-white z-50 shrink-0">
+      {/* Semi-Transparent Footer Overlay */}
+      <div className="relative bg-black/20 backdrop-blur-md p-3 border-t border-white/10 flex justify-between items-center text-white z-50 shrink-0">
          <div className="flex items-center gap-3">
-            <Badge variant="outline" className="border-white/20 text-white font-black text-[10px]">{duel?.mode.toUpperCase()}</Badge>
-            <span className="text-[10px] font-black opacity-40 uppercase tracking-widest">{duel?.difficulty || 'Normal'} Race</span>
+            <Badge variant="outline" className="border-white/20 text-white font-black text-[9px] h-5">{duel?.mode.toUpperCase()}</Badge>
+            <span className="text-[9px] font-black opacity-40 uppercase tracking-widest">{duel?.difficulty || 'Normal'} Race</span>
          </div>
-         <Button variant="ghost" size="sm" onClick={() => router.push('/game')} className="text-white/40 hover:text-white font-bold h-8">
-            <X className="w-4 h-4 mr-2" /> Forfeit
+         <Button variant="ghost" size="sm" onClick={() => router.push('/game')} className="text-white/40 hover:text-white font-bold h-7 px-4">
+            <X className="w-3.5 h-3.5 mr-2" /> Forfeit
          </Button>
       </div>
     </div>,

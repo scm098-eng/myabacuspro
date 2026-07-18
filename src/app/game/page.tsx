@@ -102,7 +102,7 @@ export default function GameHomePage() {
         if (node) {
           node.scrollIntoView({ block: 'center', behavior: 'smooth' });
         }
-      }, 150);
+      }, 300); // Increased delay for stable hydration
       return () => clearTimeout(timer);
     }
   }, [isLoading, lastAttendedId, activeTab]);
@@ -149,7 +149,7 @@ export default function GameHomePage() {
                       width: `${Math.random() * 12 + 4}px`,
                       height: `${Math.random() * 12 + 4}px`,
                       left: `${Math.random() * 100}%`,
-                      bottom: "-20px",
+                      bottom: "-50px",
                       animationDuration: `${Math.random() * 7 + 7}s`,
                       animationDelay: `${Math.random() * 15}s`,
                     }}
@@ -159,13 +159,13 @@ export default function GameHomePage() {
 
               <div className="absolute inset-0 pointer-events-none opacity-50">
                   <div className="absolute top-[20%] animate-[swimRight_20s_linear_infinite] left-[-200px]">
-                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={80} height={50} className="scale-x-[-1]" />
+                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={80} height={50} />
                   </div>
                   <div className="absolute top-[45%] animate-[swimLeft_25s_linear_infinite] right-[-200px]">
-                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={100} height={60} />
+                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={100} height={60} className="scale-x-[-1]" />
                   </div>
                    <div className="absolute top-[75%] animate-[swimRight_18s_linear_infinite] left-[-200px]">
-                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={70} height={45} className="scale-x-[-1]" />
+                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={70} height={45} />
                   </div>
               </div>
 
