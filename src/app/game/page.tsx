@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
@@ -7,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { cn } from '@/lib/utils';
-import { Star, Check, Swords, BrainCircuit, Gamepad2, MonitorOff, LayoutGrid, ChevronRight } from 'lucide-react';
+import { Star, Check, Swords, Gamepad2, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -96,7 +95,6 @@ export default function GameHomePage() {
 
   const lastAttendedId = profile?.lastLevelAttended || 1;
 
-  // Persistent Tab-Aware Scroll Engine
   useEffect(() => {
     if (!isLoading && activeTab === "levels" && scrollContainerRef.current) {
       const timer = setTimeout(() => {
@@ -139,11 +137,9 @@ export default function GameHomePage() {
           <TabsContent value="levels" className="h-full m-0 animate-in fade-in duration-500 outline-none">
             <div className="relative h-[650px] overflow-hidden bg-gradient-to-b from-sky-400 via-blue-600 to-indigo-950 rounded-[3.5rem] border-8 border-white/20 shadow-2xl mt-8 mx-auto max-w-2xl">
               
-              {/* Light Rays Effect */}
               <div className="absolute top-0 left-0 right-0 h-full opacity-40 pointer-events-none" 
                    style={{ background: 'radial-gradient(circle at 50% 10%, white 0%, transparent 60%)' }} />
 
-              {/* Decorative Rising Bubbles */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 {[...Array(30)].map((_, i) => (
                   <div
@@ -161,15 +157,14 @@ export default function GameHomePage() {
                 ))}
               </div>
 
-              {/* Animated Fish Decorations - Corrected directions */}
               <div className="absolute inset-0 pointer-events-none opacity-50">
-                  <div className="absolute top-[20%] animate-[swimRight_20s_linear_infinite]">
+                  <div className="absolute top-[20%] animate-[swimRight_20s_linear_infinite] left-0">
                     <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={80} height={50} />
                   </div>
-                  <div className="absolute top-[45%] animate-[swimLeft_25s_linear_infinite]">
+                  <div className="absolute top-[45%] animate-[swimLeft_25s_linear_infinite] left-0">
                     <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={100} height={60} className="scale-x-[-1]" />
                   </div>
-                   <div className="absolute top-[75%] animate-[swimRight_18s_linear_infinite]">
+                   <div className="absolute top-[75%] animate-[swimRight_18s_linear_infinite] left-0">
                     <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={70} height={45} />
                   </div>
               </div>
@@ -203,7 +198,6 @@ export default function GameHomePage() {
                 </div>
               </div>
               
-              {/* Fog/Atmosphere Overlays */}
               <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-sky-400 to-transparent z-10 pointer-events-none" />
               <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-indigo-950 to-transparent z-10 pointer-events-none" />
             </div>
