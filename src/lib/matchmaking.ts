@@ -107,10 +107,13 @@ export async function spawnBotForDuel(duelId: string) {
   const db = getFirestore(firebaseApp);
   const bot = BOT_IDENTITIES[Math.floor(Math.random() * BOT_IDENTITIES.length)];
   
+  // Appending motivated mood traits to bot avatars
+  const motivatedAvatar = `${bot.avatar}&eyes=happy&mouth=smile`;
+
   await updateDoc(doc(db, "duels", duelId), {
     opponentId: `bot_${Date.now()}`,
     opponentName: bot.name,
-    opponentPhoto: bot.avatar,
+    opponentPhoto: motivatedAvatar,
     opponentType: 'bot',
     botSpeed: bot.speed,
     botAccuracy: bot.accuracy,
