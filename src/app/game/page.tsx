@@ -95,6 +95,7 @@ export default function GameHomePage() {
 
   const lastAttendedId = profile?.lastLevelAttended || 1;
 
+  // Persistence Engine: Re-center whenever the levels tab becomes active
   useEffect(() => {
     if (!isLoading && activeTab === "levels" && scrollContainerRef.current) {
       const timer = setTimeout(() => {
@@ -102,7 +103,7 @@ export default function GameHomePage() {
         if (node) {
           node.scrollIntoView({ block: 'center', behavior: 'smooth' });
         }
-      }, 300); // Increased delay for stable hydration
+      }, 500); 
       return () => clearTimeout(timer);
     }
   }, [isLoading, lastAttendedId, activeTab]);
