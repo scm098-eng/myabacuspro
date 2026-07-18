@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
@@ -87,7 +86,7 @@ export default function DuelArenaPage() {
   const botIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const botTriggerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Scope critical variables at component level
+  // Core component scope variables
   const isChallenger = useMemo(() => duel?.challengerId === user?.uid, [duel, user]);
   const gameState = useMemo(() => {
     if (duel?.status === 'completed') return 'completed';
@@ -96,7 +95,7 @@ export default function DuelArenaPage() {
   }, [duel]);
   const currentQuestion = useMemo(() => duel?.questions[currentIdx], [duel, currentIdx]);
 
-  // Helper for dynamic avatar emotions
+  // Helper for motivated/contextual avatar expressions
   const getAvatarUrl = (baseUrl: string | undefined, isWinner: boolean, isDraw: boolean, isResultsScreen: boolean = false) => {
     if (!baseUrl) return undefined;
     if (!baseUrl.includes('api.dicebear.com')) return baseUrl;
@@ -146,14 +145,12 @@ export default function DuelArenaPage() {
     );
   }, [user, duelId, router, toast, hasStarted]);
 
-  const config = useMemo(() => {
-    return {
-      speed: 8,
-      answerRange: [15, 35, 65, 85],
-      qDelay: 1.2,
-      variance: 2
-    };
-  }, []);
+  const config = useMemo(() => ({
+    speed: 8,
+    answerRange: [15, 35, 65, 85],
+    qDelay: 1.2,
+    variance: 2
+  }), []);
 
   const submitDuel = useCallback(async (finalScore: number) => {
     if (!duel || !user || isSubmitting) return;
@@ -252,12 +249,15 @@ export default function DuelArenaPage() {
 
     const maxTime = (config.speed + 4) * 1000;
     questionTimeoutRef.current = setTimeout(() => {
-        if (!isSubmitting) {
+        if (!isSubmitting && !isFinishingRef.current) {
           processTurn(false, null);
         }
     }, maxTime);
 
   }, [duel, currentIdx, hasStarted, isSubmitting, config, processTurn]);
+
+  const isFinishingRef = useRef(isSubmitting);
+  useEffect(() => { isFinishingRef.current = isSubmitting; }, [isSubmitting]);
 
   useEffect(() => {
     if (hasStarted && duel?.status === 'active') {
@@ -329,7 +329,7 @@ export default function DuelArenaPage() {
 
   const startRematch = async () => {
     if (!duel || !user || !profile) return;
-    const newDuelId = await startMatchmaking(user.uid, profile, duel.mode, duel.difficulty);
+    const newDuelId = await startMatchmaking(user.uid, profile, duel.mode as any, duel.difficulty);
     router.push(`/game/duels/${newDuelId}`);
   };
 
