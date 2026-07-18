@@ -101,7 +101,6 @@ export default function DuelArenaPage() {
     if (!baseUrl) return undefined;
     if (!baseUrl.includes('api.dicebear.com')) return baseUrl;
     
-    // Results screen: Emotion based on outcome
     if (isResultsScreen) {
       if (isDraw) return `${baseUrl}&eyes=happy&mouth=smile`;
       return isWinner 
@@ -109,7 +108,6 @@ export default function DuelArenaPage() {
         : `${baseUrl}&eyes=cry&mouth=sad`;
     }
 
-    // During game/searching: Motivated Happy faces
     return `${baseUrl}&eyes=happy&mouth=smile`;
   };
 
