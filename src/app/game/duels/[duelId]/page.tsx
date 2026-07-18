@@ -80,7 +80,7 @@ export default function DuelArenaPage() {
   const config = useMemo(() => ({
     speed: 8,
     answerRange: [12, 37, 63, 88], 
-    qDelay: 1.2,
+    qDelay: 0.4, // Accelerated spawning for faster transitions
     variance: 1.5 
   }), []);
 
@@ -173,13 +173,14 @@ export default function DuelArenaPage() {
       }
     }
 
+    // Faster transition between questions
     setTimeout(() => {
       if (currentIdx < (duel?.questions.length || 0) - 1) {
         setCurrentIdx(p => p + 1);
       } else {
         submitDuel(nextScore);
       }
-    }, 500);
+    }, 150);
   }, [currentIdx, duel, localScore, playSound, submitDuel, lives]);
 
   const generateBubbles = useCallback(() => {
@@ -200,7 +201,7 @@ export default function DuelArenaPage() {
       newBubbles.push({
         id: `a-${batchId}-${i}`, value: opt, isCorrect: opt === q.answer, left: config.answerRange[i],
         duration: config.speed + 2 + Math.random() * config.variance,
-        delay: config.qDelay + (i * 0.2)
+        delay: config.qDelay + (i * 0.1) // Tighter stagger for faster arrival
       });
     });
 
@@ -243,7 +244,7 @@ export default function DuelArenaPage() {
           }
           await updateDoc(doc(getFirestore(firebaseApp), `duels/${duelId}`), payload);
           if (!isFinal) simulateNext();
-        }, 2000 + Math.random() * 2000);
+        }, 1800 + Math.random() * 1500); // Competitive bot speed
       };
       simulateNext();
     }
@@ -475,13 +476,13 @@ export default function DuelArenaPage() {
           </div>
       </div>
 
-      {/* Semi-Transparent Footer Overlay */}
-      <div className="relative bg-black/20 backdrop-blur-md p-2 sm:p-3 border-t border-white/10 flex justify-between items-center text-white z-50 shrink-0">
-         <div className="flex items-center gap-3">
+      {/* Invisible Floating Footer Controls */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 flex justify-between items-center text-white z-50 pointer-events-none">
+         <div className="flex items-center gap-3 opacity-40 pointer-events-none">
             <Badge variant="outline" className="border-white/20 text-white font-black text-[8px] h-4 sm:h-5">{duel?.mode.toUpperCase()}</Badge>
-            <span className="text-[8px] font-black opacity-40 uppercase tracking-widest">{duel?.difficulty || 'Normal'} Race</span>
+            <span className="text-[8px] font-black uppercase tracking-widest">{duel?.difficulty || 'Normal'} Race</span>
          </div>
-         <Button variant="ghost" size="sm" onClick={() => router.push('/game')} className="text-white/40 hover:text-white font-bold h-6 sm:h-7 px-3 sm:px-4 text-[10px]">
+         <Button variant="ghost" size="sm" onClick={() => router.push('/game')} className="text-white/40 hover:text-white font-bold h-6 sm:h-7 px-3 sm:px-4 text-[10px] pointer-events-auto">
             <X className="w-3 h-3 mr-2" /> Forfeit
          </Button>
       </div>
@@ -489,4 +490,3 @@ export default function DuelArenaPage() {
     document.body
   );
 }
-

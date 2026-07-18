@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
@@ -146,7 +145,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     return {
       speed: baseDuration,
       answerRange: [12, 37, 63, 88], 
-      qDelay: 1.2,
+      qDelay: 0.4, // Accelerated spawning for faster transitions
       variance: 1.5 
     };
   }, [levelId]);
@@ -287,7 +286,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         isCorrect: option === currentQuestion.answer,
         left: config.answerRange[index],
         duration: duration,
-        delay: config.qDelay + (Math.random() * 0.8),
+        delay: config.qDelay + (Math.random() * 0.4), // Tighter stagger for faster arrival
       });
     });
 
