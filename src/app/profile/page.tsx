@@ -14,8 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2, CalendarIcon, Camera, Edit, BadgeCheck, ShieldAlert, User, Image as ImageIcon, X, ChevronRight, Sparkles } from 'lucide-react';
+import { Loader2, CalendarIcon, Camera, Edit, ShieldAlert, User, Image as ImageIcon, X, ChevronRight, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import type { ProfileData, UpdateProfilePayload } from '@/types';
@@ -301,24 +300,50 @@ export default function ProfilePage() {
                       )}
                       
                       {profile.role === 'student' && (
-                        isEditing ? (
+                        <div className="grid gap-8">
+                          {isEditing ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                               <FormField control={form.control} name="teacherId" render={({ field }) => (
-                                      <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Assigned Academy / Teacher *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-14 rounded-2xl border-2 font-bold text-lg focus:ring-primary shadow-sm px-4"><SelectValue /></SelectTrigger></FormControl><SelectContent className="rounded-2xl border-2 shadow-xl">
-                                          <SelectItem value="unassigned" className="font-bold text-red-600">DIRECT ENTRY (NONE)</SelectItem>
-                                          {teachers.map(t => <SelectItem key={t.uid} value={t.uid} className="font-medium">{t.firstName} {t.surname}</SelectItem>)}
-                                      </SelectContent></Select><FormMessage /></FormItem>
-                                  )} />
-                                <FormField control={form.control} name="grade" render={({ field }) => (
-                                    <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Current Grade/Standard *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-14 rounded-2xl border-2 font-bold text-lg focus:ring-primary shadow-sm px-4"><SelectValue /></SelectTrigger></FormControl><SelectContent className="rounded-2xl border-2 shadow-xl">{grades.map(g => <SelectItem key={g} value={g} className="font-bold">{g}</SelectItem>)}</Select><FormMessage /></FormItem>
-                                )} />
+                                <FormItem>
+                                  <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Assigned Academy / Teacher *</FormLabel>
+                                  <Select onValueChange={field.onChange} value={field.value || ''}>
+                                    <FormControl>
+                                      <SelectTrigger className="h-14 rounded-2xl border-2 font-bold text-lg focus:ring-primary shadow-sm px-4">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent className="rounded-2xl border-2 shadow-xl">
+                                      <SelectItem value="unassigned" className="font-bold text-red-600">DIRECT ENTRY (NONE)</SelectItem>
+                                      {teachers.map(t => <SelectItem key={t.uid} value={t.uid} className="font-medium">{t.firstName} {t.surname}</SelectItem>)}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )} />
+                              <FormField control={form.control} name="grade" render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Current Grade/Standard *</FormLabel>
+                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger className="h-14 rounded-2xl border-2 font-bold text-lg focus:ring-primary shadow-sm px-4">
+                                        <SelectValue placeholder="Grade" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent className="rounded-2xl border-2 shadow-xl">
+                                      {grades.map(g => <SelectItem key={g} value={g} className="font-bold">{g}</SelectItem>)}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )} />
                             </div>
-                        ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <ReadOnlyField label="Training Academy" value={teacherName} />
-                            <ReadOnlyField label="Mastery Grade" value={watch('grade')} />
-                          </div>
-                        )
+                          ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                              <ReadOnlyField label="Training Academy" value={teacherName} />
+                              <ReadOnlyField label="Mastery Grade" value={watch('grade')} />
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
 

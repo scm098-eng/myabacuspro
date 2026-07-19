@@ -260,7 +260,6 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
       const level = parseInt(difficulty.split('-').pop() || '1', 10);
       const tier = difficulty.includes('expert') ? 'expert' : difficulty.includes('elite') ? 'elite' : 'novice';
       
-      // 50 Level progression logic
       const linearStep = (level - 1) / 49;
       rows = 3 + Math.floor(linearStep * 7); // 3 to 10 rows
       delay = 2000 - Math.floor(linearStep * 500); // 2.0s to 1.5s
@@ -269,10 +268,10 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
         d1 = 1; 
       } else if (tier === 'expert') { 
         d1 = 1; d2 = 2; 
-        r2 = linearStep * 0.9; // Scale towards 90% 2-digit
+        r2 = linearStep * 0.9;
       } else { 
         d1 = 2; d2 = 3; 
-        r2 = linearStep * 0.9; // Scale towards 90% 3-digit
+        r2 = linearStep * 0.9;
       }
     }
 
