@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -160,6 +159,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   };
 
   const getQuestionFontSize = (text: string) => {
+    if (!text) return "text-2xl";
     const len = text.length;
     if (len > 30) return "text-xl sm:text-2xl";
     if (len > 22) return "text-2xl sm:text-3xl";
@@ -191,6 +191,9 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     );
   }
 
+  // Safety guard for question existence
+  const currentQuestion = questions[currentIdx];
+
   return (
     <div className="max-w-3xl mx-auto px-4 flex flex-col min-h-[600px]">
       <Card className="shadow-2xl flex-1 flex flex-col rounded-[2.5rem]">
@@ -220,8 +223,8 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center text-center p-8 overflow-hidden">
             <div className="w-full overflow-hidden bg-muted/20 py-10 rounded-[2rem] border-2 border-dashed px-4">
-              <p className={cn("font-black tracking-tight whitespace-normal break-words", getQuestionFontSize(questions[currentIdx].text))}>
-                {questions[currentIdx].text} = ?
+              <p className={cn("font-black tracking-tight whitespace-normal break-words", getQuestionFontSize(currentQuestion?.text || ""))}>
+                {currentQuestion?.text} = ?
               </p>
             </div>
             <div className="mt-12">
@@ -236,24 +239,24 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
                     placeholder="Result"
                     className={cn(
                       "h-20 text-2xl sm:text-4xl text-center font-black rounded-2xl border-4 transition-all duration-300 shadow-inner",
-                      isAnswered && parseInt(inputValue) === questions[currentIdx].answer && "border-green-500 bg-green-50 text-green-700",
-                      isAnswered && parseInt(inputValue) !== questions[currentIdx].answer && "border-red-500 bg-red-50 text-red-700"
+                      isAnswered && parseInt(inputValue) === currentQuestion?.answer && "border-green-500 bg-green-50 text-green-700",
+                      isAnswered && parseInt(inputValue) !== currentQuestion?.answer && "border-red-500 bg-red-50 text-red-700"
                     )} 
                   />
                   <Button type="submit" disabled={isAnswered || !inputValue} className="h-16 w-full text-xl font-black rounded-2xl shadow-lg">SUBMIT</Button>
                 </form>
               ) : (
                 <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
-                  {questions[currentIdx].options.map(opt => (
+                  {currentQuestion?.options.map(opt => (
                     <Button 
                       key={opt} 
                       onClick={() => handleAnswer(opt)} 
                       disabled={isAnswered} 
                       className={cn(
                         "h-20 text-2xl sm:text-4xl font-black rounded-2xl transition-all duration-200 shadow-sm",
-                        isAnswered && opt === questions[currentIdx].answer && "bg-green-600 hover:bg-green-600 border-green-700 text-white scale-105 shadow-lg shadow-green-200",
-                        isAnswered && opt === selectedOption && opt !== questions[currentIdx].answer && "bg-red-600 hover:bg-red-600 border-red-700 text-white",
-                        isAnswered && opt !== selectedOption && opt !== questions[currentIdx].answer && "opacity-50 grayscale scale-95"
+                        isAnswered && opt === currentQuestion?.answer && "bg-green-600 hover:bg-green-600 border-green-700 text-white scale-105 shadow-lg shadow-green-200",
+                        isAnswered && opt === selectedOption && opt !== currentQuestion?.answer && "bg-red-600 hover:bg-red-600 border-red-700 text-white",
+                        isAnswered && opt !== selectedOption && opt !== currentQuestion?.answer && "opacity-50 grayscale scale-95"
                       )} 
                       variant="outline"
                     >

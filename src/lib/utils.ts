@@ -23,9 +23,14 @@ function getAbacusFormula(currentDigit: number, delta: number, isAddition: boole
   if (isAddition) {
     const earthlyBeads = currentDigit % 5;
     const isHeavenlyActive = currentDigit >= 5;
-    if (delta <= 4 - earthlyBeads || (delta >= 5 && !isHeavenlyActive && delta - 5 <= 4 - earthlyBeads)) return null;
     
-    if (earthlyBeads + delta > 4 && currentDigit < 5 && currentDigit + delta < 10) return `+${delta}=+5-${5 - delta}`;
+    // Direct Move Check for Addition
+    if (delta <= 4 - earthlyBeads || (delta >= 5 && !isHeavenlyActive && (delta - 5) <= (4 - earthlyBeads))) return null;
+    
+    // Small Sister (+X = +5 - complement)
+    if (currentDigit < 5 && currentDigit + delta >= 5 && currentDigit + delta < 10) return `+${delta}=+5-${5 - delta}`;
+    
+    // Big Brother / Combination (+X = +10 - complement)
     if (currentDigit + delta >= 10) {
       if (delta === 9) return "+9=+10-1";
       if (delta === 8) return "+8=+10-2";
@@ -43,9 +48,12 @@ function getAbacusFormula(currentDigit: number, delta: number, isAddition: boole
   } else {
     const earthlyBeads = currentDigit % 5;
     const isHeavenlyActive = currentDigit >= 5;
-    if (delta <= earthlyBeads || (delta >= 5 && isHeavenlyActive && delta - 5 <= earthlyBeads)) return null;
     
-    if (delta > earthlyBeads && isHeavenlyActive && currentDigit - delta >= 0) return `-${delta}=-5+${5 - delta}`;
+    // Direct Move Check for Subtraction
+    if (delta <= earthlyBeads || (delta >= 5 && isHeavenlyActive && (delta - 5) <= earthlyBeads)) return null;
+    
+    // Small Sister Subtraction (-X = -5 + complement)
+    if (isHeavenlyActive && currentDigit - delta >= 0 && currentDigit - delta < 5) return `-${delta}=-5+${5 - delta}`;
   }
   return null;
 }

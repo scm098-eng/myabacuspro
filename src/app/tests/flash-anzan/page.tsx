@@ -118,8 +118,8 @@ export default function FlashAnzanLobbyPage() {
 
         <Card className={cn("rounded-[2.5rem] border-4 border-dashed border-primary/20 overflow-hidden relative", !isPro && !isTrialActive && "opacity-60 grayscale cursor-not-allowed")}>
           {!isPro && !isTrialActive && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/40 backdrop-blur-sm p-6 text-center">
-               <Card className="max-w-xs shadow-2xl border-none p-6 space-y-4">
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm p-6 text-center">
+               <Card className="max-w-xs shadow-2xl border-none p-6 space-y-4 bg-white/90">
                   <Lock className="w-12 h-12 mx-auto text-primary" />
                   <p className="font-bold text-slate-700">Custom Lab is exclusive to Pro members. Customize your digits, rows, and speed!</p>
                   <Button asChild className="w-full font-black uppercase"><Link href="/pricing">Get Pro Access</Link></Button>
@@ -190,12 +190,21 @@ export default function FlashAnzanLobbyPage() {
                   <h3 className="text-2xl font-black uppercase tracking-tight text-slate-900">Training Profile</h3>
                   <p className="text-sm text-slate-500 font-medium leading-relaxed">Your mental visualization will process <span className="text-primary font-bold">{customSettings.rows}</span> sequential numbers, each with <span className="text-primary font-bold">{customSettings.digits}</span> digit complexity, every <span className="text-primary font-bold">{(customSettings.speed / 1000).toFixed(1)}s</span>.</p>
                 </div>
-                <Button 
-                  onClick={handleStartCustom} 
-                  className="h-20 text-base sm:text-lg font-black uppercase tracking-wide rounded-2xl shadow-xl shadow-orange-500/20 whitespace-normal px-4 py-2 leading-tight"
-                >
-                  Launch Custom Mission <Zap className="ml-2 w-6 h-6 fill-white shrink-0" />
-                </Button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Button 
+                    onClick={handleStartCustom} 
+                    className="h-20 text-base sm:text-lg font-black uppercase tracking-wide rounded-2xl shadow-xl shadow-orange-500/20 whitespace-normal px-4 py-2 leading-tight"
+                  >
+                    Launch Lab <Zap className="ml-2 w-6 h-6 fill-white shrink-0" />
+                  </Button>
+                  <Button 
+                    asChild
+                    variant="outline"
+                    className="h-20 text-base sm:text-lg font-black uppercase tracking-wide rounded-2xl border-2 hover:bg-orange-50"
+                  >
+                    <Link href="/game/duels?mode=flash">Arena Duel <Swords className="ml-2 w-6 h-6 text-primary" /></Link>
+                  </Button>
+                </div>
              </div>
           </CardContent>
         </Card>
