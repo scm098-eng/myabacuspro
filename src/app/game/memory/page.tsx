@@ -17,7 +17,7 @@ import { firebaseApp } from '@/lib/firebase';
 import { startMatchmaking, getRecentOpponents } from '@/lib/matchmaking';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import Link from 'link';
+import Link from 'next/link';
 
 const ROUNDS_PER_LEVEL = 5;
 const INITIAL_LIVES = 3;
@@ -228,7 +228,7 @@ export default function PatternMemoryPage() {
       <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in duration-500 mt-10 px-4">
         <div className="text-center space-y-4">
           <Badge className="bg-primary/10 text-primary border-primary/20 px-6 py-1.5 rounded-full font-black uppercase text-xs tracking-widest">Cognitive Hub</Badge>
-          <h1 className="text-4xl sm:text-6xl font-black font-headline uppercase tracking-tighter text-slate-900 leading-none">Matrix <span className="text-primary italic whitespace-nowrap">Flash</span></h1>
+          <h1 className="text-4xl sm:text-6xl font-black font-headline uppercase tracking-tighter text-slate-900 leading-none italic">Matrix <span className="text-primary italic whitespace-nowrap">Flash</span></h1>
           <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">Master spatial visualization. Training starts from Level {level}.</p>
         </div>
         {gameState === 'limit_reached' ? (
@@ -268,7 +268,7 @@ export default function PatternMemoryPage() {
                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Recent Rivals</p>
                        {recentOpponents.map(opp => (
                          <Button key={opp.uid} variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl" onClick={() => handleStartDuel('friend')}>
-                           <Avatar className="h-6 w-6"><AvatarImage src={opp.photo || undefined}/><AvatarFallback>{opp.name[0]}</AvatarFallback></Avatar>
+                           <Avatar className="h-6 w-6"><AvatarImage src={opp.photo || undefined}/><AvatarFallback>{opp.name?.[0]}</AvatarFallback></Avatar>
                            <span className="font-bold text-xs truncate">{opp.name}</span>
                          </Button>
                        ))}
