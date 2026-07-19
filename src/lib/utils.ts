@@ -19,32 +19,17 @@ export interface Step {
   fullState?: number[]; 
 }
 
-/**
- * Detects if a digit can be added/subtracted directly or if a formula is needed.
- * Returns the formula string if applicable, otherwise returns null.
- */
 function getAbacusFormula(currentDigit: number, delta: number, isAddition: boolean): string | null {
   if (isAddition) {
     const earthlyBeads = currentDigit % 5;
     const isHeavenlyActive = currentDigit >= 5;
-
-    // Direct Check
-    if (delta <= 4 - earthlyBeads || (delta >= 5 && !isHeavenlyActive && delta - 5 <= 4 - earthlyBeads)) {
-      return null;
-    }
-
-    // Small Sister (+5 Complements)
-    if (earthlyBeads + delta > 4 && currentDigit < 5 && currentDigit + delta < 10) {
-      return `+${delta}=+5-${5 - delta}`;
-    }
-
-    // Big Brother (+10 Complements)
+    if (delta <= 4 - earthlyBeads || (delta >= 5 && !isHeavenlyActive && delta - 5 <= 4 - earthlyBeads)) return null;
+    if (earthlyBeads + delta > 4 && currentDigit < 5 && currentDigit + delta < 10) return `+${delta}=+5-${5 - delta}`;
     if (currentDigit + delta >= 10) {
       if (delta === 9) return "+9=+10-1";
       if (delta === 8) return "+8=+10-2";
       if (delta === 7) return "+7=+10-3";
       if (delta === 6) {
-        // Special case: Combination
         if (earthlyBeads < 1 && isHeavenlyActive) return "+6=+10-5+1";
         return "+6=+10-4";
       }
@@ -55,18 +40,10 @@ function getAbacusFormula(currentDigit: number, delta: number, isAddition: boole
       if (delta === 1) return "+1=+10-9";
     }
   } else {
-    // Subtraction Logic
     const earthlyBeads = currentDigit % 5;
     const isHeavenlyActive = currentDigit >= 5;
-
-    if (delta <= earthlyBeads || (delta >= 5 && isHeavenlyActive && delta - 5 <= earthlyBeads)) {
-      return null;
-    }
-
-    // Small Sister (-5 Complements)
-    if (delta > earthlyBeads && isHeavenlyActive && currentDigit - delta >= 0) {
-      return `-${delta}=-5+${5 - delta}`;
-    }
+    if (delta <= earthlyBeads || (delta >= 5 && isHeavenlyActive && delta - 5 <= earthlyBeads)) return null;
+    if (delta > earthlyBeads && isHeavenlyActive && currentDigit - delta >= 0) return `-${delta}=-5+${5 - delta}`;
   }
   return null;
 }
@@ -85,23 +62,20 @@ export function parseCalculationSteps(questionText: string): Step[] {
   }
 
   const tokens = questionText.match(/(\d+|\+|-)/g);
-  if (!tokens || tokens.length === 0) return [];
+  if (!tokens) return [];
 
   const steps: Step[] = [];
-  let firstToken = tokens[0];
-  let startingIndex = 1;
   let currentValue = 0;
+  let startingIndex = 0;
 
-  if (firstToken === '+' || firstToken === '-') {
-      currentValue = 0;
-      startingIndex = 0;
-  } else {
-      currentValue = parseInt(firstToken, 10);
-      steps.push({ 
-        operation: `Set ${currentValue}`, 
-        value: currentValue,
-        explanation: `Start by setting the first number ${currentValue} in the current value directly.`
-      });
+  if (tokens[0] !== '+' && tokens[0] !== '-') {
+    currentValue = parseInt(tokens[0]);
+    steps.push({ 
+      operation: `Set ${currentValue}`, 
+      value: currentValue,
+      explanation: `Start by setting the first number ${currentValue} in the current value directly.`
+    });
+    startingIndex = 1;
   }
 
   for (let i = startingIndex; i < tokens.length; i += 2) {
@@ -109,18 +83,15 @@ export function parseCalculationSteps(questionText: string): Step[] {
     const nextToken = tokens[i + 1];
     if (!nextToken) break;
     
-    const number = parseInt(nextToken, 10);
-    if (isNaN(number)) continue;
-
+    const number = parseInt(nextToken);
     const prevValue = currentValue;
     if (operator === '+') currentValue += number;
     else if (operator === '-') currentValue -= number;
     
-    // Determine formula (simplistic 1-digit check for common training levels)
     const formula = number < 10 ? getAbacusFormula(prevValue % 10, number, operator === '+') : null;
-    const actionWord = operator === '+' ? 'Add' : 'Subtract';
-    const linkWord = operator === '+' ? 'in' : 'from';
-    const explanation = `${actionWord} ${number} ${linkWord} the current value ${formula ? `(${formula})` : 'directly'}.`;
+    const explanation = operator === '+' 
+      ? `Add ${number} in the current value ${formula ? `(${formula})` : 'directly'}.`
+      : `Subtract ${number} directly from the current value.`;
 
     steps.push({ operation: `${operator} ${number}`, value: currentValue, explanation });
   }
@@ -133,20 +104,16 @@ export function generateMultiplicationSteps(m1: number, m2: number): Step[] {
   const m1Str = m1.toString();
   const m2Str = m2.toString();
   const rods = new Array(7).fill(0);
-
   for (let i = 0; i < m2Str.length; i++) {
     const m2Digit = parseInt(m2Str[i]);
     const m2Power = m2Str.length - 1 - i;
-
     for (let j = 0; j < m1Str.length; j++) {
       const m1Digit = parseInt(m1Str[j]);
       const m1Power = m1Str.length - 1 - j;
       const product = m1Digit * m2Digit;
       const targetRodFromRight = m1Power + m2Power + 1;
-
       let rodIdx = 7 - targetRodFromRight;
       rods[rodIdx] += product;
-      
       for (let k = 6; k >= 0; k--) {
         if (rods[k] >= 10) {
           const carry = Math.floor(rods[k] / 10);
@@ -154,7 +121,6 @@ export function generateMultiplicationSteps(m1: number, m2: number): Step[] {
           if (k > 0) rods[k-1] += carry;
         }
       }
-
       steps.push({
         operation: `${m2Digit} × ${m1Digit} = ${product.toString().padStart(2, '0')}`,
         value: parseInt(rods.join(''), 10),
@@ -163,11 +129,6 @@ export function generateMultiplicationSteps(m1: number, m2: number): Step[] {
       });
     }
   }
-  
-  if (steps.length === 0) {
-    steps.push({ operation: 'Final Answer', value: m1 * m2, explanation: 'The final product is calculated.' });
-  }
-  
   return steps;
 }
 
@@ -176,9 +137,7 @@ export function generateDivisionSteps15(dividend: number, divisor: number): Step
   const steps: Step[] = [];
   const quotientValue = Math.floor(dividend / divisor);
   const qStr = quotientValue.toString();
-  const dStrOriginal = dividend.toString();
-  const dLen = dStrOriginal.length;
-
+  const dLen = dividend.toString().length;
   const buildState = (currDividend: number, currQuotient: number) => {
     const state = new Array(15).fill(0);
     const dStr = currDividend.toString().padStart(dLen, '0');
@@ -189,41 +148,28 @@ export function generateDivisionSteps15(dividend: number, divisor: number): Step
     for (let i = 0; i < sStr.length && i < 3; i++) state[14 - i] = parseInt(sStr[i]);
     return state;
   };
-
   steps.push({
     operation: 'Initialize Lab',
     value: 0,
     explanation: `Set the dividend ${dividend} on the left (D1-D7). Set the divisor ${divisor} on the far right (S1-S3).`,
     fullState: buildState(dividend, 0)
   });
-
   let currentDividend = dividend;
   let currentQuotient = 0;
-
   for (let i = 0; i < qStr.length; i++) {
     const qDigit = parseInt(qStr[i]);
     const power = qStr.length - 1 - i;
-    
     if (qDigit === 0) {
-      const localValueAtPos = Math.floor(currentDividend / Math.pow(10, power));
-      const localDigit = localValueAtPos % 10;
-      let explanation = localValueAtPos === 0 
-        ? "No remainder left in this segment to divide. The quotient digit is 0." 
-        : `The value ${localDigit} is smaller than ${divisor}. We cannot divide further here, so the quotient digit is 0.`;
-
-      steps.push({ operation: `Quotient Digit: 0`, value: currentQuotient, explanation, fullState: buildState(currentDividend, currentQuotient) });
+      steps.push({ operation: `Quotient Digit: 0`, value: currentQuotient, explanation: "We cannot divide further here, so the quotient digit is 0.", fullState: buildState(currentDividend, currentQuotient) });
       continue;
     }
-
     const localProduct = qDigit * divisor;
-    const subtrahend = localProduct * Math.pow(10, power);
-    currentDividend -= subtrahend;
-    currentQuotient += qDigit * Math.pow(10, power);
-    
+    currentDividend -= (localProduct * Math.pow(10, power));
+    currentQuotient += (qDigit * Math.pow(10, power));
     steps.push({
       operation: `${divisor} × ${qDigit} = ${localProduct}`,
       value: currentQuotient,
-      explanation: `${divisor} goes into the current segment ${qDigit} times. Subtract ${localProduct} from the appropriate rods and update the quotient in the center (Q1-Q5).`,
+      explanation: `${divisor} goes into the current segment ${qDigit} times. Subtract ${localProduct} and update quotient.`,
       fullState: buildState(currentDividend, currentQuotient)
     });
   }

@@ -6,35 +6,14 @@ import type { Duel, ProfileData } from '@/types';
 import { generateDuelQuestions } from '@/lib/questions';
 
 const BOT_IDENTITIES = [
-  // Male Personas
-  { name: "Arjun K.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun&top=shortHair&mouth=smile&eyes=happy", speed: 1.0, accuracy: 0.9 },
-  { name: "Vihaan P.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Vihaan&top=shortFlat&mouth=smile&eyes=happy", speed: 0.8, accuracy: 0.95 },
-  { name: "Aarav M.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aarav&top=shortWaved&mouth=smile&eyes=happy", speed: 0.9, accuracy: 0.92 },
-  { name: "Kabir L.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kabir&top=shortCurly&mouth=smile&eyes=happy", speed: 1.3, accuracy: 0.82 },
-  { name: "Reyansh C.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Reyansh&top=shortHair&mouth=smile&eyes=happy", speed: 1.4, accuracy: 0.78 },
-  { name: "Advik R.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Advik&top=shortFlat&mouth=smile&eyes=happy", speed: 1.0, accuracy: 0.89 },
-  { name: "Rishi V.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rishi&top=shortHair&mouth=smile&eyes=happy", speed: 0.75, accuracy: 0.96 },
-  { name: "Dev P.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Dev&top=shortFlat&mouth=smile&eyes=happy", speed: 1.05, accuracy: 0.93 },
-  { name: "Aryan B.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aryan&top=shortHair&mouth=smile&eyes=happy", speed: 1.35, accuracy: 0.81 },
-  { name: "Yuvraj D.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Yuvraj&top=shortWaved&mouth=smile&eyes=happy", speed: 1.15, accuracy: 0.86 },
-  
-  // Female Personas
-  { name: "Neha S.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Neha&top=longHair&mouth=smile&eyes=happy", speed: 1.2, accuracy: 0.85 },
-  { name: "Ananya R.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya&top=longHairCurvy&mouth=smile&eyes=happy", speed: 1.5, accuracy: 0.8 },
-  { name: "Ishani T.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ishani&top=longHairBigHair&mouth=smile&eyes=happy", speed: 1.1, accuracy: 0.88 },
-  { name: "Saanvi D.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Saanvi&top=longHairStraight&mouth=smile&eyes=happy", speed: 0.85, accuracy: 0.94 },
-  { name: "Myra G.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Myra&top=longHairStraight&mouth=smile&eyes=happy", speed: 0.95, accuracy: 0.91 },
-  { name: "Inaya M.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Inaya&top=longHairCurvy&mouth=smile&eyes=happy", speed: 1.1, accuracy: 0.87 },
-  { name: "Zara Q.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Zara&top=longHairStraight&mouth=smile&eyes=happy", speed: 1.25, accuracy: 0.84 },
-  { name: "Sia J.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sia&top=longHairCurvy&mouth=smile&eyes=happy", speed: 0.88, accuracy: 0.9 },
-  { name: "Kiara S.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kiara&top=longHairStraight&mouth=smile&eyes=happy", speed: 0.92, accuracy: 0.95 },
-  { name: "Pari T.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Pari&top=longHairCurly&mouth=smile&eyes=happy", speed: 0.8, accuracy: 0.98 },
+  { name: "Arjun K.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun&size=64", speed: 1.0, accuracy: 0.9 },
+  { name: "Vihaan P.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Vihaan&size=64", speed: 0.8, accuracy: 0.95 },
+  { name: "Aarav M.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aarav&size=64", speed: 0.9, accuracy: 0.92 },
+  { name: "Neha S.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Neha&size=64", speed: 1.2, accuracy: 0.85 },
+  { name: "Ananya R.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya&size=64", speed: 1.5, accuracy: 0.8 },
+  { name: "Saanvi D.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Saanvi&size=64", speed: 0.85, accuracy: 0.94 },
 ];
 
-/**
- * Intelligent Hybrid Matchmaking
- * Searches for a real opponent for 12s before failing over to a bot.
- */
 export async function startMatchmaking(
   userId: string, 
   profile: ProfileData, 
@@ -44,7 +23,6 @@ export async function startMatchmaking(
   const db = getFirestore(firebaseApp);
   const duelsRef = collection(db, "duels");
 
-  // 1. Try to find an existing human waiting lobby
   const q = query(
     duelsRef, 
     where("status", "==", "waiting"),
@@ -64,7 +42,7 @@ export async function startMatchmaking(
       await updateDoc(doc(db, "duels", match.id), {
         opponentId: userId,
         opponentName: `${profile.firstName} ${profile.surname}`,
-        opponentPhoto: profile.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.firstName}&eyes=happy&mouth=smile`,
+        opponentPhoto: profile.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.firstName}&size=64`,
         opponentType: 'human',
         status: 'active',
         updatedAt: serverTimestamp()
@@ -73,14 +51,13 @@ export async function startMatchmaking(
     }
   }
 
-  // 2. No lobby found, create one
   const seed = `${Date.now()}`;
-  const questions = generateDuelQuestions(mode as any, seed);
+  const questions = generateDuelQuestions(mode, seed);
   
   const newDuel: Partial<Duel> = {
     challengerId: userId,
     challengerName: `${profile.firstName} ${profile.surname}`,
-    challengerPhoto: profile.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.firstName}&eyes=happy&mouth=smile`,
+    challengerPhoto: profile.profilePhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.firstName}&size=64`,
     status: 'waiting',
     mode,
     difficulty,
@@ -134,4 +111,8 @@ export async function getRecentOpponents(userId: string): Promise<{uid: string, 
   });
 
   return Array.from(opponents.values()).slice(0, 5);
+}
+
+export async function startRematch(duel: Duel, userId: string, profile: ProfileData) {
+  return await startMatchmaking(userId, profile, duel.mode as any, duel.difficulty);
 }

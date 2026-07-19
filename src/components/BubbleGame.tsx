@@ -91,18 +91,14 @@ const FloatingParticle = ({ index }: { index: number }) => {
   const [style, setStyle] = useState<React.CSSProperties>({ opacity: 0 });
 
   useEffect(() => {
-    const randomOffsetX = (Math.random() - 0.5) * 100;
-    const randomOffsetY = (Math.random() - 0.5) * 100;
     const targetX = 400 + Math.random() * 400;
     const targetY = -800 - Math.random() * 400;
     const duration = 1.2 + Math.random() * 0.8;
     const delay = Math.random() * 0.4;
-
     setStyle({
       position: 'absolute',
       left: '50%',
       top: '50%',
-      transform: `translate(calc(-50% + ${randomOffsetX}px), calc(-50% + ${randomOffsetY}px))`,
       zIndex: 10005,
       pointerEvents: 'none',
       animation: `float-to-profile ${duration}s cubic-bezier(0.4, 0, 0.2, 1) ${delay}s forwards`,
@@ -111,15 +107,7 @@ const FloatingParticle = ({ index }: { index: number }) => {
     } as any);
   }, []);
 
-  return (
-    <div style={style}>
-      {index % 2 === 0 ? (
-        <Star className="w-6 h-6 text-yellow-400 fill-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
-      ) : (
-        <div className="w-5 h-5 bg-orange-400 rounded-full border-2 border-orange-600 shadow-lg flex items-center justify-center text-[10px] font-bold text-orange-900 shadow-orange-500/50">₹</div>
-      )}
-    </div>
-  );
+  return <div style={style}>{index % 2 === 0 ? <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" /> : <div className="w-5 h-5 bg-orange-400 rounded-full border-2 border-orange-600 flex items-center justify-center text-[10px] font-bold text-orange-900">₹</div>}</div>;
 };
 
 export function BubbleGame({ levelId, level, levelName }: { levelId: number, level: GameLevel, levelName: string }) {
@@ -133,44 +121,30 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const [showSubmissionAnim, setShowSubmissionAnim] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
-
   const isFinishingRef = useRef(false);
   const questionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user, saveCompletedGameLevel, recordDailyPractice, addPoints } = useAuth();
   const { playSound } = useSound();
   const router = useRouter();
 
-  const config = useMemo(() => {
-    const baseDuration = Math.max(4, 10 - (levelId / 40));
-    return {
-      speed: baseDuration,
-      answerRange: [12, 37, 63, 88], 
-      qDelay: 0.4, // Accelerated spawning for faster transitions
-      variance: 1.5 
-    };
-  }, [levelId]);
+  const config = useMemo(() => ({
+    speed: Math.max(4, 10 - (levelId / 40)),
+    answerRange: [12, 37, 63, 88], 
+    qDelay: 0.4,
+    variance: 1.5 
+  }), [levelId]);
 
   useEffect(() => {
     setMounted(true);
     document.body.style.overflow = 'hidden';
-
-    const skip = localStorage.getItem('skip_rules_bubble_game') === 'true';
-    if (skip) setGameState('playing');
-
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
+    if (localStorage.getItem('skip_rules_bubble_game') === 'true') setGameState('playing');
+    return () => { document.body.style.overflow = 'unset'; };
   }, []);
 
-  useEffect(() => {
-    const newQuestions = generateGameQuestions(level, levelId);
-    setQuestions(newQuestions);
-  }, [level, levelId]);
+  useEffect(() => { setQuestions(generateGameQuestions(level, levelId)); }, [level, levelId]);
   
   const handleStart = () => {
-    if (dontShowAgain) {
-      localStorage.setItem('skip_rules_bubble_game', 'true');
-    }
+    if (dontShowAgain) localStorage.setItem('skip_rules_bubble_game', 'true');
     setGameState('playing');
     playSound('points');
   };
@@ -178,121 +152,44 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
   const finishGame = useCallback(async (finalScore: number, finalLives: number) => {
     if (isFinishingRef.current) return;
     isFinishingRef.current = true;
-
     const correctAnswers = finalScore / 10;
     const accuracy = (correctAnswers / (questions.length || 1)) * 100;
-    
     if (user) {
-      const { earnedPoints } = calculatePoints({
-        correct: correctAnswers, 
-        total: questions.length,
-        answered: questions.length,
-        timeInSeconds: 0,
-        targetTime: 0,
-        level: levelId,
-        isGame: true
-      });
-
+      const { earnedPoints } = calculatePoints({ correct: correctAnswers, total: questions.length, answered: questions.length, timeInSeconds: 0, targetTime: 0, level: levelId, isGame: true });
       setFinalMasteryPoints(earnedPoints);
       addPoints(user.uid, earnedPoints);
-
       const db = getFirestore(firebaseApp);
-      const resultData = {
-        userId: user.uid,
-        testId: 'bubble-game',
-        difficulty: levelName,
-        score: correctAnswers, 
-        totalQuestions: questions.length,
-        accuracy: accuracy,
-        timeSpent: 0,
-        timeLeft: 0,
-        earnedPoints: earnedPoints,
-        createdAt: serverTimestamp(),
-        isGame: true
-      };
-
-      addDoc(collection(db, 'testResults'), resultData).catch(async (serverError) => {
-          const permissionError = new FirestorePermissionError({
-              path: '/testResults',
-              operation: 'create',
-              requestResourceData: resultData,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-      });
-
+      addDoc(collection(db, 'testResults'), { userId: user.uid, testId: 'bubble-game', difficulty: levelName, score: correctAnswers, totalQuestions: questions.length, accuracy, earnedPoints, createdAt: serverTimestamp(), isGame: true });
       if (accuracy >= MIN_SCORE_TO_PASS && finalLives > 0) {
         saveCompletedGameLevel(levelId);
         recordDailyPractice(user.uid);
         playSound('success');
         setGameState('levelComplete');
-        
-        confetti({
-          particleCount: 200,
-          spread: 80,
-          origin: { y: 0.6 },
-          colors: ['#f97316', '#fbbf24', '#ffffff'],
-          zIndex: 10001,
-        });
-      } else {
-        setGameState('gameOver');
-      }
-      
-      if (earnedPoints > 0) {
-        setTimeout(() => setShowSubmissionAnim(true), 600);
-      }
+        confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 }, zIndex: 10001 });
+      } else setGameState('gameOver');
+      if (earnedPoints > 0) setTimeout(() => setShowSubmissionAnim(true), 600);
     }
   }, [questions.length, user, levelId, saveCompletedGameLevel, recordDailyPractice, addPoints, playSound, levelName]);
 
   const advanceQuestion = useCallback((isCorrectOutcome?: boolean) => {
     const nextScore = isCorrectOutcome ? score + 10 : score;
     const nextIndex = currentQuestionIndex + 1;
-
-    if (nextIndex >= questions.length) {
-      finishGame(nextScore, lives);
-    } else {
-      setCurrentQuestionIndex(nextIndex);
-    }
+    if (nextIndex >= questions.length) finishGame(nextScore, lives);
+    else setCurrentQuestionIndex(nextIndex);
   }, [currentQuestionIndex, questions.length, score, lives, finishGame]);
 
   const generateBubbles = useCallback(() => {
-    if (questionTimeoutRef.current) {
-        clearTimeout(questionTimeoutRef.current);
-    }
-    
-    if (!questions.length || currentQuestionIndex >= questions.length || lives <= 0 || isFinishingRef.current) {
-      return;
-    }
-
-    const currentQuestion = questions[currentQuestionIndex];
-    const newBubbles: Bubble[] = [];
+    if (questionTimeoutRef.current) clearTimeout(questionTimeoutRef.current);
+    if (!questions.length || currentQuestionIndex >= questions.length || lives <= 0 || isFinishingRef.current) return;
+    const q = questions[currentQuestionIndex];
     const batchId = `${Date.now()}-${currentQuestionIndex}`;
-
-    newBubbles.push({
-      id: `q-${batchId}`,
-      value: -1, 
-      isCorrect: false,
-      isQuestion: true,
-      left: 50,
-      duration: config.speed, 
-      delay: 0,
+    const newBubbles: Bubble[] = [];
+    newBubbles.push({ id: `q-${batchId}`, value: -1, isCorrect: false, isQuestion: true, left: 50, duration: config.speed, delay: 0 });
+    q.options.forEach((opt, idx) => {
+      newBubbles.push({ id: `a-${batchId}-${idx}`, value: opt, isCorrect: opt === q.answer, left: config.answerRange[idx], duration: config.speed + 2 + Math.random() * config.variance, delay: config.qDelay + Math.random() * 0.4 });
     });
-    
-    currentQuestion.options.forEach((option, index) => {
-      const duration = (config.speed + 2) + (Math.random() * config.variance);
-
-      newBubbles.push({
-        id: `a-${batchId}-${index}`,
-        value: option,
-        isCorrect: option === currentQuestion.answer,
-        left: config.answerRange[index],
-        duration: duration,
-        delay: config.qDelay + (Math.random() * 0.4), // Tighter stagger for faster arrival
-      });
-    });
-
     setBubbles(newBubbles);
-
-    const maxTime = (config.speed + 3 + config.variance + config.qDelay + 0.8) * 1000;
+    const maxTime = (config.speed + 4) * 1000;
     questionTimeoutRef.current = setTimeout(() => {
         if (gameState === 'playing' && !isFinishingRef.current) {
             setLives(l => l - 1);
@@ -300,42 +197,19 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             advanceQuestion(false);
         }
     }, maxTime);
-
   }, [questions, currentQuestionIndex, lives, advanceQuestion, playSound, gameState, config]);
 
   useEffect(() => {
-    if (gameState === 'playing' && questions.length > 0) {
-      generateBubbles();
-    }
-     return () => {
-        if (questionTimeoutRef.current) clearTimeout(questionTimeoutRef.current);
-     };
+    if (gameState === 'playing' && questions.length > 0) generateBubbles();
+    return () => { if (questionTimeoutRef.current) clearTimeout(questionTimeoutRef.current); };
   }, [gameState, questions, currentQuestionIndex, generateBubbles]);
   
-  useEffect(() => {
-     if (lives <= 0 && gameState === 'playing' && !isFinishingRef.current) {
-      finishGame(score, 0);
-      if (questionTimeoutRef.current) {
-        clearTimeout(questionTimeoutRef.current);
-      }
-    }
-  }, [lives, gameState, score, finishGame]);
-
   const handleBubbleClick = (bubble: Bubble) => {
     if (gameState !== 'playing' || bubble.isQuestion || isFinishingRef.current) return;
-    
-    if (questionTimeoutRef.current) {
-        clearTimeout(questionTimeoutRef.current);
-    }
-
+    if (questionTimeoutRef.current) clearTimeout(questionTimeoutRef.current);
     const isCorrect = bubble.isCorrect;
-    if (isCorrect) {
-      setScore(s => s + 10); 
-      playSound('correct');
-    } else {
-      setLives(l => l - 1);
-      playSound('wrong');
-    }
+    if (isCorrect) { setScore(s => s + 10); playSound('correct'); }
+    else { setLives(l => l - 1); playSound('wrong'); }
     advanceQuestion(isCorrect);
   };
 
@@ -343,191 +217,56 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] bg-slate-900 flex flex-col items-center justify-center overflow-hidden touch-none">
-        <style jsx global>{`
-          @keyframes float-to-profile {
-            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
-            100% { transform: translate(calc(-50% + var(--target-x)), calc(-50% + var(--target-y))) scale(0.1); opacity: 0; }
-          }
-        `}</style>
-
-        {/* Dynamic Background Image */}
         <div className="absolute inset-0 z-0">
-          <Image 
-            src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Game%20Background.webp?alt=media&token=b0e1441c-f974-40b6-83e1-bdf957109a0c"
-            alt="Game Environment"
-            fill
-            className="object-cover"
-            priority
-          />
-          {/* subtle overlay to help bubble contrast without blurring the scenery */}
+          <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Game%20Background.webp?alt=media" alt="Arena" fill className="object-cover" priority />
           <div className="absolute inset-0 bg-black/10" />
         </div>
-
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
             <BackgroundBubbles />
-            
             <Fish className="top-[20%] animate-[swimRight_12s_linear_infinite]" duration="12s" />
             <Fish className="top-[45%] animate-[swimLeft_15s_linear_infinite]" duration="15s" flip />
             <Fish className="top-[70%] animate-[swimRight_18s_linear_infinite]" duration="18s" />
-
-            <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-yellow-300/20 to-transparent" style={{clipPath: 'polygon(0 60%, 100% 20%, 100% 100%, 0% 100%)'}}></div>
         </div>
-
-        <div className="absolute top-0 left-0 right-0 p-2 sm:p-6 bg-black/40 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50 animate-in slide-in-from-top duration-500">
+        <div className="absolute top-0 left-0 right-0 p-2 sm:p-6 bg-black/40 backdrop-blur-xl border-b border-white/10 flex justify-between items-center z-50">
             <div className="flex items-center gap-2 sm:gap-8 text-white min-w-0 flex-1">
-                <div className="min-w-0 flex-1 sm:flex-none">
-                    <h2 className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-sky-200 leading-tight">Level</h2>
-                    <p className="text-xs sm:text-xl font-black uppercase leading-none truncate max-w-full">{levelName}</p>
-                </div>
-                <div className="h-8 w-px bg-white/20 hidden sm:block shrink-0" />
-                <div className="shrink-0 text-right sm:text-left">
-                    <h2 className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-sky-200 leading-tight">Points</h2>
-                    <div className="flex items-center justify-end sm:justify-start gap-1">
-                        <p className="text-sm sm:text-2xl font-black leading-none">{score}</p>
-                    </div>
-                </div>
+                <div><h2 className="text-[8px] sm:text-[10px] font-black uppercase text-sky-200">Level</h2><p className="text-xs sm:text-xl font-black uppercase leading-none truncate">{levelName}</p></div>
+                <div className="h-8 w-px bg-white/20 hidden sm:block" />
+                <div><h2 className="text-[8px] sm:text-[10px] font-black uppercase text-sky-200">Points</h2><p className="text-sm sm:text-2xl font-black leading-none">{score}</p></div>
             </div>
-            
-            <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-white/10 rounded-xl sm:rounded-2xl border border-white/5 mx-2 shrink-0">
-                {Array.from({length: MAX_LIVES}).map((_, i) => (
-                    <Heart key={i} className={cn("w-3 h-3 sm:w-6 sm:h-6 transition-all duration-300 drop-shadow-lg", i < lives ? "text-red-500 fill-red-500" : "text-white/10")} />
-                ))}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-2xl border border-white/5 mx-2">
+                {Array.from({length: MAX_LIVES}).map((_, i) => (<Heart key={i} className={cn("w-3 h-3 sm:w-6 sm:h-6 transition-all duration-300", i < lives ? "text-red-500 fill-red-500" : "text-white/10")} />))}
             </div>
-            
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full h-8 w-8 sm:h-12 sm:w-12 shrink-0" onClick={() => router.push('/game')}>
-                <X className="w-5 h-5 sm:w-8 sm:h-8" />
-            </Button>
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full h-8 w-8 sm:h-12 sm:w-12" onClick={() => router.push('/game')}><X className="w-5 h-5 sm:w-8 sm:h-8" /></Button>
         </div>
-
         <div className="relative w-full h-full max-w-7xl z-10 flex items-center justify-center">
-            {gameState === 'playing' && (
-                <>
-                    {bubbles.map(bubble => (
-                        <div
-                            key={bubble.id}
-                            className={cn(
-                                "absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise transform-gpu border-4 shadow-2xl transition-all active:scale-95 z-10",
-                                bubble.isQuestion 
-                                    ? 'w-max max-w-[95vw] px-6 sm:px-10 h-16 sm:h-24 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20 whitespace-nowrap overflow-hidden' 
-                                    : 'w-20 h-20 sm:w-32 sm:h-32 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20'
-                            )}
-                            style={{
-                                left: `${bubble.left}%`,
-                                animationDuration: `${bubble.duration}s`,
-                                animationDelay: `${bubble.delay}s`,
-                                transform: 'translateX(-50%)',
-                            }}
-                            onClick={() => handleBubbleClick(bubble)}
-                        >
-                            <span className={cn(
-                                "text-white font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.5)] select-none text-center block whitespace-nowrap",
-                                bubble.isQuestion 
-                                    ? getQuestionFontSize(questions[currentQuestionIndex]?.text || "")
-                                    : getAnswerFontSize(bubble.value)
-                            )}>
-                                {bubble.isQuestion ? (questions[currentQuestionIndex]?.text) : bubble.value}
-                            </span>
-                        </div>
-                    ))}
-                </>
-            )}
+            {gameState === 'playing' && bubbles.map(b => (
+                <div key={b.id} onClick={() => handleBubbleClick(b)} className={cn("absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-2xl transition-all active:scale-95 z-10", b.isQuestion ? 'w-max px-6 sm:px-10 h-16 sm:h-24 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20' : 'w-20 h-20 sm:w-32 sm:h-32 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20')} style={{ left: `${b.left}%`, animationDuration: `${b.duration}s`, animationDelay: `${b.delay}s`, transform: 'translateX(-50%)' }}>
+                    <span className={cn("text-white font-black text-center", b.isQuestion ? getQuestionFontSize(questions[currentQuestionIndex]?.text || "") : getAnswerFontSize(b.value))}>{b.isQuestion ? questions[currentQuestionIndex]?.text : b.value}</span>
+                </div>
+            ))}
         </div>
-
         {gameState === 'intro' && (
-            <div className="absolute inset-0 flex items-center justify-center p-4 z-[1000] animate-in fade-in zoom-in-95 duration-500">
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+            <div className="absolute inset-0 flex items-center justify-center p-4 z-[1000]"><div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
                 <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white rounded-[3rem] overflow-hidden relative z-[1001] max-h-[90vh] flex flex-col">
-                    <CardHeader className="bg-pink-500 text-white text-center py-6 sm:py-10 shrink-0">
-                        <div className="mx-auto bg-white/20 p-2 sm:p-4 rounded-full w-fit mb-4 hidden sm:block">
-                            <Star className="w-8 h-8 sm:w-12 sm:h-12 text-white animate-pulse" />
-                        </div>
-                        <CardTitle className="text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter">
-                            How to Play
-                        </CardTitle>
-                        <CardDescription className="text-white/80 font-bold text-sm sm:text-lg mt-2">
-                            Master the Bubble Game!
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6 sm:p-8 space-y-4 overflow-y-auto flex-1 scrollbar-none">
-                        {PAGE_GUIDES.bubble_game.steps.map((step, i) => (
-                            <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-muted/50 border border-muted-foreground/5 animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${i * 100}ms` }}>
-                                <div className="flex h-8 w-8 shrink-0 aspect-square items-center justify-center rounded-full bg-pink-500 text-white text-xs font-black shadow-md">
-                                    {i + 1}
-                                </div>
-                                <p className="text-sm sm:text-base font-medium text-slate-700 leading-tight pt-1.5">{step}</p>
-                            </div>
-                        ))}
-                    </CardContent>
-                    <CardFooter className="p-6 sm:p-8 pt-0 flex flex-col gap-4 bg-white/50 border-t shrink-0">
-                        <div className="flex items-center space-x-2 py-2">
-                          <Checkbox 
-                            id="dont-show-bubbles" 
-                            checked={dontShowAgain} 
-                            onCheckedChange={(val) => setDontShowAgain(!!val)} 
-                          />
-                          <Label htmlFor="dont-show-bubbles" className="text-xs font-bold text-muted-foreground uppercase cursor-pointer">Do not show rules again</Label>
-                        </div>
-                        <Button onClick={handleStart} className="w-full h-14 sm:h-16 text-xl sm:text-2xl font-black uppercase tracking-widest rounded-2xl shadow-xl transition-transform hover:scale-[1.02] bg-pink-500 hover:bg-pink-600 text-white">
-                            <PlayCircle className="mr-3 h-6 w-6 sm:h-8 sm:w-8" /> Start Popping!
-                        </Button>
-                    </CardFooter>
+                    <CardHeader className="bg-pink-500 text-white text-center py-6 sm:py-10 shrink-0"><CardTitle className="text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter">How to Play</CardTitle></CardHeader>
+                    <CardContent className="p-6 sm:p-8 space-y-4 overflow-y-auto flex-1 scrollbar-none">{PAGE_GUIDES.bubble_game.steps.map((s, i) => (<div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-muted/50 border border-muted-foreground/5"><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pink-500 text-white text-xs font-black shadow-md">{i + 1}</div><p className="text-sm sm:text-base font-medium text-slate-700 leading-tight pt-1.5">{s}</p></div>))}</CardContent>
+                    <CardFooter className="p-6 sm:p-8 pt-0 flex flex-col gap-4 bg-white/50 border-t shrink-0"><div className="flex items-center space-x-2 py-2"><Checkbox id="db" checked={dontShowAgain} onCheckedChange={v => setDontShowAgain(!!v)} /><Label htmlFor="db" className="text-xs font-bold text-muted-foreground uppercase cursor-pointer">Do not show rules again</Label></div><Button onClick={handleStart} className="w-full h-14 sm:h-16 text-xl font-black uppercase rounded-2xl bg-pink-500 hover:bg-pink-600 text-white">Start Popping!</Button></CardFooter>
                 </Card>
             </div>
         )}
-
         {(gameState === 'levelComplete' || gameState === 'gameOver') && (
-            <div className="absolute inset-0 flex items-center justify-center p-4 z-[1000] animate-in fade-in zoom-in-95 duration-500">
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
-                <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white rounded-[3rem] overflow-hidden relative z-[1001] max-h-[90vh] flex flex-col">
-                    <CardHeader className={cn("text-center py-6 sm:py-10 shrink-0", gameState === 'levelComplete' ? "bg-green-500" : "bg-destructive")}>
-                        <div className="mx-auto bg-white/20 p-2 sm:p-4 rounded-full w-fit mb-4 hidden sm:block">
-                            {gameState === 'levelComplete' ? <CheckCircle2 className="w-8 h-8 sm:w-12 sm:h-12 text-white" /> : <AlertCircle className="w-8 h-8 sm:w-12 sm:h-12 text-white" />}
-                        </div>
-                        <CardTitle className="text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter">
-                            {gameState === 'levelComplete' ? 'Level Clear!' : 'Game Over'}
-                        </CardTitle>
-                        <CardDescription className="text-white/80 font-bold text-sm sm:text-lg mt-2 px-6">
-                            {gameState === 'levelComplete' ? `Awesome job on ${levelName}` : 'Keep going! Practice makes perfect.'}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6 sm:p-10 text-center space-y-8 flex-1 overflow-y-auto">
-                        <div className="space-y-2 relative">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Mastery Points Earned</p>
-                            <div className="relative inline-block">
-                              <p className="text-5xl sm:text-7xl font-black text-primary drop-shadow-sm">{finalMasteryPoints}</p>
-                              {showSubmissionAnim && Array.from({ length: 20 }).map((_, i) => (
-                                <FloatingParticle key={i} index={i} />
-                              ))}
-                            </div>
-                        </div>
-                        
-                        <div className="grid gap-4">
-                            {gameState === 'levelComplete' && levelId < 1000 ? (
-                                <Button onClick={() => router.push(`/game/level-${levelId + 1}`)} className="h-14 sm:h-16 text-lg sm:text-xl font-black rounded-2xl shadow-xl hover:scale-[1.02] transition-transform">
-                                    NEXT LEVEL
-                                </Button>
-                            ) : null}
-                            <Button onClick={() => {
-                                isFinishingRef.current = false;
-                                setCurrentQuestionIndex(0);
-                                setScore(0);
-                                setLives(MAX_LIVES);
-                                setFinalMasteryPoints(0);
-                                setShowSubmissionAnim(false);
-                                setGameState('playing');
-                            }} variant="outline" className="h-12 sm:h-14 text-base sm:text-lg font-bold border-2 border-primary/20 rounded-2xl">
-                                TRY AGAIN
-                            </Button>
-                            <Button variant="ghost" onClick={() => router.push('/game')} className="h-10 sm:h-12 font-bold uppercase tracking-widest text-muted-foreground text-xs sm:text-sm">
-                                BACK TO LEVEL MAP
-                            </Button>
+            <div className="absolute inset-0 flex items-center justify-center p-4 z-[1000] animate-in zoom-in-95"><div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+                <Card className="w-full max-w-lg shadow-2xl border-4 border-white/20 bg-white rounded-[3rem] overflow-hidden relative z-[1001]">
+                    <CardHeader className={cn("text-center py-6 sm:py-10", gameState === 'levelComplete' ? "bg-green-500" : "bg-destructive")}><CardTitle className="text-3xl font-black text-white uppercase tracking-tighter">{gameState === 'levelComplete' ? 'Level Clear!' : 'Game Over'}</CardTitle></CardHeader>
+                    <CardContent className="p-6 sm:p-10 text-center space-y-8"><div className="space-y-2 relative"><p className="text-[10px] font-black uppercase text-muted-foreground">Points Earned</p><div className="relative inline-block"><p className="text-5xl sm:text-7xl font-black text-primary">{finalMasteryPoints}</p>{showSubmissionAnim && Array.from({length:20}).map((_,i)=>(<FloatingParticle key={i} index={i}/>))}</div></div>
+                        <div className="grid gap-4">{gameState === 'levelComplete' && levelId < 1000 && <Button onClick={() => router.push(`/game/level-${levelId + 1}`)} className="h-14 sm:h-16 text-lg font-black rounded-2xl shadow-xl">NEXT LEVEL</Button>}
+                            <Button onClick={() => { isFinishingRef.current = false; setCurrentQuestionIndex(0); setScore(0); setLives(MAX_LIVES); setFinalMasteryPoints(0); setShowSubmissionAnim(false); setGameState('playing'); }} variant="outline" className="h-12 border-2 rounded-2xl font-bold">TRY AGAIN</Button>
+                            <Button variant="ghost" onClick={() => router.push('/game')} className="font-bold uppercase text-xs">BACK TO MAP</Button>
                         </div>
                     </CardContent>
                 </Card>
             </div>
         )}
-    </div>,
-    document.body
+    </div>, document.body
   );
 }

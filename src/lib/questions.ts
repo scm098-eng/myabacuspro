@@ -261,15 +261,12 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
       const level = parseInt(difficulty.split('-').pop() || '1', 10);
       const tier = difficulty.includes('expert') ? 'expert' : difficulty.includes('elite') ? 'elite' : 'novice';
       
-      // Scale: 1 -> 50
-      // Rows: 3 -> 10
-      // Interval: 2.0s -> 1.5s
       rows = 3 + Math.floor((level - 1) * 7 / 49);
       delay = 2000 - Math.floor((level - 1) * 500 / 49);
 
       if (tier === 'novice') { d1 = 1; }
-      else if (tier === 'expert') { d1 = 1; d2 = 2; r2 = (level - 1) / 49 * 0.9; } // Up to 90% 2-digit
-      else { d1 = 2; d2 = 3; r2 = (level - 1) / 49 * 0.9; } // Up to 90% 3-digit
+      else if (tier === 'expert') { d1 = 1; d2 = 2; r2 = (level - 1) / 49 * 0.9; }
+      else { d1 = 2; d2 = 3; r2 = (level - 1) / 49 * 0.9; }
     }
 
     const numQs = settings?.numQuestions || 10;
@@ -298,8 +295,35 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
   }
 
   for (let i = 0; i < settings!.numQuestions; i++) {
-    // Standard generation logic preserved
     questions.push({ text: "1 + 1", options: generateOptions(2), answer: 2 });
   }
   return deDuplicateQuestions(questions);
+}
+
+export function generateDuelQuestions(mode: 'standard' | 'flash' | 'matrix', seed: string): Question[] {
+  const prng = createPRNG(seed);
+  const questions: Question[] = [];
+  const count = 20;
+
+  for (let i = 0; i < count; i++) {
+    if (mode === 'flash') {
+      const { sequence, answer } = generateFlashSequence(2, 5, prng);
+      questions.push({ text: sequence.map(n => n > 0 ? `+${n}` : n).join(' '), answer, options: generateOptions(answer, prng), sequence });
+    } else if (mode === 'matrix') {
+        const size = i < 10 ? 3 : 4;
+        const tileCount = i < 10 ? 4 : 6;
+        const pattern: number[] = [];
+        while (pattern.length < tileCount) {
+          const r = Math.floor(prng() * (size * size));
+          if (!pattern.includes(r)) pattern.push(r);
+        }
+        questions.push({ text: 'Reconstruct', answer: pattern.length, options: [pattern.length, pattern.length + 1, pattern.length - 1, pattern.length + 2], matrixPattern: pattern });
+    } else {
+        const a = getRandomInt(10, 99, prng);
+        const b = getRandomInt(10, 99, prng);
+        const ans = a + b;
+        questions.push({ text: `${a} + ${b}`, answer: ans, options: generateOptions(ans, prng) });
+    }
+  }
+  return questions;
 }

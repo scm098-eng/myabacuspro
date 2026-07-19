@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -17,14 +18,13 @@ import { firebaseApp } from '@/lib/firebase';
 import { startMatchmaking, getRecentOpponents } from '@/lib/matchmaking';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import Link from 'next/link';
 
 const ROUNDS_PER_LEVEL = 5;
 const INITIAL_LIVES = 3;
 const MAX_DAILY_LEVELS = 5;
 
 export default function PatternMemoryPage() {
-  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/game_bg.jpg?alt=media');
+  usePageBackground('');
   const { user, profile, addPoints, recordDailyPractice } = useAuth();
   const router = useRouter();
   const { playSound } = useSound();
@@ -69,12 +69,6 @@ export default function PatternMemoryPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleCopyInviteLink = () => {
-    const link = `${window.location.origin}/game/duels`;
-    navigator.clipboard.writeText(link);
-    toast({ title: "Invite Link Copied!", description: "Share this link with a friend to join the lobby." });
   };
 
   const getLevelParams = useCallback((lvl: number) => {
@@ -276,7 +270,7 @@ export default function PatternMemoryPage() {
                    ) : (
                      <p className="text-xs text-muted-foreground font-medium italic text-center py-4">Challenge a friend to start a rivalry!</p>
                    )}
-                   <Button onClick={handleCopyInviteLink} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Share2 className="w-4 h-4 mr-2"/> Copy Invite Link</Button>
+                   <Button onClick={() => { navigator.clipboard.writeText(window.location.origin + "/game/duels"); toast({ title: "Invite Link Copied!" }); }} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Share2 className="w-4 h-4 mr-2"/> Copy Invite Link</Button>
                 </CardContent>
              </Card>
           </div>
@@ -330,7 +324,6 @@ export default function PatternMemoryPage() {
         <div className="bg-white/5 p-4 shrink-0 border-b border-white/5"><Progress value={(round / ROUNDS_PER_LEVEL) * 100} className="h-1.5 bg-white/10" /></div>
         <CardContent className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
           <div className="relative z-10 w-full flex flex-col items-center">
-            {/* Fixed height status container prevents grid jump */}
             <div className="h-24 flex flex-col items-center justify-center mb-6 w-full relative">
               {gameState === 'ready' && (
                 <div className="animate-in zoom-in-50 duration-300 text-center">
