@@ -96,12 +96,6 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     }
   };
 
-  const handleCopyInviteLink = () => {
-    const link = `${window.location.origin}/game/duels`;
-    navigator.clipboard.writeText(link);
-    toast({ title: "Invite Link Copied!", description: "Share this link with a friend to join the lobby." });
-  };
-
   const startFlashing = useCallback(() => {
     if (!questions[currentIdx]?.sequence) return;
     setIsFlashing(true);
@@ -191,7 +185,7 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     }
     
     sessionStorage.setItem('testResults', JSON.stringify({
-      questions: questions.map(q => ({ ...q, text: q.sequence?.join(' ') || '' })),
+      questions: questions.map(q => ({ ...q, text: q.sequence?.map(n => n > 0 ? `+ ${n}` : `${n}`).join(' ') || '' })),
       userAnswers: finalAnswers,
     }));
 
@@ -248,11 +242,9 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
                      ))}
                    </div>
                  ) : (
-                   <div className="text-center space-y-2 py-4">
-                     <p className="text-xs text-muted-foreground font-medium italic px-4">Challenge a friend to start a rivalry!</p>
-                   </div>
+                   <p className="text-xs text-muted-foreground font-medium italic text-center py-4">Challenge a friend to start a rivalry!</p>
                  )}
-                 <Button onClick={handleCopyInviteLink} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Share2 className="w-4 h-4 mr-2"/> Copy Invite Link</Button>
+                 <Button onClick={() => { navigator.clipboard.writeText(window.location.origin + "/game/duels"); toast({ title: "Link Copied!" }); }} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Share2 className="w-4 h-4 mr-2"/> Copy Invite Link</Button>
               </CardContent>
            </Card>
         </div>

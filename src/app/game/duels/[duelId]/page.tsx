@@ -45,7 +45,6 @@ export default function DuelArenaPage() {
   const [lives, setLives] = useState(5);
   const [hasStarted, setHasStarted] = useState(false);
   const [showMatchTransition, setShowMatchTransition] = useState(false);
-  const [rematchRequested, setRematchRequested] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
 
@@ -55,9 +54,6 @@ export default function DuelArenaPage() {
   const [isReadyForInput, setIsReadyForInput] = useState(false);
 
   const questionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const botIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const botTriggerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const answersRef = useRef<(number | null)[]>([]);
   const flashIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const isChallenger = duel?.challengerId === user?.uid;

@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2, User, Lock } from 'lucide-react';
+import { Eye, EyeOff, Loader2, User, Lock, Camera, Sparkles, X } from 'lucide-react';
 import type { SignupData, ProfileData } from '@/types';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,10 +26,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const indianStates = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"];
 const grades = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"];
 const majorCountries = ["India", "United States", "United Kingdom", "United Arab Emirates", "Australia", "Canada", "Singapore", "Malaysia", "Japan", "Germany", "France", "Other"];
+
+const AVATAR_STYLES = [
+  { id: 'avataaars', label: 'People', total: 200 },
+  { id: 'bottts', label: 'Robots', total: 200 },
+  { id: 'pixel-art', label: 'Retro', total: 200 },
+  { id: 'fun-emoji', label: 'Emojis', total: 200 },
+  { id: 'lorelei', label: 'Sketches', total: 200 },
+  { id: 'notionists', label: 'Notion Style', total: 200 },
+  { id: 'adventurer', label: 'Adventure', total: 200 },
+  { id: 'big-ears', label: 'Friendly', total: 200 },
+];
 
 const countryCodes: Record<string, string> = {
   "India": "+91 ",
@@ -107,6 +120,7 @@ function SignupContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false);
+  const [isAvatarGalleryOpen, setIsAvatarGalleryOpen] = useState(false);
   const [imgSrc, setImgSrc] = useState('');
   const [crop, setCrop] = useState<Crop>({ unit: '%', width: 90, height: 90, x: 5, y: 5 });
   const [completedCrop, setCompletedCrop] = useState<Crop>();
@@ -206,6 +220,16 @@ function SignupContent() {
       setAvatarPreview(URL.createObjectURL(file));
       setIsPhotoDialogOpen(false);
     }
+  };
+
+  const selectAvatar = async (url: string) => {
+    const highResUrl = url.replace('size=64', 'size=256');
+    const response = await fetch(highResUrl);
+    const blob = await response.blob();
+    const file = new File([blob], 'avatar.svg', { type: 'image/svg+xml' });
+    setCroppedImageFile(file);
+    setAvatarPreview(highResUrl);
+    setIsAvatarGalleryOpen(false);
   };
 
   if (isLoading || (user && profile)) {
@@ -320,7 +344,10 @@ function SignupContent() {
                 <div className="flex items-center gap-4">
                   <Avatar className="h-20 w-20"><AvatarImage src={avatarPreview || ''} /><AvatarFallback>{watch('firstName')?.[0]}</AvatarFallback></Avatar>
                   <input type="file" ref={fileInputRef} onChange={onFileSelect} accept="image/*" className="hidden" />
-                  <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>Choose Photo</Button>
+                  <div className="flex flex-col gap-2">
+                    <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2"><Camera className="w-4 h-4"/> Choose Photo</Button>
+                    <Button type="button" variant="ghost" onClick={() => setIsAvatarGalleryOpen(true)} className="flex items-center gap-2 text-primary"><Sparkles className="w-4 h-4"/> Use Avatar Hub</Button>
+                  </div>
                 </div>
                 <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email *</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -333,12 +360,50 @@ function SignupContent() {
         </CardContent>
         <CardFooter className="justify-center"><p className="text-sm text-muted-foreground">Already have an account? <Link href="/login" className="text-primary hover:underline font-semibold">Log in</Link></p></CardFooter>
       </Card>
+
       <Dialog open={isPhotoDialogOpen} onOpenChange={setIsPhotoDialogOpen}>
         <DialogContent><DialogHeader><DialogTitle>Crop Photo</DialogTitle></DialogHeader>
           <div className="flex justify-center">
             {imgSrc && <ReactCrop crop={crop} onChange={(_, p) => setCrop(p)} onComplete={(c) => setCompletedCrop(c)} aspect={1} circularCrop><img ref={imgRef} src={imgSrc} alt="Crop" className="max-h-[60vh]"/></ReactCrop>}
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setIsPhotoDialogOpen(false)}>Cancel</Button><Button onClick={handleCropConfirm}>Use Photo</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAvatarGalleryOpen} onOpenChange={setIsAvatarGalleryOpen}>
+        <DialogContent className="max-w-2xl max-h-[70vh] rounded-[2.5rem] border-none shadow-2xl flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-8 bg-slate-900 text-white shrink-0 flex flex-row items-center justify-between">
+            <div><DialogTitle className="text-3xl font-black uppercase tracking-tighter">Avatar Hub</DialogTitle><p className="text-slate-400 font-bold text-xs mt-1">Over 1,600 unique characters to choose from.</p></div>
+            <Button variant="ghost" size="icon" onClick={() => setIsAvatarGalleryOpen(false)} className="rounded-full text-white/40 hover:text-white hover:bg-white/10"><X className="w-6 h-6"/></Button>
+          </DialogHeader>
+          
+          <Tabs defaultValue="avataaars" className="flex-1 flex flex-col min-h-0 bg-slate-50">
+            <TabsList className="bg-slate-900 border-t border-white/5 p-1 h-auto flex flex-wrap justify-center gap-1 shrink-0">
+              {AVATAR_STYLES.map(style => (
+                <TabsTrigger key={style.id} value={style.id} className="text-[9px] font-black uppercase px-3 py-1.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white text-white/50">{style.label}</TabsTrigger>
+              ))}
+            </TabsList>
+            
+            <div className="flex-1 overflow-hidden">
+              {AVATAR_STYLES.map(style => (
+                <TabsContent key={style.id} value={style.id} className="h-full m-0 p-4 outline-none">
+                  <ScrollArea className="h-full">
+                    <div className="grid grid-cols-5 sm:grid-cols-8 gap-3 pb-8">
+                      {Array.from({ length: style.total }).map((_, i) => {
+                        const url = `https://api.dicebear.com/7.x/${style.id}/svg?seed=${style.id}-${i}&size=64`;
+                        return (
+                          <button type="button" key={i} onClick={() => selectAvatar(url)} className="relative aspect-square group rounded-xl overflow-hidden border-2 border-transparent hover:border-primary transition-all shadow-sm bg-white hover:shadow-lg active:scale-95">
+                            <img src={url} alt={style.label} className="w-full h-full object-cover p-1" loading="lazy" />
+                            <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+              ))}
+            </div>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>

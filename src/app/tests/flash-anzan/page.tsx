@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -17,9 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 
 const levels = [
-  { id: 'easy', title: 'Novice Flash', description: '1-Digit numbers, 5 rows, 1.5s interval.', color: 'bg-green-100 text-green-700', icon: Zap },
-  { id: 'medium', title: 'Expert Flash', description: '2-Digit numbers, 8 rows, 1.0s interval.', color: 'bg-orange-100 text-orange-700', icon: Zap },
-  { id: 'hard', title: 'Elite Flash', description: '2-Digit numbers, 12 rows, 0.6s interval.', color: 'bg-red-100 text-red-700', icon: Zap },
+  { id: 'easy', title: 'Novice Flash', description: '1-Digit Numbers | Levels 1-50 (Progression from 3 rows/2.0s to 10 rows/1.5s)', color: 'bg-green-100 text-green-700', icon: Zap },
+  { id: 'medium', title: 'Expert Flash', description: 'Mixed 1 & 2-Digit | Levels 1-50 (Progression from 3 rows/2.0s to 10 rows/1.5s)', color: 'bg-orange-100 text-orange-700', icon: Zap },
+  { id: 'hard', title: 'Elite Flash', description: 'Mixed 2 & 3-Digit | Levels 1-50 (Progression from 3 rows/2.0s to 10 rows/1.5s)', color: 'bg-red-100 text-red-700', icon: Zap },
 ];
 
 export default function FlashAnzanLobbyPage() {
