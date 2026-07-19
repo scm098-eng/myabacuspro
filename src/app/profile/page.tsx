@@ -310,7 +310,7 @@ export default function ProfilePage() {
                                       </SelectContent></Select><FormMessage /></FormItem>
                                   )} />
                                 <FormField control={form.control} name="grade" render={({ field }) => (
-                                    <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Current Grade/Standard *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-14 rounded-2xl border-2 font-bold text-lg focus:ring-primary shadow-sm px-4"><SelectValue /></SelectTrigger></FormControl><SelectContent className="rounded-2xl border-2 shadow-xl">{grades.map(g => <SelectItem key={g} value={g} className="font-bold">{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                    <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Current Grade/Standard *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-14 rounded-2xl border-2 font-bold text-lg focus:ring-primary shadow-sm px-4"><SelectValue /></SelectTrigger></FormControl><SelectContent className="rounded-2xl border-2 shadow-xl">{grades.map(g => <SelectItem key={g} value={g} className="font-bold">{g}</SelectItem>)}</Select><FormMessage /></FormItem>
                                 )} />
                             </div>
                         ) : (

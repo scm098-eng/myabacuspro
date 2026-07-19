@@ -23,7 +23,10 @@ function getAbacusFormula(currentDigit: number, delta: number, isAddition: boole
   if (isAddition) {
     const earthlyBeads = currentDigit % 5;
     const isHeavenlyActive = currentDigit >= 5;
+    // Direct movement check
     if (delta <= 4 - earthlyBeads || (delta >= 5 && !isHeavenlyActive && delta - 5 <= 4 - earthlyBeads)) return null;
+    
+    // Formula needed
     if (earthlyBeads + delta > 4 && currentDigit < 5 && currentDigit + delta < 10) return `+${delta}=+5-${5 - delta}`;
     if (currentDigit + delta >= 10) {
       if (delta === 9) return "+9=+10-1";
@@ -42,7 +45,10 @@ function getAbacusFormula(currentDigit: number, delta: number, isAddition: boole
   } else {
     const earthlyBeads = currentDigit % 5;
     const isHeavenlyActive = currentDigit >= 5;
+    // Direct movement check
     if (delta <= earthlyBeads || (delta >= 5 && isHeavenlyActive && delta - 5 <= earthlyBeads)) return null;
+    
+    // Formula needed
     if (delta > earthlyBeads && isHeavenlyActive && currentDigit - delta >= 0) return `-${delta}=-5+${5 - delta}`;
   }
   return null;
@@ -88,10 +94,11 @@ export function parseCalculationSteps(questionText: string): Step[] {
     if (operator === '+') currentValue += number;
     else if (operator === '-') currentValue -= number;
     
-    const formula = number < 10 ? getAbacusFormula(prevValue % 10, number, operator === '+') : null;
+    const formula = number < 100 ? getAbacusFormula(prevValue % 10, number % 10, operator === '+') : null;
+    
     const explanation = operator === '+' 
       ? `Add ${number} in the current value ${formula ? `(${formula})` : 'directly'}.`
-      : `Subtract ${number} directly from the current value.`;
+      : `Subtract ${number} directly from the current value ${formula ? `(${formula})` : ''}.`.replace(' ()', '');
 
     steps.push({ operation: `${operator} ${number}`, value: currentValue, explanation });
   }

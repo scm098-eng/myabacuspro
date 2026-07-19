@@ -10,7 +10,6 @@ import { combinationSubtractionQuestions } from './question-data/combination-sub
 
 /**
  * Deterministic PRNG Generator (Mulberry32)
- * Ensures "Same Paper" for all students when a seed is provided.
  */
 export function createPRNG(seed: string) {
   let h = 0;
@@ -261,18 +260,33 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
       const level = parseInt(difficulty.split('-').pop() || '1', 10);
       const tier = difficulty.includes('expert') ? 'expert' : difficulty.includes('elite') ? 'elite' : 'novice';
       
-      rows = 3 + Math.floor((level - 1) * 7 / 49);
-      delay = 2000 - Math.floor((level - 1) * 500 / 49);
+      // 50 Level progression logic
+      const linearStep = (level - 1) / 49;
+      rows = 3 + Math.floor(linearStep * 7); // 3 to 10 rows
+      delay = 2000 - Math.floor(linearStep * 500); // 2.0s to 1.5s
 
-      if (tier === 'novice') { d1 = 1; }
-      else if (tier === 'expert') { d1 = 1; d2 = 2; r2 = (level - 1) / 49 * 0.9; }
-      else { d1 = 2; d2 = 3; r2 = (level - 1) / 49 * 0.9; }
+      if (tier === 'novice') { 
+        d1 = 1; 
+      } else if (tier === 'expert') { 
+        d1 = 1; d2 = 2; 
+        r2 = linearStep * 0.9; // Scale towards 90% 2-digit
+      } else { 
+        d1 = 2; d2 = 3; 
+        r2 = linearStep * 0.9; // Scale towards 90% 3-digit
+      }
     }
 
     const numQs = settings?.numQuestions || 10;
     for (let i = 0; i < numQs; i++) {
       const { sequence, answer } = generateFlashSequence(d1, rows, Math.random, d2, r2);
-      questions.push({ text: sequence.map(n => n > 0 ? `+${n}` : n).join(' '), answer, options: generateOptions(answer), questionType: 'flash', sequence, delay });
+      questions.push({ 
+        text: sequence.map(n => n > 0 ? `+${n}` : n).join(' '), 
+        answer, 
+        options: generateOptions(answer), 
+        questionType: 'flash', 
+        sequence, 
+        delay 
+      });
     }
     return questions;
   }
@@ -294,10 +308,20 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
     return deDuplicateQuestions(questions);
   }
 
-  for (let i = 0; i < settings!.numQuestions; i++) {
-    questions.push({ text: "1 + 1", options: generateOptions(2), answer: 2 });
-  }
-  return deDuplicateQuestions(questions);
+  return [];
+}
+
+export function generateGameQuestions(level: GameLevel, levelId: number): Question[] {
+  const prng = Math.random;
+  let pool: Question[] = [];
+  
+  if (level.includes('small-sister')) pool = basicAdditionQuestions['basic-addition-plus-4'] || [];
+  else if (level.includes('big-brother')) pool = bigBrotherAdditionQuestions['big-brother-addition-plus-9'] || [];
+  else if (level.includes('combination')) pool = combinationAdditionQuestions['combination-plus-6'] || [];
+  else if (level.includes('mastery-mix')) pool = masteryMixQuestions[level] || [];
+  else pool = basicAdditionQuestions['basic-addition-plus-4'] || [];
+
+  return deDuplicateQuestions(shuffleArray([...pool], prng).slice(0, 10));
 }
 
 export function generateDuelQuestions(mode: 'standard' | 'flash' | 'matrix', seed: string): Question[] {
@@ -308,7 +332,12 @@ export function generateDuelQuestions(mode: 'standard' | 'flash' | 'matrix', see
   for (let i = 0; i < count; i++) {
     if (mode === 'flash') {
       const { sequence, answer } = generateFlashSequence(2, 5, prng);
-      questions.push({ text: sequence.map(n => n > 0 ? `+${n}` : n).join(' '), answer, options: generateOptions(answer, prng), sequence });
+      questions.push({ 
+        text: sequence.map(n => n > 0 ? `+${n}` : n).join(' '), 
+        answer, 
+        options: generateOptions(answer, prng), 
+        sequence 
+      });
     } else if (mode === 'matrix') {
         const size = i < 10 ? 3 : 4;
         const tileCount = i < 10 ? 4 : 6;
