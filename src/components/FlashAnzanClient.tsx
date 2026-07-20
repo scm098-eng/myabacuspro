@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Loader2, Check, PlayCircle, Zap, ShieldCheck, ChevronRight, Swords, Users, User, Share2, Copy } from 'lucide-react';
+import { AlertTriangle, Loader2, PlayCircle, Zap, ShieldCheck, ChevronRight, Swords, Users, User, Share2, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -78,9 +78,13 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     setUserAnswers(new Array(generated.length).fill(null));
     questionButtonRefs.current = new Array(generated.length).fill(null);
 
-    const skip = localStorage.getItem('skip_rules_flash_anzan') === 'true';
-    if (skip) setAppState('playing');
-    else setAppState('lobby');
+    // Fixed tiers (Novice, Expert, Elite) go straight to playing.
+    // Only 'custom' Lab shows the strategy choice lobby.
+    if (difficulty !== 'custom' || localStorage.getItem('skip_rules_flash_anzan') === 'true') {
+      setAppState('playing');
+    } else {
+      setAppState('lobby');
+    }
   }, [testId, difficulty, searchParams]);
 
   const handleStartDuel = async (type: 'match' | 'friend') => {
