@@ -78,9 +78,9 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     setUserAnswers(new Array(generated.length).fill(null));
     questionButtonRefs.current = new Array(generated.length).fill(null);
 
-    // Fixed tiers (Novice, Expert, Elite) go straight to playing.
-    // Only 'custom' Lab shows the strategy choice lobby.
-    if (difficulty !== 'custom' || localStorage.getItem('skip_rules_flash_anzan') === 'true') {
+    // Fixed tiers (Novice, Expert, Elite) now bypass the strategy choice lobby
+    // as they are purely solo curriculum levels.
+    if (difficulty !== 'custom') {
       setAppState('playing');
     } else {
       setAppState('lobby');

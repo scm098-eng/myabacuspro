@@ -20,6 +20,30 @@ const levels = [
   { id: 'hard', title: 'Elite Flash', description: 'Mixed 2 & 3-Digit | Levels 1-50 (Progression from 3 rows/2.0s to 10 rows/1.5s)', color: 'bg-red-100 text-red-700', icon: Zap },
 ];
 
+const LevelGrid = ({ tier, isLocked }: { tier: string, isLocked: boolean }) => {
+  const router = useRouter();
+  const levels = Array.from({ length: 50 }, (_, i) => i + 1);
+
+  return (
+    <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 py-4">
+      {levels.map((level) => (
+        <Button
+          key={level}
+          variant="outline"
+          disabled={isLocked}
+          onClick={() => router.push(`/tests/flash-anzan/level-${tier}-${level}`)}
+          className={cn(
+            "h-10 w-10 p-0 text-xs font-black transition-all hover:scale-110 rounded-lg flex items-center justify-center",
+            isLocked ? "opacity-50 grayscale" : "border-primary/20 hover:border-primary bg-card hover:bg-primary/5 shadow-sm"
+          )}
+        >
+          {level}
+        </Button>
+      ))}
+    </div>
+  );
+};
+
 export default function FlashAnzanLobbyPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/practice_bg.jpg?alt=media');
   const { user, profile, isLoading, isTrialActive } = useAuth();
@@ -66,20 +90,20 @@ export default function FlashAnzanLobbyPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      <div className="space-y-12 max-w-5xl mx-auto">
         {levels.map((level) => {
           const isLocked = !isPro && !isTrialActive && level.id !== 'easy';
           
           return (
             <Card key={level.id} className={cn(
-              "rounded-[2.5rem] border-none shadow-xl overflow-hidden group transition-all hover:scale-[1.02]",
+              "rounded-[2.5rem] border-none shadow-xl overflow-hidden group transition-all",
               isLocked ? "opacity-60 grayscale" : "bg-white"
             )}>
               <CardHeader className={cn("p-8 text-center", level.color)}>
                 <div className="mx-auto bg-white/40 p-4 rounded-full w-fit mb-4">
                   <level.icon className="w-8 h-8" />
                 </div>
-                <CardTitle className="text-xl font-black uppercase tracking-tight">{level.title}</CardTitle>
+                <CardTitle className="text-2xl font-black uppercase tracking-tight">{level.title}</CardTitle>
                 <CardDescription className="font-bold opacity-80">{level.description}</CardDescription>
               </CardHeader>
               <CardContent className="p-8 space-y-6">
@@ -93,13 +117,15 @@ export default function FlashAnzanLobbyPage() {
                     Mastery Points: High
                   </div>
                 </div>
-                {isLocked ? (
+
+                <div className="bg-muted/30 p-6 rounded-[1.5rem] border-2 border-dashed border-primary/10">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-4 text-center">Select Level (1-50)</p>
+                  <LevelGrid tier={level.id} isLocked={isLocked} />
+                </div>
+
+                {isLocked && (
                   <Button asChild variant="secondary" className="w-full h-14 font-black uppercase rounded-2xl">
-                    <Link href="/pricing"><Lock className="mr-2 h-4 w-4" /> Unlock Pro</Link>
-                  </Button>
-                ) : (
-                  <Button onClick={() => router.push(`/tests/flash-anzan/${level.id}`)} className="w-full h-14 font-black uppercase rounded-2xl shadow-lg">
-                    Enter Arena <ChevronRight className="ml-2 h-5 w-5" />
+                    <Link href="/pricing"><Lock className="mr-2 h-4 w-4" /> Unlock Pro to Access All Levels</Link>
                   </Button>
                 )}
               </CardContent>

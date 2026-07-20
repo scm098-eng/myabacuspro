@@ -46,9 +46,9 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
     easy: { numQuestions: 20, timeLimit: 0, title: 'Set Beads Value', icon: 'puzzle' },
   },
   'flash-anzan': {
-    easy: { numQuestions: 10, timeLimit: 0, title: 'Novice Flash', icon: 'zap' },
-    medium: { numQuestions: 15, timeLimit: 0, title: 'Expert Flash', icon: 'zap' },
-    hard: { numQuestions: 20, timeLimit: 0, title: 'Elite Flash', icon: 'zap' },
+    easy: { numQuestions: 50, timeLimit: 0, title: 'Novice Flash', icon: 'zap' },
+    medium: { numQuestions: 50, timeLimit: 0, title: 'Expert Flash', icon: 'zap' },
+    hard: { numQuestions: 50, timeLimit: 0, title: 'Elite Flash', icon: 'zap' },
     custom: { numQuestions: 10, timeLimit: 0, title: 'Anzan Custom Lab', icon: 'zap' },
   },
   'basic-add-sub-l1': {
@@ -220,7 +220,8 @@ export function getTestSettings(testId: TestType, difficulty: Difficulty): TestS
     if (isAnzan) {
       const levelNum = parseInt(difficulty.split('-').pop() || '1', 10);
       const tier = difficulty.includes('expert') ? 'Expert' : difficulty.includes('elite') ? 'Elite' : 'Novice';
-      return { numQuestions: 10, timeLimit: 0, title: `${tier} Flash • Level ${levelNum}`, icon: 'zap' };
+      // User requested 50 questions in each level
+      return { numQuestions: 50, timeLimit: 0, title: `${tier} Flash • Level ${levelNum}`, icon: 'zap' };
     }
   }
   return TEST_CONFIG[testId]?.[difficulty as keyof Partial<Record<Difficulty, TestSettings>>] as TestSettings | undefined;
@@ -400,7 +401,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
       else { d1 = 1; }
     }
 
-    const numQs = settings?.numQuestions || 10;
+    const numQs = settings?.numQuestions || 50;
     for (let i = 0; i < numQs; i++) {
       const { sequence, answer } = generateFlashSequence(d1, rows, Math.random, d2, r2);
       questions.push({ text: sequence.map(n => n > 0 ? `+${n}` : n).join(' '), answer, options: generateOptions(answer), questionType: 'flash', sequence, delay });
@@ -514,4 +515,3 @@ export function generateDuelQuestions(mode: 'standard' | 'flash' | 'matrix', see
   }
   return questions;
 }
-
