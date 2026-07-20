@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Question, Difficulty, TestType, TestSettings, GameLevel } from '@/types';
@@ -254,14 +253,157 @@ const gameQuestionMap: Record<string, string[]> = {
     'mastery-mix-12': ['mastery-mix-12'],
 };
 
-export function getStudentTitle(totalDays: number, totalPoints: number) {
-  return RANK_CRITERIA.find(t => totalDays >= t.daysReq && totalPoints >= t.pointsReq) || RANK_CRITERIA[RANK_CRITERIA.length - 1];
+export function getTestSettings(testId: TestType, difficulty: Difficulty): TestSettings | undefined {
+  if (difficulty.startsWith('level-')) {
+    const isBeadTest = testId === 'beads-identify' || testId === 'beads-set';
+    if (isBeadTest) {
+      const levelNum = parseInt(difficulty.replace('level-', ''), 10);
+      let subTitle = "Mixed Training";
+      if (levelNum <= 2) subTitle = "Single Digit";
+      else if (levelNum <= 4) subTitle = "Double Digit";
+      else if (levelNum <= 6) subTitle = "Triple Digit";
+      else if (levelNum <= 8) subTitle = "4-Digit Advanced";
+      else subTitle = "Grand Master Mix";
+
+      return {
+        numQuestions: 20,
+        timeLimit: 0,
+        title: `Beads Practice - Level ${levelNum} (${subTitle})`,
+        icon: testId === 'beads-identify' ? 'eye' : 'puzzle'
+      };
+    }
+    
+    if (testId === 'flash-anzan') {
+      const parts = difficulty.split('-');
+      const levelNum = parts[parts.length - 1];
+      const tier = parts[parts.length - 2];
+      return {
+        numQuestions: 50,
+        timeLimit: 0,
+        title: `${tier.toUpperCase()} Anzan - Level ${levelNum}`,
+        icon: 'zap'
+      };
+    }
+  }
+  return TEST_CONFIG[testId]?.[difficulty as keyof Partial<Record<Difficulty, TestSettings>>] as TestSettings | undefined;
 }
 
-import { RANK_CRITERIA } from './constants';
+export function getRandomInt(min: number, max: number, prng: () => number = Math.random): number {
+  return Math.floor(prng() * (max - min + 1)) + min;
+}
+
+export function shuffleArray<T>(array: T[], prng: () => number = Math.random): T[] {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(prng() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+/**
+ * Enhanced shuffler that ensures no two consecutive questions have the same answer.
+ */
+export function deDuplicateQuestions(questions: Question[], prng: () => number = Math.random): Question[] {
+  if (questions.length < 2) return questions;
+  const result = shuffleArray([...questions], prng);
+  for (let i = 0; i < result.length - 1; i++) {
+    if (result[i].answer === result[i + 1].answer) {
+      for (let j = i + 2; j < result.length; j++) {
+        if (result[j].answer !== result[i].answer) {
+          [result[i + 1], result[j]] = [result[j], result[i + 1]];
+          break;
+        }
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * Exports generateOptions as required by curriculum modules.
+ */
+export function generateOptions(correctAnswer: number, prng: () => number = Math.random): number[] {
+  const options = new Set<number>([correctAnswer]);
+  const safeAnswer = Math.max(0, correctAnswer);
+  const range = Math.max(10, Math.abs(Math.floor(safeAnswer * 0.4)));
+
+  while (options.size < 4) {
+    let wrongAnswer;
+    if (safeAnswer < 10) {
+        wrongAnswer = Math.floor(prng() * 20);
+    } else {
+        const minOption = Math.max(0, safeAnswer - range);
+        const maxOption = safeAnswer + range;
+        wrongAnswer = Math.floor(prng() * (maxOption - minOption + 1)) + minOption;
+    }
+    if (wrongAnswer !== safeAnswer && wrongAnswer >= 0) {
+      options.add(wrongAnswer);
+    }
+  }
+  return shuffleArray(Array.from(options), prng);
+}
+
+function isDirectDigitAdd(d1: number, d2: number): boolean {
+  const h1 = d1 >= 5 ? 1 : 0;
+  const e1 = d1 % 5;
+  const h2 = d2 >= 5 ? 1 : 0;
+  const e2 = d2 % 5;
+  return h1 + h2 <= 1 && e1 + e2 <= 4;
+}
+
+function isDirectDigitSub(d1: number, d2: number): boolean {
+  const h1 = d1 >= 5 ? 1 : 0;
+  const e1 = d1 % 5;
+  const h2 = d2 >= 5 ? 1 : 0;
+  const e2 = d2 % 5;
+  return h2 <= h1 && e2 <= e1;
+}
+
+function isDirectFull(val: number, delta: number, op: '+' | '-'): boolean {
+  const v1 = val.toString().padStart(3, '0').split('').map(Number);
+  const v2 = delta.toString().padStart(3, '0').split('').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if (op === '+') {
+      if (!isDirectDigitAdd(v1[i], v2[i])) return false;
+    } else {
+      if (!isDirectDigitSub(v1[i], v2[i])) return false;
+    }
+  }
+  return true;
+}
+
+function generateDirectQuestion(max: number, numTerms: number = 3): Question {
+  while (true) {
+    let currentVal = getRandomInt(max === 9 ? 1 : 10, max);
+    let numbers: (number | string)[] = [currentVal];
+    let successCount = 0;
+
+    for (let i = 0; i < numTerms - 1; i++) {
+      let attempts = 0;
+      let foundOp = false;
+      while (attempts < 50) { 
+        const op = Math.random() > 0.5 ? '+' : '-';
+        const delta = getRandomInt(1, max > 9 ? 40 : max); 
+        const nextVal = op === '+' ? currentVal + delta : currentVal - delta;
+        if (nextVal >= 0 && nextVal <= max && isDirectFull(currentVal, delta, op)) {
+          numbers.push(op);
+          numbers.push(delta);
+          currentVal = nextVal;
+          foundOp = true;
+          successCount++;
+          break;
+        }
+        attempts++;
+      }
+      if (!foundOp) break; 
+    }
+    if (successCount >= numTerms - 1) {
+      return { text: numbers.join(' '), answer: currentVal, options: generateOptions(currentVal) };
+    }
+  }
+}
 
 export function generateGameQuestions(level: GameLevel, levelId: number): Question[] {
-  const prng = Math.random;
   const questionKeys = gameQuestionMap[level];
   let allQuestions: Question[] = [];
   if (level === 'general-practice') allQuestions = Object.values(preDefinedQuestions).flat();
@@ -274,27 +416,19 @@ export function generateGameQuestions(level: GameLevel, levelId: number): Questi
   return deDuplicateQuestions(shuffleArray([...positiveOnly])).slice(0, 10);
 }
 
-export function generateDuelQuestions(mode: 'standard' | 'flash' | 'matrix', seed: string): Question[] {
-  const prng = createPRNG(seed);
-  const questions: Question[] = [];
-  for (let i = 0; i < 20; i++) {
-    if (mode === 'flash') {
-      const { sequence, answer } = generateFlashSequence(2, 5, prng);
-      questions.push({ text: sequence.map(n => n > 0 ? `+${n}` : n).join(' '), answer, options: generateOptions(answer, prng), sequence });
-    } else if (mode === 'matrix') {
-      const size = i < 10 ? 3 : 4;
-      const pattern: number[] = [];
-      while (pattern.length < (i < 10 ? 4 : 6)) {
-        const r = Math.floor(prng() * (size * size));
-        if (!pattern.includes(r)) pattern.push(r);
-      }
-      questions.push({ text: 'Reconstruct', answer: pattern.length, options: [pattern.length, pattern.length + 1, pattern.length - 1, pattern.length + 2], matrixPattern: pattern });
-    } else {
-      const a = getRandomInt(10, 99, prng), b = getRandomInt(10, 99, prng);
-      questions.push({ text: `${a} + ${b}`, answer: a + b, options: generateOptions(a + b, prng) });
-    }
+export function generateFlashSequence(digits: number, rows: number, prng: () => number = Math.random, digits2: number = 0, ratio2: number = 0) {
+  const sequence: number[] = [];
+  let answer = 0;
+  for (let i = 0; i < rows; i++) {
+    const useD2 = prng() < ratio2 && digits2 > 0;
+    const d = useD2 ? digits2 : digits;
+    const num = getRandomInt(Math.pow(10, d - 1), Math.pow(10, d) - 1, prng);
+    const op = (i === 0 || prng() > 0.3) ? 1 : -1;
+    const val = num * op;
+    if (answer + val < 0) { sequence.push(num); answer += num; }
+    else { sequence.push(val); answer += val; }
   }
-  return questions;
+  return { sequence, answer };
 }
 
 export function generateTest(testId: TestType, difficulty: Difficulty, customSettings?: { rows?: number, digits?: number, delay?: number }): Question[] {
@@ -304,7 +438,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
   if (testId === 'basic-add-sub-l1' || testId === 'basic-add-sub-l2') {
     const max = testId === 'basic-add-sub-l1' ? 9 : 99;
     const questions: Question[] = [];
-    for (let i = 0; i < settings!.numQuestions; i++) {
+    for (let i = 0; i < (settings?.numQuestions || 30); i++) {
       const numTerms = getRandomInt(4, 5);
       questions.push(generateDirectQuestion(max, numTerms));
     }
@@ -313,9 +447,8 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
 
   if (testId === 'flash-anzan') {
     const questions: Question[] = [];
-    let rows = 3;
-    let delay = 2000;
-    let d1 = 1, d2 = 0, r2 = 0;
+    let rows = 3, delay = 2000, d1 = 1, d2 = 0, r2 = 0;
+    const numQs = 50;
 
     if (difficulty === 'custom') {
       rows = customSettings?.rows || 10;
@@ -326,13 +459,11 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
       const linearStep = (level - 1) / 49;
       rows = 3 + Math.floor(linearStep * 7); 
       delay = 2000 - Math.floor(linearStep * 500); 
-
-      if (difficulty.includes('expert')) { d1 = 1; d2 = 2; r2 = linearStep * 0.9; }
-      else if (difficulty.includes('elite')) { d1 = 2; d2 = 3; r2 = linearStep * 0.9; }
+      if (difficulty.includes('medium')) { d1 = 1; d2 = 2; r2 = linearStep * 0.9; }
+      else if (difficulty.includes('hard')) { d1 = 2; d2 = 3; r2 = linearStep * 0.9; }
       else { d1 = 1; }
     }
 
-    const numQs = settings?.numQuestions || 50;
     for (let i = 0; i < numQs; i++) {
       const { sequence, answer } = generateFlashSequence(d1, rows, Math.random, d2, r2);
       questions.push({ text: sequence.map(n => n > 0 ? `+${n}` : n).join(' '), answer, options: generateOptions(answer), questionType: 'flash', sequence, delay });
@@ -344,25 +475,14 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
   if (preDefinedQuestions[coreTestId]) return deDuplicateQuestions([...preDefinedQuestions[coreTestId]]).slice(0, settings!.numQuestions);
 
   const questions: Question[] = [];
-  if (testId === 'beads-identify' || testId === 'beads-set') {
-    const type = testId === 'beads-identify' ? 'identify' : 'set';
-    const lvl = parseInt(difficulty.split('-').pop() || '1', 10);
-    const maxD = lvl <= 2 ? 1 : lvl <= 4 ? 2 : lvl <= 6 ? 3 : 4;
-    for(let i=0; i<settings!.numQuestions; i++) {
-      const d = lvl <= 8 ? maxD : getRandomInt(1, 4);
-      const answer = getRandomInt(Math.pow(10, d - 1), Math.pow(10, d) - 1);
-      questions.push({ text: '', answer, options: generateOptions(answer), questionType: type });
-    }
-    return deDuplicateQuestions(questions);
-  }
-
   const getNumberRange = (diff: string): [number, number] => {
     if (diff === 'easy') return [1, 9];
     if (diff === 'medium') return [10, 99];
     return [100, 999];
   };
 
-  for (let i = 0; i < settings!.numQuestions; i++) {
+  const numQuestions = settings?.numQuestions || 50;
+  for (let i = 0; i < numQuestions; i++) {
     let questionText = "";
     let answer = 0;
     const [min, max] = getNumberRange(difficulty);
@@ -371,26 +491,15 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
       let currentVal = getRandomInt(min, max);
       const numbers: (number | string)[] = [currentVal];
       for (let j = 0; j < 3; j++) {
-        let attempts = 0;
-        let foundOp = false;
+        let attempts = 0, foundOp = false;
         while(attempts < 50) {
             let op: '+' | '-' = Math.random() > 0.5 ? '+' : '-';
             let next = getRandomInt(min, max);
             const res = op === '+' ? currentVal + next : currentVal - next;
-            if (res >= 0) {
-                currentVal = res;
-                numbers.push(op);
-                numbers.push(next);
-                foundOp = true;
-                break;
-            }
+            if (res >= 0) { currentVal = res; numbers.push(op); numbers.push(next); foundOp = true; break; }
             attempts++;
         }
-        if (!foundOp) {
-             currentVal += 10;
-             numbers.push('+');
-             numbers.push(10);
-        }
+        if (!foundOp) { currentVal += 10; numbers.push('+'); numbers.push(10); }
       }
       questionText = numbers.join(' ');
       answer = currentVal;
@@ -420,9 +529,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
       answer = n;
       questionText = `³√${n * n * n}`;
     }
-
     questions.push({ text: questionText, answer, options: generateOptions(answer) });
   }
-
   return deDuplicateQuestions(questions);
 }
