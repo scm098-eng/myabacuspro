@@ -1,18 +1,11 @@
+
 'use client';
 
 import { getFirestore, collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { Duel, ProfileData } from '@/types';
-import { generateDuelQuestions } from '@/lib/questions';
-
-const BOT_IDENTITIES = [
-  { name: "Arjun K.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun&size=64", speed: 1.0, accuracy: 0.9 },
-  { name: "Vihaan P.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Vihaan&size=64", speed: 0.8, accuracy: 0.95 },
-  { name: "Aarav M.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aarav&size=64", speed: 0.9, accuracy: 0.92 },
-  { name: "Neha S.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Neha&size=64", speed: 1.2, accuracy: 0.85 },
-  { name: "Ananya R.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya&size=64", speed: 1.5, accuracy: 0.8 },
-  { name: "Saanvi D.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Saanvi&size=64", speed: 0.85, accuracy: 0.94 },
-];
+import { generateDuelQuestions, generateFlashSequence, generateOptions, createPRNG } from '@/lib/questions';
+import { getMatchedBot } from './duel/bots';
 
 export async function startMatchmaking(
   userId: string, 
@@ -23,20 +16,20 @@ export async function startMatchmaking(
   const db = getFirestore(firebaseApp);
   const duelsRef = collection(db, "duels");
 
+  // 1. Search for human match
   const q = query(
     duelsRef, 
     where("status", "==", "waiting"),
+    where("mode", "==", mode),
+    where("difficulty", "==", difficulty),
     orderBy("createdAt", "desc"),
-    limit(20)
+    limit(10)
   );
 
   const snap = await getDocs(q);
   
   if (!snap.empty) {
-    const match = snap.docs.find(doc => {
-      const d = doc.data();
-      return d.challengerId !== userId && d.mode === mode && d.difficulty === difficulty;
-    });
+    const match = snap.docs.find(doc => doc.data().challengerId !== userId);
 
     if (match) {
       await updateDoc(doc(db, "duels", match.id), {
@@ -51,6 +44,7 @@ export async function startMatchmaking(
     }
   }
 
+  // 2. No match? Create lobby
   const seed = `${Date.now()}`;
   const questions = generateDuelQuestions(mode, seed);
   
@@ -70,23 +64,25 @@ export async function startMatchmaking(
   };
 
   const docRef = await addDoc(duelsRef, newDuel);
-  return docRef.id;
-}
-
-export async function spawnBotForDuel(duelId: string) {
-  const db = getFirestore(firebaseApp);
-  const bot = BOT_IDENTITIES[Math.floor(Math.random() * BOT_IDENTITIES.length)];
   
-  await updateDoc(doc(db, "duels", duelId), {
-    opponentId: `bot_${Date.now()}`,
-    opponentName: bot.name,
-    opponentPhoto: bot.avatar,
-    opponentType: 'bot',
-    botSpeed: bot.speed,
-    botAccuracy: bot.accuracy,
-    status: 'active',
-    updatedAt: serverTimestamp()
-  });
+  // 3. Fallback to Bot after 5 seconds
+  setTimeout(async () => {
+    const freshSnap = await getDocs(query(collection(db, "duels"), where("__name__", "==", docRef.id)));
+    if (!freshSnap.empty && freshSnap.docs[0].data().status === 'waiting') {
+      const bot = getMatchedBot(profile.totalPoints || 0);
+      await updateDoc(doc(db, "duels", docRef.id), {
+        opponentId: bot.id,
+        opponentName: bot.name,
+        opponentPhoto: bot.avatar,
+        opponentType: 'bot',
+        botRef: bot, 
+        status: 'active',
+        updatedAt: serverTimestamp()
+      });
+    }
+  }, 5000);
+
+  return docRef.id;
 }
 
 export async function getRecentOpponents(userId: string): Promise<{uid: string, name: string, photo: string}[]> {
@@ -111,8 +107,4 @@ export async function getRecentOpponents(userId: string): Promise<{uid: string, 
   });
 
   return Array.from(opponents.values()).slice(0, 5);
-}
-
-export async function startRematch(duel: Duel, userId: string, profile: ProfileData) {
-  return await startMatchmaking(userId, profile, duel.mode as any, duel.difficulty);
 }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
@@ -6,14 +7,13 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { getFirestore, doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, doc, onSnapshot, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { Duel } from '@/types';
-import { Swords, Loader2, Trophy, Crown, Zap, Users, X, RotateCcw, Heart, Star, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Swords, Loader2, Trophy, Crown, Zap, Users, X, Heart, Star, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -52,16 +52,12 @@ export default function DuelArenaPage() {
 
   const questionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const flashIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const botTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const isChallenger = duel?.challengerId === user?.uid;
   const gameState = duel?.status === 'completed' ? 'completed' : duel?.status === 'active' ? 'playing' : 'searching';
   
-  // Guard for current question
   const currentQuestion = useMemo(() => duel?.questions[currentIdx] || null, [duel, currentIdx]);
-
-  const config = useMemo(() => ({
-    speed: 8, answerRange: [12, 37, 63, 88], qDelay: 0.4, variance: 1.5 
-  }), []);
 
   useEffect(() => {
     setMounted(true);
@@ -72,7 +68,7 @@ export default function DuelArenaPage() {
           const data = { id: snap.id, ...snap.data() } as Duel;
           setDuel(data);
           setLoading(false);
-          if (data.status === 'active' && !hasStarted && data.opponentId) {
+          if (data.status === 'active' && !hasStarted) {
              setHasStarted(true);
           }
         }
@@ -80,20 +76,54 @@ export default function DuelArenaPage() {
     );
   }, [user, duelId, hasStarted]);
 
+  // Bot progress simulation
+  useEffect(() => {
+    if (gameState === 'playing' && duel?.opponentType === 'bot' && isChallenger && !duel.opponentFinished) {
+      const bot = (duel as any).botRef;
+      if (!bot) return;
+
+      const simulateBotTurn = () => {
+        const delay = bot.minSpeedMs + Math.random() * (bot.maxSpeedMs - bot.minSpeedMs);
+        botTimerRef.current = setTimeout(async () => {
+          const isCorrect = Math.random() < bot.accuracyRate;
+          const botIdx = (duel as any).botIdx || 0;
+          const nextIdx = botIdx + 1;
+          
+          const db = getFirestore(firebaseApp);
+          const update: any = {
+            opponentScore: increment(isCorrect ? 10 : 0),
+            botIdx: nextIdx,
+            updatedAt: serverTimestamp()
+          };
+          
+          if (nextIdx >= duel.questions.length) update.opponentFinished = true;
+
+          await updateDoc(doc(db, "duels", duelId), update);
+          if (nextIdx < duel.questions.length) simulateBotTurn();
+        }, delay);
+      };
+
+      simulateBotTurn();
+    }
+    return () => { if (botTimerRef.current) clearTimeout(botTimerRef.current); };
+  }, [gameState, duel, isChallenger, duelId]);
+
   const submitDuel = useCallback(async (finalScore: number) => {
     if (!duel || !user || isSubmitting) return;
     setIsSubmitting(true);
     const db = getFirestore(firebaseApp);
     const docRef = doc(db, "duels", duelId);
-    const isChallengerLocal = duel.challengerId === user.uid;
-    const payload: any = isChallengerLocal 
+    
+    const payload: any = isChallenger 
       ? { challengerScore: finalScore, challengerFinished: true } 
       : { opponentScore: finalScore, opponentFinished: true };
       
-    if ((isChallengerLocal && duel.opponentFinished) || (!isChallengerLocal && duel.challengerFinished)) {
+    const otherFinished = isChallenger ? duel.opponentFinished : duel.challengerFinished;
+
+    if (otherFinished) {
         payload.status = 'completed';
-        const p1 = isChallengerLocal ? finalScore : (duel.challengerScore || 0);
-        const p2 = isChallengerLocal ? (duel.opponentScore || 0) : finalScore;
+        const p1 = isChallenger ? finalScore : (duel.challengerScore || 0);
+        const p2 = isChallenger ? (duel.opponentScore || 0) : finalScore;
         if (p1 > p2) payload.winnerId = duel.challengerId;
         else if (p2 > p1) payload.winnerId = duel.opponentId;
         else payload.winnerId = 'draw';
@@ -101,14 +131,12 @@ export default function DuelArenaPage() {
         if (payload.winnerId === user.uid) {
            confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 }, zIndex: 10001 });
            await addPoints(user.uid, 50);
-        } else if (payload.winnerId === 'draw') {
-           await addPoints(user.uid, 20);
         }
     }
-    try { await updateDoc(docRef, { ...payload, updatedAt: serverTimestamp() }); } 
+    try { await updateDoc(docRef, payload); } 
     catch (e) { console.error(e); }
     finally { setIsSubmitting(false); }
-  }, [duel, user, duelId, isSubmitting, addPoints]);
+  }, [duel, user, duelId, isSubmitting, addPoints, isChallenger]);
 
   const processTurn = useCallback((isCorrect: boolean) => {
     const pts = 10;
@@ -153,13 +181,13 @@ export default function DuelArenaPage() {
         const batchId = `${duel.id}-${currentIdx}`;
         setBubbles([
           { id: `q-${batchId}`, value: -1, isCorrect: false, isQuestion: true, left: 50, duration: 8, delay: 0 },
-          ...currentQuestion.options.map((opt, i) => ({ id: `a-${batchId}-${i}`, value: opt, isCorrect: opt === currentQuestion!.answer, left: config.answerRange[i], duration: 10 + Math.random() * 2, delay: 0.5 }))
+          ...currentQuestion.options.map((opt, i) => ({ id: `a-${batchId}-${i}`, value: opt, isCorrect: opt === currentQuestion!.answer, left: [15, 35, 65, 85][i], duration: 10 + Math.random() * 2, delay: 0.5 }))
         ]);
         questionTimeoutRef.current = setTimeout(() => processTurn(false), 12000);
       }
     }
     return () => { if (flashIntervalRef.current) clearInterval(flashIntervalRef.current); if (questionTimeoutRef.current) clearTimeout(questionTimeoutRef.current); };
-  }, [currentIdx, hasStarted, duel?.status, duel?.mode, currentQuestion, config, playSound, processTurn]);
+  }, [currentIdx, hasStarted, duel?.status, duel?.mode, currentQuestion, playSound, processTurn]);
 
   if (!mounted) return null;
   if (loading) return <div className="fixed inset-0 bg-slate-900 z-[10000] flex items-center justify-center"><Loader2 className="animate-spin w-12 h-12 text-primary" /></div>;
@@ -199,7 +227,7 @@ export default function DuelArenaPage() {
               ) : (
                 <div className="relative w-full h-full">
                   {bubbles.map(b => (
-                    <div key={b.id} onClick={() => !b.isQuestion && handleBubbleClick(b)} className={cn("absolute bottom-[-150px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-2xl", b.isQuestion ? 'w-max px-8 h-16 bg-yellow-400 border-yellow-500 rounded-3xl' : 'w-24 h-24 sm:w-28 sm:h-28 bg-pink-500 border-pink-600 rounded-full')} style={{ left: `${b.left}%`, animationDuration: `${b.duration}s`, animationDelay: `${b.delay}s`, transform: 'translateX(-50%)' }}>
+                    <div key={b.id} onClick={() => !b.isQuestion && processTurn(b.isCorrect)} className={cn("absolute bottom-[-150px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-2xl", b.isQuestion ? 'w-max px-8 h-16 bg-yellow-400 border-yellow-500 rounded-3xl' : 'w-24 h-24 sm:w-28 sm:h-28 bg-pink-500 border-pink-600 rounded-full')} style={{ left: `${b.left}%`, animationDuration: `${b.duration}s`, animationDelay: `${b.delay}s`, transform: 'translateX(-50%)' }}>
                         <span className="text-white font-black text-center">{b.isQuestion ? currentQuestion?.text : b.value}</span>
                     </div>
                   ))}
@@ -243,9 +271,4 @@ export default function DuelArenaPage() {
       )}
     </div>, document.body
   );
-
-  function handleBubbleClick(b: Bubble) {
-    if (gameState !== 'playing' || b.isQuestion || isSubmitting) return;
-    processTurn(b.isCorrect);
-  }
 }

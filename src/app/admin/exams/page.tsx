@@ -13,7 +13,7 @@ import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, s
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult, ExamGroup } from '@/types';
-import { CheckCircle2, Search, Trophy, RefreshCcw, Calendar, Loader2, Save, Ban, RotateCcw, XCircle, ScrollText, FileSearch, Crown, Clock } from 'lucide-react';
+import { CheckCircle2, Search, Trophy, RefreshCcw, Calendar, Loader2, Save, XCircle, ScrollText, FileSearch, Crown, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -284,9 +284,9 @@ export default function AdminExamsPage() {
                         <TableCell className="text-right pr-6 py-4 relative isolate"><div className="flex justify-end gap-2 relative z-50">
                           {app.status === 'pending' ? (
                             <><Button size="sm" className="bg-green-600 hover:bg-green-700 font-bold h-10 px-4 rounded-xl shadow-md" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(app.id, 'approved'); }}><CheckCircle2 className="w-4 h-4 mr-2" /> Approve</Button>
-                              <Button size="sm" variant="destructive" className="font-bold h-10 px-4 rounded-xl shadow-md" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(app.id, 'rejected'); }}><Ban className="w-4 h-4 mr-2" /> Reject</Button></>
+                              <Button size="sm" variant="destructive" className="font-bold h-10 px-4 rounded-xl shadow-md" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(app.id, 'rejected'); }}><XCircle className="w-4 h-4 mr-2" /> Reject</Button></>
                           ) : (
-                            <AlertDialog><AlertDialogTrigger asChild><Button size="sm" variant="outline" className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl" disabled={isClearingApp === app.id} onClick={(e) => { e.stopPropagation(); }}>{isClearingApp === app.id ? <Loader2 className="animate-spin mr-2 w-4 h-4" /> : <RotateCcw className="w-4 h-4 mr-2" />}Allow Re-apply</Button></AlertDialogTrigger>
+                            <AlertDialog><AlertDialogTrigger asChild><Button size="sm" variant="outline" className="font-bold h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl" disabled={isClearingApp === app.id} onClick={(e) => { e.stopPropagation(); }}>{isClearingApp === app.id ? <Loader2 className="animate-spin mr-2 w-4 h-4" /> : <RefreshCcw className="w-4 h-4 mr-2" />}Allow Re-apply</Button></AlertDialogTrigger>
                               <AlertDialogContent className="rounded-3xl"><AlertDialogHeader><AlertDialogTitle className="font-black uppercase tracking-tight">Reset Student Dashboard?</AlertDialogTitle><AlertDialogDescription className="text-slate-600 font-bold">This will clear the current application for <strong>{app.studentName}</strong>. They will be able to select a new mastery group and apply again instantly.</AlertDialogDescription></AlertDialogHeader>
                                 <AlertDialogFooter className="mt-4"><AlertDialogCancel className="rounded-xl h-11">Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleAllowReapply(app.id)} className="rounded-xl h-11 font-black bg-red-600 hover:bg-red-700 border-none text-white">Confirm Reset</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
                           )}
