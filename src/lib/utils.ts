@@ -25,6 +25,7 @@ function getAbacusFormula(currentDigit: number, delta: number, isAddition: boole
     const isHeavenlyActive = currentDigit >= 5;
     
     // Direct Move Check for Addition
+    // Can add d2 if enough earthly beads OR it's a 5-bead addition and heavenly is free
     if (delta <= 4 - earthlyBeads || (delta >= 5 && !isHeavenlyActive && (delta - 5) <= (4 - earthlyBeads))) return null;
     
     // Small Sister (+X = +5 - complement)
