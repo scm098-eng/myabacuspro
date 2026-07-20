@@ -121,6 +121,7 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
     medium: { numQuestions: 40, timeLimit: 480, title: 'Master: Cube Root (Medium)', icon: 'keyboard' },
     hard: { numQuestions: 60, timeLimit: 600, title: 'Master: Cube Root (Hard)', icon: 'keyboard' },
   },
+  // Addition Formulas
   'basic-addition-plus-4': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +4 = +5 - 1', icon: 'puzzle' } },
   'basic-addition-plus-40': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +40 = +50 - 10', icon: 'puzzle' } },
   'basic-addition-plus-3': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +3 = +5 - 2', icon: 'puzzle' } },
@@ -129,6 +130,7 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
   'basic-addition-plus-20': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +20 = +50 - 30', icon: 'puzzle' } },
   'basic-addition-plus-1': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +1 = +5 - 4', icon: 'puzzle' } },
   'basic-addition-plus-10': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +10 = +50 - 40', icon: 'puzzle' } },
+  // Subtraction Formulas
   'basic-subtraction-minus-4': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -4 = -5 + 1', icon: 'puzzle' } },
   'basic-subtraction-minus-40': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -40 = -50 + 10', icon: 'puzzle' } },
   'basic-subtraction-minus-3': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -3 = -5 + 2', icon: 'puzzle' } },
@@ -137,6 +139,7 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
   'basic-subtraction-minus-20': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -20 = -50 + 30', icon: 'puzzle' } },
   'basic-subtraction-minus-1': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -1 = -5 + 4', icon: 'puzzle' } },
   'basic-subtraction-minus-10': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -10 = -50 + 40', icon: 'puzzle' } },
+  // Big Brother Formulas
   'big-brother-addition-plus-9': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +9 = +10 - 1', icon: 'puzzle' } },
   'big-brother-addition-plus-90': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +90 = +100 - 10', icon: 'puzzle' } },
   'big-brother-addition-plus-8': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +8 = +10 - 2', icon: 'puzzle' } },
@@ -173,6 +176,7 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
   'big-brother-subtraction-minus-20': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -20 = -100 + 80', icon: 'puzzle' } },
   'big-brother-subtraction-minus-1': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -1 = -10 + 9', icon: 'puzzle' } },
   'big-brother-subtraction-minus-10': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -10 = -100 + 90', icon: 'puzzle' } },
+  // Combination Formulas
   'combination-plus-6': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +6 = +10 - 5 + 1', icon: 'puzzle' } },
   'combination-plus-60': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +60 = +100 - 50 + 10', icon: 'puzzle' } },
   'combination-plus-7': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +7 = +10 - 5 + 2', icon: 'puzzle' } },
@@ -267,9 +271,6 @@ export function deDuplicateQuestions(questions: Question[], prng: () => number =
   return result;
 }
 
-/**
- * Exports generateOptions as required by curriculum modules.
- */
 export function generateOptions(correctAnswer: number, prng: () => number = Math.random): number[] {
   const options = new Set<number>([correctAnswer]);
   const safeAnswer = Math.max(0, correctAnswer);
@@ -320,10 +321,9 @@ export function generateDuelQuestions(mode: 'standard' | 'flash' | 'matrix', see
 }
 
 export function generateGameQuestions(level: GameLevel, levelId: number): Question[] {
-  const questionKeys = (level as any) === 'general-practice' ? Object.values(preDefinedQuestions).flat() : [];
-  // Corrected logic for specific levels
   let allQuestions: Question[] = [];
   if (level === 'general-practice') allQuestions = Object.values(preDefinedQuestions).flat();
+  else if (preDefinedQuestions[level as string]) allQuestions = preDefinedQuestions[level as string];
   
   const positiveOnly = allQuestions.filter(q => q.answer >= 0);
   return deDuplicateQuestions(shuffleArray([...positiveOnly])).slice(0, 10);
@@ -368,6 +368,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
           const op = Math.random() > 0.5 ? '+' : '-';
           const next = getRandomInt(min, max);
           const res = op === '+' ? currentVal + next : currentVal - next;
+          // IMPORTANT: Abacus logic - no negative intermediate values
           if (res >= 0) { currentVal = res; numbers.push(op); numbers.push(next); found = true; break; }
           attempts++;
         }

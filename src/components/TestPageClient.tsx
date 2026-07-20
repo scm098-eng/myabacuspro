@@ -85,7 +85,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     const finalAnswers = forcedAnswers || answersRef.current;
     const finalTimeLeft = timeLeftRef.current;
 
-    const score = finalAnswers.reduce((acc: number, ans, i) => (ans !== null && ans === questions[i]?.answer ? acc + 1 : acc), 0);
+    const score = finalAnswers.reduce((acc: number, ans, i) => (ans !== null && questions[i] && ans === questions[i].answer ? acc + 1 : acc), 0);
     const answered = finalAnswers.filter(a => a !== null).length;
     let earnedPoints = 0;
 
