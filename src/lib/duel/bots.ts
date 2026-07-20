@@ -1,4 +1,3 @@
-
 /**
  * Simulated Bot Ecosystem for My Abacus Pro
  * Features 100+ unique identities with tiered performance metrics.
@@ -85,7 +84,6 @@ function generateBotPool(): BotProfile[] {
 const BOT_POOL = generateBotPool();
 
 export function getMatchedBot(playerPoints: number): BotProfile {
-  // Use player points to pick a suitable tier
   let targetTier: 'beginner' | 'intermediate' | 'advanced' = 'intermediate';
   if (playerPoints < 1500) targetTier = 'beginner';
   else if (playerPoints > 15000) targetTier = 'advanced';

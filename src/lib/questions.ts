@@ -343,6 +343,34 @@ export function generateOptions(correctAnswer: number, prng: () => number = Math
   return shuffleArray(Array.from(options), prng);
 }
 
+export function generateDuelQuestions(mode: 'standard' | 'flash' | 'matrix', seed: string): Question[] {
+  const prng = createPRNG(seed);
+  const questions: Question[] = [];
+  const count = 20;
+
+  for (let i = 0; i < count; i++) {
+    if (mode === 'flash') {
+      const { sequence, answer } = generateFlashSequence(2, 8, prng);
+      questions.push({ text: sequence.map(n => n > 0 ? `+${n}` : n).join(' '), answer, options: generateOptions(answer, prng), questionType: 'flash', sequence, delay: 1000 });
+    } else {
+      let currentVal = getRandomInt(10, 50, prng);
+      const numbers: (number | string)[] = [currentVal];
+      for (let j = 0; j < 3; j++) {
+        const op = prng() > 0.5 ? '+' : '-';
+        const next = getRandomInt(1, 9, prng);
+        if (op === '-') {
+            if (currentVal >= next) { currentVal -= next; numbers.push(op); numbers.push(next); }
+            else { currentVal += next; numbers.push('+'); numbers.push(next); }
+        } else {
+            currentVal += next; numbers.push(op); numbers.push(next);
+        }
+      }
+      questions.push({ text: numbers.join(' '), answer: currentVal, options: generateOptions(currentVal, prng) });
+    }
+  }
+  return deDuplicateQuestions(questions, prng);
+}
+
 function isDirectDigitAdd(d1: number, d2: number): boolean {
   const h1 = d1 >= 5 ? 1 : 0;
   const e1 = d1 % 5;
