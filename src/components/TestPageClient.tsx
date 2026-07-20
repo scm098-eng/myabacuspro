@@ -191,11 +191,10 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
     );
   }
 
-  // Safety guard for question existence
   const currentQuestion = questions[currentIdx];
 
   return (
-    <div className="max-w-3xl mx-auto px-4 flex flex-col min-h-[600px]">
+    <div className="flex flex-col max-w-3xl mx-auto px-4 flex-1 min-h-[600px]">
       <Card className="shadow-2xl flex-1 flex flex-col rounded-[2.5rem]">
         <CardHeader className="bg-muted/10 pb-4">
           <div className="flex justify-between items-center mb-4">
@@ -223,8 +222,8 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center text-center p-8 overflow-hidden">
             <div className="w-full overflow-hidden bg-muted/20 py-10 rounded-[2rem] border-2 border-dashed px-4">
-              <p className={cn("font-black tracking-tight whitespace-normal break-words", getQuestionFontSize(currentQuestion?.text || ""))}>
-                {currentQuestion?.text} = ?
+              <p className={cn("font-black tracking-tight whitespace-normal break-words", currentQuestion ? getQuestionFontSize(currentQuestion.text) : "text-2xl")}>
+                {currentQuestion ? `${currentQuestion.text} = ?` : "Loading..."}
               </p>
             </div>
             <div className="mt-12">
@@ -239,8 +238,8 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
                     placeholder="Result"
                     className={cn(
                       "h-20 text-2xl sm:text-4xl text-center font-black rounded-2xl border-4 transition-all duration-300 shadow-inner",
-                      isAnswered && parseInt(inputValue) === currentQuestion?.answer && "border-green-500 bg-green-50 text-green-700",
-                      isAnswered && parseInt(inputValue) !== currentQuestion?.answer && "border-red-500 bg-red-50 text-red-700"
+                      isAnswered && currentQuestion && parseInt(inputValue) === currentQuestion.answer && "border-green-500 bg-green-50 text-green-700",
+                      isAnswered && currentQuestion && parseInt(inputValue) !== currentQuestion.answer && "border-red-500 bg-red-50 text-red-700"
                     )} 
                   />
                   <Button type="submit" disabled={isAnswered || !inputValue} className="h-16 w-full text-xl font-black rounded-2xl shadow-lg">SUBMIT</Button>
@@ -271,7 +270,16 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
       <div className="mt-6 flex justify-end">
         <AlertDialog>
           <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="font-bold rounded-xl shadow-md h-10 px-6">End Practice</Button></AlertDialogTrigger>
-          <AlertDialogContent className="rounded-3xl"><AlertDialogHeader><AlertDialogTitle className="font-black uppercase tracking-tight">End Session?</AlertDialogTitle><AlertDialogDescription className="font-medium text-slate-600">Your current progress will be recorded and you will be taken to the performance summary.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="mt-4"><AlertDialogCancel className="rounded-xl h-11">Cancel</AlertDialogCancel><AlertDialogAction onClick={() => finishTest()} className="rounded-xl h-11 bg-destructive hover:bg-destructive/90 text-white border-none shadow-lg">Yes, end test</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+          <AlertDialogContent className="rounded-3xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-black uppercase tracking-tight">End Session?</AlertDialogTitle>
+              <AlertDialogDescription className="font-medium text-slate-600">Your current progress will be recorded and you will be taken to the performance summary.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-4">
+              <AlertDialogCancel className="rounded-xl h-11">Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => finishTest()} className="rounded-xl h-11 bg-destructive hover:bg-destructive/90 text-white border-none shadow-lg">Yes, end test</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
         </AlertDialog>
       </div>
     </div>

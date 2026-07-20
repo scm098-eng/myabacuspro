@@ -300,50 +300,48 @@ export default function ProfilePage() {
                       )}
                       
                       {profile.role === 'student' && (
-                        <div className="grid gap-8">
-                          {isEditing ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                              <FormField control={form.control} name="teacherId" render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Assigned Academy / Teacher *</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value || ''}>
-                                    <FormControl>
-                                      <SelectTrigger className="h-14 rounded-2xl border-2 font-bold text-lg focus:ring-primary shadow-sm px-4">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent className="rounded-2xl border-2 shadow-xl">
-                                      <SelectItem value="unassigned" className="font-bold text-red-600">DIRECT ENTRY (NONE)</SelectItem>
-                                      {teachers.map(t => <SelectItem key={t.uid} value={t.uid} className="font-medium">{t.firstName} {t.surname}</SelectItem>)}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )} />
-                              <FormField control={form.control} name="grade" render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Current Grade/Standard *</FormLabel>
-                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger className="h-14 rounded-2xl border-2 font-bold text-lg focus:ring-primary shadow-sm px-4">
-                                        <SelectValue placeholder="Grade" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent className="rounded-2xl border-2 shadow-xl">
-                                      {grades.map(g => <SelectItem key={g} value={g} className="font-bold">{g}</SelectItem>)}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )} />
-                            </div>
-                          ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                              <ReadOnlyField label="Training Academy" value={teacherName} />
-                              <ReadOnlyField label="Mastery Grade" value={watch('grade')} />
-                            </div>
-                          )}
-                        </div>
+                        isEditing ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <FormField control={form.control} name="teacherId" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Assigned Academy / Teacher *</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || ''}>
+                                  <FormControl>
+                                    <SelectTrigger className="h-14 rounded-2xl border-2 font-bold text-lg focus:ring-primary shadow-sm px-4">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent className="rounded-2xl border-2 shadow-xl">
+                                    <SelectItem value="unassigned" className="font-bold text-red-600">DIRECT ENTRY (NONE)</SelectItem>
+                                    {teachers.map(t => <SelectItem key={t.uid} value={t.uid} className="font-medium">{t.firstName} {t.surname}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name="grade" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Current Grade/Standard *</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger className="h-14 rounded-2xl border-2 font-bold text-lg focus:ring-primary shadow-sm px-4">
+                                      <SelectValue placeholder="Grade" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent className="rounded-2xl border-2 shadow-xl">
+                                    {grades.map(g => <SelectItem key={g} value={g} className="font-bold">{g}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <ReadOnlyField label="Training Academy" value={teacherName} />
+                            <ReadOnlyField label="Mastery Grade" value={watch('grade')} />
+                          </div>
+                        )
                       )}
                     </div>
 
@@ -399,7 +397,7 @@ export default function ProfilePage() {
                     {Array.from({ length: style.total }).map((_, i) => {
                       const url = `https://api.dicebear.com/7.x/${style.id}/svg?seed=${style.id}-${i}&size=64`;
                       return (
-                        <button key={i} onClick={() => selectAvatar(url)} className="relative aspect-square group rounded-xl overflow-hidden border-2 border-transparent hover:border-primary transition-all shadow-sm bg-white hover:shadow-lg active:scale-95">
+                        <button type="button" key={i} onClick={() => selectAvatar(url)} className="relative aspect-square group rounded-xl overflow-hidden border-2 border-transparent hover:border-primary transition-all shadow-sm bg-white hover:shadow-lg active:scale-95">
                           <img src={url} alt={style.label} className="w-full h-full object-cover p-1" loading="lazy" />
                           <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
