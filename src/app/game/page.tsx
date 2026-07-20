@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { cn } from '@/lib/utils';
-import { Star, Check, Swords, Gamepad2, LayoutGrid } from 'lucide-react';
+import { Star, Check, Swords, Gamepad2, LayoutGrid, ChevronRight, MonitorOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 interface Level {
   id: number;
@@ -117,7 +118,7 @@ const LevelNode = ({ level, isLocked, isCompleted }: { level: Level; isLocked: b
 };
 
 export default function GameHomePage() {
-  usePageBackground('');
+  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/game_bg.jpg?alt=media');
   const { user, profile, getCompletedGameLevels } = useAuth();
   const [completedLevels, setCompletedLevels] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
