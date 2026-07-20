@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Zap, ShieldCheck, Lock, Sparkles, ChevronRight, Settings2, Sliders } from 'lucide-react';
+import { Zap, ShieldCheck, Lock, Sparkles, ChevronRight, Settings2, Sliders, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
