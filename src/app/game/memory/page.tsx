@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BrainCircuit, Trophy, Timer, Zap, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2, Heart, Swords, Users, User, LayoutGrid, ChevronRight, Share2, Clock } from 'lucide-react';
+import { BrainCircuit, Trophy, Timer, Zap, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2, Heart, Swords, Users, User, LayoutGrid, ChevronRight, Share2, Clock, X } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
@@ -365,3 +365,4 @@ export default function PatternMemoryPage() {
     </div>
   );
 }
+

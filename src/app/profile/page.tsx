@@ -4,7 +4,6 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,7 +13,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, CalendarIcon, Camera, Edit, ShieldAlert, User, Image as ImageIcon, X, ChevronRight, Sparkles } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Loader2, CalendarIcon, Camera, Edit, BadgeCheck, ShieldAlert, User, Sparkles, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import type { ProfileData, UpdateProfilePayload } from '@/types';
@@ -26,6 +26,7 @@ import ReactCrop, { type Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -44,6 +45,21 @@ const AVATAR_STYLES = [
   { id: 'big-ears', label: 'Friendly', total: 200 },
 ];
 
+const countryCodes: Record<string, string> = {
+  "India": "+91 ",
+  "United States": "+1 ",
+  "United Kingdom": "+44 ",
+  "United Arab Emirates": "+971 ",
+  "Australia": "+61 ",
+  "Canada": "+1 ",
+  "Singapore": "+65 ",
+  "Malaysia": "+60 ",
+  "Japan": "+81 ",
+  "Germany": "+49 ",
+  "France": "+33 ",
+  "Other": ""
+};
+
 const profileSchema = z.object({
   firstName: z.string().min(1, { message: "First name is required." }),
   middleName: z.string().optional(),
@@ -61,6 +77,14 @@ const profileSchema = z.object({
   mobileNo: z.string().min(5, { message: "Mobile number is required." }),
   whatsappNo: z.string().min(5, { message: "WhatsApp number is required." }),
   teacherId: z.string().min(1, { message: "Teacher assignment is required." }),
+  instituteName: z.string().optional(),
+  instituteCountry: z.string().optional(),
+  instituteAddressLine1: z.string().optional(),
+  instituteCity: z.string().optional(),
+  instituteTaluka: z.string().optional(),
+  instituteDistrict: z.string().optional(),
+  instituteState: z.string().optional(),
+  institutePincode: z.string().optional(),
 });
 
 function calculateAge(dob: Date | undefined) {
@@ -88,7 +112,7 @@ async function getCroppedImg(image: HTMLImageElement, crop: Crop, fileName: stri
 
 const ReadOnlyField = ({ label, value }: { label: string; value?: string | null }) => {
   if (!value) return null;
-  return (<div className="space-y-2"><Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">{label}</Label><div className="p-3 bg-slate-50 border border-slate-100 rounded-xl font-bold">{value}</div></div>);
+  return (<div className="space-y-2"><Label className="text-muted-foreground">{label}</Label><div className="p-2 border-b font-bold">{value}</div></div>);
 };
 
 export default function ProfilePage() {
@@ -114,17 +138,37 @@ export default function ProfilePage() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       firstName: '', middleName: '', surname: '', country: 'India', addressLine1: '', city: '', 
-      taluka: '', district: '', state: '', pincode: '', schoolName: '', mobileNo: '', whatsappNo: '', grade: '', teacherId: ''
+      taluka: '', district: '', state: '', pincode: '', schoolName: '', mobileNo: '', whatsappNo: '', grade: '', teacherId: '',
+      instituteName: '', instituteCountry: 'India', instituteAddressLine1: '', instituteCity: '', instituteTaluka: '', instituteDistrict: '', instituteState: '', institutePincode: ''
     },
   });
 
-  const { watch } = form;
-  const age = calculateAge(watch('dob'));
+  const { watch, setValue } = form;
+  const dobValue = watch('dob');
+  const age = calculateAge(dobValue);
+
   const isProfileEmpty = profile && !profile.grade && !profile.schoolName;
 
   useEffect(() => {
-    if (isProfileEmpty && !isEditing) setIsEditing(true);
+    if (isProfileEmpty && !isEditing) {
+      setIsEditing(true);
+    }
   }, [isProfileEmpty, isEditing]);
+
+  useEffect(() => {
+    if (isEditing) {
+      const subscription = watch((value, { name }) => {
+        if (name === 'country') {
+          const code = countryCodes[value?.country || 'India'] || "+91 ";
+          const currentM = form.getValues('mobileNo');
+          if (!currentM || Object.values(countryCodes).some(c => currentM === c)) setValue('mobileNo', code);
+          const currentW = form.getValues('whatsappNo');
+          if (!currentW || Object.values(countryCodes).some(c => currentW === c)) setValue('whatsappNo', code);
+        }
+      });
+      return () => subscription.unsubscribe();
+    }
+  }, [watch, setValue, isEditing, form]);
 
   const fetchTeachers = useCallback(async () => {
     if (profile?.role === 'student') {
@@ -162,6 +206,14 @@ export default function ProfilePage() {
         mobileNo: profile.mobileNo || '',
         whatsappNo: profile.whatsappNo || '',
         teacherId: profile.teacherId || '',
+        instituteName: profile.instituteName || '',
+        instituteCountry: profile.instituteCountry || 'India',
+        instituteAddressLine1: profile.instituteAddressLine1 || '',
+        instituteCity: profile.instituteCity || '',
+        instituteTaluka: profile.instituteTaluka || '',
+        instituteDistrict: profile.instituteDistrict || '',
+        instituteState: profile.instituteState || '',
+        institutePincode: profile.institutePincode || '',
       });
       if(profile.profilePhoto) setAvatarPreview(profile.profilePhoto);
     }
@@ -175,9 +227,11 @@ export default function ProfilePage() {
       if (croppedImageFile) payload.profilePhoto = croppedImageFile;
       await updateUserProfile(user.uid, payload);
       await fetchProfile(user); 
-      toast({ title: "Profile Updated" });
+      toast({ title: "Profile Updated", description: "Your details have been saved successfully." });
       setIsEditing(false);
-      if (isProfileEmpty) router.push('/dashboard');
+      if (isProfileEmpty) {
+        router.push('/dashboard');
+      }
     } catch (error: any) {
       toast({ title: "Update Failed", description: error.message, variant: "destructive" });
     } finally { setIsSubmitting(false); }
@@ -211,146 +265,252 @@ export default function ProfilePage() {
     setIsAvatarGalleryOpen(false);
   };
 
-  if (isLoading || !user || !profile) return <div className="max-w-4xl mx-auto"><Skeleton className="h-96 w-full" /></div>;
+  const handleCancelEdit = () => {
+      if (isProfileEmpty) {
+        toast({ title: "Profile Incomplete", description: "Please fulfill your profile details to continue using the platform.", variant: "destructive" });
+        return;
+      }
+      if (profile) {
+        form.reset({
+            firstName: profile.firstName || '',
+            middleName: profile.middleName || '',
+            surname: profile.surname || '',
+            dob: profile.dob ? new Date(profile.dob) : new Date(),
+            country: profile.country || 'India',
+            addressLine1: profile.addressLine1 || '',
+            city: profile.city || '',
+            taluka: profile.taluka || '',
+            district: profile.district || '',
+            state: profile.state || '',
+            pincode: profile.pincode || '',
+            schoolName: profile.schoolName || '',
+            grade: profile.grade || '',
+            mobileNo: profile.mobileNo || '',
+            whatsappNo: profile.whatsappNo || '',
+            teacherId: profile.teacherId || '',
+            instituteName: profile.instituteName || '',
+            instituteCountry: profile.instituteCountry || 'India',
+            instituteAddressLine1: profile.instituteAddressLine1 || '',
+            instituteCity: profile.instituteCity || '',
+            instituteTaluka: profile.instituteTaluka || '',
+            instituteDistrict: profile.instituteDistrict || '',
+            instituteState: profile.instituteState || '',
+            institutePincode: profile.institutePincode || '',
+        });
+      }
+      setIsEditing(false);
+  }
 
+  if (isLoading || !user || !profile || (profile.role === 'student' && teachers.length === 0)) return <div className="max-w-4xl mx-auto"><Skeleton className="h-96 w-full" /></div>;
+
+  const currentDisplayName = `${watch('firstName')} ${watch('surname')}`;
+  const isStudentWithoutTeacher = profile.role === 'student' && (!watch('teacherId') || watch('teacherId') === 'unassigned');
   const teacherObj = teachers.find(t => t.uid === watch('teacherId'));
   const teacherName = teacherObj ? `${teacherObj.firstName} ${teacherObj.surname}` : 'Not Assigned';
 
   return (
     <>
-    <div className="max-w-4xl mx-auto pb-12 px-4">
-      <Card className="shadow-2xl rounded-[2.5rem] border-none overflow-hidden bg-white/90 backdrop-blur-md">
-        <CardHeader className="bg-slate-900 text-white p-8 sm:p-12 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-8 relative z-10">
-                <div className="flex flex-col sm:flex-row items-center gap-8 text-center sm:text-left">
-                  <div className="relative group">
-                      <Avatar className="h-32 w-32 border-4 border-white/20 shadow-2xl transition-transform group-hover:scale-105 duration-500">
-                        <AvatarImage src={avatarPreview || ''} />
-                        <AvatarFallback className="text-3xl font-black bg-primary text-white">{watch('firstName')?.[0]}</AvatarFallback>
-                      </Avatar>
-                      {isEditing && (
-                        <div className="absolute -bottom-2 -right-2 flex flex-col gap-2">
-                          <Button type="button" size="icon" className="rounded-full bg-primary text-white shadow-xl h-10 w-10 border-2 border-white hover:scale-110 transition-transform" onClick={() => fileInputRef.current?.click()}><Camera className="h-5 w-5"/></Button>
-                          <Button type="button" size="icon" variant="outline" className="rounded-full bg-white text-primary shadow-xl h-10 w-10 border-2 border-primary hover:scale-110 transition-transform" onClick={() => setIsAvatarGalleryOpen(true)}><Sparkles className="h-5 w-5"/></Button>
-                        </div>
-                      )}
-                      <input type="file" ref={fileInputRef} onChange={onFileSelect} accept="image/*" className="hidden" />
-                  </div>
-                  <div>
-                      <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
-                        <Badge className="bg-primary text-white border-none font-black text-[10px] uppercase tracking-widest px-4 py-1">{profile.role}</Badge>
-                        {profile.subscriptionStatus === 'pro' && <Badge className="bg-yellow-400 text-slate-900 border-none font-black text-[10px] uppercase tracking-widest px-4 py-1">PRO MEMBER</Badge>}
-                      </div>
-                      <CardTitle className="text-3xl sm:text-5xl font-black uppercase tracking-tighter italic leading-none mb-2">
-                          {`${watch('firstName')} ${watch('surname')}`}
-                      </CardTitle>
-                      <p className="text-slate-400 font-bold text-lg">{user.email}</p>
-                  </div>
+    <div className="max-w-4xl mx-auto">
+      <Card className="shadow-lg">
+        <CardHeader>
+            <div className="flex justify-between items-start">
+                <div>
+                    <CardTitle className="text-3xl font-headline flex items-center gap-2">
+                        My Profile
+                        {profile.emailVerified ? <BadgeCheck className="w-6 h-6 text-green-500" /> : <ShieldAlert className="w-6 h-6 text-orange-500" />}
+                    </CardTitle>
+                    <CardDescription>
+                      {isProfileEmpty ? 'Welcome! Please complete your student profile details first.' : (profile.emailVerified ? 'Verified Account' : 'Action Required: Verification Pending')}
+                    </CardDescription>
                 </div>
-                {!isEditing && !isProfileEmpty && (
-                  <Button onClick={() => setIsEditing(true)} className="rounded-[1.2rem] font-black uppercase tracking-widest h-14 px-8 bg-white text-slate-900 hover:bg-slate-100 shadow-xl shrink-0">
-                    <Edit className="mr-2 h-5 w-5" /> Edit Profile
-                  </Button>
-                )}
+                {!isEditing && !isProfileEmpty && <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>}
             </div>
         </CardHeader>
-        <CardContent className="p-8 sm:p-12">
+        <CardContent>
+            {isStudentWithoutTeacher && <Alert variant="destructive" className="mb-6"><ShieldAlert className="h-4 w-4" /><AlertTitle>Action Required</AlertTitle><AlertDescription>Please select a teacher to complete your profile.</AlertDescription></Alert>}
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
-                    <div className="space-y-8">
-                      <div className="flex items-center gap-3 text-primary border-b-2 pb-3 border-primary/10">
-                        <User className="w-6 h-6" />
-                        <h3 className="text-xl sm:text-2xl font-headline font-black uppercase tracking-tight">Identity Details</h3>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                    <div className="flex items-center gap-6">
+                        <div className="relative">
+                            <Avatar className="h-24 w-24 border-4 border-primary/20"><AvatarImage src={avatarPreview || ''} /><AvatarFallback>{watch('firstName')?.[0]}</AvatarFallback></Avatar>
+                            {isEditing && (
+                              <div className="absolute -bottom-2 -right-2 flex flex-col gap-2">
+                                <Button type="button" size="icon" variant="outline" className="rounded-full bg-white shadow-sm" onClick={() => fileInputRef.current?.click()}><Camera className="h-4 w-4"/></Button>
+                              </div>
+                            )}
+                            <input type="file" ref={fileInputRef} onChange={onFileSelect} accept="image/*" className="hidden" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold">{currentDisplayName}</h2>
+                          <p className="text-muted-foreground">{user.email}</p>
+                          {isEditing && (
+                            <Button type="button" variant="ghost" size="sm" onClick={() => setIsAvatarGalleryOpen(true)} className="mt-2 text-primary font-bold h-8">
+                              <Sparkles className="w-3 h-3 mr-2" /> Use Avatar Hub
+                            </Button>
+                          )}
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-2 text-primary border-b pb-2">
+                        <User className="w-5 h-5" />
+                        <h3 className="text-xl font-headline font-bold uppercase tracking-tight">Student Details</h3>
                       </div>
 
                       {isEditing ? (
-                        <div className="grid gap-8">
+                        <>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                              <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">First Name *</FormLabel><FormControl><Input {...field} className="h-14 rounded-2xl border-2 font-bold text-lg focus:ring-primary shadow-sm" /></FormControl><FormMessage /></FormItem>)} />
-                              <FormField control={form.control} name="middleName" render={({ field }) => (<FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Middle Name</FormLabel><FormControl><Input {...field} className="h-14 rounded-2xl border-2 font-bold text-lg focus:ring-primary shadow-sm" /></FormControl><FormMessage /></FormItem>)} />
-                              <FormField control={form.control} name="surname" render={({ field }) => (<FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Surname *</FormLabel><FormControl><Input {...field} className="h-14 rounded-2xl border-2 font-bold text-lg focus:ring-primary shadow-sm" /></FormControl><FormMessage /></FormItem>)} />
+                              <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                              <FormField control={form.control} name="middleName" render={({ field }) => (<FormItem><FormLabel>Middle Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                              <FormField control={form.control} name="surname" render={({ field }) => (<FormItem><FormLabel>Surname *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField control={form.control} name="dob" render={({ field }) => (
                                   <FormItem className="flex flex-col">
-                                    <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Date of Birth *</FormLabel>
+                                    <FormLabel>Date of Birth *</FormLabel>
                                       <Popover>
                                         <PopoverTrigger asChild>
-                                          <Button variant={"outline"} className={cn("w-full h-14 justify-between text-left font-bold rounded-2xl border-2 text-lg shadow-sm px-4", !field.value && "text-muted-foreground")}>
+                                          <Button variant={"outline"} className={cn("w-full justify-between text-left font-normal", !field.value && "text-muted-foreground")}>
                                             <span>{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}</span>
-                                            <CalendarIcon className="ml-2 h-5 w-5 opacity-50" />
+                                            <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
                                           </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0 rounded-[2rem] overflow-hidden border-2 shadow-2xl" align="start">
+                                        <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar mode="single" captionLayout="dropdown-buttons" fromYear={1950} toYear={new Date().getFullYear()} selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
                                         </PopoverContent>
                                       </Popover>
                                     <FormMessage />
                                   </FormItem>
                                 )} />
-                               <div className="space-y-2"><Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Verified Age</Label><Input value={age !== null ? `${age} years old` : 'Pending Selection'} disabled className="h-14 rounded-2xl border-2 bg-slate-50 font-black text-lg text-primary shadow-inner" /></div>
+                               <div className="space-y-2"><Label>Age</Label><Input value={age !== null ? `${age} years old` : 'Select DOB'} disabled /></div>
                           </div>
-                        </div>
+                        </>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          <ReadOnlyField label="Full Registration Name" value={`${watch('firstName')} ${watch('surname')}`} />
-                          <ReadOnlyField label="Calculated Maturity" value={age ? `${age} years` : 'Not verified'} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <ReadOnlyField label="Full Name" value={currentDisplayName} />
+                          <ReadOnlyField label="Age" value={age ? `${age} years` : 'Not set'} />
                         </div>
                       )}
                       
-                      {profile.role === 'student' && (
-                        isEditing ? (
+                      {isEditing ? (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <FormField control={form.control} name="teacherId" render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Assigned Academy / Teacher *</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value || ''}>
-                                  <FormControl>
-                                    <SelectTrigger className="h-14 rounded-2xl border-2 font-bold text-lg focus:ring-primary shadow-sm px-4">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent className="rounded-2xl border-2 shadow-xl">
-                                    <SelectItem value="unassigned" className="font-bold text-red-600">DIRECT ENTRY (NONE)</SelectItem>
-                                    {teachers.map(t => <SelectItem key={t.uid} value={t.uid} className="font-medium">{t.firstName} {t.surname}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )} />
-                            <FormField control={form.control} name="grade" render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Current Grade/Standard *</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger className="h-14 rounded-2xl border-2 font-bold text-lg focus:ring-primary shadow-sm px-4">
-                                      <SelectValue placeholder="Grade" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent className="rounded-2xl border-2 shadow-xl">
-                                    {grades.map(g => <SelectItem key={g} value={g} className="font-bold">{g}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )} />
+                                    <FormItem><FormLabel>Assigned Teacher *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={profile.role !== 'student'}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>
+                                        <SelectItem value="unassigned">None</SelectItem>
+                                        {teachers.map(t => <SelectItem key={t.uid} value={t.uid}>{t.firstName} {t.surname}</SelectItem>)}
+                                    </SelectContent></Select><FormMessage /></FormItem>
+                                )} />
+                            {profile.role === 'student' && (
+                              <FormField control={form.control} name="grade" render={({ field }) => (
+                                  <FormItem><FormLabel>Grade/Std. *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                              )} />
+                            )}
                           </div>
-                        ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <ReadOnlyField label="Training Academy" value={teacherName} />
-                            <ReadOnlyField label="Mastery Grade" value={watch('grade')} />
-                          </div>
-                        )
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <ReadOnlyField label="Teacher" value={teacherName} />
+                          {profile.role === 'student' && <ReadOnlyField label="Grade/Std." value={watch('grade')} />}
+                        </div>
                       )}
+
+                      {isEditing && profile.role === 'student' && (
+                        <FormField control={form.control} name="schoolName" render={({ field }) => (
+                            <FormItem><FormLabel>School Name *</FormLabel><FormControl><Input placeholder="Name of your school" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                      )}
+
+                      {!isEditing && profile.role === 'student' && <ReadOnlyField label="School Name" value={watch('schoolName')} />}
                     </div>
 
+                    {isEditing ? (
+                      <>
+                        <h3 className="text-lg font-medium pt-4 border-b">Residential Address</h3>
+                        <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country *</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <FormField control={form.control} name="state" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>State</FormLabel>
+                              {watch('country') === 'India' ? (
+                                <Select onValueChange={field.onChange} value={field.value || ''}>
+                                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                  <SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                                </Select>
+                              ) : (
+                                <FormControl><Input {...field} /></FormControl>
+                              )}
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                        <FormField control={form.control} name="addressLine1" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Full Address *</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Enter your full address (House No, Street, Landmark...)" {...field} rows={3} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <h3 className="text-lg font-medium pt-4 border-b">Contact Details</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <FormField control={form.control} name="mobileNo" render={({ field }) => (<FormItem><FormLabel>Mobile No. *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="whatsappNo" render={({ field }) => (<FormItem><FormLabel>WhatsApp No. *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                      </>
+                    ) : <ReadOnlyField label="Address" value={`${watch('addressLine1') || ''}, ${watch('city') || ''}, ${watch('state') || ''}, ${watch('country') || ''}`} />}
+
+                    {profile.role === 'teacher' && (
+                      isEditing ? (
+                      <>
+                        <FormField control={form.control} name="instituteName" render={({ field }) => (<FormItem><FormLabel>Name of Institute</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
+                        <FormField control={form.control} name="instituteCountry" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><Select onValueChange={field.onChange} value={field.value || 'India'}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{majorCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="instituteState" render={({ field }) => ( 
+                          <FormItem>
+                            <FormLabel>State</FormLabel>
+                            {watch('instituteCountry') === 'India' ? (
+                              <Select onValueChange={field.onChange} value={field.value || ''}>
+                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                  <SelectContent>{indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                              </Select>
+                            ) : (
+                              <FormControl><Input {...field} /></FormControl>
+                            )}
+                            <FormMessage />
+                          </FormItem> 
+                        )} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField control={form.control} name="instituteDistrict" render={({ field }) => (<FormItem><FormLabel>District</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="instituteTaluka" render={({ field }) => (<FormItem><FormLabel>Taluka / Tehsil</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField control={form.control} name="instituteCity" render={({ field }) => (<FormItem><FormLabel>City / Town</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="institutePincode" render={({ field }) => (<FormItem><FormLabel>Pincode</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                        <FormField control={form.control} name="instituteAddressLine1" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Institute Address</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Enter institute address" {...field} rows={2} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </>
+                      ) : (
+                          <>
+                            <ReadOnlyField label="Name of Institute" value={watch('instituteName')} />
+                            <h3 className="text-lg font-medium pt-4 border-b">Institute Address</h3>
+                            <ReadOnlyField label="Address" value={`${watch('instituteAddressLine1') || ''}, ${watch('instituteCity') || ''}, ${watch('instituteState') || ''}, ${watch('instituteCountry') || ''}`} />
+                          </>
+                      )
+                    )}
+
                     {isEditing && (
-                        <div className="flex flex-col sm:flex-row justify-end gap-4 pt-8">
-                            {!isProfileEmpty && <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} className="h-14 px-10 rounded-2xl font-bold text-slate-500">Cancel Changes</Button>}
-                            <Button type="submit" disabled={isSubmitting} className="h-16 px-12 text-lg font-black uppercase tracking-widest rounded-2xl shadow-2xl transition-transform hover:scale-[1.01] active:scale-95">
-                              {isSubmitting ? <Loader2 className="mr-3 h-6 w-6 animate-spin" /> : <ShieldAlert className="mr-3 h-6 w-6" />} Complete Verification
-                            </Button>
+                        <div className="flex justify-end gap-4 pt-4">
+                            {!isProfileEmpty && <Button type="button" variant="outline" onClick={handleCancelEdit}>Cancel</Button>}
+                            <Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Changes & Start Training</Button>
                         </div>
                     )}
                 </form>
@@ -360,18 +520,12 @@ export default function ProfilePage() {
     </div>
 
     <Dialog open={isPhotoDialogOpen} onOpenChange={setIsPhotoDialogOpen}>
-        <DialogContent className="max-w-md rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden">
-            <DialogHeader className="p-8 bg-slate-900 text-white">
-                <DialogTitle className="text-2xl font-black uppercase tracking-tighter">Perfect Crop</DialogTitle>
-                <CardDescription className="text-slate-400 font-bold">Align your profile photo for the best look.</CardDescription>
-            </DialogHeader>
-            <div className="flex justify-center p-8 bg-slate-50">
-                {imgSrc && <ReactCrop crop={crop} onChange={(_, p) => setCrop(p)} onComplete={(c) => setCompletedCrop(c)} aspect={1} circularCrop><img ref={imgRef} src={imgSrc} alt="Crop" className="max-h-[50vh] rounded-2xl shadow-xl" /></ReactCrop>}
+        <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Crop Photo</DialogTitle></DialogHeader>
+            <div className="flex justify-center">
+                {imgSrc && <ReactCrop crop={crop} onChange={(_, p) => setCrop(p)} onComplete={(c) => setCompletedCrop(c)} aspect={1} circularCrop><img ref={imgRef} src={imgSrc} alt="Crop" style={{ maxHeight: "60vh" }} /></ReactCrop>}
             </div>
-             <DialogFooter className="p-8 bg-white border-t flex gap-3">
-               <Button variant="ghost" onClick={() => setIsPhotoDialogOpen(false)} className="rounded-xl font-bold">Cancel</Button>
-               <Button onClick={handleCropConfirm} className="rounded-xl px-8 font-black uppercase tracking-widest shadow-lg">Set Photo</Button>
-             </DialogFooter>
+             <DialogFooter><Button variant="outline" onClick={() => setIsPhotoDialogOpen(false)}>Cancel</Button><Button onClick={handleCropConfirm}>Use Photo</Button></DialogFooter>
         </DialogContent>
     </Dialog>
 
@@ -409,13 +563,9 @@ export default function ProfilePage() {
             ))}
           </div>
         </Tabs>
-        <div className="p-4 bg-white border-t text-center shrink-0">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-center gap-2">
-            <Sparkles className="w-3 h-3 text-primary" /> Scroll to explore all variations
-          </p>
-        </div>
       </DialogContent>
     </Dialog>
     </>
   );
 }
+

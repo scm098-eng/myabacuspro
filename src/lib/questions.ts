@@ -120,7 +120,7 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
   'cube-root': {
     easy: { numQuestions: 20, timeLimit: 300, title: 'Cube Root (Easy)', icon: 'brain-circuit' },
     medium: { numQuestions: 40, timeLimit: 480, title: 'Cube Root (Medium)', icon: 'brain-circuit' },
-    hard: { numQuestions: 60, timeLimit: 600, title: 'Cube Root (Hard)', icon: 'brain-circuit' },
+    hard: { numQuestions: 75, timeLimit: 600, title: 'Cube Root (Hard)', icon: 'brain-circuit' },
   },
   'cube-root-input': {
     easy: { numQuestions: 20, timeLimit: 300, title: 'Master: Cube Root (Easy)', icon: 'keyboard' },
@@ -441,15 +441,8 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
       for (let j = 0; j < 3; j++) {
         let op: '+' | '-' = Math.random() > 0.5 ? '+' : '-';
         let next = getRandomInt(min, max);
-        
-        // Ensure no intermediate negative results for abacus logic
-        if (op === '-' && currentVal < next) {
-          op = '+';
-        }
-        
-        if (op === '+') currentVal += next; 
-        else currentVal -= next;
-        
+        if (op === '-' && currentVal < next) op = '+';
+        if (op === '+') currentVal += next; else currentVal -= next;
         numbers.push(op);
         numbers.push(next);
       }
@@ -521,3 +514,4 @@ export function generateDuelQuestions(mode: 'standard' | 'flash' | 'matrix', see
   }
   return questions;
 }
+
