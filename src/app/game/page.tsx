@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { cn } from '@/lib/utils';
-import { Star, Check, Gamepad2, LayoutGrid, Swords, ChevronRight, MonitorOff } from 'lucide-react';
+import { Star, Check, Gamepad2, LayoutGrid, Swords, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

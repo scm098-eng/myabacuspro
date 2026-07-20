@@ -164,12 +164,17 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         playSound('success');
         setGameState('levelComplete');
         confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 }, zIndex: 10001 });
-      } else setGameState('gameOver');
+      } else {
+        setGameState('gameOver');
+        playSound('wrong');
+      }
       if (earnedPoints > 0) setTimeout(() => setShowSubmissionAnim(true), 600);
     }
   }, [questions.length, user, levelId, saveCompletedGameLevel, recordDailyPractice, addPoints, playSound, levelName]);
 
   const advanceQuestion = useCallback((isCorrectOutcome?: boolean) => {
+    if (lives <= 0) return; // Prevent advancing if no lives left
+
     const nextScore = isCorrectOutcome ? score + 10 : score;
     const nextIndex = currentQuestionIndex + 1;
     if (nextIndex >= questions.length) finishGame(nextScore, lives);
@@ -190,25 +195,42 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
     const maxTime = (config.speed + 4) * 1000;
     questionTimeoutRef.current = setTimeout(() => {
         if (gameState === 'playing' && !isFinishingRef.current) {
-            setLives(l => l - 1);
+            const nextLives = lives - 1;
+            setLives(nextLives);
             playSound('wrong');
-            advanceQuestion(false);
+            if (nextLives <= 0) {
+                finishGame(score, 0);
+            } else {
+                advanceQuestion(false);
+            }
         }
     }, maxTime);
-  }, [questions, currentQuestionIndex, lives, advanceQuestion, playSound, gameState, config]);
+  }, [questions, currentQuestionIndex, lives, advanceQuestion, playSound, gameState, config, score, finishGame]);
 
   useEffect(() => {
-    if (gameState === 'playing' && questions.length > 0) generateBubbles();
+    if (gameState === 'playing' && questions.length > 0 && lives > 0) generateBubbles();
     return () => { if (questionTimeoutRef.current) clearTimeout(questionTimeoutRef.current); };
-  }, [gameState, questions, currentQuestionIndex, generateBubbles]);
+  }, [gameState, questions, currentQuestionIndex, generateBubbles, lives]);
   
   const handleBubbleClick = (bubble: Bubble) => {
-    if (gameState !== 'playing' || bubble.isQuestion || isFinishingRef.current) return;
+    if (gameState !== 'playing' || bubble.isQuestion || isFinishingRef.current || lives <= 0) return;
     if (questionTimeoutRef.current) clearTimeout(questionTimeoutRef.current);
+    
     const isCorrect = bubble.isCorrect;
-    if (isCorrect) { setScore(s => s + 10); playSound('correct'); }
-    else { setLives(l => l - 1); playSound('wrong'); }
-    advanceQuestion(isCorrect);
+    if (isCorrect) { 
+      setScore(s => s + 10); 
+      playSound('correct'); 
+      advanceQuestion(isCorrect);
+    } else { 
+      const nextLives = lives - 1;
+      setLives(nextLives); 
+      playSound('wrong'); 
+      if (nextLives <= 0) {
+        finishGame(score, 0);
+      } else {
+        advanceQuestion(isCorrect);
+      }
+    }
   };
 
   if (!mounted) return null;
@@ -237,7 +259,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full h-8 w-8 sm:h-12 sm:w-12" onClick={() => router.push('/game')}><X className="w-5 h-5 sm:w-8 sm:h-8" /></Button>
         </div>
         <div className="relative w-full h-full max-w-7xl z-10 flex items-center justify-center">
-            {gameState === 'playing' && bubbles.map(b => (
+            {gameState === 'playing' && lives > 0 && bubbles.map(b => (
                 <div key={b.id} onClick={() => handleBubbleClick(b)} className={cn("absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-2xl transition-all active:scale-95 z-10", b.isQuestion ? 'w-max px-6 sm:px-10 h-16 sm:h-24 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20' : 'w-20 h-20 sm:w-32 sm:h-32 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20')} style={{ left: `${b.left}%`, animationDuration: `${b.duration}s`, animationDelay: `${b.delay}s`, transform: 'translateX(-50%)' }}>
                     <span className={cn("text-white font-black text-center", b.isQuestion ? getQuestionFontSize(questions[currentQuestionIndex]?.text || "") : getAnswerFontSize(b.value))}>{b.isQuestion ? questions[currentQuestionIndex]?.text : b.value}</span>
                 </div>
