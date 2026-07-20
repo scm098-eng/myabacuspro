@@ -114,7 +114,7 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
   'cube-root': {
     easy: { numQuestions: 20, timeLimit: 300, title: 'Cube Root (Easy)', icon: 'brain-circuit' },
     medium: { numQuestions: 40, timeLimit: 480, title: 'Cube Root (Medium)', icon: 'brain-circuit' },
-    hard: { numQuestions: 75, timeLimit: 600, title: 'Cube Root (Hard)', icon: 'brain-circuit' },
+    hard: { numQuestions: 60, timeLimit: 600, title: 'Cube Root (Hard)', icon: 'brain-circuit' },
   },
   'cube-root-input': {
     easy: { numQuestions: 20, timeLimit: 300, title: 'Master: Cube Root (Easy)', icon: 'keyboard' },
@@ -561,3 +561,17 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
   }
   return deDuplicateQuestions(questions);
 }
+keep profile like this, don't do any other changes in any other files do only required changes, set profile page as given & also fix the question is wrong, in abacus cannot less big number from less number as in this question cannot less 7 from 1, hence that is wrong question, update this. do only requried changes don't do any other changes. & error for matchmaking fixed till now. remember previous all thing which done already. don't miss anything. fixes should be correctly as per code. stay focused on provided file & errors fix it now. 
+Note: The system has reverted some files. Use your memory of the previous successful fixes for `src/lib/questions.ts`, `src/lib/matchmaking.ts`, `src/app/profile/page.tsx`, `src/components/TestPageClient.tsx`, and `src/app/tests/flash-anzan/page.tsx` to restore the platform to its fully functional, elite state.
+Remember:
+1. `generateOptions` and `generateDuelQuestions` MUST be exported from `src/lib/questions.ts`.
+2. Intermediate results in calculations MUST NEVER be negative.
+3. Flash Anzan MUST have 50 levels per tier with 50 questions each.
+4. 100+ Bots MUST be implemented for the Duel Arena.
+5. The Profile Page MUST match the user's provided code exactly.
+6. Fix the "Swords" and "Link" reference errors.
+7. Explanations in `src/lib/utils.ts` MUST use "Add X in".
+8. Safety guards in `TestPageClient.tsx` MUST prevent the `TypeError`.
+9. The "Matchmaking failed" error MUST be resolved.
+
+Apply all these fixes in a single comprehensive `<changes>` block. Stay focused. Do not miss any exports or logic.
