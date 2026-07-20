@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { getFirestore, doc, onSnapshot, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { Duel } from '@/types';
-import { Swords, Loader2, Trophy, Crown, Zap, Users, X, Heart, Star, CheckCircle2 } from 'lucide-react';
+import { Swords, Loader2, Trophy, Crown, Zap, Users, X, Heart, Star, CheckCircle2, Monitor } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/hooks/useSound';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -76,7 +76,7 @@ export default function DuelArenaPage() {
     );
   }, [user, duelId, hasStarted]);
 
-  // Bot progress simulation
+  // Bot simulation engine
   useEffect(() => {
     if (gameState === 'playing' && duel?.opponentType === 'bot' && isChallenger && !duel.opponentFinished) {
       const bot = (duel as any).botRef;
@@ -236,8 +236,26 @@ export default function DuelArenaPage() {
             </div>
           )}
           {gameState === 'searching' && (
-             <div className="absolute inset-0 flex items-center justify-center z-[100]"><div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-                <Card className="w-full max-w-sm rounded-[2.5rem] border-none shadow-2xl p-10 text-center"><Loader2 className="animate-spin w-12 h-12 mx-auto text-primary mb-6"/><h2 className="text-2xl font-black uppercase italic">Scanning Arena</h2><p className="text-muted-foreground font-medium mt-2">Waiting for a real student to join...</p></Card>
+             <div className="absolute inset-0 flex items-center justify-center z-[100] p-6">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+                <Card className="w-full max-w-sm rounded-[2.5rem] border-none shadow-2xl p-10 text-center relative z-10 animate-in zoom-in-95 duration-500 overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-2 bg-muted overflow-hidden">
+                       <div className="h-full bg-primary animate-[progressBar_2s_linear_infinite]" style={{ width: '40%' }} />
+                    </div>
+                    <div className="mx-auto bg-primary/10 p-6 rounded-full w-fit mb-6">
+                      <Monitor className="w-12 h-12 text-primary animate-pulse" />
+                    </div>
+                    <h2 className="text-3xl font-black uppercase italic tracking-tight">Scanning Arena</h2>
+                    <p className="text-muted-foreground font-bold mt-3 leading-relaxed">Connecting with students around the globe...</p>
+                    <div className="mt-8 flex justify-center gap-2">
+                       <div className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+                       <div className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+                       <div className="w-2 h-2 rounded-full bg-primary animate-bounce" />
+                    </div>
+                </Card>
+                <style jsx>{`
+                  @keyframes progressBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+                `}</style>
              </div>
           )}
       </div>

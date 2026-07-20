@@ -1,9 +1,9 @@
+
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { cn } from '@/lib/utils';
 import { Star, Check, Swords, Gamepad2, LayoutGrid } from 'lucide-react';
@@ -20,6 +20,7 @@ interface Level {
   isHard?: boolean;
 }
 
+// Generate 1000 levels dynamically
 const generateLevels = (): Level[] => {
   const levels: Level[] = [];
   const titles = [
@@ -50,6 +51,18 @@ const generateLevels = (): Level[] => {
 };
 
 const gameLevels = generateLevels();
+
+const PathLine = ({ reverse = false, className }: { reverse?: boolean; className?: string }) => (
+    <svg className={cn("h-full w-full", className)} viewBox="0 0 100 100" preserveAspectRatio="none">
+        <path
+            d={reverse ? "M 95 0 C 95 50, 5 50, 5 100" : "M 5 0 C 5 50, 95 50, 95 100"}
+            stroke="#8c5a2b"
+            strokeWidth="12"
+            fill="none"
+            strokeLinecap="round"
+        />
+    </svg>
+);
 
 const LevelNode = ({ level, isLocked, isCompleted, style }: { level: Level; isLocked: boolean; isCompleted: boolean; style?: React.CSSProperties }) => {
   const linkContent = (
@@ -85,7 +98,6 @@ export default function GameHomePage() {
   const [completedLevels, setCompletedLevels] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("levels");
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -95,9 +107,8 @@ export default function GameHomePage() {
 
   const lastAttendedId = profile?.lastLevelAttended || 1;
 
-  // Persistence Engine: Re-center whenever the levels tab becomes active
   useEffect(() => {
-    if (!isLoading && activeTab === "levels" && scrollContainerRef.current) {
+    if (!isLoading && activeTab === "levels") {
       const timer = setTimeout(() => {
         const node = document.getElementById(`level-node-${lastAttendedId}`);
         if (node) {
@@ -137,73 +148,33 @@ export default function GameHomePage() {
         <div className="flex-1 min-h-0">
           <TabsContent value="levels" className="h-full m-0 animate-in fade-in duration-500 outline-none">
             <div className="relative h-[650px] overflow-hidden bg-gradient-to-b from-sky-400 via-blue-600 to-indigo-950 rounded-[3.5rem] border-8 border-white/20 shadow-2xl mt-8 mx-auto max-w-3xl">
-              
-              <div className="absolute top-0 left-0 right-0 h-full opacity-40 pointer-events-none" 
-                   style={{ background: 'radial-gradient(circle at 50% 10%, white 0%, transparent 60%)' }} />
-
+              <div className="absolute top-0 left-0 right-0 h-full opacity-40 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 10%, white 0%, transparent 60%)' }} />
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 {[...Array(30)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="absolute bg-white/20 rounded-full animate-[bubble-rise-bg_linear_infinite]"
-                    style={{
-                      width: `${Math.random() * 12 + 4}px`,
-                      height: `${Math.random() * 12 + 4}px`,
-                      left: `${Math.random() * 100}%`,
-                      bottom: "-50px",
-                      animationDuration: `${Math.random() * 7 + 7}s`,
-                      animationDelay: `${Math.random() * 15}s`,
-                    }}
-                  />
+                  <div key={i} className="absolute bg-white/20 rounded-full animate-[bubble-rise-bg_linear_infinite]" style={{ width: `${Math.random() * 12 + 4}px`, height: `${Math.random() * 12 + 4}px`, left: `${Math.random() * 100}%`, bottom: "-50px", animationDuration: `${Math.random() * 7 + 7}s`, animationDelay: `${Math.random() * 15}s` }} />
                 ))}
               </div>
-
-              <div className="absolute inset-0 pointer-events-none opacity-50">
-                  <div className="absolute top-[20%] animate-[swimRight_20s_linear_infinite] left-[-200px]">
-                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={80} height={50} />
-                  </div>
-                  <div className="absolute top-[45%] animate-[swimLeft_25s_linear_infinite] right-[-200px]">
-                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={100} height={60} className="scale-x-[-1]" />
-                  </div>
-                   <div className="absolute top-[75%] animate-[swimRight_18s_linear_infinite] left-[-200px]">
-                    <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/fish%20(2).webp?alt=media" alt="Fish" width={70} height={45} />
-                  </div>
-              </div>
-
-              <div 
-                ref={scrollContainerRef}
-                className="absolute inset-0 overflow-y-auto scrollbar-none py-[280px] px-8"
-              >
+              <div className="absolute inset-0 overflow-y-auto scrollbar-none py-[280px] px-8">
                 <div className="relative flex flex-col items-center gap-24">
-                  {gameLevels.map((level) => {
+                  {gameLevels.map((level, index) => {
                     const isLocked = isAdmin ? false : (user ? level.id > 1 && !completedLevels.includes(level.id - 1) : level.id > 1);
                     const isCompleted = completedLevels.includes(level.id);
-                    
+                    const isLeft = index % 2 === 0;
                     const maxCompleted = Math.max(...completedLevels, 0);
                     if (level.id > maxCompleted + 25 && !isAdmin) return null;
-
                     return (
-                      <div 
-                        key={level.id} 
-                        id={`level-node-${level.id}`}
-                        className="relative transition-all duration-300 flex justify-center"
-                      >
-                        <LevelNode 
-                          level={level} 
-                          isLocked={isLocked} 
-                          isCompleted={isCompleted}
-                        />
+                      <div key={level.id} id={`level-node-${level.id}`} className="relative h-32 flex items-center w-full max-w-xs">
+                          {index < gameLevels.length - 1 && (<div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-32 h-full z-0"><PathLine reverse={!isLeft} /></div>)}
+                          <div className={cn("absolute z-10", isLeft ? "left-0" : "right-0")}><LevelNode level={level} isLocked={isLocked} isCompleted={isCompleted} /></div>
                       </div>
                     );
                   })}
                 </div>
               </div>
-              
               <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-sky-400 to-transparent z-10 pointer-events-none" />
               <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-indigo-950 to-transparent z-10 pointer-events-none" />
             </div>
           </TabsContent>
-
           <TabsContent value="memory" className="animate-in slide-in-from-left-8 duration-500 pt-8 outline-none">
              <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
                <div className="bg-teal-600 p-8 sm:p-12 text-white text-center">
@@ -212,18 +183,12 @@ export default function GameHomePage() {
                   <p className="text-teal-100 font-bold mt-2 text-sm sm:text-lg">Build perfect spatial visualization by reconstructing high-speed pattern matrices.</p>
                </div>
                <CardContent className="p-8 sm:p-12 text-center space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-                     <div className="p-6 bg-teal-50 rounded-2xl border-2 border-teal-100"><Badge className="mb-2 bg-teal-600">Phase 1</Badge><h4 className="font-bold text-teal-900">Observe</h4><p className="text-xs text-teal-700/70 mt-1 font-medium">A unique pattern flashes on the grid. Observe the shape.</p></div>
-                     <div className="p-6 bg-teal-50 rounded-2xl border-2 border-teal-100"><Badge className="mb-2 bg-teal-600">Phase 2</Badge><h4 className="font-bold text-teal-900">Visualize</h4><p className="text-xs text-teal-700/70 mt-1 font-medium">The tiles clear. Reconstruct the image from your mental "snapshot".</p></div>
-                     <div className="p-6 bg-teal-50 rounded-2xl border-2 border-teal-100"><Badge className="mb-2 bg-teal-600">Phase 3</Badge><h4 className="font-bold text-teal-900">Scale</h4><p className="text-xs text-teal-700/70 mt-1 font-medium">Clear 5 rounds to level up. The grid grows as you improve.</p></div>
-                  </div>
                   <Button asChild size="lg" className="h-16 px-12 text-xl font-black uppercase tracking-widest rounded-2xl bg-teal-600 hover:bg-teal-700 shadow-xl shadow-teal-200">
                     <Link href="/game/memory">Enter Memory Matrix</Link>
                   </Button>
                </CardContent>
              </Card>
           </TabsContent>
-
           <TabsContent value="duels" className="animate-in slide-in-from-right-8 duration-500 pt-8 outline-none">
              <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
                <div className="bg-orange-500 p-8 sm:p-12 text-white text-center">
@@ -232,23 +197,9 @@ export default function GameHomePage() {
                   <p className="text-orange-100 font-bold mt-2 text-sm sm:text-lg">Challenge other students worldwide in real-time or async math races.</p>
                </div>
                <CardContent className="p-8 sm:p-12 text-center space-y-10">
-                  <div className="flex flex-col md:flex-row items-center justify-center gap-12">
-                     <div className="space-y-4">
-                        <h3 className="text-xl sm:text-2xl font-black uppercase text-slate-800">Quick Match</h3>
-                        <p className="text-sm text-slate-500 font-medium">Find an available opponent instantly.</p>
-                        <Button asChild className="h-14 w-full bg-orange-500 hover:bg-orange-600 rounded-xl font-black">
-                           <Link href="/game/duels">Find Opponent</Link>
-                        </Button>
-                     </div>
-                     <div className="h-20 w-px bg-slate-200 hidden md:block" />
-                     <div className="space-y-4">
-                        <h3 className="text-xl sm:text-2xl font-black uppercase text-slate-800">Private Duel</h3>
-                        <p className="text-sm text-slate-500 font-medium">Create a lobby and share the link with a friend.</p>
-                        <Button asChild variant="outline" className="h-14 w-full border-2 border-orange-500 text-orange-600 hover:bg-orange-50 rounded-xl font-black">
-                           <Link href="/game/duels?mode=create">Create Lobby</Link>
-                        </Button>
-                     </div>
-                  </div>
+                  <Button asChild className="h-14 w-full max-w-sm bg-orange-500 hover:bg-orange-600 rounded-xl font-black">
+                     <Link href="/game/duels">Find Opponent</Link>
+                  </Button>
                </CardContent>
              </Card>
           </TabsContent>
