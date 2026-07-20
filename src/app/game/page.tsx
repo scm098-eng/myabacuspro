@@ -1,17 +1,15 @@
-
 'use client';
 
-import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { cn } from '@/lib/utils';
 import { Star, Check, Swords, Gamepad2, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
-import Image from 'next/image';
 
 interface Level {
   id: number;
@@ -23,6 +21,7 @@ interface Level {
 // Generate 1000 levels dynamically
 const generateLevels = (): Level[] => {
   const levels: Level[] = [];
+  
   const titles = [
     'Small Sister: +4 Formula', 'Small Sister: +3 Formula', 'Small Sister: +2 Formula', 'Small Sister: +1 Formula',
     'Small Sister: -4 Formula', 'Small Sister: -3 Formula', 'Small Sister: -2 Formula', 'Small Sister: -1 Formula',
@@ -35,6 +34,7 @@ const generateLevels = (): Level[] => {
     'Combination Challenge', 'Final Challenge',
     'Mastery Mix 1', 'Mastery Mix 2', 'Mastery Mix 3', 'Mastery Mix 4', 'Mastery Mix 5', 'Mastery Mix 6', 'Mastery Mix 7', 'Mastery Mix 8', 'Mastery Mix 9', 'Mastery Mix 10', 'Mastery Mix 11', 'Mastery Mix 12'
   ];
+
   for (let i = 1; i <= 1000; i++) {
     if (i <= 50) {
       let category = 'Mastery Mix';
@@ -42,9 +42,20 @@ const generateLevels = (): Level[] => {
       else if (i <= 28) category = 'Big Brother';
       else if (i <= 37) category = 'Combination';
       else if (i === 38) category = 'Final Challenge';
-      levels.push({ id: i, title: titles[i - 1] || `Mix ${i}`, category, isHard: i % 9 === 0 || i === 38 || i === 50 });
+
+      levels.push({
+        id: i,
+        title: titles[i - 1],
+        category,
+        isHard: i % 9 === 0 || i === 38 || i === 50
+      });
     } else {
-      levels.push({ id: i, title: `Elite Mastery: Mix ${((i - 51) % 12) + 1}`, category: 'Elite Mastery', isHard: i % 10 === 0 });
+      levels.push({
+        id: i,
+        title: `Elite Mastery: Mix ${((i - 51) % 12) + 1}`,
+        category: 'Elite Mastery',
+        isHard: i % 10 === 0
+      });
     }
   }
   return levels;
@@ -64,31 +75,44 @@ const PathLine = ({ reverse = false, className }: { reverse?: boolean; className
     </svg>
 );
 
-const LevelNode = ({ level, isLocked, isCompleted, style }: { level: Level; isLocked: boolean; isCompleted: boolean; style?: React.CSSProperties }) => {
+const LevelNode = ({ level, isLocked, isCompleted }: { level: Level; isLocked: boolean; isCompleted: boolean; }) => {
   const linkContent = (
-    <div 
-      className={cn(
-        "relative w-20 h-20 sm:w-28 sm:h-28 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 transform",
-        isLocked ? "bg-gray-400 grayscale cursor-not-allowed" : "bg-gradient-to-br from-pink-400 to-pink-600 hover:scale-110",
-        isCompleted && !isLocked && "from-green-400 to-green-600",
-        level.isHard && !isLocked && "ring-4 ring-yellow-400 ring-offset-4 ring-offset-transparent",
+    <div className={cn(
+        "relative w-24 h-24 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-300 transform hover:scale-110",
+        isLocked ? "bg-gray-400 cursor-not-allowed" : "bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700",
+        isCompleted && "bg-gradient-to-br from-yellow-400 to-yellow-600",
         "border-4 border-white/50"
-      )}
-    >
-        <div className="absolute inset-1 rounded-full bg-black/10"></div>
-        <span className="relative text-3xl sm:text-5xl font-black [text-shadow:2px_2px_4px_rgba(0,0,0,0.4)]">{level.id}</span>
-        {isCompleted && !isLocked && (<div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1.5 border-2 border-white shadow-md"><Check className="w-4 h-4 text-white stroke-[4px]" /></div>)}
-        {level.isHard && !isLocked && (<div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-1.5 border-2 border-white shadow-md"><Star className="w-4 h-4 text-yellow-900 fill-yellow-900" /></div>)}
-        {isLocked && (<div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center"><Check className="w-8 h-8 text-white/20" /></div>)}
+    )}>
+      <div className="absolute inset-1 rounded-full bg-black/10"></div>
+      <div className="absolute top-2 left-4 h-4 w-8 rounded-full bg-white/30 transform -rotate-45"></div>
+        <span className="relative text-4xl font-bold [text-shadow:2px_2px_4px_rgba(0,0,0,0.4)]">{level.id}</span>
+        
+        {isCompleted && !isLocked && (
+            <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full p-1 border-2 border-white shadow-md">
+                <Check className="w-4 h-4 text-white" />
+            </div>
+        )}
+        {level.isHard && !isLocked && (
+             <div className="absolute -bottom-2 -right-2 bg-purple-700 rounded-full p-1 border-2 border-white shadow-md">
+                <Star className="w-4 h-4 text-yellow-300" />
+            </div>
+        )}
+         {isLocked && (
+            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center" />
+        )}
     </div>
   );
-  
-  return isLocked ? (
-    <div className="opacity-50 pointer-events-none" style={style}>{linkContent}</div>
-  ) : (
-    <Link href={`/game/level-${level.id}`} className="block" style={style}>
-      {linkContent}
-    </Link>
+
+  return (
+    isLocked ? (
+      <div className="tooltip" data-tip={`Complete level ${level.id-1} to unlock`}>
+        {linkContent}
+      </div>
+    ) : (
+      <Link href={`/game/level-${level.id}`} className="tooltip" data-tip={level.title}>
+        {linkContent}
+      </Link>
+    )
   );
 };
 
@@ -101,40 +125,56 @@ export default function GameHomePage() {
 
   useEffect(() => {
     if (user) {
-      getCompletedGameLevels().then(levels => { setCompletedLevels(levels); setIsLoading(false); });
-    } else { setIsLoading(false); }
+      getCompletedGameLevels()
+        .then(levels => {
+          setCompletedLevels(levels);
+          setIsLoading(false);
+        });
+    } else {
+      setIsLoading(false);
+    }
   }, [user, getCompletedGameLevels]);
 
-  const lastAttendedId = profile?.lastLevelAttended || 1;
+  const lastAttendedId = profile?.lastLevelAttended || 0;
 
+  // Auto-scroll to last attended level
   useEffect(() => {
-    if (!isLoading && activeTab === "levels") {
+    if (!isLoading && activeTab === "levels" && lastAttendedId > 0) {
       const timer = setTimeout(() => {
-        const node = document.getElementById(`level-node-${lastAttendedId}`);
-        if (node) {
-          node.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        const element = document.getElementById(`level-node-${lastAttendedId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-      }, 500); 
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, [isLoading, lastAttendedId, activeTab]);
 
-  if (isLoading) return (<div className="space-y-12 p-8"><Skeleton className="h-12 w-3/4 mx-auto" /><Skeleton className="h-96 w-full mt-8 rounded-[3rem]" /></div>);
+  if (isLoading) {
+    return (
+      <div className="space-y-12 p-8">
+        <Skeleton className="h-12 w-3/4 mx-auto" />
+        <Skeleton className="h-96 w-full mt-8 rounded-[3rem]" />
+      </div>
+    );
+  }
 
   const isAdmin = profile?.role === 'admin';
 
   return (
     <div className="relative min-h-[80vh] flex flex-col">
       <div className="text-center space-y-4 mb-8 shrink-0">
-        <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-pink-600 font-headline drop-shadow-sm uppercase">Bubble Game</h1>
-        <p className="max-w-2xl mx-auto text-sm sm:text-lg text-pink-800/80 font-bold">Challenge your mind with visualization drills, competitive duels, and bubble missions!</p>
+        <h1 className="text-5xl font-extrabold tracking-tight text-pink-600 font-headline drop-shadow-lg sm:text-6xl uppercase">Bubble Missions</h1>
+        <p className="mt-4 max-w-2xl mx-auto text-lg text-pink-800/80 font-bold">
+          Follow the candy road to master your abacus formulas!
+        </p>
       </div>
 
       <Tabs defaultValue="levels" value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col">
         <div className="sticky top-16 z-[60] bg-background/95 backdrop-blur-md py-4 border-b shrink-0">
           <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto h-14 sm:h-16 p-1 bg-pink-100/50 rounded-2xl border-2 border-pink-200">
             <TabsTrigger value="levels" className="text-xs sm:text-lg font-black flex items-center gap-2 rounded-xl data-[state=active]:bg-pink-500 data-[state=active]:text-white">
-              <Gamepad2 className="w-4 h-4 sm:w-5 sm:h-5" /> Bubble Game
+              <Gamepad2 className="w-4 h-4 sm:w-5 sm:h-5" /> Levels
             </TabsTrigger>
             <TabsTrigger value="memory" className="text-xs sm:text-lg font-black flex items-center gap-2 rounded-xl data-[state=active]:bg-teal-500 data-[state=active]:text-white">
               <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" /> Matrix
@@ -147,35 +187,40 @@ export default function GameHomePage() {
 
         <div className="flex-1 min-h-0">
           <TabsContent value="levels" className="h-full m-0 animate-in fade-in duration-500 outline-none">
-            <div className="relative h-[650px] overflow-hidden bg-gradient-to-b from-sky-400 via-blue-600 to-indigo-950 rounded-[3.5rem] border-8 border-white/20 shadow-2xl mt-8 mx-auto max-w-3xl">
-              <div className="absolute top-0 left-0 right-0 h-full opacity-40 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 10%, white 0%, transparent 60%)' }} />
-              <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                {[...Array(30)].map((_, i) => (
-                  <div key={i} className="absolute bg-white/20 rounded-full animate-[bubble-rise-bg_linear_infinite]" style={{ width: `${Math.random() * 12 + 4}px`, height: `${Math.random() * 12 + 4}px`, left: `${Math.random() * 100}%`, bottom: "-50px", animationDuration: `${Math.random() * 7 + 7}s`, animationDelay: `${Math.random() * 15}s` }} />
-                ))}
-              </div>
-              <div className="absolute inset-0 overflow-y-auto scrollbar-none py-[280px] px-8">
-                <div className="relative flex flex-col items-center gap-24">
-                  {gameLevels.map((level, index) => {
-                    const isLocked = isAdmin ? false : (user ? level.id > 1 && !completedLevels.includes(level.id - 1) : level.id > 1);
-                    const isCompleted = completedLevels.includes(level.id);
-                    const isLeft = index % 2 === 0;
-                    const maxCompleted = Math.max(...completedLevels, 0);
-                    if (level.id > maxCompleted + 25 && !isAdmin) return null;
-                    return (
-                      <div key={level.id} id={`level-node-${level.id}`} className="relative h-32 flex items-center w-full max-w-xs">
-                          {index < gameLevels.length - 1 && (<div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-32 h-full z-0"><PathLine reverse={!isLeft} /></div>)}
-                          <div className={cn("absolute z-10", isLeft ? "left-0" : "right-0")}><LevelNode level={level} isLocked={isLocked} isCompleted={isCompleted} /></div>
+            <div className="relative w-full max-w-sm mx-auto pb-20 mt-12">
+              {gameLevels.map((level, index) => {
+                  const isLocked = isAdmin ? false : (user ? level.id > 1 && !completedLevels.includes(level.id - 1) : level.id > 1);
+                  const isCompleted = completedLevels.includes(level.id);
+                  const isLeft = index % 2 === 0;
+
+                  const maxCompleted = Math.max(...completedLevels, 0);
+                  const maxReachable = Math.max(maxCompleted + 5, lastAttendedId + 3);
+                  
+                  if (level.id > maxReachable && !isAdmin) return null;
+
+                  return (
+                      <div key={level.id} id={`level-node-${level.id}`} className="relative h-32 flex items-center">
+                          {index < gameLevels.length - 1 && (
+                              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-32 h-full z-0">
+                                  <PathLine reverse={!isLeft} />
+                              </div>
+                          )}
+
+                          <div className={cn("absolute z-10", isLeft ? "left-0" : "right-0")}>
+                              <LevelNode level={level} isLocked={isLocked} isCompleted={isCompleted} />
+                          </div>
                       </div>
-                    );
-                  })}
+                  )
+              })}
+              {!isAdmin && (
+                <div className="text-center mt-12">
+                  <p className="text-muted-foreground font-medium italic">Complete current levels to reveal more of the road...</p>
                 </div>
-              </div>
-              <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-sky-400 to-transparent z-10 pointer-events-none" />
-              <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-indigo-950 to-transparent z-10 pointer-events-none" />
+              )}
             </div>
           </TabsContent>
-          <TabsContent value="memory" className="animate-in slide-in-from-left-8 duration-500 pt-8 outline-none">
+
+          <TabsContent value="memory" className="animate-in slide-in-from-left-8 duration-500 pt-12 outline-none">
              <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
                <div className="bg-teal-600 p-8 sm:p-12 text-white text-center">
                   <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-pulse"><LayoutGrid className="w-10 h-10 sm:w-12 sm:h-12 text-white" /></div>
@@ -189,7 +234,8 @@ export default function GameHomePage() {
                </CardContent>
              </Card>
           </TabsContent>
-          <TabsContent value="duels" className="animate-in slide-in-from-right-8 duration-500 pt-8 outline-none">
+
+          <TabsContent value="duels" className="animate-in slide-in-from-right-8 duration-500 pt-12 outline-none">
              <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
                <div className="bg-orange-500 p-8 sm:p-12 text-white text-center">
                   <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-bounce"><Swords className="w-10 h-10 sm:w-12 sm:h-12" /></div>
@@ -197,7 +243,7 @@ export default function GameHomePage() {
                   <p className="text-orange-100 font-bold mt-2 text-sm sm:text-lg">Challenge other students worldwide in real-time or async math races.</p>
                </div>
                <CardContent className="p-8 sm:p-12 text-center space-y-10">
-                  <Button asChild className="h-14 w-full max-w-sm bg-orange-500 hover:bg-orange-600 rounded-xl font-black">
+                  <Button asChild className="h-14 w-full max-w-sm bg-orange-500 hover:bg-orange-600 rounded-xl font-black shadow-lg">
                      <Link href="/game/duels">Find Opponent</Link>
                   </Button>
                </CardContent>

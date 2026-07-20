@@ -1,10 +1,9 @@
-
 'use client';
 
-import { getFirestore, collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
+import { getFirestore, collection, query, where, limit, getDocs, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { Duel, ProfileData } from '@/types';
-import { generateDuelQuestions, createPRNG } from '@/lib/questions';
+import { generateDuelQuestions } from '@/lib/questions';
 import { getMatchedBot } from './duel/bots';
 
 export async function startMatchmaking(
@@ -13,12 +12,13 @@ export async function startMatchmaking(
   mode: 'standard' | 'flash' | 'matrix',
   difficulty: string = 'medium'
 ): Promise<string> {
-  console.log("--- STARTING MATCHMAKING ---", { mode, difficulty });
+  console.log("--- STARTING MATCHMAKING ---", { mode, difficulty, userId });
   const db = getFirestore(firebaseApp);
   const duelsRef = collection(db, "duels");
 
-  // 1. Search for human match (Simplified to avoid index requirement)
+  // 1. Search for human match (Bypass composite index by filtering in memory)
   try {
+    console.log("Searching for human opponents...");
     const q = query(
       duelsRef, 
       where("status", "==", "waiting"),
@@ -26,13 +26,15 @@ export async function startMatchmaking(
     );
 
     const snap = await getDocs(q);
+    console.log(`Found ${snap.docs.length} waiting lobbies total.`);
+    
     const match = snap.docs.find(doc => {
       const d = doc.data();
       return d.challengerId !== userId && d.mode === mode && d.difficulty === difficulty;
     });
 
     if (match) {
-      console.log("Found Human Opponent:", match.id);
+      console.log("SUCCESS: Found Human Match!", match.id);
       await updateDoc(doc(db, "duels", match.id), {
         opponentId: userId,
         opponentName: `${profile.firstName} ${profile.surname}`,
@@ -43,8 +45,9 @@ export async function startMatchmaking(
       });
       return match.id;
     }
-  } catch (e) {
-    console.error("Matchmaking Search Error:", e);
+    console.log("No compatible human match found. Creating new lobby...");
+  } catch (e: any) {
+    console.error("Matchmaking Search CRITICAL ERROR:", e.message, e);
   }
 
   // 2. No match? Create lobby
@@ -67,15 +70,16 @@ export async function startMatchmaking(
   };
 
   const docRef = await addDoc(duelsRef, newDuel);
-  console.log("Created Waiting Lobby:", docRef.id);
+  console.log("SUCCESS: Created New Lobby:", docRef.id);
   
   // 3. Fallback to Bot after 5 seconds
   setTimeout(async () => {
     try {
+      const db = getFirestore(firebaseApp);
       const freshSnap = await getDocs(query(collection(db, "duels"), where("__name__", "==", docRef.id)));
       if (!freshSnap.empty && freshSnap.docs[0].data().status === 'waiting') {
         const bot = getMatchedBot(profile.totalPoints || 0);
-        console.log("Pairing with Bot:", bot.name);
+        console.log(`PAIRING WITH BOT: ${bot.name} (Tier: ${bot.tier})`);
         await updateDoc(doc(db, "duels", docRef.id), {
           opponentId: bot.id,
           opponentName: bot.name,
@@ -86,8 +90,8 @@ export async function startMatchmaking(
           updatedAt: serverTimestamp()
         });
       }
-    } catch (err) {
-      console.error("Bot Pair Error:", err);
+    } catch (err: any) {
+      console.error("BOT PAIRING ERROR:", err.message);
     }
   }, 5000);
 
@@ -99,7 +103,6 @@ export async function getRecentOpponents(userId: string): Promise<{uid: string, 
   const q = query(
     collection(db, "duels"),
     where("status", "==", "completed"),
-    orderBy("createdAt", "desc"),
     limit(50)
   );
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
@@ -193,8 +192,7 @@ export default function DuelArenaPage() {
   if (loading) return <div className="fixed inset-0 bg-slate-900 z-[10000] flex items-center justify-center"><Loader2 className="animate-spin w-12 h-12 text-primary" /></div>;
 
   return createPortal(
-    <div className="fixed inset-0 z-[10000] bg-slate-900 flex flex-col overflow-hidden h-screen w-screen">
-      <style jsx global>{`@keyframes bubble-rise { from { transform: translate(-50%, 0); } to { transform: translate(-50%, -130vh); } } .animate-bubble-rise { animation: bubble-rise linear forwards; }`}</style>
+    <div className="fixed inset-0 z-[10000] bg-slate-900 flex flex-col overflow-hidden h-screen w-screen text-slate-900">
       <div className="absolute inset-0 z-0">
           <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Game%20Background.webp?alt=media" alt="Arena" fill className="object-cover" priority />
       </div>
@@ -240,7 +238,7 @@ export default function DuelArenaPage() {
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
                 <Card className="w-full max-w-sm rounded-[2.5rem] border-none shadow-2xl p-10 text-center relative z-10 animate-in zoom-in-95 duration-500 overflow-hidden">
                     <div className="absolute top-0 left-0 right-0 h-2 bg-muted overflow-hidden">
-                       <div className="h-full bg-primary animate-[progressBar_2s_linear_infinite]" style={{ width: '40%' }} />
+                       <div className="h-full bg-primary animate-progress-bar" style={{ width: '40%' }} />
                     </div>
                     <div className="mx-auto bg-primary/10 p-6 rounded-full w-fit mb-6">
                       <Monitor className="w-12 h-12 text-primary animate-pulse" />
@@ -253,9 +251,6 @@ export default function DuelArenaPage() {
                        <div className="w-2 h-2 rounded-full bg-primary animate-bounce" />
                     </div>
                 </Card>
-                <style jsx>{`
-                  @keyframes progressBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
-                `}</style>
              </div>
           )}
       </div>
