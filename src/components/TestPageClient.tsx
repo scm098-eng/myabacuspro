@@ -194,7 +194,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
   const currentQuestion = questions[currentIdx];
 
   return (
-    <div className="flex flex-col max-w-3xl mx-auto px-4 flex-1 min-h-[600px]">
+    <div className="max-w-3xl mx-auto px-4 flex flex-col min-h-[600px]">
       <Card className="shadow-2xl flex-1 flex flex-col rounded-[2.5rem]">
         <CardHeader className="bg-muted/10 pb-4">
           <div className="flex justify-between items-center mb-4">
@@ -273,13 +273,7 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
           <AlertDialogContent className="rounded-3xl">
             <AlertDialogHeader>
               <AlertDialogTitle className="font-black uppercase tracking-tight">End Session?</AlertDialogTitle>
-              <AlertDialogDescription className="font-medium text-slate-600">Your current progress will be recorded and you will be taken to the performance summary.</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="mt-4">
-              <AlertDialogCancel className="rounded-xl h-11">Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => finishTest()} className="rounded-xl h-11 bg-destructive hover:bg-destructive/90 text-white border-none shadow-lg">Yes, end test</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
+              <AlertDialogDescription className="font-medium text-slate-600">Your current progress will be recorded and you will be taken to the performance summary.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="mt-4"><AlertDialogCancel className="rounded-xl h-11">Cancel</AlertDialogCancel><AlertDialogAction onClick={() => finishTest()} className="rounded-xl h-11 bg-destructive hover:bg-destructive/90 text-white border-none shadow-lg">Yes, end test</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
         </AlertDialog>
       </div>
     </div>

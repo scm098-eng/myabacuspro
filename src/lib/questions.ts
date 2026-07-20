@@ -436,17 +436,25 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
     const [min, max] = getNumberRange(difficulty);
 
     if (coreTestId === 'addition-subtraction') {
-      let temp = getRandomInt(min, max);
-      const numbers = [temp];
+      let currentVal = getRandomInt(min, max);
+      const numbers: (number | string)[] = [currentVal];
       for (let j = 0; j < 3; j++) {
-        const op = Math.random() > 0.5 ? '+' : '-';
-        const next = getRandomInt(min, max);
-        if (op === '+') temp += next; else temp = Math.max(0, temp - next);
-        numbers.push(op as any);
+        let op: '+' | '-' = Math.random() > 0.5 ? '+' : '-';
+        let next = getRandomInt(min, max);
+        
+        // Ensure no intermediate negative results for abacus logic
+        if (op === '-' && currentVal < next) {
+          op = '+';
+        }
+        
+        if (op === '+') currentVal += next; 
+        else currentVal -= next;
+        
+        numbers.push(op);
         numbers.push(next);
       }
       questionText = numbers.join(' ');
-      answer = temp;
+      answer = currentVal;
     } else if (coreTestId === 'multiplication') {
       const m1 = getRandomInt(min, difficulty === 'easy' ? 9 : 99);
       const m2 = getRandomInt(2, 9);
