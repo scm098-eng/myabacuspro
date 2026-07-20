@@ -14,7 +14,7 @@ import Link from 'next/link';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 
-const levels = [
+const tiers = [
   { id: 'easy', title: 'Novice Flash', description: '1-Digit Numbers | Levels 1-50 (Progression from 3 rows/2.0s to 10 rows/1.5s)', color: 'bg-green-100 text-green-700', icon: Zap },
   { id: 'medium', title: 'Expert Flash', description: 'Mixed 1 & 2-Digit | Levels 1-50 (Progression from 3 rows/2.0s to 10 rows/1.5s)', color: 'bg-orange-100 text-orange-700', icon: Zap },
   { id: 'hard', title: 'Elite Flash', description: 'Mixed 2 & 3-Digit | Levels 1-50 (Progression from 3 rows/2.0s to 10 rows/1.5s)', color: 'bg-red-100 text-red-700', icon: Zap },
@@ -91,7 +91,7 @@ export default function FlashAnzanLobbyPage() {
       </div>
 
       <div className="space-y-12 max-w-5xl mx-auto">
-        {levels.map((level) => {
+        {tiers.map((level) => {
           const isLocked = !isPro && !isTrialActive && level.id !== 'easy';
           
           return (

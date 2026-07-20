@@ -1,6 +1,6 @@
 /**
  * Simulated Bot Ecosystem for My Abacus Pro
- * Features 100+ unique identities with tiered performance metrics.
+ * Features 110 unique identities with tiered performance metrics.
  */
 
 export interface BotProfile {
@@ -35,7 +35,6 @@ function generateBotPool(): BotProfile[] {
     const lName = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
     const id = `bot_${i}_${Math.random().toString(36).substr(2, 5)}`;
     
-    // Distribute into tiers
     let tier: 'beginner' | 'intermediate' | 'advanced' = 'intermediate';
     if (i < 35) tier = 'beginner';
     else if (i > 75) tier = 'advanced';
@@ -90,10 +89,4 @@ export function getMatchedBot(playerPoints: number): BotProfile {
 
   const eligibleBots = BOT_POOL.filter(b => b.tier === targetTier);
   return eligibleBots[Math.floor(Math.random() * eligibleBots.length)];
-}
-
-export function simulateBotAnswer(bot: BotProfile, isCorrectAnswer: boolean): { isCorrect: boolean; delay: number } {
-  const isCorrect = Math.random() < bot.accuracyRate;
-  const delay = bot.minSpeedMs + Math.random() * (bot.maxSpeedMs - bot.minSpeedMs);
-  return { isCorrect, delay };
 }

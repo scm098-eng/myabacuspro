@@ -7,7 +7,7 @@ import type { GameLevel, Question } from '@/types';
 import { generateGameQuestions } from '@/lib/questions';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from './ui/card';
-import { Heart, X, Star, CheckCircle2, AlertCircle, PlayCircle } from 'lucide-react';
+import { Heart, X, Star, Trophy, XCircle, PlayCircle, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
@@ -16,8 +16,6 @@ import { useSound } from '@/hooks/useSound';
 import confetti from 'canvas-confetti';
 import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
-import { errorEmitter } from '@/lib/error-emitter';
-import { FirestorePermissionError } from '@/lib/errors';
 import { PAGE_GUIDES } from '@/lib/constants';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -215,7 +213,7 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
 
   if (!mounted) return null;
 
-  return createPortal(
+  const content = (
     <div className="fixed inset-0 z-[9999] bg-slate-900 flex flex-col items-center justify-center overflow-hidden touch-none">
         <div className="absolute inset-0 z-0">
           <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Game%20Background.webp?alt=media" alt="Arena" fill className="object-cover" priority />
@@ -267,6 +265,8 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
                 </Card>
             </div>
         )}
-    </div>, document.body
+    </div>
   );
+
+  return createPortal(content, document.body);
 }

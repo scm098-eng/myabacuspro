@@ -1,10 +1,9 @@
-
 'use client';
 
 import { getFirestore, collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { Duel, ProfileData } from '@/types';
-import { generateDuelQuestions, generateFlashSequence, generateOptions, createPRNG } from '@/lib/questions';
+import { generateDuelQuestions, createPRNG } from '@/lib/questions';
 import { getMatchedBot } from './duel/bots';
 
 export async function startMatchmaking(
