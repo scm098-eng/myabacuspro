@@ -1,12 +1,13 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { cn } from '@/lib/utils';
-import { Star, Check, Swords, Gamepad2, LayoutGrid, ChevronRight, MonitorOff } from 'lucide-react';
+import { Star, Check, Gamepad2, LayoutGrid, Swords, ChevronRight, MonitorOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
@@ -46,7 +47,7 @@ const generateLevels = (): Level[] => {
 
       levels.push({
         id: i,
-        title: titles[i - 1],
+        title: titles[i - 1] || `Elite Mastery Level ${i}`,
         category,
         isHard: i % 9 === 0 || i === 38 || i === 50
       });
@@ -153,7 +154,7 @@ export default function GameHomePage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-12 p-8">
+      <div className="space-y-12">
         <Skeleton className="h-12 w-3/4 mx-auto" />
         <Skeleton className="h-96 w-full mt-8 rounded-[3rem]" />
       </div>
@@ -167,7 +168,7 @@ export default function GameHomePage() {
       <div className="text-center space-y-4 mb-8 shrink-0">
         <h1 className="text-5xl font-extrabold tracking-tight text-pink-600 font-headline drop-shadow-lg sm:text-6xl uppercase">Bubble Missions</h1>
         <p className="mt-4 max-w-2xl mx-auto text-lg text-pink-800/80 font-bold">
-          Follow the candy road to master your abacus formulas!
+          Follow the candy road to master your abacus skills!
         </p>
       </div>
 
