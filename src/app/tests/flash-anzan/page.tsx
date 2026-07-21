@@ -220,7 +220,7 @@ export default function FlashAnzanLobbyPage() {
                     onClick={handleStartCustom} 
                     className="w-full h-20 text-base sm:text-lg font-black uppercase tracking-wide rounded-2xl shadow-xl shadow-orange-500/20 whitespace-normal px-4 py-2 leading-tight"
                   >
-                    Launch Lab <Zap className="ml-2 w-6 h-6 fill-white shrink-0" />
+                    Start <Zap className="ml-2 w-6 h-6 fill-white shrink-0" />
                   </Button>
                 </div>
              </div>
