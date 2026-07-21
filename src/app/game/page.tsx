@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { cn } from '@/lib/utils';
-import { Star, Check, Gamepad2, LayoutGrid, Swords, ChevronRight } from 'lucide-react';
+import { Star, Check, Gamepad2, LayoutGrid, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -174,15 +174,12 @@ export default function GameHomePage() {
 
       <Tabs defaultValue="levels" value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col">
         <div className="sticky top-16 z-[60] bg-background/95 backdrop-blur-md py-4 border-b shrink-0">
-          <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto h-14 sm:h-16 p-1 bg-pink-100/50 rounded-2xl border-2 border-pink-200">
+          <TabsList className="grid w-full grid-cols-2 max-w-lg mx-auto h-14 sm:h-16 p-1 bg-pink-100/50 rounded-2xl border-2 border-pink-200">
             <TabsTrigger value="levels" className="text-xs sm:text-lg font-black flex items-center gap-2 rounded-xl data-[state=active]:bg-pink-500 data-[state=active]:text-white">
               <Gamepad2 className="w-4 h-4 sm:w-5 sm:h-5" /> Levels
             </TabsTrigger>
             <TabsTrigger value="memory" className="text-xs sm:text-lg font-black flex items-center gap-2 rounded-xl data-[state=active]:bg-teal-500 data-[state=active]:text-white">
               <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" /> Matrix
-            </TabsTrigger>
-            <TabsTrigger value="duels" className="text-xs sm:text-lg font-black flex items-center gap-2 rounded-xl data-[state=active]:bg-orange-500 data-[state=active]:text-white">
-              <Swords className="w-4 h-4 sm:w-5 sm:h-5" /> Duels
             </TabsTrigger>
           </TabsList>
         </div>
@@ -232,21 +229,6 @@ export default function GameHomePage() {
                <CardContent className="p-8 sm:p-12 text-center space-y-8">
                   <Button asChild size="lg" className="h-16 px-12 text-xl font-black uppercase tracking-widest rounded-2xl bg-teal-600 hover:bg-teal-700 shadow-xl shadow-teal-200">
                     <Link href="/game/memory">Enter Memory Matrix</Link>
-                  </Button>
-               </CardContent>
-             </Card>
-          </TabsContent>
-
-          <TabsContent value="duels" className="animate-in slide-in-from-right-8 duration-500 pt-12 outline-none">
-             <Card className="max-w-4xl mx-auto rounded-[2.5rem] border-none shadow-2xl overflow-hidden">
-               <div className="bg-orange-500 p-8 sm:p-12 text-white text-center">
-                  <div className="mx-auto bg-white/20 p-5 rounded-full w-fit mb-6 animate-bounce"><Swords className="w-10 h-10 sm:w-12 sm:h-12" /></div>
-                  <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tighter italic">World Championship Duels</h2>
-                  <p className="text-orange-100 font-bold mt-2 text-sm sm:text-lg">Challenge other students worldwide in real-time or async math races.</p>
-               </div>
-               <CardContent className="p-8 sm:p-12 text-center space-y-10">
-                  <Button asChild className="h-14 w-full max-w-sm bg-orange-500 hover:bg-orange-600 rounded-xl font-black shadow-lg">
-                     <Link href="/game/duels">Find Opponent</Link>
                   </Button>
                </CardContent>
              </Card>

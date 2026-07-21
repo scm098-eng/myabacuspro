@@ -9,26 +9,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BrainCircuit, Trophy, Timer, Zap, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2, Heart, Swords, Users, User, LayoutGrid, ChevronRight, Share2, Clock, X } from 'lucide-react';
+import { BrainCircuit, Trophy, Timer, Zap, CheckCircle2, XCircle, ArrowRight, RotateCcw, Loader2, Heart, LayoutGrid, ChevronRight, ChevronLeft, Clock, X } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
 import { getFirestore, collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
-import { startMatchmaking, getRecentOpponents } from '@/lib/matchmaking';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
 
 const ROUNDS_PER_LEVEL = 5;
 const INITIAL_LIVES = 3;
 const MAX_DAILY_LEVELS = 5;
 
 export default function PatternMemoryPage() {
-  usePageBackground('');
+  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/results_bg.jpg?alt=media');
   const { user, profile, addPoints, recordDailyPractice } = useAuth();
   const router = useRouter();
   const { playSound } = useSound();
-  const { toast } = useToast();
 
   const [level, setLevel] = useState(1);
   const [round, setRound] = useState(1);
@@ -43,7 +39,6 @@ export default function PatternMemoryPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [finalMasteryPoints, setFinalMasteryPoints] = useState(0);
-  const [recentOpponents, setRecentOpponents] = useState<{uid: string, name: string, photo: string}[]>([]);
 
   useEffect(() => {
     if (profile) {
@@ -53,23 +48,7 @@ export default function PatternMemoryPage() {
         setGameState('limit_reached');
       }
     }
-    if (user) {
-      getRecentOpponents(user.uid).then(setRecentOpponents);
-    }
-  }, [profile, user]);
-
-  const handleStartDuel = async (type: 'match' | 'friend') => {
-    if (!user || !profile) return;
-    setIsSubmitting(true);
-    try {
-      const duelId = await startMatchmaking(user.uid, profile, 'matrix', `Level ${level}`);
-      router.push(`/game/duels/${duelId}`);
-    } catch (e) {
-      toast({ title: "Matchmaking failed", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  }, [profile]);
 
   const getLevelParams = useCallback((lvl: number) => {
     let size = 3;
@@ -233,45 +212,14 @@ export default function PatternMemoryPage() {
              <Button asChild variant="outline" className="mt-8 border-orange-300 text-orange-800 hover:bg-orange-100 rounded-xl font-bold"><Link href="/game">Return to Hub</Link></Button>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
-             <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => setGameState('ready')}>
+          <div className="flex justify-center px-4">
+             <Card className="max-w-sm w-full rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => setGameState('ready')}>
                 <CardHeader className="p-8 text-center bg-teal-50 rounded-t-[2.5rem] border-b">
-                   <div className="mx-auto bg-teal-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><User className="w-8 h-8 text-teal-600" /></div>
-                   <CardTitle className="text-2xl font-black uppercase tracking-tight">Train Alone</CardTitle>
+                   <div className="mx-auto bg-teal-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><LayoutGrid className="w-8 h-8 text-teal-600" /></div>
+                   <CardTitle className="text-2xl font-black uppercase tracking-tight">Start Mission</CardTitle>
                    <CardDescription className="font-bold">Standard single-player progression.</CardDescription>
                 </CardHeader>
-                <CardContent className="p-8 text-center"><Button variant="ghost" className="font-black text-teal-600">Start Session <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
-             </Card>
-             <Card className="rounded-[2.5rem] border-none shadow-2xl bg-slate-900 text-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => handleStartDuel('match')}>
-                <CardHeader className="p-8 text-center bg-white/5 rounded-t-[2.5rem] border-b border-white/10">
-                   <div className="mx-auto bg-primary/20 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><Swords className="w-8 h-8 text-primary" /></div>
-                   <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Find Duel</CardTitle>
-                   <CardDescription className="text-slate-400 font-bold">Battle anyone online instantly.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-8 text-center"><Button variant="ghost" className="font-black text-primary">Join Matchmaking <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
-             </Card>
-             <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all group overflow-hidden">
-                <CardHeader className="p-8 text-center bg-indigo-50 border-b">
-                   <div className="mx-auto bg-indigo-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><Users className="w-8 h-8 text-indigo-600" /></div>
-                   <CardTitle className="text-2xl font-black uppercase tracking-tight">Play Friend</CardTitle>
-                   <CardDescription className="font-bold">Challenge a teammate.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-6 space-y-4">
-                   {recentOpponents.length > 0 ? (
-                     <div className="space-y-3">
-                       <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Recent Rivals</p>
-                       {recentOpponents.map(opp => (
-                         <Button key={opp.uid} variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl" onClick={() => handleStartDuel('friend')}>
-                           <Avatar className="h-6 w-6"><AvatarImage src={opp.photo || undefined}/><AvatarFallback>{opp.name?.[0]}</AvatarFallback></Avatar>
-                           <span className="font-bold text-xs truncate">{opp.name}</span>
-                         </Button>
-                       ))}
-                     </div>
-                   ) : (
-                     <p className="text-xs text-muted-foreground font-medium italic text-center py-4">Challenge a friend to start a rivalry!</p>
-                   )}
-                   <Button onClick={() => { navigator.clipboard.writeText(window.location.origin + "/game/duels"); toast({ title: "Invite Link Copied!" }); }} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Share2 className="w-4 h-4 mr-2"/> Copy Invite Link</Button>
-                </CardContent>
+                <CardContent className="p-8 text-center"><Button className="w-full h-12 rounded-xl font-black bg-teal-600 hover:bg-teal-700 text-white">Enter Arena <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
              </Card>
           </div>
         )}
@@ -308,7 +256,7 @@ export default function PatternMemoryPage() {
     );
   }
 
-  const { colorClass, shapeClass } = getLevelParams(level);
+  const { shapeClass } = getLevelParams(level);
 
   return (
     <div className="max-w-4xl mx-auto space-y-10 pb-20 mt-10 px-4">
@@ -320,9 +268,10 @@ export default function PatternMemoryPage() {
             {Array.from({length: INITIAL_LIVES}).map((_, i) => (<Heart key={i} className={cn("w-6 h-6 transition-all duration-300", i < lives ? "text-red-500 fill-red-500" : "text-slate-200")} />))}
          </div>
       </div>
-      <Card className="rounded-[3rem] shadow-2xl border-none overflow-hidden min-h-[500px] flex flex-col bg-slate-900 relative">
-        <div className="bg-white/5 p-4 shrink-0 border-b border-white/5"><Progress value={(round / ROUNDS_PER_LEVEL) * 100} className="h-1.5 bg-white/10" /></div>
-        <CardContent className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
+      <Card className="rounded-[3rem] shadow-2xl border-none overflow-hidden min-h-[500px] flex flex-col bg-black relative">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.15) 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
+        <div className="bg-white/5 p-4 shrink-0 border-b border-white/5 relative z-10"><Progress value={(round / ROUNDS_PER_LEVEL) * 100} className="h-1.5 bg-white/10" /></div>
+        <CardContent className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden z-10">
           <div className="relative z-10 w-full flex flex-col items-center">
             <div className="h-24 flex flex-col items-center justify-center mb-6 w-full relative">
               {gameState === 'ready' && (
@@ -350,18 +299,23 @@ export default function PatternMemoryPage() {
               )}
             </div>
 
-            <div className="grid gap-3 sm:gap-4 p-4 bg-white/5 rounded-[2.5rem] border-4 border-white/10 shadow-inner" style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, width: '100%', maxWidth: gridSize === 3 ? '320px' : gridSize === 4 ? '400px' : '500px' }}>
+            <div className="grid gap-3 sm:gap-4 p-8 bg-white/5 rounded-[2.5rem] border-4 border-white/10 shadow-inner" style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, width: '100%', maxWidth: gridSize === 3 ? '320px' : gridSize === 4 ? '400px' : '500px' }}>
               {Array.from({ length: gridSize * gridSize }).map((_, i) => {
                 const isCorrectPattern = pattern.includes(i);
                 const isSelected = userSelection.includes(i);
                 const isWrong = wrongSelection === i;
                 const showHint = gameState === 'memorizing' || gameState === 'feedback';
-                return (<div key={i} onClick={() => handleTileClick(i)} className={cn("aspect-square transition-all duration-300 cursor-pointer shadow-lg border-b-4 border-r-4 active:border-0 active:translate-y-1", shapeClass, !showHint && !isSelected && !isWrong && "bg-slate-700 border-slate-800 hover:bg-slate-600", showHint && isCorrectPattern && cn(colorClass, "scale-[0.98] ring-8 ring-white/20"), showHint && !isCorrectPattern && "bg-slate-800 border-slate-900 opacity-40", gameState === 'playing' && isSelected && cn(colorClass, "scale-[0.98] ring-8 ring-white/20 animate-in zoom-in-90"), isWrong && "bg-red-500 border-red-600 ring-8 ring-red-500/20")} />);
+                return (<div key={i} onClick={() => handleTileClick(i)} className={cn("aspect-square transition-all duration-300 cursor-pointer shadow-lg border-b-4 border-r-4 active:border-0 active:translate-y-1", shapeClass, !showHint && !isSelected && !isWrong && "bg-slate-700 border-slate-800 hover:bg-slate-600", showHint && isCorrectPattern && cn("bg-teal-400 border-teal-500", "scale-[0.98] ring-8 ring-white/20"), showHint && !isCorrectPattern && "bg-white/5 border-white/10 opacity-40", gameState === 'playing' && isSelected && cn("bg-teal-400 border-teal-500", "scale-[0.98] ring-8 ring-white/20 animate-in zoom-in-90"), isWrong && "bg-red-500 border-red-600 ring-8 ring-red-500/20")} />);
               })}
             </div>
           </div>
         </CardContent>
       </Card>
+      <div className="flex justify-center pt-4">
+        <Button asChild variant="ghost" className="text-white/40 hover:text-white hover:bg-white/5 font-black uppercase text-[10px] tracking-widest">
+           <Link href="/game"><ChevronLeft className="w-3 h-3 mr-1" /> Exit Mission</Link>
+        </Button>
+      </div>
     </div>
   );
 }

@@ -27,7 +27,7 @@ interface Bubble {
 }
 
 export default function DuelArenaPage() {
-  usePageBackground('');
+  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/results_bg.jpg?alt=media');
   const { duelId } = useParams() as { duelId: string };
   const { user, profile, addPoints } = useAuth();
   const router = useRouter();
@@ -52,6 +52,7 @@ export default function DuelArenaPage() {
   const questionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const flashIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const botTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const botLastIdxRef = useRef(-1);
 
   const isChallenger = duel?.challengerId === user?.uid;
   const gameState = duel?.status === 'completed' ? 'completed' : duel?.status === 'active' ? 'playing' : 'searching';
@@ -81,28 +82,26 @@ export default function DuelArenaPage() {
       const bot = (duel as any).botRef;
       if (!bot) return;
 
-      const simulateBotTurn = () => {
-        const delay = bot.minSpeedMs + Math.random() * (bot.maxSpeedMs - bot.minSpeedMs);
-        botTimerRef.current = setTimeout(async () => {
-          const isCorrect = Math.random() < bot.accuracyRate;
-          const botIdx = (duel as any).botIdx || 0;
-          const nextIdx = botIdx + 1;
+      const botIdx = (duel as any).botIdx || 0;
+      if (botIdx > botLastIdxRef.current) {
+          botLastIdxRef.current = botIdx;
+          const delay = (bot.minSpeedMs + Math.random() * (bot.maxSpeedMs - bot.minSpeedMs)) * 2.5;
           
-          const db = getFirestore(firebaseApp);
-          const update: any = {
-            opponentScore: increment(isCorrect ? 10 : 0),
-            botIdx: nextIdx,
-            updatedAt: serverTimestamp()
-          };
-          
-          if (nextIdx >= duel.questions.length) update.opponentFinished = true;
-
-          await updateDoc(doc(db, "duels", duelId), update);
-          if (nextIdx < duel.questions.length) simulateBotTurn();
-        }, delay);
-      };
-
-      simulateBotTurn();
+          botTimerRef.current = setTimeout(async () => {
+            const isCorrect = Math.random() < bot.accuracyRate;
+            const nextIdx = botIdx + 1;
+            
+            const db = getFirestore(firebaseApp);
+            const update: any = {
+              opponentScore: increment(isCorrect ? 10 : 0),
+              botIdx: nextIdx,
+              updatedAt: serverTimestamp()
+            };
+            
+            if (nextIdx >= duel.questions.length) update.opponentFinished = true;
+            await updateDoc(doc(db, "duels", duelId), update);
+          }, delay);
+      }
     }
     return () => { if (botTimerRef.current) clearTimeout(botTimerRef.current); };
   }, [gameState, duel, isChallenger, duelId]);
@@ -188,13 +187,50 @@ export default function DuelArenaPage() {
     return () => { if (flashIntervalRef.current) clearInterval(flashIntervalRef.current); if (questionTimeoutRef.current) clearTimeout(questionTimeoutRef.current); };
   }, [currentIdx, hasStarted, duel?.status, duel?.mode, currentQuestion, playSound, processTurn]);
 
+  // Matrix pattern generation for duels
+  const matrixPattern = useMemo(() => {
+    if (duel?.mode !== 'matrix' || !duelId) return [];
+    const seed = `${duelId}-${currentIdx}`;
+    const prng = (s: string) => {
+        let h = 0; for (let i = 0; i < s.length; i++) h = Math.imul(31, h) + s.charCodeAt(i) | 0;
+        let v = h >>> 0; v |= 0; v = v + 0x6D2B79F5 | 0;
+        let t = Math.imul(v ^ v >>> 15, 1 | v); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+    const p: number[] = [];
+    const count = 3 + Math.floor(currentIdx / 4);
+    while(p.length < count) {
+        const r = Math.floor(prng(seed + p.length) * 9);
+        if(!p.includes(r)) p.push(r);
+    }
+    return p;
+  }, [duel?.mode, duelId, currentIdx]);
+
+  const [matrixSelection, setMatrixSelection] = useState<number[]>([]);
+  const [matrixState, setMatrixState] = useState<'memorizing' | 'playing'>('memorizing');
+
+  useEffect(() => {
+    if(duel?.mode === 'matrix' && gameState === 'playing') {
+        setMatrixState('memorizing');
+        setMatrixSelection([]);
+        setTimeout(() => setMatrixState('playing'), 2000);
+    }
+  }, [currentIdx, duel?.mode, gameState]);
+
   if (!mounted) return null;
   if (loading) return <div className="fixed inset-0 bg-slate-900 z-[10000] flex items-center justify-center"><Loader2 className="animate-spin w-12 h-12 text-primary" /></div>;
 
   return createPortal(
     <div className="fixed inset-0 z-[10000] bg-slate-900 flex flex-col overflow-hidden h-screen w-screen text-slate-900">
       <div className="absolute inset-0 z-0">
-          <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Game%20Background.webp?alt=media" alt="Arena" fill className="object-cover" priority />
+          {duel?.mode === 'matrix' ? (
+            <div className="w-full h-full bg-black" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.05) 1.5px, transparent 1.5px)', backgroundSize: '40px 40px' }} />
+          ) : (
+            <>
+              <Image src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Game%20Background.webp?alt=media" alt="Arena" fill className="object-cover" priority />
+              <div className="absolute inset-0 bg-black/10" />
+            </>
+          )}
       </div>
       <div className="relative bg-black/40 backdrop-blur-md p-4 border-b border-white/10 flex justify-between items-center z-50">
           <div className="flex items-center gap-3 text-white flex-1">
@@ -202,7 +238,7 @@ export default function DuelArenaPage() {
              <div><CardTitle className="text-sm font-black uppercase italic leading-none">{isChallenger ? duel?.challengerName : duel?.opponentName}</CardTitle><CardDescription className="text-sky-300 font-bold text-[10px]">Round {currentIdx + 1}</CardDescription></div>
           </div>
           <div className="flex items-center gap-4 text-white">
-             <div className="text-right"><p className="text-[10px] font-black uppercase text-sky-200 leading-none">{isChallenger ? duel?.challengerName : duel?.opponentName}</p><p className="text-2xl font-black text-orange-500">{isChallenger ? localScore : (duel?.challengerScore || 0)}</p></div>
+             <div className="text-right"><p className="text-[10px] font-black uppercase text-sky-200 leading-none">{isChallenger ? duel?.challengerName : (duel?.opponentName || 'Bot')}</p><p className="text-2xl font-black text-orange-500">{isChallenger ? localScore : (duel?.challengerScore || 0)}</p></div>
              <div className="text-2xl font-black text-white/20">VS</div>
              <div className="text-left"><p className="text-[10px] font-black uppercase text-sky-200 leading-none">{!isChallenger ? duel?.challengerName : (duel?.opponentName || 'Searching...')}</p><p className="text-2xl font-black text-primary">{!isChallenger ? localScore : (duel?.opponentScore || 0)}</p></div>
              <Button variant="ghost" size="icon" className="text-white/40 hover:text-white" onClick={() => router.push('/game')}><X className="w-6 h-6"/></Button>
@@ -211,7 +247,36 @@ export default function DuelArenaPage() {
       <div className="relative flex-1 flex flex-col justify-center overflow-hidden z-10 w-full">
           {duel?.status === 'active' && hasStarted && (
             <div className="w-full h-full flex flex-col items-center justify-center p-8">
-              {duel.mode === 'flash' ? (
+              {duel.mode === 'matrix' ? (
+                <div className="grid grid-cols-3 gap-4 p-8 bg-white/5 rounded-[2.5rem] border-4 border-white/10 shadow-inner max-w-sm w-full aspect-square">
+                    {Array.from({length: 9}).map((_, i) => {
+                        const isCorrect = matrixPattern.includes(i);
+                        const isSelected = matrixSelection.includes(i);
+                        return (
+                            <div 
+                                key={i} 
+                                onClick={() => {
+                                    if(matrixState === 'playing' && !isSelected) {
+                                        if(isCorrect) {
+                                            const next = [...matrixSelection, i];
+                                            setMatrixSelection(next);
+                                            playSound('correct');
+                                            if(next.length === matrixPattern.length) processTurn(true);
+                                        } else {
+                                            processTurn(false);
+                                        }
+                                    }
+                                }}
+                                className={cn(
+                                    "aspect-square rounded-2xl transition-all duration-300 cursor-pointer shadow-lg border-b-4 border-r-4",
+                                    (matrixState === 'memorizing' && isCorrect) ? "bg-teal-400 border-teal-500" : "bg-slate-700 border-slate-800",
+                                    (matrixState === 'playing' && isSelected) && "bg-teal-400 border-teal-500"
+                                )} 
+                            />
+                        );
+                    })}
+                </div>
+              ) : duel.mode === 'flash' ? (
                 <div className="w-full max-w-lg space-y-12">
                    {isFlashing ? (
                      <div className="text-7xl sm:text-9xl font-black text-white text-center drop-shadow-2xl">{activeNumber !== null ? (activeNumber > 0 ? `+${activeNumber}` : activeNumber) : ''}</div>
@@ -245,11 +310,6 @@ export default function DuelArenaPage() {
                     </div>
                     <h2 className="text-3xl font-black uppercase italic tracking-tight">Scanning Arena</h2>
                     <p className="text-muted-foreground font-bold mt-3 leading-relaxed">Connecting with students around the globe...</p>
-                    <div className="mt-8 flex justify-center gap-2">
-                       <div className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-                       <div className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                       <div className="w-2 h-2 rounded-full bg-primary animate-bounce" />
-                    </div>
                 </Card>
              </div>
           )}

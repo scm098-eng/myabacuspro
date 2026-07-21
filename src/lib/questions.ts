@@ -368,7 +368,6 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
           const op = Math.random() > 0.5 ? '+' : '-';
           const next = getRandomInt(min, max);
           const res = op === '+' ? currentVal + next : currentVal - next;
-          // Intermediate Subtraction Safety: ensures student is never asked to subtract from a too-low balance
           if (res >= 0) { currentVal = res; numbers.push(op); numbers.push(next); found = true; break; }
           attempts++;
         }
