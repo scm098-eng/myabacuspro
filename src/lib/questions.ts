@@ -206,6 +206,15 @@ const preDefinedQuestions: Record<string, Question[]> = {
 };
 
 export function getTestSettings(testId: TestType, difficulty: Difficulty): TestSettings | undefined {
+  if (testId === 'flash-anzan' && difficulty === 'custom') {
+    return {
+      numQuestions: 50,
+      timeLimit: 0,
+      title: 'Anzan Custom Lab',
+      icon: 'zap'
+    };
+  }
+
   if (difficulty.startsWith('level-')) {
     const isBeadTest = testId === 'beads-identify' || testId === 'beads-set';
     if (isBeadTest) {
