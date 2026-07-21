@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Zap, ShieldCheck, Lock, Sparkles, ChevronRight, Settings2, Swords } from 'lucide-react';
+import { Zap, ShieldCheck, Lock, Sparkles, ChevronRight, Settings2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -215,19 +215,12 @@ export default function FlashAnzanLobbyPage() {
                   <h3 className="text-2xl font-black uppercase tracking-tight text-slate-900">Training Profile</h3>
                   <p className="text-sm text-slate-500 font-medium leading-relaxed">Your mental visualization will process <span className="text-primary font-bold">{customSettings.rows}</span> sequential numbers, each with <span className="text-primary font-bold">{customSettings.digits}</span> digit complexity, every <span className="text-primary font-bold">{(customSettings.speed / 1000).toFixed(1)}s</span>.</p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex justify-center">
                   <Button 
                     onClick={handleStartCustom} 
-                    className="h-20 text-base sm:text-lg font-black uppercase tracking-wide rounded-2xl shadow-xl shadow-orange-500/20 whitespace-normal px-4 py-2 leading-tight"
+                    className="w-full h-20 text-base sm:text-lg font-black uppercase tracking-wide rounded-2xl shadow-xl shadow-orange-500/20 whitespace-normal px-4 py-2 leading-tight"
                   >
                     Launch Lab <Zap className="ml-2 w-6 h-6 fill-white shrink-0" />
-                  </Button>
-                  <Button 
-                    asChild
-                    variant="outline"
-                    className="h-20 text-base sm:text-lg font-black uppercase tracking-wide rounded-2xl border-2 hover:bg-orange-50"
-                  >
-                    <Link href="/game/duels?mode=flash">Arena Duel <Swords className="ml-2 w-6 h-6 text-primary" /></Link>
                   </Button>
                 </div>
              </div>

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Loader2, PlayCircle, Zap, ShieldCheck, ChevronRight, Swords, Users, User, Share2, Copy } from 'lucide-react';
+import { AlertTriangle, Loader2, PlayCircle, Zap, ShieldCheck, ChevronRight, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -30,24 +30,18 @@ import { calculatePoints } from '@/lib/scoring';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { useSound } from '@/hooks/useSound';
-import { startMatchmaking, getRecentOpponents } from '@/lib/matchmaking';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
 
 export default function FlashAnzanClient({ testId, difficulty, settings }: { testId: TestType; difficulty: Difficulty, settings: TestSettings }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, profile, recordDailyPractice, addPoints } = useAuth();
   const { playSound } = useSound();
-  const { toast } = useToast();
   
   const [appState, setAppState] = useState<'lobby' | 'playing'>('lobby');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>([]);
   const [isFinished, setIsFinished] = useState(false);
-  const [recentOpponents, setRecentOpponents] = useState<{uid: string, name: string, photo: string}[]>([]);
-  const [isMatchmaking, setIsMatchmaking] = useState(false);
 
   const [isFlashing, setIsFlashing] = useState(false);
   const [activeNumber, setActiveNumber] = useState<number | null>(null);
@@ -58,10 +52,6 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
   const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const isFinishedRef = useRef(false);
-
-  useEffect(() => {
-    if (user) getRecentOpponents(user.uid).then(setRecentOpponents);
-  }, [user]);
 
   useEffect(() => {
     let generated: Question[] = [];
@@ -78,27 +68,13 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
     setUserAnswers(new Array(generated.length).fill(null));
     questionButtonRefs.current = new Array(generated.length).fill(null);
 
-    // Fixed tiers (Novice, Expert, Elite) now bypass the strategy choice lobby
-    // as they are purely solo curriculum levels.
+    // Fixed tiers (Novice, Expert, Elite) bypass lobby
     if (difficulty !== 'custom') {
       setAppState('playing');
     } else {
       setAppState('lobby');
     }
   }, [testId, difficulty, searchParams]);
-
-  const handleStartDuel = async (type: 'match' | 'friend') => {
-    if (!user || !profile) return;
-    setIsMatchmaking(true);
-    try {
-      const duelId = await startMatchmaking(user.uid, profile, 'flash', difficulty);
-      router.push(`/game/duels/${duelId}`);
-    } catch (e) {
-      toast({ title: "Matchmaking failed", variant: "destructive" });
-    } finally {
-      setIsMatchmaking(false);
-    }
-  };
 
   const startFlashing = useCallback(() => {
     if (!questions[currentIdx]?.sequence) return;
@@ -206,50 +182,17 @@ export default function FlashAnzanClient({ testId, difficulty, settings }: { tes
           <h1 className="text-4xl sm:text-6xl font-black font-headline uppercase tracking-tighter text-slate-900 leading-none italic">
             Flash <span className="text-primary italic">Anzan</span>
           </h1>
-          <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">Master mental arithmetic with sequential flashing numbers. Challenge your precision against the global community.</p>
+          <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">Master mental arithmetic with sequential flashing numbers. Build lightning-fast visualization through solo mastery.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
-           <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => setAppState('playing')}>
+        <div className="flex justify-center px-4">
+           <Card className="max-w-sm w-full rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => setAppState('playing')}>
               <CardHeader className="p-8 text-center bg-teal-50 rounded-t-[2.5rem] border-b">
                  <div className="mx-auto bg-teal-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><User className="w-8 h-8 text-teal-600" /></div>
-                 <CardTitle className="text-2xl font-black uppercase tracking-tight">Train Alone</CardTitle>
-                 <CardDescription className="font-bold">Standard solo practice session.</CardDescription>
+                 <CardTitle className="text-2xl font-black uppercase tracking-tight">Start Mission</CardTitle>
+                 <CardDescription className="font-bold">Standard solo mastery session.</CardDescription>
               </CardHeader>
-              <CardContent className="p-8 text-center"><Button variant="ghost" className="font-black text-teal-600">Start Session <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
-           </Card>
-
-           <Card className="rounded-[2.5rem] border-none shadow-2xl bg-slate-900 text-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => handleStartDuel('match')}>
-              <CardHeader className="p-8 text-center bg-white/5 rounded-t-[2.5rem] border-b border-white/10">
-                 <div className="mx-auto bg-primary/20 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><Swords className="w-8 h-8 text-primary" /></div>
-                 <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Find Duel</CardTitle>
-                 <CardDescription className="text-slate-400 font-bold">Real-time Anzan race.</CardDescription>
-              </CardHeader>
-              <CardContent className="p-8 text-center"><Button variant="ghost" className="font-black text-primary">Join Matchmaking <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
-           </Card>
-
-           <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all group overflow-hidden">
-              <CardHeader className="p-8 text-center bg-indigo-50 border-b">
-                 <div className="mx-auto bg-indigo-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><Users className="w-8 h-8 text-indigo-600" /></div>
-                 <CardTitle className="text-2xl font-black uppercase tracking-tight">Play Friend</CardTitle>
-                 <CardDescription className="font-bold">Challenge a teammate.</CardDescription>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                 {recentOpponents.length > 0 ? (
-                   <div className="space-y-3">
-                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Recent Rivals</p>
-                     {recentOpponents.map(opp => (
-                       <Button key={opp.uid} variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl" onClick={() => handleStartDuel('friend')}>
-                         <Avatar className="h-6 w-6"><AvatarImage src={opp.photo}/><AvatarFallback>{opp.name[0]}</AvatarFallback></Avatar>
-                         <span className="font-bold text-xs truncate">{opp.name}</span>
-                       </Button>
-                     ))}
-                   </div>
-                 ) : (
-                   <p className="text-xs text-muted-foreground font-medium italic text-center py-4">Challenge a friend to start a rivalry!</p>
-                 )}
-                 <Button onClick={() => { navigator.clipboard.writeText(window.location.origin + "/game/duels"); toast({ title: "Link Copied!" }); }} className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest"><Share2 className="w-4 h-4 mr-2"/> Copy Invite Link</Button>
-              </CardContent>
+              <CardContent className="p-8 text-center"><Button className="w-full h-12 rounded-xl font-black bg-teal-600 hover:bg-teal-700 text-white">Enter Arena <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
            </Card>
         </div>
       </div>
