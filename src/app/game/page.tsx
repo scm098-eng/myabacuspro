@@ -166,7 +166,7 @@ export default function GameHomePage() {
   return (
     <div className="relative min-h-[80vh] flex flex-col">
       <div className="text-center space-y-4 mb-8 shrink-0">
-        <h1 className="text-5xl font-extrabold tracking-tight text-pink-600 font-headline drop-shadow-lg sm:text-6xl uppercase">Bubble Missions</h1>
+        <h1 className="text-5xl font-extrabold tracking-tight text-pink-600 font-headline drop-shadow-lg sm:text-6xl uppercase">Game Hub</h1>
         <p className="mt-4 max-w-2xl mx-auto text-lg text-pink-800/80 font-bold">
           Follow the candy road to master your abacus skills!
         </p>
@@ -176,7 +176,7 @@ export default function GameHomePage() {
         <div className="sticky top-16 z-[60] bg-background/95 backdrop-blur-md py-4 border-b shrink-0">
           <TabsList className="grid w-full grid-cols-2 max-w-lg mx-auto h-14 sm:h-16 p-1 bg-pink-100/50 rounded-2xl border-2 border-pink-200">
             <TabsTrigger value="levels" className="text-xs sm:text-lg font-black flex items-center gap-2 rounded-xl data-[state=active]:bg-pink-500 data-[state=active]:text-white">
-              <Gamepad2 className="w-4 h-4 sm:w-5 sm:h-5" /> Levels
+              <Gamepad2 className="w-4 h-4 sm:w-5 sm:h-5" /> Bubble Game
             </TabsTrigger>
             <TabsTrigger value="memory" className="text-xs sm:text-lg font-black flex items-center gap-2 rounded-xl data-[state=active]:bg-teal-500 data-[state=active]:text-white">
               <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" /> Matrix

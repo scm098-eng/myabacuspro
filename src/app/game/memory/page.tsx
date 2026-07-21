@@ -21,7 +21,7 @@ const INITIAL_LIVES = 3;
 const MAX_DAILY_LEVELS = 5;
 
 export default function PatternMemoryPage() {
-  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/results_bg.jpg?alt=media');
+  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/game_bg.jpg?alt=media');
   const { user, profile, addPoints, recordDailyPractice } = useAuth();
   const router = useRouter();
   const { playSound } = useSound();
@@ -269,7 +269,8 @@ export default function PatternMemoryPage() {
          </div>
       </div>
       <Card className="rounded-[3rem] shadow-2xl border-none overflow-hidden min-h-[500px] flex flex-col bg-black relative">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.15) 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
+        <div className="absolute inset-0 opacity-20 bg-cover bg-center mix-blend-overlay" style={{ backgroundImage: "url('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/abacus_hero.webp?alt=media')" }} />
+        <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.15) 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
         <div className="bg-white/5 p-4 shrink-0 border-b border-white/5 relative z-10"><Progress value={(round / ROUNDS_PER_LEVEL) * 100} className="h-1.5 bg-white/10" /></div>
         <CardContent className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden z-10">
           <div className="relative z-10 w-full flex flex-col items-center">
