@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Question, Difficulty, TestType, TestSettings, GameLevel } from '@/types';
@@ -82,44 +83,44 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
     hard: { numQuestions: 150, timeLimit: 900, title: 'Master: Division (Hard)', icon: 'keyboard' },
   },
   'square': {
-    easy: { numQuestions: 30, timeLimit: 300, title: 'Square (Easy)', icon: 'sparkles' },
-    medium: { numQuestions: 50, timeLimit: 480, title: 'Square (Medium)', icon: 'sparkles' },
-    hard: { numQuestions: 75, timeLimit: 600, title: 'Square (Hard)', icon: 'sparkles' },
+    easy: { numQuestions: 50, timeLimit: 300, title: 'Square (Easy)', icon: 'sparkles' },
+    medium: { numQuestions: 100, timeLimit: 600, title: 'Square (Medium)', icon: 'sparkles' },
+    hard: { numQuestions: 150, timeLimit: 900, title: 'Square (Hard)', icon: 'sparkles' },
   },
   'square-input': {
-    easy: { numQuestions: 30, timeLimit: 300, title: 'Master: Square (Easy)', icon: 'keyboard' },
-    medium: { numQuestions: 50, timeLimit: 480, title: 'Master: Square (Medium)', icon: 'keyboard' },
-    hard: { numQuestions: 75, timeLimit: 600, title: 'Master: Square (Hard)', icon: 'keyboard' },
+    easy: { numQuestions: 50, timeLimit: 300, title: 'Master: Square (Easy)', icon: 'keyboard' },
+    medium: { numQuestions: 100, timeLimit: 600, title: 'Master: Square (Medium)', icon: 'keyboard' },
+    hard: { numQuestions: 150, timeLimit: 900, title: 'Master: Square (Hard)', icon: 'keyboard' },
   },
   'cube': {
-    easy: { numQuestions: 20, timeLimit: 300, title: 'Cube (Easy)', icon: 'box' },
-    medium: { numQuestions: 40, timeLimit: 480, title: 'Cube (Medium)', icon: 'box' },
-    hard: { numQuestions: 60, timeLimit: 600, title: 'Cube (Hard)', icon: 'box' },
+    easy: { numQuestions: 50, timeLimit: 300, title: 'Cube (Easy)', icon: 'box' },
+    medium: { numQuestions: 100, timeLimit: 600, title: 'Cube (Medium)', icon: 'box' },
+    hard: { numQuestions: 150, timeLimit: 900, title: 'Cube (Hard)', icon: 'box' },
   },
   'cube-input': {
-    easy: { numQuestions: 20, timeLimit: 300, title: 'Master: Cube (Easy)', icon: 'keyboard' },
-    medium: { numQuestions: 40, timeLimit: 480, title: 'Master: Cube (Medium)', icon: 'keyboard' },
-    hard: { numQuestions: 60, timeLimit: 600, title: 'Master: Cube (Hard)', icon: 'keyboard' },
+    easy: { numQuestions: 50, timeLimit: 300, title: 'Master: Cube (Easy)', icon: 'keyboard' },
+    medium: { numQuestions: 100, timeLimit: 600, title: 'Master: Cube (Medium)', icon: 'keyboard' },
+    hard: { numQuestions: 150, timeLimit: 900, title: 'Master: Cube (Hard)', icon: 'keyboard' },
   },
   'square-root': {
-    easy: { numQuestions: 30, timeLimit: 300, title: 'Square Root (Easy)', icon: 'brain-circuit' },
-    medium: { numQuestions: 50, timeLimit: 480, title: 'Square Root (Medium)', icon: 'brain-circuit' },
-    hard: { numQuestions: 75, timeLimit: 600, title: 'Square Root (Hard)', icon: 'brain-circuit' },
+    easy: { numQuestions: 50, timeLimit: 300, title: 'Square Root (Easy)', icon: 'brain-circuit' },
+    medium: { numQuestions: 100, timeLimit: 600, title: 'Square Root (Medium)', icon: 'brain-circuit' },
+    hard: { numQuestions: 150, timeLimit: 900, title: 'Square Root (Hard)', icon: 'brain-circuit' },
   },
   'square-root-input': {
-    easy: { numQuestions: 30, timeLimit: 300, title: 'Master: Square Root (Easy)', icon: 'keyboard' },
-    medium: { numQuestions: 50, timeLimit: 480, title: 'Master: Square Root (Medium)', icon: 'keyboard' },
-    hard: { numQuestions: 75, timeLimit: 600, title: 'Master: Square Root (Hard)', icon: 'keyboard' },
+    easy: { numQuestions: 50, timeLimit: 300, title: 'Master: Square Root (Easy)', icon: 'keyboard' },
+    medium: { numQuestions: 100, timeLimit: 600, title: 'Master: Square Root (Medium)', icon: 'keyboard' },
+    hard: { numQuestions: 150, timeLimit: 900, title: 'Master: Square Root (Hard)', icon: 'keyboard' },
   },
   'cube-root': {
-    easy: { numQuestions: 20, timeLimit: 300, title: 'Cube Root (Easy)', icon: 'brain-circuit' },
-    medium: { numQuestions: 40, timeLimit: 480, title: 'Cube Root (Medium)', icon: 'brain-circuit' },
-    hard: { numQuestions: 60, timeLimit: 600, title: 'Cube Root (Hard)', icon: 'brain-circuit' },
+    easy: { numQuestions: 50, timeLimit: 300, title: 'Cube Root (Easy)', icon: 'brain-circuit' },
+    medium: { numQuestions: 100, timeLimit: 600, title: 'Cube Root (Medium)', icon: 'brain-circuit' },
+    hard: { numQuestions: 150, timeLimit: 900, title: 'Cube Root (Hard)', icon: 'brain-circuit' },
   },
   'cube-root-input': {
-    easy: { numQuestions: 20, timeLimit: 300, title: 'Master: Cube Root (Easy)', icon: 'keyboard' },
-    medium: { numQuestions: 40, timeLimit: 480, title: 'Master: Cube Root (Medium)', icon: 'keyboard' },
-    hard: { numQuestions: 60, timeLimit: 600, title: 'Master: Cube Root (Hard)', icon: 'keyboard' },
+    easy: { numQuestions: 50, timeLimit: 300, title: 'Master: Cube Root (Easy)', icon: 'keyboard' },
+    medium: { numQuestions: 100, timeLimit: 600, title: 'Master: Cube Root (Medium)', icon: 'keyboard' },
+    hard: { numQuestions: 150, timeLimit: 900, title: 'Master: Cube Root (Hard)', icon: 'keyboard' },
   },
   // Addition Formulas
   'basic-addition-plus-4': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +4 = +5 - 1', icon: 'puzzle' } },
@@ -206,7 +207,7 @@ const preDefinedQuestions: Record<string, Question[]> = {
 };
 
 export function getTestSettings(testId: TestType, difficulty: Difficulty): TestSettings | undefined {
-  if (testId === 'flash-anzan' && difficulty === 'custom') {
+  if (testId === ('flash-anzan' as any) && difficulty === 'custom') {
     return {
       numQuestions: 50,
       timeLimit: 0,
@@ -234,7 +235,7 @@ export function getTestSettings(testId: TestType, difficulty: Difficulty): TestS
       };
     }
     
-    if (testId === 'flash-anzan') {
+    if (testId === ('flash-anzan' as any)) {
       const parts = difficulty.split('-');
       const levelNum = parts[parts.length - 1];
       const tier = parts[parts.length - 2];
@@ -416,7 +417,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
     return deDuplicateQuestions(questions);
   }
 
-  if (testId === 'flash-anzan') {
+  if (testId === ('flash-anzan' as any)) {
     const questions: Question[] = [];
     let rows = 3, delay = 2000, d1 = 1, d2 = 0, r2 = 0;
     const numQs = 50;
@@ -489,19 +490,19 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
       answer = q;
       questionText = `${q * div} ÷ ${div}`;
     } else if (coreTestId === 'square') {
-      const n = getRandomInt(difficulty === 'easy' ? 2 : 11, difficulty === 'easy' ? 12 : 50);
+      const n = getRandomInt(difficulty === 'easy' ? 2 : difficulty === 'medium' ? 16 : 51, difficulty === 'easy' ? 15 : difficulty === 'medium' ? 50 : 99);
       answer = n * n;
       questionText = `${n}²`;
     } else if (coreTestId === 'cube') {
-      const n = getRandomInt(2, difficulty === 'easy' ? 5 : 15);
+      const n = getRandomInt(difficulty === 'easy' ? 2 : difficulty === 'medium' ? 7 : 16, difficulty === 'easy' ? 6 : difficulty === 'medium' ? 15 : 30);
       answer = n * n * n;
       questionText = `${n}³`;
     } else if (coreTestId === 'square-root') {
-      const n = getRandomInt(2, 30);
+      const n = getRandomInt(difficulty === 'easy' ? 2 : difficulty === 'medium' ? 16 : 51, difficulty === 'easy' ? 15 : difficulty === 'medium' ? 50 : 99);
       answer = n;
       questionText = `√${n * n}`;
     } else if (coreTestId === 'cube-root') {
-      const n = getRandomInt(2, 15);
+      const n = getRandomInt(difficulty === 'easy' ? 2 : difficulty === 'medium' ? 7 : 16, difficulty === 'easy' ? 6 : difficulty === 'medium' ? 15 : 30);
       answer = n;
       questionText = `³√${n * n * n}`;
     }

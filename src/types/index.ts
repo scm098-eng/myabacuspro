@@ -99,7 +99,8 @@ export type TestType =
   | 'mastery-mix-11'
   | 'mastery-mix-12'
   | 'bubble-game'
-  | 'matrix-flash';
+  | 'matrix-flash'
+  | 'flash-anzan';
 
 export type ExamGroup = 'A' | 'B' | 'C' | 'D' | 'E';
 

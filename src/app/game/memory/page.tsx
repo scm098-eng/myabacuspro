@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -269,8 +270,10 @@ export default function PatternMemoryPage() {
          </div>
       </div>
       <Card className="rounded-[3rem] shadow-2xl border-none overflow-hidden min-h-[500px] flex flex-col bg-black relative">
+        {/* Background Texture & 2nd Layer Image */}
         <div className="absolute inset-0 opacity-20 bg-cover bg-center mix-blend-overlay" style={{ backgroundImage: "url('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/abacus_hero.webp?alt=media')" }} />
         <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.15) 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
+        
         <div className="bg-white/5 p-4 shrink-0 border-b border-white/5 relative z-10"><Progress value={(round / ROUNDS_PER_LEVEL) * 100} className="h-1.5 bg-white/10" /></div>
         <CardContent className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden z-10">
           <div className="relative z-10 w-full flex flex-col items-center">
@@ -300,13 +303,33 @@ export default function PatternMemoryPage() {
               )}
             </div>
 
+            {/* Matrix Box Container */}
             <div className="grid gap-3 sm:gap-4 p-8 bg-white/5 rounded-[2.5rem] border-4 border-white/10 shadow-inner" style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, width: '100%', maxWidth: gridSize === 3 ? '320px' : gridSize === 4 ? '400px' : '500px' }}>
               {Array.from({ length: gridSize * gridSize }).map((_, i) => {
                 const isCorrectPattern = pattern.includes(i);
                 const isSelected = userSelection.includes(i);
                 const isWrong = wrongSelection === i;
                 const showHint = gameState === 'memorizing' || gameState === 'feedback';
-                return (<div key={i} onClick={() => handleTileClick(i)} className={cn("aspect-square transition-all duration-300 cursor-pointer shadow-lg border-b-4 border-r-4 active:border-0 active:translate-y-1", shapeClass, !showHint && !isSelected && !isWrong && "bg-slate-700 border-slate-800 hover:bg-slate-600", showHint && isCorrectPattern && cn("bg-teal-400 border-teal-500", "scale-[0.98] ring-8 ring-white/20"), showHint && !isCorrectPattern && "bg-white/5 border-white/10 opacity-40", gameState === 'playing' && isSelected && cn("bg-teal-400 border-teal-500", "scale-[0.98] ring-8 ring-white/20 animate-in zoom-in-90"), isWrong && "bg-red-500 border-red-600 ring-8 ring-red-500/20")} />);
+                
+                // Plain boxes for Get Ready (removing white corners)
+                const isGetReady = gameState === 'ready';
+
+                return (
+                  <div 
+                    key={i} 
+                    onClick={() => handleTileClick(i)} 
+                    className={cn(
+                      "aspect-square transition-all duration-300 cursor-pointer shadow-lg border-b-4 border-r-4 active:border-0 active:translate-y-1", 
+                      shapeClass, 
+                      (!showHint && !isSelected && !isWrong) && "bg-slate-700 border-slate-800 hover:bg-slate-600",
+                      isGetReady && "bg-white/5 border-white/10", // Plain subtle boxes for Get Ready
+                      showHint && isCorrectPattern && cn("bg-teal-400 border-teal-500", "scale-[0.98] ring-8 ring-white/20"),
+                      showHint && !isCorrectPattern && "bg-white/5 border-white/10 opacity-40",
+                      gameState === 'playing' && isSelected && cn("bg-teal-400 border-teal-500", "scale-[0.98] ring-8 ring-white/20 animate-in zoom-in-90"),
+                      isWrong && "bg-red-500 border-red-600 ring-8 ring-red-500/20"
+                    )} 
+                  />
+                );
               })}
             </div>
           </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -13,7 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 /**
  * Dynamic Level Engine
  * Maps any level ID (1-1000) to the corresponding curriculum type.
- * Ensures the keys match the question pools in src/lib/questions.ts.
+ * Renamed to "Bubble Game" for Hub consistency.
  */
 const getLevelInfo = (levelSlug: string): { type: GameLevel, name: string } | null => {
     const levelId = parseInt(levelSlug.replace('level-', ''), 10);
@@ -21,30 +22,31 @@ const getLevelInfo = (levelSlug: string): { type: GameLevel, name: string } | nu
 
     if (levelId <= 8) {
         const types: GameLevel[] = [
-            'basic-addition-plus-4', 'basic-addition-plus-3', 'basic-addition-plus-2', 'basic-addition-plus-1',
-            'basic-subtraction-minus-4', 'basic-subtraction-minus-3', 'basic-subtraction-minus-2', 'basic-subtraction-minus-1'
+            'small-sister-plus-4', 'small-sister-plus-3', 'small-sister-plus-2', 'small-sister-plus-1',
+            'small-sister-minus-4', 'small-sister-minus-3', 'small-sister-minus-2', 'small-sister-minus-1'
         ];
-        return { type: types[levelId - 1] as GameLevel, name: `Bubble Game ${levelId}: Small Sister` };
+        const formulas = ['+4', '+3', '+2', '+1', '-4', '-3', '-2', '-1'];
+        return { type: types[levelId - 1], name: `Bubble Game ${levelId}: Small Sister ${formulas[levelId-1]}` };
     }
     if (levelId === 9) return { type: 'small-sister-all', name: `Bubble Game 9: Small Sister Challenge` };
     
     if (levelId >= 10 && levelId <= 27) {
-        const bigBrotherTypes: string[] = [
-            'big-brother-addition-plus-9', 'big-brother-addition-plus-8', 'big-brother-addition-plus-7', 'big-brother-addition-plus-6', 'big-brother-addition-plus-5',
-            'big-brother-addition-plus-4', 'big-brother-addition-plus-3', 'big-brother-addition-plus-2', 'big-brother-addition-plus-1',
-            'big-brother-subtraction-minus-9', 'big-brother-subtraction-minus-8', 'big-brother-subtraction-minus-7', 'big-brother-subtraction-minus-6', 'big-brother-subtraction-minus-5',
-            'big-brother-subtraction-minus-4', 'big-brother-subtraction-minus-3', 'big-brother-subtraction-minus-2', 'big-brother-subtraction-minus-1'
+        const bigBrotherTypes: GameLevel[] = [
+            'big-brother-plus-9', 'big-brother-plus-8', 'big-brother-plus-7', 'big-brother-plus-6', 'big-brother-plus-5',
+            'big-brother-plus-4', 'big-brother-plus-3', 'big-brother-plus-2', 'big-brother-plus-1',
+            'big-brother-minus-9', 'big-brother-minus-8', 'big-brother-minus-7', 'big-brother-minus-6', 'big-brother-minus-5',
+            'big-brother-minus-4', 'big-brother-minus-3', 'big-brother-minus-2', 'big-brother-minus-1'
         ];
-        return { type: bigBrotherTypes[levelId - 10] as GameLevel, name: `Bubble Game ${levelId}: Big Brother` };
+        return { type: bigBrotherTypes[levelId - 10], name: `Bubble Game ${levelId}: Big Brother` };
     }
     if (levelId === 28) return { type: 'big-brother-all', name: `Bubble Game 28: Big Brother Challenge` };
 
     if (levelId >= 29 && levelId <= 36) {
-        const combiTypes: string[] = [
+        const combiTypes: GameLevel[] = [
             'combination-plus-9', 'combination-plus-8', 'combination-plus-7', 'combination-plus-6',
             'combination-minus-9', 'combination-minus-8', 'combination-minus-7', 'combination-minus-6'
         ];
-        return { type: combiTypes[levelId - 29] as GameLevel, name: `Bubble Game ${levelId}: Combination` };
+        return { type: combiTypes[levelId - 29], name: `Bubble Game ${levelId}: Combination` };
     }
     if (levelId === 37) return { type: 'combination-all', name: `Bubble Game 37: Combination Challenge` };
     if (levelId === 38) return { type: 'general-practice', name: `Bubble Game 38: Final Challenge` };
@@ -78,7 +80,7 @@ export default function GamePage() {
         return (
             <Card className="max-w-md mx-auto mt-20">
                 <CardHeader>
-                    <CardTitle>Invalid Bubble Game Mission</CardTitle>
+                    <CardTitle>Invalid Mission</CardTitle>
                     <CardDescription>The level you selected does not exist.</CardDescription>
                 </CardHeader>
                 <CardContent>
