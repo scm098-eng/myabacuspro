@@ -440,17 +440,71 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
   if (preDefinedQuestions[coreTestId]) return deDuplicateQuestions([...preDefinedQuestions[coreTestId]]).slice(0, settings!.numQuestions);
 
   const questions: Question[] = [];
-  const getRange = (diff: string): [number, number] => { if (diff === 'easy') return [1, 9]; if (diff === 'medium') return [10, 99]; return [100, 999]; };
+  
   for (let i = 0; i < (settings?.numQuestions || 50); i++) {
     let questionText = "";
     let answer = 0;
-    const [min, max] = getRange(difficulty);
-    if (coreTestId === 'multiplication') { const m1 = getRandomInt(min, difficulty === 'easy' ? 9 : 99); const m2 = getRandomInt(2, 9); answer = m1 * m2; questionText = `${m1} × ${m2}`; }
-    else if (coreTestId === 'division') { const divisor = getRandomInt(2, 9); answer = getRandomInt(min, max); questionText = `${answer * divisor} ÷ ${divisor}`; }
-    else if (coreTestId === 'square') { const n = getRandomInt(difficulty === 'easy' ? 2 : 11, difficulty === 'easy' ? 12 : 50); answer = n * n; questionText = `${n}²`; }
-    else if (coreTestId === 'cube') { const n = getRandomInt(2, difficulty === 'easy' ? 5 : 15); answer = n * n * n; questionText = `${n}³`; }
-    else if (coreTestId === 'square-root') { const n = getRandomInt(2, 30); answer = n; questionText = `√${n * n}`; }
-    else if (coreTestId === 'cube-root') { const n = getRandomInt(2, 15); answer = n; questionText = `³√${n * n * n}`; }
+    
+    if (coreTestId === 'multiplication') {
+      let m1, m2;
+      if (difficulty === 'easy') {
+        m1 = getRandomInt(2, 9);
+        m2 = getRandomInt(2, 9);
+      } else if (difficulty === 'medium') {
+        m1 = getRandomInt(10, 99);
+        m2 = getRandomInt(2, 9);
+      } else { // Hard
+        const type = Math.random();
+        if (type < 0.4) { // 3x1
+          m1 = getRandomInt(100, 999);
+          m2 = getRandomInt(2, 9);
+        } else if (type < 0.8) { // 2x2
+          m1 = getRandomInt(11, 99);
+          m2 = getRandomInt(11, 99);
+        } else { // 4x1
+          m1 = getRandomInt(1000, 9999);
+          m2 = getRandomInt(2, 9);
+        }
+      }
+      answer = m1 * m2;
+      questionText = `${m1} × ${m2}`;
+    } else if (coreTestId === 'division') {
+      let q, div;
+      if (difficulty === 'easy') {
+        q = getRandomInt(2, 9);
+        div = getRandomInt(2, 9);
+      } else if (difficulty === 'medium') {
+        q = getRandomInt(10, 99);
+        div = getRandomInt(2, 9);
+      } else { // Hard
+        const type = Math.random();
+        if (type < 0.5) { // 3 / 1
+          q = getRandomInt(100, 999);
+          div = getRandomInt(2, 9);
+        } else { // 4 / 1 or 3 / 2
+           q = getRandomInt(100, 999);
+           div = getRandomInt(11, 49);
+        }
+      }
+      answer = q;
+      questionText = `${q * div} ÷ ${div}`;
+    } else if (coreTestId === 'square') {
+      const n = getRandomInt(difficulty === 'easy' ? 2 : 11, difficulty === 'easy' ? 12 : 50);
+      answer = n * n;
+      questionText = `${n}²`;
+    } else if (coreTestId === 'cube') {
+      const n = getRandomInt(2, difficulty === 'easy' ? 5 : 15);
+      answer = n * n * n;
+      questionText = `${n}³`;
+    } else if (coreTestId === 'square-root') {
+      const n = getRandomInt(2, 30);
+      answer = n;
+      questionText = `√${n * n}`;
+    } else if (coreTestId === 'cube-root') {
+      const n = getRandomInt(2, 15);
+      answer = n;
+      questionText = `³√${n * n * n}`;
+    }
     questions.push({ text: questionText, answer, options: generateOptions(answer) });
   }
   return deDuplicateQuestions(questions);

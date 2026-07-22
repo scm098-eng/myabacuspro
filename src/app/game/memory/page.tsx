@@ -21,7 +21,7 @@ const INITIAL_LIVES = 3;
 const MAX_DAILY_LEVELS = 5;
 
 export default function PatternMemoryPage() {
-  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/game_bg.jpg?alt=media');
+  usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Game%20Background.webp?alt=media');
   const { user, profile, addPoints, recordDailyPractice } = useAuth();
   const router = useRouter();
   const { playSound } = useSound();
