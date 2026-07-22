@@ -197,10 +197,69 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
 };
 
 const preDefinedQuestions: Record<string, Question[]> = {
-  ...basicAdditionQuestions,
-  ...basicSubtractionQuestions,
-  ...bigBrotherAdditionQuestions,
-  ...bigBrotherSubtractionQuestions,
+  // Small Sister
+  'small-sister-plus-4': basicAdditionQuestions['basic-addition-plus-4'],
+  'small-sister-plus-3': basicAdditionQuestions['basic-addition-plus-3'],
+  'small-sister-plus-2': basicAdditionQuestions['basic-addition-plus-2'],
+  'small-sister-plus-1': basicAdditionQuestions['basic-addition-plus-1'],
+  'small-sister-minus-4': basicSubtractionQuestions['basic-subtraction-minus-4'],
+  'small-sister-minus-3': basicSubtractionQuestions['basic-subtraction-minus-3'],
+  'small-sister-minus-2': basicSubtractionQuestions['basic-subtraction-minus-2'],
+  'small-sister-minus-1': basicSubtractionQuestions['basic-subtraction-minus-1'],
+  'small-sister-all': [
+    ...basicAdditionQuestions['basic-addition-plus-4'],
+    ...basicAdditionQuestions['basic-addition-plus-3'],
+    ...basicAdditionQuestions['basic-addition-plus-2'],
+    ...basicAdditionQuestions['basic-addition-plus-1'],
+    ...basicSubtractionQuestions['basic-subtraction-minus-4'],
+    ...basicSubtractionQuestions['basic-subtraction-minus-3'],
+    ...basicSubtractionQuestions['basic-subtraction-minus-2'],
+    ...basicSubtractionQuestions['basic-subtraction-minus-1']
+  ],
+  
+  // Big Brother
+  'big-brother-plus-9': bigBrotherAdditionQuestions['big-brother-addition-plus-9'],
+  'big-brother-plus-8': bigBrotherAdditionQuestions['big-brother-addition-plus-8'],
+  'big-brother-plus-7': bigBrotherAdditionQuestions['big-brother-addition-plus-7'],
+  'big-brother-plus-6': bigBrotherAdditionQuestions['big-brother-addition-plus-6'],
+  'big-brother-plus-5': bigBrotherAdditionQuestions['big-brother-addition-plus-5'],
+  'big-brother-plus-4': bigBrotherAdditionQuestions['big-brother-addition-plus-4'],
+  'big-brother-plus-3': bigBrotherAdditionQuestions['big-brother-addition-plus-3'],
+  'big-brother-plus-2': bigBrotherAdditionQuestions['big-brother-addition-plus-2'],
+  'big-brother-plus-1': bigBrotherAdditionQuestions['big-brother-addition-plus-1'],
+  'big-brother-minus-9': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-9'],
+  'big-brother-minus-8': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-8'],
+  'big-brother-minus-7': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-7'],
+  'big-brother-minus-6': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-6'],
+  'big-brother-minus-5': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-5'],
+  'big-brother-minus-4': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-4'],
+  'big-brother-minus-3': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-3'],
+  'big-brother-minus-2': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-2'],
+  'big-brother-minus-1': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-1'],
+  'big-brother-all': [
+    ...bigBrotherAdditionQuestions['big-brother-addition-plus-9'],
+    ...bigBrotherAdditionQuestions['big-brother-addition-plus-8'],
+    ...bigBrotherAdditionQuestions['big-brother-addition-plus-7'],
+    ...bigBrotherAdditionQuestions['big-brother-addition-plus-6'],
+    ...bigBrotherAdditionQuestions['big-brother-addition-plus-5'],
+    ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-9'],
+    ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-8'],
+    ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-7'],
+    ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-6'],
+    ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-5']
+  ],
+
+  'combination-all': [
+    ...combinationAdditionQuestions['combination-plus-9'],
+    ...combinationAdditionQuestions['combination-plus-8'],
+    ...combinationAdditionQuestions['combination-plus-7'],
+    ...combinationAdditionQuestions['combination-plus-6'],
+    ...combinationSubtractionQuestions['combination-minus-9'],
+    ...combinationSubtractionQuestions['combination-minus-8'],
+    ...combinationSubtractionQuestions['combination-minus-7'],
+    ...combinationSubtractionQuestions['combination-minus-6']
+  ],
+
   ...combinationAdditionQuestions,
   ...combinationSubtractionQuestions,
   ...masteryMixQuestions,
