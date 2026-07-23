@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePageBackground } from '@/hooks/usePageBackground';
-import { ArrowRight, BookOpen, BrainCircuit, Puzzle, Eye, Gamepad2, Zap } from 'lucide-react';
+import { ArrowRight, BookOpen, BrainCircuit, Puzzle, Eye, Gamepad2, Zap, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
@@ -67,6 +67,13 @@ const testCategories = [
     description: 'High-speed mental math training. Calculate sequences of rapid flashing numbers.',
     icon: Zap,
     iconBg: 'bg-orange-100'
+  },
+  {
+    href: '/tests/voice-anzan',
+    title: 'Voice Based Anzan',
+    description: 'Training for the auditory mind. Listen to the dictation and reconstruct the beads in your mental vision.',
+    icon: Megaphone,
+    iconBg: 'bg-indigo-100'
   }
 ];
 

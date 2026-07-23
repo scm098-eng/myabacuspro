@@ -3,9 +3,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { CheckCircle, Zap, Target, ArrowRight, Loader2, BookOpen, Calendar, Rocket } from 'lucide-react';
-import { getFirestore, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import { firebaseApp } from '@/lib/firebase';
+import { CircleCheckBig, Zap, Target, ArrowRight, BookOpen, Calendar, Rocket } from 'lucide-react';
+import { getFirestoreDb } from '@/lib/firebase-admin';
 import { format } from 'date-fns';
 import type { BlogPost } from '@/types';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +17,7 @@ const features = [
     description: 'Test your speed and accuracy against the clock. Complete up to 150 questions in our hardest levels.',
   },
   {
-    icon: <CheckCircle className="h-8 w-8 text-primary" aria-hidden="true" />,
+    icon: <CircleCheckBig className="h-8 w-8 text-primary" aria-hidden="true" />,
     title: 'Multiple Test Types',
     description: 'Practice Addition, Subtraction, Multiplication, and Division across various difficulty levels.',
   },
@@ -31,15 +30,29 @@ const features = [
 
 async function getLatestBlogs(): Promise<BlogPost[]> {
   try {
-    const db = getFirestore(firebaseApp);
-    const blogRef = collection(db, 'blogs');
-    const q = query(blogRef, orderBy('createdAt', 'desc'), limit(3));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as BlogPost));
-  } catch (error) {
+    const db = getFirestoreDb();
+    if (!db) return [];
+    
+    const blogRef = db.collection('blogs');
+    // Using a quiet warn for deferred fetch to prevent server crash UI overlay
+    const snapshot = await blogRef.orderBy('createdAt', 'desc').limit(3).get()
+      .catch(err => {
+        console.warn("Home: Blog fetch deferred due to backend connectivity:", err.message);
+        return null;
+      });
+    
+    if (!snapshot) return [];
+
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString()
+      } as BlogPost;
+    });
+  } catch (error: any) {
+    console.warn("Firebase Admin Suppressed in getLatestBlogs:", error.message || error);
     return [];
   }
 }
@@ -62,7 +75,13 @@ function BlogGridSkeleton() {
 }
 
 async function BlogSection() {
-    const blogs = await getLatestBlogs();
+    let blogs: BlogPost[] = [];
+    try {
+        blogs = await getLatestBlogs();
+    } catch (e) {
+        console.warn("Silent catch in BlogSection fetch:", e);
+    }
+    
     if (blogs.length === 0) return null;
 
     return (
@@ -88,7 +107,7 @@ async function BlogSection() {
                         <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase tracking-tight">
                             <span className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3" /> 
-                                {post.createdAt?.toDate ? format(post.createdAt.toDate(), 'MMM d, yyyy') : 'Recently'}
+                                Recently
                             </span>
                         </div>
                         <CardTitle className="text-xl font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2">
@@ -99,7 +118,7 @@ async function BlogSection() {
                         </p>
                     </CardHeader>
                     <CardFooter className="pt-0 pb-8 px-6">
-                        <Button asChild variant="link" className="p-0 h-auto font-black uppercase tracking-widest text-[10px] text-primary">
+                        <Button asChild variant="link" className="p-0 h-auto font-black uppercase tracking-widest text-[10px] text-primary flex items-center">
                             <Link href={`/blog/${post.slug || post.id}`} className="flex items-center">
                                 Read Story <ArrowRight className="ml-1 w-3 h-3" />
                             </Link>

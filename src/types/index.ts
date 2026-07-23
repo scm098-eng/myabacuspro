@@ -99,8 +99,8 @@ export type TestType =
   | 'mastery-mix-12'
   | 'bubble-game'
   | 'matrix-flash'
-  | 'voice-anzan'
-  | 'flash-anzan';
+  | 'flash-anzan'
+  | 'voice-anzan';
 
 export type ExamGroup = 'A' | 'B' | 'C' | 'D' | 'E';
 
@@ -229,7 +229,7 @@ export interface TestSettings {
   numQuestions: number;
   timeLimit: number; 
   title: string;
-  icon: 'brain-circuit' | 'x' | 'divide' | 'puzzle' | 'eye' | 'keyboard' | 'square-root' | 'sparkles' | 'box' | 'zap';
+  icon: 'brain-circuit' | 'x' | 'divide' | 'puzzle' | 'eye' | 'keyboard' | 'square-root' | 'sparkles' | 'box' | 'zap' | 'megaphone';
 }
 
 export type SubscriptionStatus = 'free' | 'pro' | 'active';
