@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -6,7 +5,7 @@ import { getAuth } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import type { ProfileData } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Loader2, Zap, ShieldCheck, Gift, Ticket, Send, CheckCircle2, Globe, Landmark, Settings2, Info, X, Crown, Swords, LayoutGrid } from 'lucide-react';
+import { Check, Star, Loader2, Zap, ShieldCheck, Gift, Ticket, Send, CheckCircle2, Globe, Landmark, Settings2, Info, X, Crown, LayoutGrid, Megaphone } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageBackground } from '@/hooks/usePageBackground';
 import { Badge } from '@/components/ui/badge';
@@ -102,12 +101,12 @@ const GLOBAL_PLANS = [
 ];
 
 const PRO_FEATURES = [
-  'High-Speed Flash Anzan (0.2s)',
-  'Unlimited 1v1 World Duels',
+  'Elite Flash Card Anzan (0.2s)',
+  'Professional Voice Dictation Lab',
   'All Matrix Memory Patterns',
-  'Full Formula Mastery Levels',
+  'Full Formula Mastery Quest',
   'Official Certification & Ranks',
-  'Hall of Fame Placement'
+  'Hall of Fame Eligibility'
 ];
 
 declare global {
@@ -351,14 +350,14 @@ export default function PricingPage() {
                                 <TableCell className="text-center font-black text-[9px] text-primary uppercase">0.2S ELITE SPEED</TableCell>
                             </TableRow>
                             <TableRow className="border-b-slate-100 bg-slate-50/30">
+                                <TableCell className="font-bold py-6 px-8 text-slate-700">Voice Based Dictation Lab</TableCell>
+                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
+                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
+                            </TableRow>
+                            <TableRow className="border-b-slate-100">
                                 <TableCell className="font-bold py-6 px-8 text-slate-700">Matrix Memory Cognitive Drills</TableCell>
                                 <TableCell className="text-center font-black text-[9px] text-muted-foreground uppercase">3x3 GRID ONLY</TableCell>
                                 <TableCell className="text-center font-black text-[9px] text-primary uppercase">UP TO 5x5 GRID</TableCell>
-                            </TableRow>
-                            <TableRow className="border-b-slate-100">
-                                <TableCell className="font-bold py-6 px-8 text-slate-700">1v1 World Championship Duels</TableCell>
-                                <TableCell className="text-center"><X className="mx-auto text-slate-200 w-5 h-5 stroke-[3px]" /></TableCell>
-                                <TableCell className="text-center"><Check className="mx-auto text-green-500 w-6 h-6 stroke-[3px]" /></TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>

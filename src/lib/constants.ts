@@ -89,7 +89,6 @@ export const TEST_NAME_MAP: Record<string, string> = {
     'combination-minus-90': 'Combination: -90',
     'bubble-game': 'Bubble Game',
     'matrix-flash': 'Matrix Flash',
-    'duel': '1v1 Duel Arena'
 };
 
 export const ADMIN_EMAILS = [
@@ -111,11 +110,11 @@ export const RANK_CRITERIA = [
   { name: "Math Ninja", icon: "🥋", color: "#C0C0C0", daysReq: 180, pointsReq: 200000, bonusPoints: 12000, description: "Lightning fast visualization and silent precision." },
   { name: "Senior Calculator", icon: "🎓", color: "#3b82f6", daysReq: 150, pointsReq: 100000, bonusPoints: 8000, description: "A seasoned expert with immense speed and deep abacus wisdom." },
   { name: "Senior Apprentice", icon: "🧮", color: "#6366f1", daysReq: 120, pointsReq: 50000, bonusPoints: 5000, description: "Advanced skills and deep understanding of abacus logic." },
-  { name: "Apprentice", icon: "🛠️", color: "#A52A2A", daysReq: 90, pointsReq: 25000, bonusPoints: 3500, description: "Solid foundation in all core abacus techniques." },
-  { name: "Novice II", icon: "🥈", color: "#94a3b8", daysReq: 60, pointsReq: 10000, bonusPoints: 2000, description: "Building a consistent practice habit." },
-  { name: "Novice I", icon: "🥉", color: "#cd7f32", daysReq: 30, pointsReq: 5000, bonusPoints: 1000, description: "The first major step in your journey." },
-  { name: "Rising Star", icon: "🌟", color: "#4ADE80", daysReq: 15, pointsReq: 2500, bonusPoints: 500, description: "An incredible start! You're destined for greatness." },
-  { name: "Junior Calculator", icon: "🧒", color: "#f97316", daysReq: 3, pointsReq: 500, bonusPoints: 100, description: "The engine is starting. You are now a Junior Calculator!" },
+  { name: "Apprentice", icon: "🛠️", color: "#A52A2A", daysReq: 90, pointsReq: 30000, bonusPoints: 3500, description: "Solid foundation in all core abacus techniques." },
+  { name: "Novice II", icon: "🥈", color: "#94a3b8", daysReq: 60, pointsReq: 20000, bonusPoints: 2000, description: "Building a consistent practice habit." },
+  { name: "Novice I", icon: "🥉", color: "#cd7f32", daysReq: 30, pointsReq: 10000, bonusPoints: 1000, description: "The first major step in your journey." },
+  { name: "Rising Star", icon: "🌟", color: "#4ADE80", daysReq: 15, pointsReq: 5000, bonusPoints: 500, description: "An incredible start! You're destined for greatness." },
+  { name: "Junior Calculator", icon: "🧒", color: "#f97316", daysReq: 3, pointsReq: 1000, bonusPoints: 100, description: "The engine is starting. You are now a Junior Calculator!" },
   { name: "Math Beginner", icon: "👶", color: "#ADD8E6", daysReq: 0, pointsReq: 0, bonusPoints: 0, description: "The journey to math mastery begins today." }
 ];
 
@@ -239,9 +238,9 @@ export const UPDATE_NOTES = [
     icon: "⚡"
   },
   {
-    title: "Real-Time 1v1 Duels",
-    description: "Challenge students worldwide to high-speed math races and climb the competitive ranks.",
-    icon: "⚔️"
+    title: "Voice Based Anzan",
+    description: "Listen to natural verbal dictation and calculate mentally. Perfect for auditory learners.",
+    icon: "📢"
   },
   {
     title: "Abacus Memory Flash",

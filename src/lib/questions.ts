@@ -39,6 +39,7 @@ export const masteryMixQuestions: Record<string, Question[]> = {
 };
 
 const preDefinedQuestions: Record<string, Question[]> = {
+  // Direct Formula Mapping for Bubble Game (Syncing Hub Keys with Internal Keys)
   'small-sister-plus-4': basicAdditionQuestions['basic-addition-plus-4'],
   'small-sister-plus-3': basicAdditionQuestions['basic-addition-plus-3'],
   'small-sister-plus-2': basicAdditionQuestions['basic-addition-plus-2'],
@@ -87,6 +88,14 @@ const preDefinedQuestions: Record<string, Question[]> = {
     ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-6'],
     ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-5']
   ],
+  'combination-plus-9': combinationAdditionQuestions['combination-plus-9'],
+  'combination-plus-8': combinationAdditionQuestions['combination-plus-8'],
+  'combination-plus-7': combinationAdditionQuestions['combination-plus-7'],
+  'combination-plus-6': combinationAdditionQuestions['combination-plus-6'],
+  'combination-minus-9': combinationSubtractionQuestions['combination-minus-9'],
+  'combination-minus-8': combinationSubtractionQuestions['combination-minus-8'],
+  'combination-minus-7': combinationSubtractionQuestions['combination-minus-7'],
+  'combination-minus-6': combinationSubtractionQuestions['combination-minus-6'],
   'combination-all': [
     ...combinationAdditionQuestions['combination-plus-9'],
     ...combinationAdditionQuestions['combination-plus-8'],
@@ -278,8 +287,15 @@ export function generateOptions(correctAnswer: number, prng: () => number = Math
 
 export function generateGameQuestions(level: GameLevel, levelId: number): Question[] {
   let allQuestions: Question[] = [];
-  if (level === 'general-practice') allQuestions = Object.values(preDefinedQuestions).flat();
-  else if (preDefinedQuestions[level as string]) allQuestions = preDefinedQuestions[level as string];
+  if (level === 'general-practice') {
+     // Spread all available formulas
+     allQuestions = Object.values(preDefinedQuestions).flat();
+  } else if (preDefinedQuestions[level as string]) {
+     allQuestions = preDefinedQuestions[level as string];
+  } else {
+     // Fallback for dynamic mix levels
+     allQuestions = Object.values(preDefinedQuestions).flat();
+  }
   const positiveOnly = allQuestions.filter(q => q.answer >= 0);
   return deDuplicateQuestions(shuffleArray([...positiveOnly])).slice(0, 10);
 }
@@ -375,6 +391,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
       if (difficulty === 'easy') { m1 = getRandomInt(2, 9); m2 = getRandomInt(2, 9); } 
       else if (difficulty === 'medium') { m1 = getRandomInt(10, 99); m2 = getRandomInt(2, 9); } 
       else { 
+        // Dynamic mix for Hard: 3x1, 2x2, 4x1
         const t = Math.random(); 
         if (t < 0.4) { m1 = getRandomInt(100, 999); m2 = getRandomInt(2, 9); } 
         else if (t < 0.8) { m1 = getRandomInt(11, 99); m2 = getRandomInt(11, 99); } 
