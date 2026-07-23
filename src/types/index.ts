@@ -1,4 +1,3 @@
-
 export type TestType =
   | 'addition-subtraction'
   | 'multiplication'
@@ -100,6 +99,7 @@ export type TestType =
   | 'mastery-mix-12'
   | 'bubble-game'
   | 'matrix-flash'
+  | 'voice-anzan'
   | 'flash-anzan';
 
 export type ExamGroup = 'A' | 'B' | 'C' | 'D' | 'E';
@@ -141,7 +141,7 @@ export interface ExamResult {
   id: string;
   userId: string;
   studentName?: string;
-  paperId: string; // paper-1 to paper-20 or final
+  paperId: string;
   group: ExamGroup;
   score: number;
   totalQuestions: number;
@@ -220,9 +220,9 @@ export interface Question {
   options: number[];
   answer: number;
   questionType?: BeadQuestionType;
-  sequence?: number[]; // For Flash Anzan
-  delay?: number; // For Flash Anzan (ms per number)
-  matrixPattern?: number[]; // For Matrix Memory Duel
+  sequence?: number[];
+  delay?: number;
+  matrixPattern?: number[];
 }
 
 export interface TestSettings {
@@ -382,7 +382,6 @@ export type UpdateProfilePayload = {
   dailyMemoryLevelsSolved?: number;
   lastMemoryDate?: string | null;
 };
-
 
 export interface TestResult {
   id: string;

@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Question, Difficulty, TestType, TestSettings, GameLevel } from '@/types';
@@ -37,6 +36,81 @@ export const masteryMixQuestions: Record<string, Question[]> = {
     'mastery-mix-10': [...combinationAdditionQuestions['combination-plus-8'], ...combinationSubtractionQuestions['combination-minus-8']],
     'mastery-mix-11': [...combinationAdditionQuestions['combination-plus-7'], ...combinationSubtractionQuestions['combination-minus-7']],
     'mastery-mix-12': [...combinationAdditionQuestions['combination-plus-6'], ...combinationSubtractionQuestions['combination-minus-6']],
+};
+
+const preDefinedQuestions: Record<string, Question[]> = {
+  // --- Small Sister (Hub Keys) ---
+  'small-sister-plus-4': basicAdditionQuestions['basic-addition-plus-4'],
+  'small-sister-plus-3': basicAdditionQuestions['basic-addition-plus-3'],
+  'small-sister-plus-2': basicAdditionQuestions['basic-addition-plus-2'],
+  'small-sister-plus-1': basicAdditionQuestions['basic-addition-plus-1'],
+  'small-sister-minus-4': basicSubtractionQuestions['basic-subtraction-minus-4'],
+  'small-sister-minus-3': basicSubtractionQuestions['basic-subtraction-minus-3'],
+  'small-sister-minus-2': basicSubtractionQuestions['basic-subtraction-minus-2'],
+  'small-sister-minus-1': basicSubtractionQuestions['basic-subtraction-minus-1'],
+  'small-sister-all': [
+    ...basicAdditionQuestions['basic-addition-plus-4'],
+    ...basicAdditionQuestions['basic-addition-plus-3'],
+    ...basicAdditionQuestions['basic-addition-plus-2'],
+    ...basicAdditionQuestions['basic-addition-plus-1'],
+    ...basicSubtractionQuestions['basic-subtraction-minus-4'],
+    ...basicSubtractionQuestions['basic-subtraction-minus-3'],
+    ...basicSubtractionQuestions['basic-subtraction-minus-2'],
+    ...basicSubtractionQuestions['basic-subtraction-minus-1']
+  ],
+  
+  // --- Big Brother (Hub Keys) ---
+  'big-brother-plus-9': bigBrotherAdditionQuestions['big-brother-addition-plus-9'],
+  'big-brother-plus-8': bigBrotherAdditionQuestions['big-brother-addition-plus-8'],
+  'big-brother-plus-7': bigBrotherAdditionQuestions['big-brother-addition-plus-7'],
+  'big-brother-plus-6': bigBrotherAdditionQuestions['big-brother-addition-plus-6'],
+  'big-brother-plus-5': bigBrotherAdditionQuestions['big-brother-addition-plus-5'],
+  'big-brother-plus-4': bigBrotherAdditionQuestions['big-brother-addition-plus-4'],
+  'big-brother-plus-3': bigBrotherAdditionQuestions['big-brother-addition-plus-3'],
+  'big-brother-plus-2': bigBrotherAdditionQuestions['big-brother-addition-plus-2'],
+  'big-brother-plus-1': bigBrotherAdditionQuestions['big-brother-addition-plus-1'],
+  'big-brother-minus-9': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-9'],
+  'big-brother-minus-8': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-8'],
+  'big-brother-minus-7': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-7'],
+  'big-brother-minus-6': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-6'],
+  'big-brother-minus-5': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-5'],
+  'big-brother-minus-4': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-4'],
+  'big-brother-minus-3': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-3'],
+  'big-brother-minus-2': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-2'],
+  'big-brother-minus-1': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-1'],
+  'big-brother-all': [
+    ...bigBrotherAdditionQuestions['big-brother-addition-plus-9'],
+    ...bigBrotherAdditionQuestions['big-brother-addition-plus-8'],
+    ...bigBrotherAdditionQuestions['big-brother-addition-plus-7'],
+    ...bigBrotherAdditionQuestions['big-brother-addition-plus-6'],
+    ...bigBrotherAdditionQuestions['big-brother-addition-plus-5'],
+    ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-9'],
+    ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-8'],
+    ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-7'],
+    ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-6'],
+    ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-5']
+  ],
+
+  // --- Combination (Hub Keys) ---
+  'combination-all': [
+    ...combinationAdditionQuestions['combination-plus-9'],
+    ...combinationAdditionQuestions['combination-plus-8'],
+    ...combinationAdditionQuestions['combination-plus-7'],
+    ...combinationAdditionQuestions['combination-plus-6'],
+    ...combinationSubtractionQuestions['combination-minus-9'],
+    ...combinationSubtractionQuestions['combination-minus-8'],
+    ...combinationSubtractionQuestions['combination-minus-7'],
+    ...combinationSubtractionQuestions['combination-minus-6']
+  ],
+
+  // --- Spread Objects for "basic-addition-plus-X" Practice Keys ---
+  ...basicAdditionQuestions,
+  ...basicSubtractionQuestions,
+  ...bigBrotherAdditionQuestions,
+  ...bigBrotherSubtractionQuestions,
+  ...combinationAdditionQuestions,
+  ...combinationSubtractionQuestions,
+  ...masteryMixQuestions,
 };
 
 const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
@@ -153,8 +227,8 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
   'big-brother-addition-plus-50': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +50 = +100 - 50', icon: 'puzzle' } },
   'big-brother-addition-plus-4': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +4 = +10 - 6', icon: 'puzzle' } },
   'big-brother-addition-plus-40': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +40 = +100 - 60', icon: 'puzzle' } },
-  'big-brother-addition-plus-3': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +3 = +10 - 7', icon: 'puzzle' } },
-  'big-brother-addition-plus-30': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +30 = +100 - 70', icon: 'puzzle' } },
+  'big-brother-addition-plus-3': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +3 = +5 - 2', icon: 'puzzle' } },
+  'big-brother-addition-plus-30': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +30 = +50 - 20', icon: 'puzzle' } },
   'big-brother-addition-plus-2': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +2 = +10 - 8', icon: 'puzzle' } },
   'big-brother-addition-plus-20': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +20 = +100 - 80', icon: 'puzzle' } },
   'big-brother-addition-plus-1': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: +1 = +10 - 9', icon: 'puzzle' } },
@@ -196,77 +270,8 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
   'combination-minus-90': { easy: { numQuestions: 28, timeLimit: 480, title: 'Formula: -90 = -100 + 50 - 40', icon: 'puzzle' } },
 };
 
-const preDefinedQuestions: Record<string, Question[]> = {
-  // Small Sister
-  'small-sister-plus-4': basicAdditionQuestions['basic-addition-plus-4'],
-  'small-sister-plus-3': basicAdditionQuestions['basic-addition-plus-3'],
-  'small-sister-plus-2': basicAdditionQuestions['basic-addition-plus-2'],
-  'small-sister-plus-1': basicAdditionQuestions['basic-addition-plus-1'],
-  'small-sister-minus-4': basicSubtractionQuestions['basic-subtraction-minus-4'],
-  'small-sister-minus-3': basicSubtractionQuestions['basic-subtraction-minus-3'],
-  'small-sister-minus-2': basicSubtractionQuestions['basic-subtraction-minus-2'],
-  'small-sister-minus-1': basicSubtractionQuestions['basic-subtraction-minus-1'],
-  'small-sister-all': [
-    ...basicAdditionQuestions['basic-addition-plus-4'],
-    ...basicAdditionQuestions['basic-addition-plus-3'],
-    ...basicAdditionQuestions['basic-addition-plus-2'],
-    ...basicAdditionQuestions['basic-addition-plus-1'],
-    ...basicSubtractionQuestions['basic-subtraction-minus-4'],
-    ...basicSubtractionQuestions['basic-subtraction-minus-3'],
-    ...basicSubtractionQuestions['basic-subtraction-minus-2'],
-    ...basicSubtractionQuestions['basic-subtraction-minus-1']
-  ],
-  
-  // Big Brother
-  'big-brother-plus-9': bigBrotherAdditionQuestions['big-brother-addition-plus-9'],
-  'big-brother-plus-8': bigBrotherAdditionQuestions['big-brother-addition-plus-8'],
-  'big-brother-plus-7': bigBrotherAdditionQuestions['big-brother-addition-plus-7'],
-  'big-brother-plus-6': bigBrotherAdditionQuestions['big-brother-addition-plus-6'],
-  'big-brother-plus-5': bigBrotherAdditionQuestions['big-brother-addition-plus-5'],
-  'big-brother-plus-4': bigBrotherAdditionQuestions['big-brother-addition-plus-4'],
-  'big-brother-plus-3': bigBrotherAdditionQuestions['big-brother-addition-plus-3'],
-  'big-brother-plus-2': bigBrotherAdditionQuestions['big-brother-addition-plus-2'],
-  'big-brother-plus-1': bigBrotherAdditionQuestions['big-brother-addition-plus-1'],
-  'big-brother-minus-9': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-9'],
-  'big-brother-minus-8': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-8'],
-  'big-brother-minus-7': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-7'],
-  'big-brother-minus-6': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-6'],
-  'big-brother-minus-5': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-5'],
-  'big-brother-minus-4': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-4'],
-  'big-brother-minus-3': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-3'],
-  'big-brother-minus-2': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-2'],
-  'big-brother-minus-1': bigBrotherSubtractionQuestions['big-brother-subtraction-minus-1'],
-  'big-brother-all': [
-    ...bigBrotherAdditionQuestions['big-brother-addition-plus-9'],
-    ...bigBrotherAdditionQuestions['big-brother-addition-plus-8'],
-    ...bigBrotherAdditionQuestions['big-brother-addition-plus-7'],
-    ...bigBrotherAdditionQuestions['big-brother-addition-plus-6'],
-    ...bigBrotherAdditionQuestions['big-brother-addition-plus-5'],
-    ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-9'],
-    ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-8'],
-    ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-7'],
-    ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-6'],
-    ...bigBrotherSubtractionQuestions['big-brother-subtraction-minus-5']
-  ],
-
-  'combination-all': [
-    ...combinationAdditionQuestions['combination-plus-9'],
-    ...combinationAdditionQuestions['combination-plus-8'],
-    ...combinationAdditionQuestions['combination-plus-7'],
-    ...combinationAdditionQuestions['combination-plus-6'],
-    ...combinationSubtractionQuestions['combination-minus-9'],
-    ...combinationSubtractionQuestions['combination-minus-8'],
-    ...combinationSubtractionQuestions['combination-minus-7'],
-    ...combinationSubtractionQuestions['combination-minus-6']
-  ],
-
-  ...combinationAdditionQuestions,
-  ...combinationSubtractionQuestions,
-  ...masteryMixQuestions,
-};
-
 export function getTestSettings(testId: TestType, difficulty: Difficulty): TestSettings | undefined {
-  if (testId === ('flash-anzan' as any) && difficulty === 'custom') {
+  if (testId === 'flash-anzan' && difficulty === 'custom') {
     return {
       numQuestions: 50,
       timeLimit: 0,
@@ -294,7 +299,7 @@ export function getTestSettings(testId: TestType, difficulty: Difficulty): TestS
       };
     }
     
-    if (testId === ('flash-anzan' as any)) {
+    if (testId === 'flash-anzan') {
       const parts = difficulty.split('-');
       const levelNum = parts[parts.length - 1];
       const tier = parts[parts.length - 2];
@@ -419,6 +424,11 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
 
   const coreTestId = testId.replace('-input', '');
   
+  // Explicitly check preDefinedQuestions first for formula-based tests
+  if (preDefinedQuestions[coreTestId]) {
+    return deDuplicateQuestions(shuffleArray([...preDefinedQuestions[coreTestId]])).slice(0, settings?.numQuestions || 50);
+  }
+
   if (coreTestId === 'addition-subtraction') {
     const questions: Question[] = [];
     const getRange = (d: string): [number, number] => {
@@ -476,7 +486,7 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
     return deDuplicateQuestions(questions);
   }
 
-  if (testId === ('flash-anzan' as any)) {
+  if (testId === 'flash-anzan') {
     const questions: Question[] = [];
     let rows = 3, delay = 2000, d1 = 1, d2 = 0, r2 = 0;
     const numQs = 50;
@@ -497,75 +507,48 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
     return questions;
   }
 
-  if (preDefinedQuestions[coreTestId]) return deDuplicateQuestions([...preDefinedQuestions[coreTestId]]).slice(0, settings!.numQuestions);
-
   const questions: Question[] = [];
   
   for (let i = 0; i < (settings?.numQuestions || 50); i++) {
-    let questionText = "";
+    let text = "";
     let answer = 0;
     
     if (coreTestId === 'multiplication') {
       let m1, m2;
-      if (difficulty === 'easy') {
-        m1 = getRandomInt(2, 9);
-        m2 = getRandomInt(2, 9);
-      } else if (difficulty === 'medium') {
-        m1 = getRandomInt(10, 99);
-        m2 = getRandomInt(2, 9);
-      } else { // Hard
-        const type = Math.random();
-        if (type < 0.4) { // 3x1
-          m1 = getRandomInt(100, 999);
-          m2 = getRandomInt(2, 9);
-        } else if (type < 0.8) { // 2x2
-          m1 = getRandomInt(11, 99);
-          m2 = getRandomInt(11, 99);
-        } else { // 4x1
-          m1 = getRandomInt(1000, 9999);
-          m2 = getRandomInt(2, 9);
-        }
+      if (difficulty === 'easy') { m1 = getRandomInt(2, 9); m2 = getRandomInt(2, 9); } 
+      else if (difficulty === 'medium') { m1 = getRandomInt(10, 99); m2 = getRandomInt(2, 9); } 
+      else { 
+        const t = Math.random(); 
+        if (t < 0.4) { m1 = getRandomInt(100, 999); m2 = getRandomInt(2, 9); } 
+        else if (t < 0.8) { m1 = getRandomInt(11, 99); m2 = getRandomInt(11, 99); } 
+        else { m1 = getRandomInt(1000, 9999); m2 = getRandomInt(2, 9); } 
       }
-      answer = m1 * m2;
-      questionText = `${m1} × ${m2}`;
+      answer = m1 * m2; text = `${m1} × ${m2}`;
     } else if (coreTestId === 'division') {
       let q, div;
-      if (difficulty === 'easy') {
-        q = getRandomInt(2, 9);
-        div = getRandomInt(2, 9);
-      } else if (difficulty === 'medium') {
-        q = getRandomInt(10, 99);
-        div = getRandomInt(2, 9);
-      } else { // Hard
-        const type = Math.random();
-        if (type < 0.5) { // 3 / 1
-          q = getRandomInt(100, 999);
-          div = getRandomInt(2, 9);
-        } else { // 4 / 1 or 3 / 2
-           q = getRandomInt(100, 999);
-           div = getRandomInt(11, 49);
-        }
-      }
-      answer = q;
-      questionText = `${q * div} ÷ ${div}`;
+      if (difficulty === 'easy') { q = getRandomInt(2, 9); div = getRandomInt(2, 9); } 
+      else if (difficulty === 'medium') { q = getRandomInt(10, 99); div = getRandomInt(2, 9); } 
+      else { 
+        const t = Math.random(); if (t < 0.5) { q = getRandomInt(100, 999); div = getRandomInt(2, 9); } else { q = getRandomInt(100, 999); div = getRandomInt(11, 49); } }
+        answer = q; text = `${q * div} ÷ ${div}`;
     } else if (coreTestId === 'square') {
-      const n = getRandomInt(difficulty === 'easy' ? 2 : difficulty === 'medium' ? 16 : 51, difficulty === 'easy' ? 15 : difficulty === 'medium' ? 50 : 99);
-      answer = n * n;
-      questionText = `${n}²`;
+        const [min, max] = difficulty === 'easy' ? [2, 15] : difficulty === 'medium' ? [16, 50] : [51, 99];
+        const n = getRandomInt(min, max);
+        answer = n * n; text = `${n}²`;
     } else if (coreTestId === 'cube') {
-      const n = getRandomInt(difficulty === 'easy' ? 2 : difficulty === 'medium' ? 7 : 16, difficulty === 'easy' ? 6 : difficulty === 'medium' ? 15 : 30);
-      answer = n * n * n;
-      questionText = `${n}³`;
+        const [min, max] = difficulty === 'easy' ? [2, 6] : difficulty === 'medium' ? [7, 15] : [16, 30];
+        const n = getRandomInt(min, max);
+        answer = n * n * n; text = `${n}³`;
     } else if (coreTestId === 'square-root') {
-      const n = getRandomInt(difficulty === 'easy' ? 2 : difficulty === 'medium' ? 16 : 51, difficulty === 'easy' ? 15 : difficulty === 'medium' ? 50 : 99);
-      answer = n;
-      questionText = `√${n * n}`;
+        const [min, max] = difficulty === 'easy' ? [2, 15] : difficulty === 'medium' ? [16, 50] : [51, 99];
+        const n = getRandomInt(min, max);
+        answer = n; text = `√${n * n}`;
     } else if (coreTestId === 'cube-root') {
-      const n = getRandomInt(difficulty === 'easy' ? 2 : difficulty === 'medium' ? 7 : 16, difficulty === 'easy' ? 6 : difficulty === 'medium' ? 15 : 30);
-      answer = n;
-      questionText = `³√${n * n * n}`;
+        const [min, max] = difficulty === 'easy' ? [2, 6] : difficulty === 'medium' ? [7, 15] : [16, 30];
+        const n = getRandomInt(min, max);
+        answer = n; text = `³√${n * n * n}`;
     }
-    questions.push({ text: questionText, answer, options: generateOptions(answer) });
+    questions.push({ text, answer, options: generateOptions(answer) });
   }
   return deDuplicateQuestions(questions);
 }
