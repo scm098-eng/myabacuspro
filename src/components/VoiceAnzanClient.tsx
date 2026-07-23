@@ -60,6 +60,7 @@ export default function VoiceAnzanClient({ testId, difficulty, settings }: { tes
       generated = generated.map(q => ({ ...q, delay: s }));
     } else {
       generated = generateTest(testId, difficulty);
+      // Tiered levels also use 1.0x speed by default unless specified
       generated = generated.map(q => ({ ...q, delay: 1.0 }));
     }
     
@@ -105,7 +106,7 @@ export default function VoiceAnzanClient({ testId, difficulty, settings }: { tes
       const num = sequence[i];
       const prefix = i === 0 ? "" : (num > 0 ? "Add " : "Less ");
       const text = `${prefix} ${Math.abs(num)}`;
-      // Update speakingStatus for speech engine but don't show specific numbers in UI for true "Blind" training
+      // Numbers are hidden in UI for "Blind" training
       setSpeakingStatus(text); 
       await speak(text);
     }
@@ -116,7 +117,9 @@ export default function VoiceAnzanClient({ testId, difficulty, settings }: { tes
 
     setIsSpeaking(false);
     setIsReadyForInput(true);
-    if (inputRef.current) inputRef.current.focus();
+    setTimeout(() => {
+      if (inputRef.current) inputRef.current.focus();
+    }, 100);
   }, [questions, currentIdx, searchParams]);
 
   useEffect(() => {
@@ -286,7 +289,7 @@ export default function VoiceAnzanClient({ testId, difficulty, settings }: { tes
         <CardFooter className="p-8 border-t bg-slate-50 flex justify-between items-center">
             <div className="flex items-center gap-2 opacity-30">
               <ShieldCheck className="w-4 h-4" />
-              <p className="text-[9px] font-black uppercase tracking-widest">Auditory Session Active</p>
+              <p className="text-[9px] font-black uppercase tracking-widest">Mastery Session Active</p>
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>

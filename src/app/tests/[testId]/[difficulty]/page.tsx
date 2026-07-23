@@ -44,25 +44,6 @@ export default function TestPage() {
     );
   }
   
-  if (!user) {
-     return (
-       <div className="max-w-lg mx-auto text-center">
-            <Alert>
-                <LogIn className="h-4 w-4" />
-                <AlertTitle>Authentication Required</AlertTitle>
-                <AlertDescription>
-                    You need to be logged in to access practice tests. Please log in to continue.
-                </AlertDescription>
-                 <div className="mt-4">
-                    <Button asChild>
-                        <Link href="/login">Login</Link>
-                    </Button>
-                </div>
-            </Alert>
-        </div>
-    );
-  }
-
   // Pro subscription check for non-bead/flash tests for students (allowing trial access)
   const isPublicTest = isBeadTest || (isFlashAnzan && difficulty === 'easy') || (isVoiceAnzan && difficulty === 'easy');
   if (profile?.role === 'student' && profile?.subscriptionStatus !== 'pro' && !isPublicTest && !isTrialActive) {
@@ -105,8 +86,8 @@ export default function TestPage() {
   
   let TestComponent = TestPageClient;
   if (isBeadTest) TestComponent = BeadsTestPageClient;
-  if (isFlashAnzan) TestComponent = FlashAnzanClient as any;
-  if (isVoiceAnzan) TestComponent = VoiceAnzanClient as any;
+  if (isFlashAnzan) TestComponent = FlashAnzanClient;
+  if (isVoiceAnzan) TestComponent = VoiceAnzanClient;
 
   return (
     <TestPageWrapper>

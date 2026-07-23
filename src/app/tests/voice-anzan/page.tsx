@@ -21,7 +21,7 @@ const tiers = [
   { id: 'hard', title: 'Elite Dictation', description: 'Mixed 2 & 3-Digit | Levels 1-50 (Verbal Progression)', color: 'bg-purple-100 text-purple-700', icon: Megaphone },
 ];
 
-const LevelGrid = ({ tier, isLocked }: { tier: string, isLocked: boolean }) => {
+const LevelGrid = ({ tier, isLocked, selectedVoice }: { tier: string, isLocked: boolean, selectedVoice: string }) => {
   const router = useRouter();
   const levels = Array.from({ length: 50 }, (_, i) => i + 1);
 
@@ -32,7 +32,10 @@ const LevelGrid = ({ tier, isLocked }: { tier: string, isLocked: boolean }) => {
           key={level}
           variant="outline"
           disabled={isLocked}
-          onClick={() => router.push(`/tests/voice-anzan/level-${tier}-${level}`)}
+          onClick={() => {
+            const params = new URLSearchParams({ v: selectedVoice });
+            router.push(`/tests/voice-anzan/level-${tier}-${level}?${params.toString()}`);
+          }}
           className={cn(
             "h-10 w-10 p-0 text-xs font-black transition-all hover:scale-110 rounded-lg flex items-center justify-center",
             isLocked ? "opacity-50 grayscale" : "border-primary/20 hover:border-primary bg-card hover:bg-primary/5 shadow-sm"
@@ -67,12 +70,25 @@ export default function VoiceAnzanLobbyPage() {
   useEffect(() => {
     const updateVoices = () => {
       const v = window.speechSynthesis.getVoices();
-      setVoices(v.filter(voice => voice.lang.includes('en')));
-      if (v.length > 0 && !selectedVoice) setSelectedVoice(v[0].name);
+      const filtered = v.filter(voice => voice.lang.includes('en'));
+      setVoices(filtered);
+      
+      // Load preference or default to first available
+      const savedVoice = localStorage.getItem('anzan_voice_pref');
+      if (savedVoice && filtered.find(v => v.name === savedVoice)) {
+        setSelectedVoice(savedVoice);
+      } else if (filtered.length > 0 && !selectedVoice) {
+        setSelectedVoice(filtered[0].name);
+      }
     };
     updateVoices();
     window.speechSynthesis.onvoiceschanged = updateVoices;
   }, [selectedVoice]);
+
+  const handleVoiceChange = (val: string) => {
+    setSelectedVoice(val);
+    localStorage.setItem('anzan_voice_pref', val);
+  };
 
   if (isLoading || !user) {
     return (
@@ -104,10 +120,56 @@ export default function VoiceAnzanLobbyPage() {
         </p>
       </div>
 
+      {/* Global Voice Selection - Affects all tiers */}
+      <Card className="max-w-xl mx-auto rounded-3xl border-2 border-primary/10 shadow-lg bg-white/50 backdrop-blur-sm overflow-hidden">
+        <CardHeader className="bg-primary/5 pb-4">
+          <div className="flex items-center gap-3">
+            <Volume2 className="w-5 h-5 text-primary" />
+            <CardTitle className="text-lg font-black uppercase tracking-tight">Audio Settings</CardTitle>
+          </div>
+          <CardDescription className="text-xs font-bold">This voice will be used for all auditory training sessions.</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="space-y-3">
+            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Preferred System Voice</Label>
+            <Select value={selectedVoice} onValueChange={handleVoiceChange}>
+              <SelectTrigger className="h-12 border-2 font-bold rounded-xl bg-white"><SelectValue placeholder="Choose a voice" /></SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {voices.map(v => (
+                  <SelectItem key={v.name} value={v.name}>{v.name} ({v.lang})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-12 max-w-5xl mx-auto">
+        {tiers.map((level) => {
+          const isLocked = !isPro && !isTrialActive && level.id !== 'easy';
+          return (
+            <Card key={level.id} className={cn("rounded-[2.5rem] border-none shadow-xl overflow-hidden group transition-all", isLocked ? "opacity-60 grayscale" : "bg-white")}>
+              <CardHeader className={cn("p-8 text-center", level.color)}>
+                <div className="mx-auto bg-white/40 p-4 rounded-full w-fit mb-4"><level.icon className="w-8 h-8" /></div>
+                <CardTitle className="text-2xl font-black uppercase tracking-tight">{level.title}</CardTitle>
+                <CardDescription className="font-bold opacity-80">{level.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="bg-muted/30 p-6 rounded-[1.5rem] border-2 border-dashed border-primary/10">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-4 text-center">Select Level (1-50)</p>
+                  <LevelGrid tier={level.id} isLocked={isLocked} selectedVoice={selectedVoice} />
+                </div>
+                {isLocked && <Button asChild variant="secondary" className="w-full h-14 font-black uppercase rounded-2xl mt-6"><Link href="/pricing"><Lock className="mr-2 h-4 w-4" /> Upgrade to Pro</Link></Button>}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
       <section className="max-w-4xl mx-auto space-y-8">
         <div className="flex items-center gap-3 border-b pb-4">
           <Settings2 className="w-8 h-8 text-primary" />
-          <h2 className="text-3xl font-black uppercase tracking-tight font-headline">Voice Custom <span className="text-primary italic">Lab</span></h2>
+          <h2 className="text-3xl font-black uppercase tracking-tight font-headline">Anzan Custom <span className="text-primary italic">Lab</span></h2>
           <Badge className="ml-auto bg-primary text-white font-black px-4 py-1">PRO FEATURE</Badge>
         </div>
 
@@ -116,25 +178,13 @@ export default function VoiceAnzanLobbyPage() {
             <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm p-6 text-center">
                <Card className="max-w-xs shadow-2xl border-none p-6 space-y-4 bg-white/90">
                   <Lock className="w-12 h-12 mx-auto text-primary" />
-                  <p className="font-bold text-slate-700">Voice Lab is exclusive to Pro members. Customize your training environment!</p>
+                  <p className="font-bold text-slate-700">Custom Lab is exclusive to Pro members. Customize your digits, rows, and speed!</p>
                   <Button asChild className="w-full font-black uppercase"><Link href="/pricing">Get Pro Access</Link></Button>
                </Card>
             </div>
           )}
           <CardContent className="p-8 sm:p-12 grid grid-cols-1 md:grid-cols-2 gap-12">
              <div className="space-y-10">
-                <div className="space-y-4">
-                   <Label className="text-xs font-black uppercase tracking-widest text-slate-500">Select Voice</Label>
-                   <Select value={selectedVoice} onValueChange={setSelectedVoice}>
-                     <SelectTrigger className="h-12 border-2 font-bold rounded-xl"><SelectValue placeholder="Choose a voice" /></SelectTrigger>
-                     <SelectContent>
-                       {voices.map(v => (
-                         <SelectItem key={v.name} value={v.name}>{v.name} ({v.lang})</SelectItem>
-                       ))}
-                     </SelectContent>
-                   </Select>
-                </div>
-
                 <div className="space-y-4">
                    <div className="flex justify-between items-center">
                      <Label className="text-xs font-black uppercase tracking-widest text-slate-500">Complexity (Digits)</Label>
@@ -174,38 +224,16 @@ export default function VoiceAnzanLobbyPage() {
              <div className="flex flex-col justify-center text-center space-y-8 bg-slate-50 p-8 rounded-3xl border-2 shadow-inner">
                 <div className="space-y-4">
                   <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit"><Volume2 className="w-8 h-8 text-primary" /></div>
-                  <h3 className="text-2xl font-black uppercase tracking-tight text-slate-900">Audio Preview</h3>
-                  <p className="text-sm text-slate-500 font-medium leading-relaxed">Hear it: <span className="text-primary font-bold">"Add {customSettings.digits === 1 ? '7' : '25'}, Less {customSettings.digits === 1 ? '2' : '10'}... That is"</span></p>
+                  <h3 className="text-2xl font-black uppercase tracking-tight text-slate-900">Lab Summary</h3>
+                  <p className="text-sm text-slate-500 font-medium leading-relaxed">Prepare for <span className="text-primary font-bold">{customSettings.rows}</span> verbal commands at <span className="text-primary font-bold">{customSettings.speed.toFixed(1)}x</span> speed using <span className="text-primary font-bold">{selectedVoice?.split(' ')[0] || 'System'}</span> voice.</p>
                 </div>
                 <Button onClick={handleStartCustom} className="w-full h-20 text-lg font-black uppercase tracking-widest rounded-2xl shadow-xl">
-                  Start Session <Zap className="ml-2 w-6 h-6 fill-white" />
+                  Start Custom Lab <Zap className="ml-2 w-6 h-6 fill-white" />
                 </Button>
              </div>
           </CardContent>
         </Card>
       </section>
-
-      <div className="space-y-12 max-w-5xl mx-auto">
-        {tiers.map((level) => {
-          const isLocked = !isPro && !isTrialActive && level.id !== 'easy';
-          return (
-            <Card key={level.id} className={cn("rounded-[2.5rem] border-none shadow-xl overflow-hidden group transition-all", isLocked ? "opacity-60 grayscale" : "bg-white")}>
-              <CardHeader className={cn("p-8 text-center", level.color)}>
-                <div className="mx-auto bg-white/40 p-4 rounded-full w-fit mb-4"><level.icon className="w-8 h-8" /></div>
-                <CardTitle className="text-2xl font-black uppercase tracking-tight">{level.title}</CardTitle>
-                <CardDescription className="font-bold opacity-80">{level.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="p-8">
-                <div className="bg-muted/30 p-6 rounded-[1.5rem] border-2 border-dashed border-primary/10">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-4 text-center">Select Level (1-50)</p>
-                  <LevelGrid tier={level.id} isLocked={isLocked} />
-                </div>
-                {isLocked && <Button asChild variant="secondary" className="w-full h-14 font-black uppercase rounded-2xl mt-6"><Link href="/pricing"><Lock className="mr-2 h-4 w-4" /> Upgrade to Pro</Link></Button>}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
     </div>
   );
 }
