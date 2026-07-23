@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect } from 'react';
@@ -11,6 +10,7 @@ import type { Difficulty, TestType } from '@/types';
 import TestPageClient from '@/components/TestPageClient';
 import BeadsTestPageClient from '@/components/BeadsTestPageClient';
 import FlashAnzanClient from '@/components/FlashAnzanClient';
+import VoiceAnzanClient from '@/components/VoiceAnzanClient';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Crown, Terminal, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,7 @@ export default function TestPage() {
   const settings = getTestSettings(testId, difficulty);
   const isBeadTest = testId === 'beads-identify' || testId === 'beads-set';
   const isFlashAnzan = testId === 'flash-anzan';
+  const isVoiceAnzan = testId === 'voice-anzan';
 
   if (isLoading || !user) {
     return (
@@ -63,7 +64,7 @@ export default function TestPage() {
   }
 
   // Pro subscription check for non-bead/flash tests for students (allowing trial access)
-  const isPublicTest = isBeadTest || (isFlashAnzan && difficulty === 'easy');
+  const isPublicTest = isBeadTest || (isFlashAnzan && difficulty === 'easy') || (isVoiceAnzan && difficulty === 'easy');
   if (profile?.role === 'student' && profile?.subscriptionStatus !== 'pro' && !isPublicTest && !isTrialActive) {
     return (
        <div className="max-w-lg mx-auto text-center">
@@ -105,6 +106,7 @@ export default function TestPage() {
   let TestComponent = TestPageClient;
   if (isBeadTest) TestComponent = BeadsTestPageClient;
   if (isFlashAnzan) TestComponent = FlashAnzanClient as any;
+  if (isVoiceAnzan) TestComponent = VoiceAnzanClient as any;
 
   return (
     <TestPageWrapper>

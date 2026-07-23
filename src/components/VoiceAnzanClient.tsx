@@ -57,18 +57,22 @@ export default function VoiceAnzanClient({ testId, difficulty, settings }: { tes
       const r = parseInt(searchParams.get('r') || '8', 10);
       const s = parseFloat(searchParams.get('s') || '1.0');
       generated = generateTest(testId, 'custom', { digits: d, rows: r });
-      // Apply the custom speed/rate to each question
       generated = generated.map(q => ({ ...q, delay: s }));
     } else {
       generated = generateTest(testId, difficulty);
-      // Default rate for standard levels
       generated = generated.map(q => ({ ...q, delay: 1.0 }));
     }
     
     setQuestions(generated);
     setUserAnswers(new Array(generated.length).fill(null));
     questionButtonRefs.current = new Array(generated.length).fill(null);
-    setAppState('playing');
+    
+    // Tiers automatically start playing
+    if (difficulty !== 'custom') {
+      setAppState('playing');
+    } else {
+      setAppState('lobby');
+    }
   }, [testId, difficulty, searchParams]);
 
   const speakSequence = useCallback(async () => {
@@ -101,7 +105,8 @@ export default function VoiceAnzanClient({ testId, difficulty, settings }: { tes
       const num = sequence[i];
       const prefix = i === 0 ? "" : (num > 0 ? "Add " : "Less ");
       const text = `${prefix} ${Math.abs(num)}`;
-      setSpeakingStatus(text);
+      // Update speakingStatus for speech engine but don't show specific numbers in UI for true "Blind" training
+      setSpeakingStatus(text); 
       await speak(text);
     }
 
@@ -111,7 +116,6 @@ export default function VoiceAnzanClient({ testId, difficulty, settings }: { tes
 
     setIsSpeaking(false);
     setIsReadyForInput(true);
-    setSpeakingStatus("Ready for answer");
     if (inputRef.current) inputRef.current.focus();
   }, [questions, currentIdx, searchParams]);
 
@@ -178,6 +182,31 @@ export default function VoiceAnzanClient({ testId, difficulty, settings }: { tes
 
   if (questions.length === 0) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto w-10 h-10 text-primary" /></div>;
 
+  if (appState === 'lobby') {
+    return (
+      <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in duration-500 mt-10 px-4">
+        <div className="text-center space-y-4">
+          <Badge className="bg-primary/10 text-primary border-primary/20 px-6 py-1.5 rounded-full font-black uppercase text-xs tracking-widest">Auditory Hub</Badge>
+          <h1 className="text-4xl sm:text-6xl font-black font-headline uppercase tracking-tighter text-slate-900 leading-none italic">
+            Voice <span className="text-primary italic whitespace-nowrap">Anzan</span>
+          </h1>
+          <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">Master mental arithmetic with verbal sequences. Reconstruct the beads in your mental vision purely from sound.</p>
+        </div>
+
+        <div className="flex justify-center px-4">
+           <Card className="max-w-sm w-full rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => setAppState('playing')}>
+              <CardHeader className="p-8 text-center bg-indigo-50 rounded-t-[2.5rem] border-b">
+                 <div className="mx-auto bg-indigo-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><Megaphone className="w-8 h-8 text-indigo-600" /></div>
+                 <CardTitle className="text-2xl font-black uppercase tracking-tight">Enter Lab</CardTitle>
+                 <CardDescription className="font-bold">Standard auditory mastery session.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-8 text-center"><Button className="w-full h-12 rounded-xl font-black bg-indigo-600 hover:bg-indigo-700 text-white">Start Dictation <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
+           </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col max-w-3xl mx-auto px-4 mt-6">
       <Card className="shadow-2xl relative overflow-hidden flex flex-col flex-grow rounded-[2.5rem]">
@@ -187,7 +216,7 @@ export default function VoiceAnzanClient({ testId, difficulty, settings }: { tes
               <Megaphone className="w-5 h-5 text-primary" /> Voice Based Anzan
             </CardTitle>
             <Badge className="bg-primary font-black uppercase text-[10px] tracking-widest">
-              {difficulty === 'custom' ? 'VOICE LAB' : difficulty.toUpperCase()}
+              {difficulty === 'custom' ? 'CUSTOM LAB' : difficulty.toUpperCase()}
             </Badge>
           </div>
           <ScrollArea className="w-full whitespace-nowrap bg-white/50 p-2 rounded-xl border border-muted-foreground/10 mb-4 shadow-inner">
@@ -215,8 +244,9 @@ export default function VoiceAnzanClient({ testId, difficulty, settings }: { tes
                   <Volume2 className="w-16 h-16 text-primary" />
                </div>
                <div className="space-y-2">
-                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Mastery Dictation In Progress</p>
-                 <h2 className="text-5xl font-black text-slate-900 uppercase italic tracking-tighter">{speakingStatus}</h2>
+                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Auditory Session In Progress</p>
+                 <h2 className="text-5xl font-black text-slate-900 uppercase italic tracking-tighter">Visualizing...</h2>
+                 <p className="text-sm font-bold text-slate-400">Numbers are hidden for blind training</p>
                </div>
             </div>
           ) : isReadyForInput ? (
@@ -255,7 +285,7 @@ export default function VoiceAnzanClient({ testId, difficulty, settings }: { tes
         
         <CardFooter className="p-8 border-t bg-slate-50 flex justify-between items-center">
             <div className="flex items-center gap-2 opacity-30">
-              <Megaphone className="w-4 h-4" />
+              <ShieldCheck className="w-4 h-4" />
               <p className="text-[9px] font-black uppercase tracking-widest">Auditory Session Active</p>
             </div>
             <AlertDialog>
