@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -16,12 +15,14 @@ import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
 import { getFirestore, collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
+import Image from 'next/image';
 
 const ROUNDS_PER_LEVEL = 5;
 const INITIAL_LIVES = 3;
 const MAX_DAILY_LEVELS = 5;
 
 export default function PatternMemoryPage() {
+  // Use solid black background with professional grid texture and subtle hero texture
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Game%20Background.webp?alt=media');
   const { user, profile, addPoints, recordDailyPractice } = useAuth();
   const router = useRouter();
@@ -218,7 +219,7 @@ export default function PatternMemoryPage() {
                 <CardHeader className="p-8 text-center bg-teal-50 rounded-t-[2.5rem] border-b">
                    <div className="mx-auto bg-teal-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><LayoutGrid className="w-8 h-8 text-teal-600" /></div>
                    <CardTitle className="text-2xl font-black uppercase tracking-tight">Start Mission</CardTitle>
-                   <CardDescription className="font-bold">Standard single-player progression.</CardDescription>
+                   <CardDescription className="font-bold">Standard solo progression.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-8 text-center"><Button className="w-full h-12 rounded-xl font-black bg-teal-600 hover:bg-teal-700 text-white">Enter Arena <ChevronRight className="ml-1 w-4 h-4"/></Button></CardContent>
              </Card>
@@ -250,7 +251,9 @@ export default function PatternMemoryPage() {
             ) : (
                <Button onClick={() => { setRound(1); setScore(0); setLives(INITIAL_LIVES); setGameState('ready'); }} className="h-16 rounded-2xl text-xl font-black uppercase tracking-widest shadow-xl bg-slate-900 hover:bg-black text-white"><RotateCcw className="mr-2 w-6 h-6" /> Retry Level {level}</Button>
             )}
-            <Button variant="ghost" onClick={() => setGameState('lobby')} className="font-black uppercase tracking-widest text-[10px] h-12 text-slate-400">Back to Hub</Button>
+            <Button variant="ghost" asChild className="font-black uppercase tracking-widest text-[10px] h-12 text-slate-400">
+               <Link href="/game">Back to Hub</Link>
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -262,17 +265,21 @@ export default function PatternMemoryPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-10 pb-20 mt-10 px-4">
       <div className="flex justify-between items-center px-4">
-         <div className="space-y-1"><h1 className="text-3xl font-black uppercase tracking-tight text-slate-900 italic">Matrix Flash</h1>
-            <div className="flex gap-2"><Badge className="bg-slate-900 text-white border-none font-black text-[10px] px-3">LEVEL {level}</Badge><Badge variant="outline" className="font-black text-[10px] px-3 border-slate-200 text-slate-700">ROUND {round}/{ROUNDS_PER_LEVEL}</Badge></div>
+         <div className="space-y-1">
+            <h1 className="text-3xl font-black uppercase tracking-tight text-slate-900 italic">Matrix Flash</h1>
+            <div className="flex gap-2">
+              <Badge className="bg-slate-900 text-white border-none font-black text-[10px] px-3">LEVEL {level}</Badge>
+              <Badge variant="outline" className="font-black text-[10px] px-3 border-slate-200 text-slate-700">ROUND {round}/{ROUNDS_PER_LEVEL}</Badge>
+            </div>
          </div>
          <div className="flex items-center gap-3 bg-white/50 backdrop-blur-md px-6 py-3 rounded-2xl border-2 border-white shadow-sm">
             {Array.from({length: INITIAL_LIVES}).map((_, i) => (<Heart key={i} className={cn("w-6 h-6 transition-all duration-300", i < lives ? "text-red-500 fill-red-500" : "text-slate-200")} />))}
          </div>
       </div>
       <Card className="rounded-[3rem] shadow-2xl border-none overflow-hidden min-h-[500px] flex flex-col bg-black relative">
-        {/* Background Texture & 2nd Layer Image */}
-        <div className="absolute inset-0 opacity-20 bg-cover bg-center mix-blend-overlay" style={{ backgroundImage: "url('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/abacus_hero.webp?alt=media')" }} />
-        <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.15) 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
+        {/* Elite Matrix Arena: Black bg + grid texture + subtle image overlay */}
+        <div className="absolute inset-0 opacity-20 bg-cover bg-center mix-blend-overlay pointer-events-none" style={{ backgroundImage: "url('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/abacus_hero.webp?alt=media')" }} />
+        <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.15) 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
         
         <div className="bg-white/5 p-4 shrink-0 border-b border-white/5 relative z-10"><Progress value={(round / ROUNDS_PER_LEVEL) * 100} className="h-1.5 bg-white/10" /></div>
         <CardContent className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden z-10">
@@ -303,15 +310,16 @@ export default function PatternMemoryPage() {
               )}
             </div>
 
-            {/* Matrix Box Container */}
-            <div className="grid gap-3 sm:gap-4 p-8 bg-white/5 rounded-[2.5rem] border-4 border-white/10 shadow-inner" style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, width: '100%', maxWidth: gridSize === 3 ? '320px' : gridSize === 4 ? '400px' : '500px' }}>
+            {/* Re-applied high-fidelity rounded glass matrix box */}
+            <div 
+              className="grid gap-3 sm:gap-4 p-8 bg-white/5 rounded-[2.5rem] border-4 border-white/10 shadow-inner" 
+              style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, width: '100%', maxWidth: gridSize === 3 ? '320px' : gridSize === 4 ? '400px' : '500px' }}
+            >
               {Array.from({ length: gridSize * gridSize }).map((_, i) => {
                 const isCorrectPattern = pattern.includes(i);
                 const isSelected = userSelection.includes(i);
                 const isWrong = wrongSelection === i;
                 const showHint = gameState === 'memorizing' || gameState === 'feedback';
-                
-                // Plain boxes for Get Ready (removing white corners)
                 const isGetReady = gameState === 'ready';
 
                 return (
@@ -322,7 +330,7 @@ export default function PatternMemoryPage() {
                       "aspect-square transition-all duration-300 cursor-pointer shadow-lg border-b-4 border-r-4 active:border-0 active:translate-y-1", 
                       shapeClass, 
                       (!showHint && !isSelected && !isWrong) && "bg-slate-700 border-slate-800 hover:bg-slate-600",
-                      isGetReady && "bg-white/5 border-white/10", // Plain subtle boxes for Get Ready
+                      isGetReady && "bg-white/5 border-white/10",
                       showHint && isCorrectPattern && cn("bg-teal-400 border-teal-500", "scale-[0.98] ring-8 ring-white/20"),
                       showHint && !isCorrectPattern && "bg-white/5 border-white/10 opacity-40",
                       gameState === 'playing' && isSelected && cn("bg-teal-400 border-teal-500", "scale-[0.98] ring-8 ring-white/20 animate-in zoom-in-90"),

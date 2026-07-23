@@ -39,7 +39,7 @@ export const masteryMixQuestions: Record<string, Question[]> = {
 };
 
 const preDefinedQuestions: Record<string, Question[]> = {
-  // Direct Formula Mapping for Bubble Game (Syncing Hub Keys with Internal Keys)
+  // Syncing Hub Keys with Internal Formula Keys for Bubble Game
   'small-sister-plus-4': basicAdditionQuestions['basic-addition-plus-4'],
   'small-sister-plus-3': basicAdditionQuestions['basic-addition-plus-3'],
   'small-sister-plus-2': basicAdditionQuestions['basic-addition-plus-2'],
@@ -120,7 +120,7 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
     easy: { numQuestions: 20, timeLimit: 0, title: 'Identify Beads Value', icon: 'eye' },
   },
   'beads-set': {
-    easy: { numQuestions: 20, timeLimit: 0, title: 'Set Beads Value', icon: 'puzzle' },
+    easy: { numQuestions: 20, timeLimit: 0, title: 'Set Beads Value', icon: 'eye' },
   },
   'basic-add-sub-l1': {
     easy: { numQuestions: 30, timeLimit: 0, title: 'Basic Add/Sub: Level 1 (Direct)', icon: 'brain-circuit' },
@@ -221,10 +221,10 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
     custom: { numQuestions: 50, timeLimit: 0, title: 'Anzan Custom Lab', icon: 'zap' }
   },
   'voice-anzan': {
-    easy: { numQuestions: 50, timeLimit: 0, title: 'Novice Voice Anzan', icon: 'megaphone' },
-    medium: { numQuestions: 50, timeLimit: 0, title: 'Expert Voice Anzan', icon: 'megaphone' },
-    hard: { numQuestions: 50, timeLimit: 0, title: 'Elite Voice Anzan', icon: 'megaphone' },
-    custom: { numQuestions: 50, timeLimit: 0, title: 'Voice Custom Lab', icon: 'megaphone' }
+    easy: { numQuestions: 50, timeLimit: 0, title: 'Novice Voice Anzan', icon: 'zap' },
+    medium: { numQuestions: 50, timeLimit: 0, title: 'Expert Voice Anzan', icon: 'zap' },
+    hard: { numQuestions: 50, timeLimit: 0, title: 'Elite Voice Anzan', icon: 'zap' },
+    custom: { numQuestions: 50, timeLimit: 0, title: 'Voice Custom Lab', icon: 'zap' }
   },
 };
 
@@ -239,7 +239,7 @@ export function getTestSettings(testId: TestType, difficulty: Difficulty): TestS
       const parts = difficulty.split('-');
       const levelNum = parts[parts.length - 1];
       const tier = parts[parts.length - 2];
-      return { numQuestions: 50, timeLimit: 0, title: `${tier.toUpperCase()} Anzan - Level ${levelNum}`, icon: testId === 'voice-anzan' ? 'megaphone' : 'zap' };
+      return { numQuestions: 50, timeLimit: 0, title: `${tier.toUpperCase()} Anzan - Level ${levelNum}`, icon: 'zap' };
     }
   }
   return TEST_CONFIG[testId]?.[difficulty as keyof Partial<Record<Difficulty, TestSettings>>] as TestSettings | undefined;
@@ -288,12 +288,10 @@ export function generateOptions(correctAnswer: number, prng: () => number = Math
 export function generateGameQuestions(level: GameLevel, levelId: number): Question[] {
   let allQuestions: Question[] = [];
   if (level === 'general-practice') {
-     // Spread all available formulas
      allQuestions = Object.values(preDefinedQuestions).flat();
   } else if (preDefinedQuestions[level as string]) {
      allQuestions = preDefinedQuestions[level as string];
   } else {
-     // Fallback for dynamic mix levels
      allQuestions = Object.values(preDefinedQuestions).flat();
   }
   const positiveOnly = allQuestions.filter(q => q.answer >= 0);
@@ -313,6 +311,25 @@ export function generateFlashSequence(digits: number, rows: number, prng: () => 
     else { sequence.push(val); answer += val; }
   }
   return { sequence, answer };
+}
+
+/**
+ * Duel Question Generator (Fixes Build Error)
+ */
+export function generateDuelQuestions(mode: 'standard' | 'flash' | 'matrix', seed?: string): Question[] {
+  const prng = seed ? createPRNG(seed) : Math.random;
+  const questions: Question[] = [];
+  for (let i = 0; i < 10; i++) {
+    if (mode === 'flash') {
+      const { sequence, answer } = generateFlashSequence(1, 5, prng);
+      questions.push({ text: sequence.join(' '), answer, options: generateOptions(answer, prng), sequence });
+    } else {
+      const n1 = getRandomInt(1, 9, prng);
+      const n2 = getRandomInt(1, 9, prng);
+      questions.push({ text: `${n1} + ${n2}`, answer: n1 + n2, options: generateOptions(n1 + n2, prng) });
+    }
+  }
+  return questions;
 }
 
 export function generateTest(testId: TestType, difficulty: Difficulty, customSettings?: { rows?: number, digits?: number, delay?: number }): Question[] {
@@ -391,7 +408,6 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
       if (difficulty === 'easy') { m1 = getRandomInt(2, 9); m2 = getRandomInt(2, 9); } 
       else if (difficulty === 'medium') { m1 = getRandomInt(10, 99); m2 = getRandomInt(2, 9); } 
       else { 
-        // Dynamic mix for Hard: 3x1, 2x2, 4x1
         const t = Math.random(); 
         if (t < 0.4) { m1 = getRandomInt(100, 999); m2 = getRandomInt(2, 9); } 
         else if (t < 0.8) { m1 = getRandomInt(11, 99); m2 = getRandomInt(11, 99); } 
@@ -406,16 +422,20 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
       answer = q; text = `${q * div} ÷ ${div}`;
     } else if (coreTestId === 'square') {
         const [min, max] = difficulty === 'easy' ? [2, 15] : difficulty === 'medium' ? [16, 50] : [51, 99];
-        const n = getRandomInt(min, max); answer = n * n; text = `${n}²`;
+        const n = getRandomInt(min, max);
+        answer = n * n; text = `${n}²`;
     } else if (coreTestId === 'cube') {
         const [min, max] = difficulty === 'easy' ? [2, 6] : difficulty === 'medium' ? [7, 15] : [16, 30];
-        const n = getRandomInt(min, max); answer = n * n * n; text = `${n}³`;
+        const n = getRandomInt(min, max);
+        answer = n * n * n; text = `${n}³`;
     } else if (coreTestId === 'square-root') {
         const [min, max] = difficulty === 'easy' ? [2, 15] : difficulty === 'medium' ? [16, 50] : [51, 99];
-        const n = getRandomInt(min, max); answer = n; text = `√${n * n}`;
+        const n = getRandomInt(min, max);
+        answer = n; text = `√${n * n}`;
     } else if (coreTestId === 'cube-root') {
         const [min, max] = difficulty === 'easy' ? [2, 6] : difficulty === 'medium' ? [7, 15] : [16, 30];
-        const n = getRandomInt(min, max); answer = n; text = `³√${n * n * n}`;
+        const n = getRandomInt(min, max);
+        answer = n; text = `³√${n * n * n}`;
     }
     questions.push({ text, answer, options: generateOptions(answer) });
   }
