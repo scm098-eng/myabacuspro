@@ -363,6 +363,54 @@ export default function PricingPage() {
                     </Table>
                 </Card>
             </section>
+
+            {/* Gift Coupon Section */}
+            <section className="max-w-4xl mx-auto py-20 border-t">
+              <div className="flex flex-col md:flex-row items-center gap-12">
+                <div className="flex-1 space-y-6">
+                  <div className="bg-orange-100 p-4 rounded-3xl w-fit"><Gift className="w-10 h-10 text-orange-600" /></div>
+                  <h2 className="text-3xl font-black uppercase tracking-tight font-headline">Redeem <span className="text-primary italic">Gift Code</span></h2>
+                  <p className="text-lg text-muted-foreground font-medium leading-relaxed">
+                    Have a special gift coupon from your teacher or an event? Enter it here to instantly unlock Pro access to all training modules.
+                  </p>
+                </div>
+                <Card className="flex-1 w-full rounded-[2.5rem] border-2 shadow-xl p-8 bg-white/50 backdrop-blur-sm">
+                  <form onSubmit={handleRedeemCoupon} className="space-y-6">
+                    <div className="space-y-2">
+                      <Label className="font-black uppercase text-[10px] tracking-widest text-muted-foreground ml-1">Coupon Code</Label>
+                      <Input 
+                        placeholder="ENTER-CODE-HERE" 
+                        value={couponCode} 
+                        onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                        className="h-14 text-center font-mono text-xl font-bold tracking-widest border-2 rounded-2xl"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full h-14 text-lg font-black uppercase tracking-widest rounded-xl shadow-lg" disabled={isRedeeming || !couponCode.trim()}>
+                      {isRedeeming ? <><Loader2 className="animate-spin mr-2" /> Validating...</> : <><Send className="mr-2 w-5 h-5" /> Activate Pro</>}
+                    </Button>
+                  </form>
+                </Card>
+              </div>
+            </section>
+
+            <Dialog open={!!redemptionSuccess} onOpenChange={() => setRedemptionSuccess(null)}>
+                <DialogContent className="rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+                    <div className="bg-green-600 p-8 text-center text-white">
+                        <div className="mx-auto bg-white/20 p-4 rounded-full w-fit mb-4">
+                            <CheckCircle2 className="w-12 h-12" />
+                        </div>
+                        <DialogTitle className="text-3xl font-black uppercase tracking-tight">Code Activated!</DialogTitle>
+                    </div>
+                    <div className="p-10 text-center space-y-6">
+                        <DialogDescription className="text-xl font-bold text-slate-700">
+                            Congratulations! Your account has been upgraded to **Pro** for the next **{redemptionSuccess?.days} days**.
+                        </DialogDescription>
+                        <Button onClick={() => router.push('/dashboard')} className="w-full h-14 text-lg font-black uppercase rounded-xl">
+                            Go to My Dashboard
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

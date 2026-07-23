@@ -39,7 +39,7 @@ export const masteryMixQuestions: Record<string, Question[]> = {
 };
 
 const preDefinedQuestions: Record<string, Question[]> = {
-  // Syncing Hub Keys with Internal Formula Keys for Bubble Game
+  // Aliases to ensure Bubble Game missions match curriculum keys
   'small-sister-plus-4': basicAdditionQuestions['basic-addition-plus-4'],
   'small-sister-plus-3': basicAdditionQuestions['basic-addition-plus-3'],
   'small-sister-plus-2': basicAdditionQuestions['basic-addition-plus-2'],
@@ -120,7 +120,7 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
     easy: { numQuestions: 20, timeLimit: 0, title: 'Identify Beads Value', icon: 'eye' },
   },
   'beads-set': {
-    easy: { numQuestions: 20, timeLimit: 0, title: 'Set Beads Value', icon: 'eye' },
+    easy: { numQuestions: 20, timeLimit: 0, title: 'Set Beads Value', icon: 'puzzle' },
   },
   'basic-add-sub-l1': {
     easy: { numQuestions: 30, timeLimit: 0, title: 'Basic Add/Sub: Level 1 (Direct)', icon: 'brain-circuit' },
@@ -314,7 +314,7 @@ export function generateFlashSequence(digits: number, rows: number, prng: () => 
 }
 
 /**
- * Duel Question Generator (Fixes Build Error)
+ * Duel Question Generator
  */
 export function generateDuelQuestions(mode: 'standard' | 'flash' | 'matrix', seed?: string): Question[] {
   const prng = seed ? createPRNG(seed) : Math.random;
