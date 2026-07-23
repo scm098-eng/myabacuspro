@@ -22,7 +22,7 @@ const faqs = [
     category: 'Game Hub',
     question: 'What is the Game Hub?',
     answer:
-      'The Game Hub is our dedicated missions center. It currently features three distinct training modes: \n\n• **Bubble Path**: A 1,000-level formula mastery quest. \n• **Matrix Flash**: A spatial visualization drill to sharpen your "Mental Snapshot" ability. \n• **1v1 Duels**: A competitive arena where you can challenge friends or simulated global opponents to real-time math races.',
+      'The Game Hub is our dedicated missions center. It currently features three distinct training modes: \n\n• **Bubble Game**: A 1,000-level formula mastery quest. \n• **Matrix Flash**: A spatial visualization drill to sharpen your "Mental Snapshot" ability. \n• **1v1 Duels**: A competitive arena where you can challenge friends or simulated global opponents to real-time math races.',
   },
   {
     category: 'Bot Matchmaking',
@@ -46,12 +46,12 @@ const faqs = [
     category: 'Rewards',
     question: 'How exactly are Mastery Points earned?',
     answer:
-      'Mastery Points represent your growth: \n\n• **Daily Consistency**: +25 points for your first practice session each day. \n• **Accuracy**: +1 point per right answer in Tests and Game. \n• **Speed Bonus**: Up to +5 bonus points in timed tests based on your pace. \n• **Duel Winner**: +50 points for winning a match against a human or bot.',
+      'Mastery Points represent your growth: \n\n• **Daily Consistency**: +25 points for your first practice session each day. \n• **Accuracy**: +1 point per right answer in Tests and Game. \n• **Speed Bonus**: Up to +5 bonus points in timed tests based on your pace. \n• **Duel Winner**: +50 points for winning a match against a human or bot. \n• **Achievement Bonus**: Significant point bonuses awarded automatically when you achieve a new Rank (added to Global points only).',
   },
   {
     category: 'Ranks',
     question: 'What are the Rank and Title criteria?',
-    answer: 'Titles are awarded based on total points and practice consistency. Each title includes a Rank-Up point bonus.',
+    answer: 'Titles are awarded based on total points and practice consistency. Each achievement adds a significant Mastery Bonus to your Global score.',
     isCustom: true
   },
 ];
@@ -89,14 +89,16 @@ export default function FAQPage() {
                                                             <TableHead className="px-4">Rank</TableHead>
                                                             <TableHead className="text-center px-4">Days</TableHead>
                                                             <TableHead className="text-center px-4">Points</TableHead>
+                                                            <TableHead className="text-center px-4">Bonus</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
                                                         {RANK_CRITERIA.slice().reverse().map((rank) => (
                                                             <TableRow key={rank.name} className="h-12 hover:bg-muted/30">
-                                                                <TableCell className="font-bold py-2 px-4 min-w-[100px]"><span className="mr-2">{rank.icon}</span>{rank.name}</TableCell>
+                                                                <TableCell className="font-bold py-2 px-4 min-w-[150px]"><span className="mr-2">{rank.icon}</span>{rank.name}</TableCell>
                                                                 <TableCell className="text-center py-2 px-4 font-medium">{rank.daysReq}+</TableCell>
                                                                 <TableCell className="text-center py-2 px-4 font-medium">{rank.pointsReq.toLocaleString()}+</TableCell>
+                                                                <TableCell className="text-center py-2 px-4 font-black text-primary">+{rank.bonusPoints.toLocaleString()}</TableCell>
                                                             </TableRow>
                                                         ))}
                                                     </TableBody>

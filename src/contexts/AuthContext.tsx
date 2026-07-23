@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -498,6 +497,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const updateData: any = { updatedAt: serverTimestamp() };
     
     if (nextRank.name !== data.lastAwardedRank) {
+      // Rank bonus point only will add in global points, don't add it in weekly & monthly points
       const bonus = nextRank.bonusPoints || 0;
       updateData.lastAwardedRank = nextRank.name;
       updateData.totalPoints = increment(earnedPoints + bonus);
@@ -514,8 +514,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const currentWeekKey = getUTCMondayKey();
     const currentMonthKey = getUTCMonthKey();
-    if (data.lastWeeklyReset !== currentWeekKey) { updateData.weeklyPoints = earnedPoints; updateData.lastWeeklyReset = currentWeekKey; } else { updateData.weeklyPoints = increment(earnedPoints); }
-    if (data.lastMonthlyReset !== currentMonthKey) { updateData.monthlyPoints = earnedPoints; updateData.lastMonthlyReset = currentMonthKey; } else { updateData.monthlyPoints = increment(earnedPoints); }
+
+    // Session points added to weekly/monthly as usual
+    if (data.lastWeeklyReset !== currentWeekKey) { 
+        updateData.weeklyPoints = earnedPoints; 
+        updateData.lastWeeklyReset = currentWeekKey; 
+    } else { 
+        updateData.weeklyPoints = increment(earnedPoints); 
+    }
+
+    if (data.lastMonthlyReset !== currentMonthKey) { 
+        updateData.monthlyPoints = earnedPoints; 
+        updateData.lastMonthlyReset = currentMonthKey; 
+    } else { 
+        updateData.monthlyPoints = increment(earnedPoints); 
+    }
     
     await updateDoc(userRef, updateData);
   }, [getStudentTitle]);
