@@ -1,5 +1,4 @@
-
-'use client';
+"use client"
 
 import React from 'react';
 import Image from 'next/image';
@@ -41,11 +40,6 @@ export function HomeHero() {
             loop: true,
           }}
         >
-          {/* 
-            Note: We use absolute fill on the CarouselItem's child to ensure 
-            images always fill the aspect-video container regardless of 
-            Embla's internal viewport height behavior.
-          */}
           <CarouselContent className="h-full ml-0">
             {HERO_IMAGES.map((image, index) => (
               <CarouselItem key={index} className="h-full pl-0 basis-full relative flex-shrink-0">
