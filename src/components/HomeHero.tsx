@@ -9,22 +9,20 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
+import placeholderImages from '@/lib/placeholder-images.json';
 
 const HERO_IMAGES = [
   {
-    src: "https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/abacus_hero.webp?alt=media&token=1427f56d-3719-48db-8252-49d4e60e427a",
-    alt: "Mental math training hero",
-    hint: "abacus education"
+    ...placeholderImages.homeHero,
+    alt: "Mental math training hero"
   },
   {
-    src: "https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Abhi.webp?alt=media&token=f604be25-f0d9-48d8-82c2-5ee714842f0a",
-    alt: "Student Abhi practicing",
-    hint: "student learning"
+    ...placeholderImages.abhi,
+    alt: "Student Abhi practicing"
   },
   {
-    src: "https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Super%20Abhi.webp?alt=media&token=8bda6d23-bc82-4efb-b402-8007e05f71fc",
-    alt: "Student Super Abhi",
-    hint: "math champion"
+    ...placeholderImages.superAbhi,
+    alt: "Student Super Abhi"
   }
 ];
 
@@ -43,17 +41,22 @@ export function HomeHero() {
             loop: true,
           }}
         >
-          {/* Ensure the viewport container also stretches to full height */}
-          <CarouselContent className="h-full ml-0 flex items-stretch">
+          {/* 
+            Note: We use absolute fill on the CarouselItem's child to ensure 
+            images always fill the aspect-video container regardless of 
+            Embla's internal viewport height behavior.
+          */}
+          <CarouselContent className="h-full ml-0">
             {HERO_IMAGES.map((image, index) => (
               <CarouselItem key={index} className="h-full pl-0 basis-full relative flex-shrink-0">
-                <div className="relative w-full h-full overflow-hidden">
+                <div className="relative w-full h-full">
                   <Image
                     src={image.src}
                     alt={image.alt}
                     fill
                     className="object-cover"
                     priority={index === 0}
+                    sizes="(max-width: 1280px) 100vw, 1280px"
                     data-ai-hint={image.hint}
                   />
                 </div>

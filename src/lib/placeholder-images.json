@@ -52,5 +52,17 @@
     "width": 1200,
     "height": 800,
     "hint": "math competition"
+  },
+  "abhi": {
+    "src": "https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Abhi.webp?alt=media&token=f604be25-f0d9-48d8-82c2-5ee714842f0a",
+    "width": 1200,
+    "height": 675,
+    "hint": "student practicing"
+  },
+  "superAbhi": {
+    "src": "https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/Super%20Abhi.webp?alt=media&token=8bda6d23-bc82-4efb-b402-8007e05f71fc",
+    "width": 1200,
+    "height": 675,
+    "hint": "math champion"
   }
 }
