@@ -1,14 +1,14 @@
 import React, { Suspense } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { CircleCheckBig, Zap, Target, ArrowRight, BookOpen, Calendar, Rocket } from 'lucide-react';
 import { getFirestoreDb } from '@/lib/firebase-admin';
-import { format } from 'date-fns';
 import type { BlogPost } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { HomeHero } from '@/components/HomeHero';
+import Image from 'next/image';
 
 const features = [
   {
@@ -154,17 +154,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="w-full" aria-label="Visual Preview">
-         <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-[2.5rem] overflow-hidden border-4 border-primary/20 shadow-2xl">
-             <Image 
-                src="https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.firebasestorage.app/o/abacus_hero.webp?alt=media"
-                alt="Mental math training hero"
-                fill
-                className="object-cover"
-                priority
-             />
-         </div>
-      </section>
+      <HomeHero />
 
       <section className="w-full" aria-labelledby="features-heading">
         <div className="text-center mb-12">
