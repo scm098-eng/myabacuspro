@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react';
@@ -27,12 +28,12 @@ const HERO_IMAGES = [
 
 export function HomeHero() {
   const plugin = React.useRef(
-    Autoplay({ delay: 4000, stopOnInteraction: false })
+    Autoplay({ delay: 5000, stopOnInteraction: false })
   );
 
   return (
     <section className="w-full" aria-label="Visual Preview">
-      <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-[2.5rem] overflow-hidden border-4 border-primary/20 shadow-2xl bg-muted">
+      <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-[2.5rem] overflow-hidden border-[8px] border-white shadow-2xl bg-white group">
         <Carousel
           plugins={[plugin.current]}
           className="w-full h-full"
@@ -48,7 +49,7 @@ export function HomeHero() {
                     src={image.src}
                     alt={image.alt}
                     fill
-                    className="object-cover"
+                    className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                     priority={index === 0}
                     sizes="(max-width: 1280px) 100vw, 1280px"
                     data-ai-hint={image.hint}

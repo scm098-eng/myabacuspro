@@ -1,14 +1,18 @@
-import React, { Suspense } from 'react';
+
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { CircleCheckBig, Zap, Target, ArrowRight, BookOpen, Calendar, Rocket } from 'lucide-react';
-import { getFirestoreDb } from '@/lib/firebase-admin';
 import type { BlogPost } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { HomeHero } from '@/components/HomeHero';
 import Image from 'next/image';
+import { getFirestore, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { firebaseApp } from '@/lib/firebase';
 
 const features = [
   {
@@ -28,35 +32,6 @@ const features = [
   },
 ];
 
-async function getLatestBlogs(): Promise<BlogPost[]> {
-  try {
-    const db = getFirestoreDb();
-    if (!db) return [];
-    
-    const blogRef = db.collection('blogs');
-    // Using a quiet warn for deferred fetch to prevent server crash UI overlay
-    const snapshot = await blogRef.orderBy('createdAt', 'desc').limit(3).get()
-      .catch(err => {
-        console.warn("Home: Blog fetch deferred due to backend connectivity:", err.message);
-        return null;
-      });
-    
-    if (!snapshot) return [];
-
-    return snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString()
-      } as BlogPost;
-    });
-  } catch (error: any) {
-    console.warn("Firebase Admin Suppressed in getLatestBlogs:", error.message || error);
-    return [];
-  }
-}
-
 function BlogGridSkeleton() {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -74,14 +49,35 @@ function BlogGridSkeleton() {
     );
 }
 
-async function BlogSection() {
-    let blogs: BlogPost[] = [];
-    try {
-        blogs = await getLatestBlogs();
-    } catch (e) {
-        console.warn("Silent catch in BlogSection fetch:", e);
-    }
-    
+function ClientBlogSection() {
+    const [blogs, setBlogs] = useState<BlogPost[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchBlogs = async () => {
+            try {
+                const db = getFirestore(firebaseApp);
+                const blogRef = collection(db, 'blogs');
+                const q = query(blogRef, orderBy('createdAt', 'desc'), limit(3));
+                const snapshot = await getDocs(q);
+                
+                const data = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate().toISOString() : new Date().toISOString()
+                } as BlogPost));
+                
+                setBlogs(data);
+            } catch (e) {
+                console.warn("ClientBlogSection: Failed to fetch blogs", e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchBlogs();
+    }, []);
+
+    if (loading) return <BlogGridSkeleton />;
     if (blogs.length === 0) return null;
 
     return (
@@ -203,9 +199,7 @@ export default function Home() {
             </Button>
           </div>
 
-          <Suspense fallback={<BlogGridSkeleton />}>
-            <BlogSection />
-          </Suspense>
+          <ClientBlogSection />
         </div>
       </section>
     </div>
