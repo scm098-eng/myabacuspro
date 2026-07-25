@@ -104,7 +104,8 @@ export default function VoiceAnzanClient({ testId, difficulty, settings }: { tes
     // Sequential Dictation Loop
     for (let i = 0; i < sequence.length; i++) {
       const num = sequence[i];
-      const prefix = i === 0 ? "" : (num > 0 ? "Add " : "Less ");
+      // Always use Add/Less prefix as requested, including the first number
+      const prefix = num >= 0 ? "Add " : "Less ";
       const text = `${prefix} ${Math.abs(num)}`;
       // Numbers are hidden in UI for "Blind" training
       setSpeakingStatus(text); 
@@ -176,7 +177,10 @@ export default function VoiceAnzanClient({ testId, difficulty, settings }: { tes
     }
     
     sessionStorage.setItem('testResults', JSON.stringify({
-      questions: questions.map(q => ({ ...q, text: q.sequence?.map((n, i) => (i === 0 ? '' : (n > 0 ? '+ ' : '- ')) + Math.abs(n)).join(' ') || '' })),
+      questions: questions.map(q => ({ 
+        ...q, 
+        text: q.sequence?.map((n) => (n >= 0 ? '+ ' : '- ') + Math.abs(n)).join(' ') || '' 
+      })),
       userAnswers: finalAnswers,
     }));
 
@@ -199,7 +203,7 @@ export default function VoiceAnzanClient({ testId, difficulty, settings }: { tes
         <div className="flex justify-center px-4">
            <Card className="max-w-sm w-full rounded-[2.5rem] border-none shadow-2xl bg-white hover:scale-[1.02] transition-all cursor-pointer group" onClick={() => setAppState('playing')}>
               <CardHeader className="p-8 text-center bg-indigo-50 rounded-t-[2.5rem] border-b">
-                 <div className="mx-auto bg-indigo-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><Megaphone className="w-8 h-8 text-indigo-600" /></div>
+                 <div className="mx-auto bg-teal-100 p-4 rounded-2xl w-fit mb-4 group-hover:scale-110 transition-transform"><Megaphone className="w-8 h-8 text-indigo-600" /></div>
                  <CardTitle className="text-2xl font-black uppercase tracking-tight">Enter Lab</CardTitle>
                  <CardDescription className="font-bold">Standard auditory mastery session.</CardDescription>
               </CardHeader>
