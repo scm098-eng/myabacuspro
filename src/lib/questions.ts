@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Question, Difficulty, TestType, TestSettings, GameLevel } from '@/types';
@@ -115,7 +116,34 @@ const preDefinedQuestions: Record<string, Question[]> = {
   ...masteryMixQuestions,
 };
 
+const FORMULA_IDS = [
+    'basic-addition-plus-4', 'basic-addition-plus-40', 'basic-addition-plus-3', 'basic-addition-plus-30', 
+    'basic-addition-plus-2', 'basic-addition-plus-20', 'basic-addition-plus-1', 'basic-addition-plus-10',
+    'basic-subtraction-minus-4', 'basic-subtraction-minus-40', 'basic-subtraction-minus-3', 'basic-subtraction-minus-30', 
+    'basic-subtraction-minus-2', 'basic-subtraction-minus-20', 'basic-subtraction-minus-1', 'basic-subtraction-minus-10',
+    'big-brother-addition-plus-9', 'big-brother-addition-plus-90', 'big-brother-addition-plus-8', 'big-brother-addition-plus-80', 
+    'big-brother-addition-plus-7', 'big-brother-addition-plus-70', 'big-brother-addition-plus-6', 'big-brother-addition-plus-60', 
+    'big-brother-addition-plus-5', 'big-brother-addition-plus-50', 'big-brother-addition-plus-4', 'big-brother-addition-plus-40', 
+    'big-brother-addition-plus-3', 'big-brother-addition-plus-30', 'big-brother-addition-plus-2', 'big-brother-addition-plus-20', 
+    'big-brother-addition-plus-1', 'big-brother-addition-plus-10',
+    'big-brother-subtraction-minus-9', 'big-brother-subtraction-minus-90', 'big-brother-subtraction-minus-8', 'big-brother-subtraction-minus-80', 
+    'big-brother-subtraction-minus-7', 'big-brother-subtraction-minus-70', 'big-brother-subtraction-minus-6', 'big-brother-subtraction-minus-60', 
+    'big-brother-subtraction-minus-5', 'big-brother-subtraction-minus-50', 'big-brother-subtraction-minus-4', 'big-brother-subtraction-minus-40', 
+    'big-brother-subtraction-minus-3', 'big-brother-subtraction-minus-30', 'big-brother-subtraction-minus-2', 'big-brother-subtraction-minus-20', 
+    'big-brother-subtraction-minus-1', 'big-brother-subtraction-minus-10',
+    'combination-plus-9', 'combination-plus-90', 'combination-plus-8', 'combination-plus-80', 
+    'combination-plus-7', 'combination-plus-70', 'combination-plus-6', 'combination-plus-60',
+    'combination-minus-9', 'combination-minus-90', 'combination-minus-8', 'combination-minus-80', 
+    'combination-minus-7', 'combination-minus-70', 'combination-minus-6', 'combination-minus-60'
+];
+
+const formulaConfigs = FORMULA_IDS.reduce((acc, id) => {
+    acc[id] = { easy: { numQuestions: 50, timeLimit: 300, title: `Formula Training: ${id.split('-').pop()?.toUpperCase()}`, icon: 'puzzle' } };
+    return acc;
+}, {} as any);
+
 const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
+  ...formulaConfigs,
   'beads-identify': {
     easy: { numQuestions: 20, timeLimit: 0, title: 'Identify Beads Value', icon: 'eye' },
   },
@@ -198,22 +226,6 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
     medium: { numQuestions: 100, timeLimit: 600, title: 'Master: Cube Root (Medium)', icon: 'keyboard' },
     hard: { numQuestions: 150, timeLimit: 900, title: 'Master: Cube Root (Hard)', icon: 'keyboard' },
   },
-  'basic-addition-plus-4': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: +4 = +5 - 1', icon: 'puzzle' } },
-  'basic-addition-plus-3': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: +3 = +5 - 2', icon: 'puzzle' } },
-  'basic-addition-plus-2': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: +2 = +5 - 3', icon: 'puzzle' } },
-  'basic-addition-plus-1': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: +1 = +5 - 4', icon: 'puzzle' } },
-  'basic-subtraction-minus-4': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: -4 = -5 + 1', icon: 'puzzle' } },
-  'basic-subtraction-minus-3': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: -3 = -5 + 2', icon: 'puzzle' } },
-  'basic-subtraction-minus-2': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: -2 = -5 + 3', icon: 'puzzle' } },
-  'basic-subtraction-minus-1': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: -1 = -5 + 4', icon: 'puzzle' } },
-  'big-brother-addition-plus-9': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: +9 = +10 - 1', icon: 'puzzle' } },
-  'big-brother-addition-plus-8': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: +8 = +10 - 2', icon: 'puzzle' } },
-  'big-brother-subtraction-minus-9': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: -9 = -10 + 1', icon: 'puzzle' } },
-  'big-brother-subtraction-minus-8': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: -8 = -10 + 2', icon: 'puzzle' } },
-  'combination-plus-6': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: +6 = +10 - 5 + 1', icon: 'puzzle' } },
-  'combination-plus-7': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: +7 = +10 - 5 + 2', icon: 'puzzle' } },
-  'combination-plus-8': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: +8 = +10 - 5 + 3', icon: 'puzzle' } },
-  'combination-plus-9': { easy: { numQuestions: 50, timeLimit: 300, title: 'Formula: +9 = +10 - 5 + 4', icon: 'puzzle' } },
   'flash-anzan': {
     easy: { numQuestions: 50, timeLimit: 0, title: 'Novice Flash Anzan', icon: 'zap' },
     medium: { numQuestions: 50, timeLimit: 0, title: 'Expert Flash Anzan', icon: 'zap' },
@@ -335,6 +347,38 @@ export function generateDuelQuestions(mode: 'standard' | 'flash' | 'matrix', see
 export function generateTest(testId: TestType, difficulty: Difficulty, customSettings?: { rows?: number, digits?: number, delay?: number }): Question[] {
   const settings = getTestSettings(testId, difficulty);
   if (!settings && difficulty !== 'custom') return [];
+
+  // Handle Beads Practice (Dynamic Generation)
+  if (testId === 'beads-identify' || testId === 'beads-set') {
+    const levelMatch = difficulty.match(/level-(\d+)/);
+    const levelNum = levelMatch ? parseInt(levelMatch[1], 10) : 1;
+    const questions: Question[] = [];
+    
+    // Determine digit complexity based on level
+    let digits = 1;
+    if (levelNum <= 2) digits = 1;
+    else if (levelNum <= 4) digits = 2;
+    else if (levelNum <= 6) digits = 3;
+    else if (levelNum <= 8) digits = 4;
+    else digits = Math.floor(Math.random() * 3) + 2; // Mix for 9-12
+
+    for (let i = 0; i < 20; i++) {
+        // Handle mix levels specifically
+        const d = (levelNum >= 9) ? (Math.floor(Math.random() * 4) + 1) : digits;
+        const min = Math.pow(10, d - 1);
+        const max = Math.pow(10, d) - 1;
+        const val = getRandomInt(min, max);
+        
+        questions.push({
+            text: testId === 'beads-set' ? `Set ${val}` : 'Identify Value',
+            answer: val,
+            options: generateOptions(val),
+            questionType: testId === 'beads-identify' ? 'identify' : 'set'
+        });
+    }
+    return questions;
+  }
+
   const coreTestId = testId.replace('-input', '');
   if (preDefinedQuestions[coreTestId]) return deDuplicateQuestions(shuffleArray([...preDefinedQuestions[coreTestId]])).slice(0, settings?.numQuestions || 50);
   

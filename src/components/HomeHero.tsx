@@ -33,7 +33,7 @@ export function HomeHero() {
 
   return (
     <section className="w-full" aria-label="Visual Preview">
-      <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-[2.5rem] overflow-hidden border-[8px] border-white shadow-2xl bg-white group">
+      <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-[2.5rem] overflow-hidden border-[6px] border-[#ffebd9] shadow-2xl bg-white group">
         <Carousel
           plugins={[plugin.current]}
           className="w-full h-full"
