@@ -219,7 +219,19 @@ function ResultsComponent() {
                   {statusIcon}
               </CardHeader>
               <CardContent className="flex-grow">
-                  <p className="text-xl font-bold tracking-tight">{q.text || (q.questionType === 'set' ? `Set ${q.answer}` : 'Identify Beads')}</p>
+                  <p className="text-xl font-bold tracking-tight whitespace-normal break-words">
+                    {(q.text || (q.questionType === 'set' ? `Set ${q.answer}` : 'Identify Beads')).split(' ').reduce((acc: React.ReactNode[], part, i, arr) => {
+                      if (['+', '-', '×', '÷'].includes(part)) return acc;
+                      const prev = arr[i-1];
+                      if (prev && ['+', '-', '×', '÷'].includes(prev)) {
+                        acc.push(<span key={i} className="inline-block whitespace-nowrap">{prev} {part}</span>);
+                      } else {
+                        acc.push(<span key={i} className="inline-block">{part}</span>);
+                      }
+                      if (i < arr.length - 1) acc.push(<span key={`space-${i}`}> </span>);
+                      return acc;
+                    }, [])}
+                  </p>
                   <Separator className="my-3" />
                   <div className="space-y-2 text-sm">
                       <p className="flex justify-between">Correct: <span className="font-bold text-primary">{q.answer}</span></p>

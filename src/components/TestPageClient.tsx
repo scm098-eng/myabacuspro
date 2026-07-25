@@ -218,9 +218,20 @@ export default function TestPageClient({ testId, difficulty, settings }: { testI
           <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-3 text-center">Progress: {currentIdx + 1} of {questions.length}</p>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center text-center p-8 overflow-hidden">
-            <div className="w-full overflow-hidden bg-muted/20 py-10 rounded-[2rem] border-2 border-dashed">
-              <p className={cn("font-black tracking-tight whitespace-nowrap", getQuestionFontSize(questions[currentIdx]?.text || ""))}>
-                {questions[currentIdx]?.text || "Loading..."} = ?
+            <div className="w-full bg-muted/20 py-10 rounded-[2rem] border-2 border-dashed px-4 overflow-hidden">
+              <p className={cn("font-black tracking-tight whitespace-normal break-words", getQuestionFontSize(questions[currentIdx]?.text || ""))}>
+                {(questions[currentIdx]?.text || "Loading...").split(' ').reduce((acc: React.ReactNode[], part, i, arr) => {
+                  if (['+', '-', '×', '÷'].includes(part)) return acc;
+                  const prev = arr[i-1];
+                  if (prev && ['+', '-', '×', '÷'].includes(prev)) {
+                    acc.push(<span key={i} className="inline-block whitespace-nowrap">{prev} {part}</span>);
+                  } else {
+                    acc.push(<span key={i} className="inline-block">{part}</span>);
+                  }
+                  if (i < arr.length - 1) acc.push(<span key={`space-${i}`}> </span>);
+                  return acc;
+                }, [])}
+                <span className="inline-block whitespace-nowrap">&nbsp;=&nbsp;?</span>
               </p>
             </div>
             <div className="mt-12">

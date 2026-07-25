@@ -260,8 +260,22 @@ export function BubbleGame({ levelId, level, levelName }: { levelId: number, lev
         </div>
         <div className="relative w-full h-full max-w-7xl z-10 flex items-center justify-center">
             {gameState === 'playing' && lives > 0 && bubbles.map(b => (
-                <div key={b.id} onClick={() => handleBubbleClick(b)} className={cn("absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-2xl transition-all active:scale-95 z-10", b.isQuestion ? 'w-max px-6 sm:px-10 h-16 sm:h-24 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20' : 'w-20 h-20 sm:w-32 sm:h-32 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20')} style={{ left: `${b.left}%`, animationDuration: `${b.duration}s`, animationDelay: `${b.delay}s`, transform: 'translateX(-50%)' }}>
-                    <span className={cn("text-white font-black text-center", b.isQuestion ? getQuestionFontSize(questions[currentQuestionIndex]?.text || "") : getAnswerFontSize(b.value))}>{b.isQuestion ? questions[currentQuestionIndex]?.text : b.value}</span>
+                <div key={b.id} onClick={() => handleBubbleClick(b)} className={cn("absolute bottom-[-200px] flex items-center justify-center cursor-pointer animate-bubble-rise border-4 shadow-2xl transition-all active:scale-95 z-10", b.isQuestion ? 'w-max px-6 sm:px-10 h-auto min-h-16 sm:min-h-24 bg-yellow-400 border-yellow-500 rounded-3xl ring-8 ring-yellow-400/20' : 'w-20 h-20 sm:w-32 sm:h-32 bg-pink-500 border-pink-600 rounded-full ring-8 ring-pink-500/20')} style={{ left: `${b.left}%`, animationDuration: `${b.duration}s`, animationDelay: `${b.delay}s`, transform: 'translateX(-50%)' }}>
+                    <span className={cn("text-white font-black text-center whitespace-normal break-words", b.isQuestion ? getQuestionFontSize(questions[currentQuestionIndex]?.text || "") : getAnswerFontSize(b.value))}>
+                        {b.isQuestion ? (
+                          (questions[currentQuestionIndex]?.text || "").split(' ').reduce((acc: React.ReactNode[], part, i, arr) => {
+                            if (['+', '-', '×', '÷'].includes(part)) return acc;
+                            const prev = arr[i-1];
+                            if (prev && ['+', '-', '×', '÷'].includes(prev)) {
+                              acc.push(<span key={i} className="inline-block whitespace-nowrap">{prev} {part}</span>);
+                            } else {
+                              acc.push(<span key={i} className="inline-block">{part}</span>);
+                            }
+                            if (i < arr.length - 1) acc.push(<span key={`space-${i}`}> </span>);
+                            return acc;
+                          }, [])
+                        ) : b.value}
+                    </span>
                 </div>
             ))}
         </div>

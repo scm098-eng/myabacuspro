@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
@@ -270,15 +269,26 @@ export default function ExamArenaPage() {
         </CardHeader>
         <CardContent className="p-8 text-center flex-grow flex flex-col justify-center overflow-hidden">
           <div className="space-y-6">
-            <div className="py-4 bg-muted/30 rounded-[2rem] border-2 border-dashed flex flex-col items-center min-h-[160px] justify-center px-4">
+            <div className="bg-muted/30 rounded-[2rem] border-2 border-dashed flex flex-col items-center min-h-[160px] justify-center px-4 overflow-hidden py-8">
                 {questions[currentIdx]?.questionType === 'identify' ? (
                   <div className="w-full max-w-md">
                     <BeadDisplay value={questions[currentIdx].answer} rodCount={dynamicRodCount} />
                   </div>
                 ) : (
-                  <div className="w-full overflow-visible">
+                  <div className="w-full overflow-hidden">
                     <p className={cn("font-black tracking-tight whitespace-normal break-words", getQuestionFontSize(questions[currentIdx]?.text || ""))}>
-                      {questions[currentIdx]?.text} = ?
+                      {(questions[currentIdx]?.text || "").split(' ').reduce((acc: React.ReactNode[], part, i, arr) => {
+                        if (['+', '-', '×', '÷'].includes(part)) return acc;
+                        const prev = arr[i-1];
+                        if (prev && ['+', '-', '×', '÷'].includes(prev)) {
+                          acc.push(<span key={i} className="inline-block whitespace-nowrap">{prev} {part}</span>);
+                        } else {
+                          acc.push(<span key={i} className="inline-block">{part}</span>);
+                        }
+                        if (i < arr.length - 1) acc.push(<span key={`space-${i}`}> </span>);
+                        return acc;
+                      }, [])}
+                      <span className="inline-block whitespace-nowrap">&nbsp;=&nbsp;?</span>
                     </p>
                   </div>
                 )}
