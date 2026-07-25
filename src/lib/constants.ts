@@ -41,7 +41,7 @@ export const TEST_NAME_MAP: Record<string, string> = {
     'big-brother-addition-plus-8': 'Big Brother: +8',
     'big-brother-addition-plus-80': 'Big Brother: +80',
     'big-brother-addition-plus-7': 'Big Brother: +7',
-    'big-brother-addition-plus-70': 'Big Brother: +100 - 30',
+    'big-brother-addition-plus-70': 'Big Brother: +70',
     'big-brother-addition-plus-6': 'Big Brother: +6',
     'big-brother-addition-plus-60': 'Big Brother: +60',
     'big-brother-addition-plus-5': 'Big Brother: +5',
@@ -203,6 +203,10 @@ export const FORMULA_GUIDES: Record<string, { title: string, steps: string[] }> 
   // Big Brother Subtraction
   'big-brother-subtraction-minus-9': { title: "Big Brother -9", steps: ["Formula: -9 = -10 + 1", "To subtract 9: Remove 1 bead from the rod on the LEFT (-10).", "Then: Add 1 earthly bead to the CURRENT rod (+1)."] },
   'big-brother-subtraction-minus-8': { title: "Big Brother -8", steps: ["Formula: -8 = -10 + 2", "To subtract 8: Remove 1 bead from the rod on the LEFT (-10).", "Then: Add 2 earthly beads to the CURRENT rod (+2)."] },
+  'big-brother-subtraction-minus-3': { title: "Big Brother -3", steps: ["Formula: -3 = -10 + 7", "To subtract 3: Remove 1 bead from the rod on the LEFT (-10).", "Then: Add 7 (one 5-bead and two earthly beads) to the CURRENT rod."] },
+  'big-brother-subtraction-minus-2': { title: "Big Brother -2", steps: ["Formula: -2 = -10 + 8", "To subtract 2: Remove 1 bead from the rod on the LEFT (-10).", "Then: Add 8 (one 5-bead and three earthly beads) to the CURRENT rod."] },
+  'big-brother-subtraction-minus-1': { title: "Big Brother -1", steps: ["Formula: -1 = -10 + 9", "To subtract 1: Remove 1 bead from the rod on the LEFT (-10).", "Then: Add 9 (one 5-bead and four earthly beads) to the CURRENT rod."] },
+  'big-brother-subtraction-minus-10': { title: "Big Brother -10", steps: ["Formula: -10 = -100 + 90", "To subtract 10: Remove 1 bead from the 100s rod.", "Then: Add 9 beads to the 10s rod (+90)."] },
 
   // Combination Addition
   'combination-plus-6': { title: "Combination +6", steps: ["Formula: +6 = +10 - 5 + 1", "To add 6: Add 1 bead to the rod on the LEFT (+10).", "Then: Push UP the 5-bead (-5) and Add 1 earthly bead (+1)."] },

@@ -137,8 +137,44 @@ const FORMULA_IDS = [
     'combination-minus-7', 'combination-minus-70', 'combination-minus-6', 'combination-minus-60'
 ];
 
+function getFormulaMathString(id: string) {
+  const parts = id.split('-');
+  const rawVal = parts[parts.length - 1]; // e.g. "4", "40", "9"
+  const op = id.includes('plus') || id.includes('addition') ? '+' : '-';
+  const val = parseInt(rawVal);
+  
+  if (id.includes('basic')) {
+     const comp = 5 - (val % 5 === 0 ? val/10 : val);
+     const compStr = val >= 10 ? (comp * 10).toString() : comp.toString();
+     const sign = op === '+' ? '-' : '+';
+     const base = val >= 10 ? '50' : '5';
+     return `Small Sister: ${op}${val} = ${op}${base} ${sign} ${compStr}`;
+  }
+  
+  if (id.includes('big-brother')) {
+     const comp = 10 - (val % 10 === 0 ? val/10 : val);
+     const compStr = val >= 10 ? (comp * 10).toString() : comp.toString();
+     const sign = op === '+' ? '-' : '+';
+     const base = val >= 10 ? '100' : '10';
+     return `Big Brother: ${op}${val} = ${op}${base} ${sign} ${compStr}`;
+  }
+
+  if (id.includes('combination')) {
+     return `Combination: ${op}${val}`;
+  }
+
+  return `Formula Training: ${rawVal}`;
+}
+
 const formulaConfigs = FORMULA_IDS.reduce((acc, id) => {
-    acc[id] = { easy: { numQuestions: 50, timeLimit: 300, title: `Formula Training: ${id.split('-').pop()?.toUpperCase()}`, icon: 'puzzle' } };
+    acc[id] = { 
+      easy: { 
+        numQuestions: 50, 
+        timeLimit: 300, 
+        title: getFormulaMathString(id),
+        icon: 'puzzle' 
+      } 
+    };
     return acc;
 }, {} as any);
 
