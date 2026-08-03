@@ -563,7 +563,10 @@ export default function AdminDashboardPage() {
                                     </TableCell>
                                     <TableCell className="pl-0 py-4">
                                       <div className="flex items-center gap-3">
-                                        <Avatar className="h-8 w-8"><AvatarImage src={s.profilePhoto ?? undefined}/><AvatarFallback>{s.firstName?.[0]}</AvatarFallback></Avatar>
+                                        <Avatar className="h-8 w-8">
+                                          <AvatarImage src={s.profilePhoto ?? undefined}/>
+                                          <AvatarFallback className="font-bold">{s.firstName?.[0]}</AvatarFallback>
+                                        </Avatar>
                                         <div>
                                           <div className="font-bold text-sm">{s.firstName} {s.surname}</div>
                                           <div className="text-[9px] text-muted-foreground">{s.email}</div>
@@ -592,7 +595,10 @@ export default function AdminDashboardPage() {
                                               s.students.map((stu: ProfileData) => (
                                                 <div key={stu.uid} className="flex items-center justify-between p-3 bg-white rounded-xl border shadow-sm">
                                                   <div className="flex items-center gap-3">
-                                                    <Avatar className="h-7 w-7"><AvatarImage src={stu.profilePhoto ?? undefined}/><AvatarFallback>{stu.firstName?.[0]}</AvatarFallback></Avatar>
+                                                    <Avatar className="h-7 w-7">
+                                                      <AvatarImage src={stu.profilePhoto ?? undefined}/>
+                                                      <AvatarFallback className="font-bold">{stu.firstName?.[0]}</AvatarFallback>
+                                                    </Avatar>
                                                     <div>
                                                       <p className="text-xs font-bold leading-none">{stu.firstName} {stu.surname}</p>
                                                       <p className="text-[9px] text-muted-foreground mt-1">{stu.email}</p>
@@ -932,7 +938,10 @@ export default function AdminDashboardPage() {
                     <div key={s.uid} className="flex items-center justify-between p-4 hover:bg-muted/10 transition-colors">
                       <div className="flex items-center gap-4 min-w-0">
                         <span className={cn("w-6 text-sm font-black", idx === 0 ? "text-yellow-500" : idx === 1 ? "text-slate-400" : idx === 2 ? "text-amber-600" : "text-muted-foreground")}>#{idx + 1}</span>
-                        <Avatar className="h-10 w-10 border-2 border-white shadow-sm"><AvatarImage src={s.photo} /></Avatar>
+                        <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                          <AvatarImage src={s.photo} />
+                          <AvatarFallback className="font-bold">{s.name?.[0]}</AvatarFallback>
+                        </Avatar>
                         <div className="min-w-0 overflow-hidden">
                           <span className="text-sm font-bold block truncate text-slate-900">{s.name}</span>
                           <span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase truncate inline-block" style={{ backgroundColor: s.title.color + '20', color: s.title.color }}>{s.title.name}</span>

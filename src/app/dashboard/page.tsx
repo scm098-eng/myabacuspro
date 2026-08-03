@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -13,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { getFirestore, onSnapshot, doc, collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
 import type { ProfileData } from '@/types';
-import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RANK_CRITERIA, ADMIN_EMAILS } from '@/lib/constants';
@@ -120,7 +119,14 @@ export default function StudentDashboardPage() {
         const data = snapshot.docs.map(doc => {
             const ud = doc.data() as ProfileData;
             const pts = (ud as any)[leaderboardTab] || 0;
-            return { uid: doc.id, email: ud.email?.toLowerCase(), name: `${ud.firstName} ${ud.surname}`, points: pts, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
+            return { 
+              uid: doc.id, 
+              email: ud.email?.toLowerCase(), 
+              name: `${ud.firstName} ${ud.surname}`, 
+              photo: ud.profilePhoto,
+              points: pts, 
+              title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) 
+            };
           }).filter(s => s.points > 0 && !ADMIN_EMAILS.includes(s.email)).slice(0, 10);
         
         setLeaderboard(data);
@@ -356,7 +362,11 @@ export default function StudentDashboardPage() {
                   <div key={s.uid} className={cn("flex items-center justify-between p-4", s.uid === user.uid ? "bg-primary/5" : "hover:bg-muted/30")}>
                     <div className="flex items-center gap-4 min-w-0">
                       <span className={cn("w-6 text-sm font-black shrink-0", i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground")}>#{i + 1}</span>
-                      <Avatar className="h-10 w-10 border-2 border-white shrink-0"><AvatarImage src={s.photo || undefined}/></Avatar><div className="min-w-0 overflow-hidden"><p className="text-sm font-bold truncate">{s.name}</p><span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase truncate inline-block max-w-full" style={{ backgroundColor: (s.title?.color || "#94a3b8") + "20", color: (s.title?.color || "#94a3b8") }}>{s.title?.name || "Math Beginner"}</span></div></div>
+                      <Avatar className="h-10 w-10 border-2 border-white shrink-0">
+                        <AvatarImage src={s.photo || undefined}/>
+                        <AvatarFallback className="font-bold">{s.name?.[0]}</AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 overflow-hidden"><p className="text-sm font-bold truncate">{s.name}</p><span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase truncate inline-block max-w-full" style={{ backgroundColor: (s.title?.color || "#94a3b8") + "20", color: (s.title?.color || "#94a3b8") }}>{s.title?.name || "Math Beginner"}</span></div></div>
                     <div className="text-right shrink-0 ml-2"><p className="text-sm font-black text-primary">{s.points.toLocaleString()}</p></div>
                   </div>
                 ))}
