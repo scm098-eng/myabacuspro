@@ -240,7 +240,7 @@ export default function PricingPage() {
         try {
             const redeemFn = httpsCallable<{ code: string }, any>(getFunctions(firebaseApp), 'redeemCoupon');
             const result = await redeemFn({ code: couponCode });
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 10001 });
             setRedemptionSuccess({ 
               days: result.data.durationDays,
               isAdditive: result.data.isAdditive,
@@ -409,7 +409,7 @@ export default function PricingPage() {
                         <DialogTitle className="text-3xl font-black uppercase tracking-tight">Code Activated!</DialogTitle>
                     </div>
                     <div className="p-10 text-center space-y-6">
-                        <DialogDescription className="text-xl font-bold text-slate-700 leading-relaxed">
+                        <DialogDescription className="text-xl font-bold text-slate-700 leading-relaxed px-4">
                             {redemptionSuccess?.isAdditive 
                               ? <>Success! **{redemptionSuccess?.days} days** have been added to your current membership. Your new expiry is **{redemptionSuccess?.expiryDate ? format(parseISO(redemptionSuccess.expiryDate), 'PPP') : 'extended'}**.</>
                               : <>Congratulations! Your account has been upgraded to **Pro** for the next **{redemptionSuccess?.days} days**.</>

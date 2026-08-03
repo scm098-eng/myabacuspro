@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -219,7 +220,7 @@ export default function StudentDashboardPage() {
 
   const proExpiry = profile.subscriptionExpiry?.toDate ? profile.subscriptionExpiry.toDate() : (profile.subscriptionExpiry ? new Date(profile.subscriptionExpiry) : null);
   const proDaysRemaining = proExpiry ? Math.max(0, differenceInSeconds(proExpiry, new Date()) / (24 * 3600)) : 0;
-  const proHours = Math.floor(proDaysRemaining * 24);
+  const proHoursTotal = Math.floor(proDaysRemaining * 24);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
@@ -246,9 +247,9 @@ export default function StudentDashboardPage() {
               </div>
               <div className="text-center md:text-left">
                 <h3 className="text-xl font-black uppercase tracking-tight">Pro Membership Active</h3>
-                <p className="font-bold opacity-90 text-sm">
-                  Your <span className="capitalize">{profile.subscriptionType || 'Pro'}</span> access expires in: <span className="underline underline-offset-4">{Math.floor(proDaysRemaining)}d {proHours % 24}h</span>. 
-                  Master your formulas before the cycle ends!
+                <p className="font-bold opacity-90 text-sm leading-relaxed">
+                  Your <span className="capitalize">{profile.subscriptionType || 'Pro'}</span> access expires in: <span className="underline underline-offset-4">{Math.floor(proDaysRemaining)}d {proHoursTotal % 24}h</span>. 
+                  Keep practicing to defend your rank!
                 </p>
               </div>
             </div>
@@ -271,7 +272,7 @@ export default function StudentDashboardPage() {
               </div>
               <div className="text-center md:text-left">
                 <h3 className="text-xl font-black uppercase tracking-tight">Free Trial Active!</h3>
-                <p className="font-bold opacity-90 text-sm">
+                <p className="font-bold opacity-90 text-sm leading-relaxed">
                   Experience all Pro features for <span className="underline underline-offset-4">{Math.floor(trialDaysRemaining)}d {trialHours % 24}h {trialMinutes % 60}m</span>. 
                   Don't lose your progress!
                 </p>

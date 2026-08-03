@@ -620,7 +620,11 @@ exports.applyToExam = onCall(async (request) => {
  */
 exports.redeemCoupon = onCall(async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login is required.");
-    const { code } = request.data;
+    
+    // Robust extraction of code
+    const payload = request.data || {};
+    const code = payload.code || (payload.data && payload.data.code);
+    
     if (!code) throw new HttpsError('invalid-argument', "Gift code is missing.");
 
     const couponRef = db.collection('coupons').doc(code.toUpperCase());
@@ -635,33 +639,36 @@ exports.redeemCoupon = onCall(async (request) => {
         const coupon = couponSnap.data();
         if (coupon.isUsed) throw new HttpsError('already-exists', "This code has already been redeemed.");
 
+        // Safe expiry check
         if (coupon.expiresAt) {
-            const expiry = coupon.expiresAt.toDate?.() || new Date(coupon.expiresAt);
-            if (new Date() > expiry) throw new HttpsError('failed-precondition', "This code has expired.");
+            const couponExpiry = coupon.expiresAt.toDate ? coupon.expiresAt.toDate() : new Date(coupon.expiresAt);
+            if (new Date() > couponExpiry) throw new HttpsError('failed-precondition', "This code has expired.");
         }
 
         const userData = userSnap.data();
-        const durationDays = coupon.durationDays || 30;
+        const durationDays = Number(coupon.durationDays) || 30;
         
-        // --- ADDITIVE SUBSCRIPTION LOGIC ---
-        // If the user is currently Pro and has a future expiry, we append to it.
-        // Otherwise, we start from today.
+        // Calculate the base date (either today or existing expiry if in future)
         let baseDate = new Date();
+        let isAdditive = false;
+
         if (userData?.subscriptionStatus === 'pro' && userData?.subscriptionExpiry) {
             const currentExpiry = userData.subscriptionExpiry.toDate ? userData.subscriptionExpiry.toDate() : new Date(userData.subscriptionExpiry);
             if (currentExpiry > baseDate) {
-                baseDate = currentExpiry;
+                // If user is currently Pro and expiry is in the future, add to it
+                baseDate = new Date(currentExpiry.getTime());
+                isAdditive = true;
             }
         }
 
-        const expiryDate = new Date(baseDate);
-        expiryDate.setDate(expiryDate.getDate() + durationDays);
+        // Add durationDays to the base date
+        const finalExpiry = new Date(baseDate.getTime() + (durationDays * 24 * 60 * 60 * 1000));
 
         // Update User
         t.update(userRef, {
             subscriptionStatus: 'pro',
             subscriptionType: 'gift',
-            subscriptionExpiry: admin.firestore.Timestamp.fromDate(expiryDate),
+            subscriptionExpiry: admin.firestore.Timestamp.fromDate(finalExpiry),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
@@ -675,8 +682,8 @@ exports.redeemCoupon = onCall(async (request) => {
         return { 
           status: "success", 
           durationDays, 
-          expiryDate: expiryDate.toISOString(),
-          isAdditive: baseDate > new Date()
+          expiryDate: finalExpiry.toISOString(),
+          isAdditive: isAdditive
         };
     });
 });
