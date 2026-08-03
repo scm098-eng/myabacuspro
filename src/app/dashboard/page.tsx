@@ -60,6 +60,30 @@ export default function StudentDashboardPage() {
     if (!isLoading && !user) router.push('/login');
   }, [isLoading, user, router]);
 
+  // Session Rank-Up Detector (congrats notification)
+  useEffect(() => {
+    if (!profile || !profile.lastAwardedRank || profile.lastAwardedRank === 'Math Beginner') return;
+    
+    const lastSeenRank = localStorage.getItem('last_seen_rank');
+    if (lastSeenRank && lastSeenRank !== profile.lastAwardedRank) {
+      // User has achieved a new rank!
+      const achievementDate = profile.lastRankAchievedAt?.toDate 
+        ? profile.lastRankAchievedAt.toDate() 
+        : new Date();
+
+      setCertData({
+        type: 'rank',
+        title: profile.lastAwardedRank,
+        score: `${(profile.totalPoints || 0).toLocaleString()} Global Mastery Points`,
+        date: format(achievementDate, 'MMMM do, yyyy')
+      });
+      setShowCertificate(true);
+      localStorage.setItem('last_seen_rank', profile.lastAwardedRank);
+    } else if (!lastSeenRank) {
+      localStorage.setItem('last_seen_rank', profile.lastAwardedRank);
+    }
+  }, [profile]);
+
   // Leaderboard Stats Listener
   useEffect(() => {
     if (!mounted) return;

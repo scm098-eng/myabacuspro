@@ -22,6 +22,16 @@
       },
       "required": ["uid", "email", "role"]
     },
+    "PublicAchievement": {
+      "title": "PublicAchievement",
+      "description": "Public announcement of a student reaching a new rank.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "rankName": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
     "Duel": {
       "title": "Duel",
       "description": "A 1v1 competitive match between two students.",
@@ -127,6 +137,10 @@
     "/users/{userId}": {
       "schema": "#/backend/entities/UserProfile",
       "description": "User profiles and statistics."
+    },
+    "/publicAchievements/{id}": {
+      "schema": "#/backend/entities/PublicAchievement",
+      "description": "Public rank-up announcements."
     },
     "/duels/{duelId}": {
       "schema": "#/backend/entities/Duel",

@@ -36,9 +36,15 @@ service cloud.firestore {
       allow list: if request.auth != null;
     }
 
+    // --- ANNOUNCEMENT RULES ---
+    match /publicAchievements/{id} {
+      allow read, list: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if isAdmin();
+    }
+
     // --- DUEL RULES ---
     match /duels/{duelId} {
-      // Allow authenticated users to list lobbies and read match details
       allow read, list: if request.auth != null;
       allow create: if request.auth != null && isNotSuspended();
       allow update: if request.auth != null && isNotSuspended() && 

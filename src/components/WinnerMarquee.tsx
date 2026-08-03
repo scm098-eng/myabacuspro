@@ -2,32 +2,42 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
+import { getFirestore, doc, onSnapshot, collection, query, orderBy, limit } from 'firebase/firestore';
 import { firebaseApp } from '@/lib/firebase';
-import { Trophy, Star, Crown, Megaphone, Calendar, ScrollText, XCircle, MonitorOff } from 'lucide-react';
+import { Trophy, Star, Crown, Megaphone, Calendar, ScrollText, XCircle, MonitorOff, Zap, ShieldCheck } from 'lucide-react';
 import { isAfter, isBefore } from 'date-fns';
 
 export default function WinnerMarquee() {
-  const [data, setData] = useState<{ winners: any, schedule: any }>({ winners: null, schedule: null });
+  const [data, setData] = useState<{ winners: any, schedule: any, publicAchievements: any[] }>({ winners: null, schedule: null, publicAchievements: [] });
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const db = getFirestore(firebaseApp);
+    
     const unsubWinners = onSnapshot(doc(db, "stats", "leaderboard"), (snap) => {
       if (snap.exists()) setData(prev => ({ ...prev, winners: snap.data() }));
     });
+    
     const unsubSchedule = onSnapshot(doc(db, "stats", "examSchedule"), (snap) => {
       if (snap.exists()) setData(prev => ({ ...prev, schedule: snap.data() }));
     });
-    return () => { unsubWinners(); unsubSchedule(); };
+
+    const achievementsQuery = query(collection(db, "publicAchievements"), orderBy("timestamp", "desc"), limit(10));
+    const unsubAchievements = onSnapshot(achievementsQuery, (snap) => {
+      setData(prev => ({ 
+        ...prev, 
+        publicAchievements: snap.docs.map(d => ({ id: d.id, ...d.data() })) 
+      }));
+    });
+
+    return () => { unsubWinners(); unsubSchedule(); unsubAchievements(); };
   }, []);
 
   const messages = useMemo(() => {
     const msgs: { text: string; icon: any }[] = [];
     const now = new Date();
-    // Get current date string in YYYY-MM-DD for stable comparison across timezones
     const todayStr = now.toISOString().split('T')[0];
-    const { winners, schedule } = data;
+    const { winners, schedule, publicAchievements } = data;
 
     // 1. Exam Cancelled Message
     if (schedule?.isActive === false && schedule?.updatedAt) {
@@ -49,7 +59,7 @@ export default function WinnerMarquee() {
       }
     }
 
-    // 3. Exam Schedule & Deadline (Stable YYYY-MM-DD checks)
+    // 3. Exam Schedule & Deadline
     if (schedule?.isActive !== false && schedule?.date && !schedule?.resultsDeclared) {
       const isExamToday = schedule.date === todayStr;
       const endTimeStr = schedule.endTime || '16:00';
@@ -68,7 +78,6 @@ export default function WinnerMarquee() {
           });
         }
       } else if (schedule.date > todayStr) {
-        // Exam is in the future
         const deadlineDateStr = schedule.lastApplyDate;
         const isDeadlineActive = deadlineDateStr && deadlineDateStr >= todayStr;
 
@@ -86,7 +95,22 @@ export default function WinnerMarquee() {
       }
     }
 
-    // 4. Winner Announcements
+    // 4. Public Rank Achievements (Show for 24 hours)
+    publicAchievements.forEach(ach => {
+      if (ach.timestamp) {
+        const timestamp = ach.timestamp.toDate?.() || new Date(ach.timestamp);
+        const oneDayAfter = new Date(timestamp.getTime() + 86400000);
+        if (isAfter(now, timestamp) && isBefore(now, oneDayAfter)) {
+          const isHighRank = ach.rankName === 'Human Calculator' || ach.rankName === 'Grandmaster';
+          msgs.push({
+            text: `${isHighRank ? 'LEGENDARY ACHIEVEMENT' : 'NEW RANK'}: ${ach.name} reached ${ach.rankName.toUpperCase()}! 🎉`,
+            icon: isHighRank ? <Crown className="w-5 h-5 text-yellow-400 fill-yellow-400 animate-bounce" /> : <Zap className="w-5 h-5 text-primary" />
+          });
+        }
+      }
+    });
+
+    // 5. Winner Announcements
     if (winners) {
       ['lastWeeklyWinner', 'lastMonthlyWinner'].forEach(k => {
         const w = winners[k];
