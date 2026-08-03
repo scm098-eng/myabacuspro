@@ -219,8 +219,9 @@ export default function StudentDashboardPage() {
   const trialMinutes = Math.floor((trialDaysRemaining * 24 - trialHours) * 60);
 
   const proExpiry = profile.subscriptionExpiry?.toDate ? profile.subscriptionExpiry.toDate() : (profile.subscriptionExpiry ? new Date(profile.subscriptionExpiry) : null);
-  const proDaysRemaining = proExpiry ? Math.max(0, differenceInSeconds(proExpiry, new Date()) / (24 * 3600)) : 0;
-  const proHoursTotal = Math.floor(proDaysRemaining * 24);
+  const proDiffSeconds = proExpiry ? differenceInSeconds(proExpiry, new Date()) : 0;
+  const proDaysRemaining = Math.max(0, proDiffSeconds / (24 * 3600));
+  const proHoursTotal = Math.floor(Math.max(0, proDiffSeconds) / 3600);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
@@ -246,7 +247,7 @@ export default function StudentDashboardPage() {
                 <ShieldCheck className={cn("w-8 h-8", proDaysRemaining < 3 && "animate-pulse")} />
               </div>
               <div className="text-center md:text-left">
-                <h3 className="text-xl font-black uppercase tracking-tight">Pro Membership Active</h3>
+                <h3 className="text-xl font-black uppercase tracking-tight">PRO MEMBERSHIP ACTIVE</h3>
                 <p className="font-bold opacity-90 text-sm leading-relaxed">
                   Your <span className="capitalize">{profile.subscriptionType || 'Pro'}</span> access expires in: <span className="underline underline-offset-4">{Math.floor(proDaysRemaining)}d {proHoursTotal % 24}h</span>. 
                   Keep practicing to defend your rank!
