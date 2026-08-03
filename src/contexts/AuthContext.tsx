@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -213,24 +212,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   type: 'practice_reminder'
                 });
               }
-
-              // 2. Exam Alerts
-              onSnapshot(doc(firestore, "stats", "examSchedule"), (examSnap) => {
-                if (examSnap.exists()) {
-                  const exam = examSnap.data();
-                  if (exam.isActive && exam.date) {
-                    const examDate = parseISO(exam.date);
-                    const daysToExam = differenceInDays(examDate, new Date());
-                    if (daysToExam > 0 && daysToExam <= 3) {
-                      createNotification(authUser.uid, {
-                        title: "Exam Priority Alert",
-                        message: `The Grand Final is in ${daysToExam} days! Finalize your Group ${profileData.grade || ''} formulas now.`,
-                        type: 'exam_alert'
-                      });
-                    }
-                  }
-                }
-              });
             }
           } else {
             setProfile(null);
@@ -256,6 +237,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profileUnsub) profileUnsub();
     };
   }, [createNotification]);
+
+  // Dedicated Exam Schedule Listener
+  useEffect(() => {
+    if (!user || !profile) return;
+    const db = getFirestore(firebaseApp);
+    const scheduleRef = doc(db, "stats", "examSchedule");
+    
+    const unsubscribe = onSnapshot(scheduleRef, 
+      (snap) => {
+        if (snap.exists()) {
+          const exam = snap.data();
+          if (exam.isActive && exam.date && profile.uid) {
+            const examDate = parseISO(exam.date);
+            const daysToExam = differenceInDays(examDate, new Date());
+            if (daysToExam > 0 && daysToExam <= 3) {
+              createNotification(profile.uid, {
+                title: "Exam Priority Alert",
+                message: `The Grand Final is in ${daysToExam} days! Finalize your Group ${profile.grade || ''} formulas now.`,
+                type: 'exam_alert'
+              });
+            }
+          }
+        }
+      },
+      async (error) => {
+        if (error.code === 'permission-denied') {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: scheduleRef.path,
+            operation: 'get',
+          }));
+        }
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user, profile, createNotification]);
 
   useEffect(() => {
     if (!isLoading && profile) {
@@ -548,13 +565,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const updateData: any = { updatedAt: serverTimestamp() };
     
     if (nextRank.name !== data.lastAwardedRank) {
-      // Rank bonus point only will add in global points, don't add it in weekly & monthly points
       const bonus = nextRank.bonusPoints || 0;
       updateData.lastAwardedRank = nextRank.name;
       updateData.totalPoints = increment(earnedPoints + bonus);
       updateData.lastRankAchievedAt = serverTimestamp();
       
-      // Public Announcement for Marquee (Excluding Math Beginner)
       if (nextRank.name !== 'Math Beginner') {
         addDoc(collection(firestore, 'publicAchievements'), {
           name: `${data.firstName} ${data.surname}`,
@@ -575,7 +590,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const currentWeekKey = getUTCMondayKey();
     const currentMonthKey = getUTCMonthKey();
 
-    // Session points added to weekly/monthly as usual
     if (data.lastWeeklyReset !== currentWeekKey) { 
         updateData.weeklyPoints = earnedPoints; 
         updateData.lastWeeklyReset = currentWeekKey; 
