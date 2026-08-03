@@ -34,6 +34,14 @@ service cloud.firestore {
         .hasAny(['role', 'status', 'subscriptionStatus', 'isSuspended']));
       allow delete: if isAdmin();
       allow list: if request.auth != null;
+
+      // Notifications Subcollection
+      match /notifications/{notifId} {
+        allow read, list: if isOwner(userId);
+        allow create: if request.auth != null; // Allow system-driven creation
+        allow update: if isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+        allow delete: if isOwner(userId);
+      }
     }
 
     // --- ANNOUNCEMENT RULES ---

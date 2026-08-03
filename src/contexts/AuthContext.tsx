@@ -19,13 +19,13 @@ import {
 import { firebaseApp } from '@/lib/firebase';
 import { doc, setDoc, getDoc, serverTimestamp, getFirestore, collection, getDocs, query, where, arrayUnion, updateDoc, increment, orderBy, deleteDoc, onSnapshot, limit, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, getStorage } from 'firebase/storage';
-import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload, Duel } from '@/types';
+import type { ProfileData, TestResult, SignupData, UserRole, UpdateProfilePayload, Notification } from '@/types';
 import { useRouter, usePathname } from 'next/navigation';
 import { RANK_CRITERIA, ADMIN_EMAILS, EXCLUDED_FROM_TEACHER_LIST } from '@/lib/constants';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
+import { differenceInDays, isToday, parseISO } from 'date-fns';
 
-// Initialize services once outside the component to prevent re-initialization loops
 const auth = getAuth(firebaseApp);
 const firestore = getFirestore(firebaseApp);
 const storage = getStorage(firebaseApp);
@@ -63,6 +63,7 @@ interface AuthContextType {
   recordDailyPractice: (userId: string) => Promise<void>;
   addPoints: (userId: string, points: number) => Promise<void>;
   getStudentTitle: (totalDays: number, totalPoints: number) => typeof RANK_CRITERIA[0];
+  createNotification: (userId: string, notif: Omit<Notification, 'id' | 'createdAt' | 'isRead'>) => Promise<void>;
   isTrialActive: boolean;
   trialDaysRemaining: number;
 }
@@ -132,6 +133,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const createNotification = useCallback(async (userId: string, notif: Omit<Notification, 'id' | 'createdAt' | 'isRead'>) => {
+    try {
+      const notifCol = collection(firestore, 'users', userId, 'notifications');
+      // Limit frequency of notifications of same type/title to once per day
+      const today = new Date().toISOString().split('T')[0];
+      const q = query(notifCol, where('type', '==', notif.type), where('title', '==', notif.title));
+      const existing = await getDocs(q);
+      
+      const alreadySentToday = existing.docs.some(d => {
+        const created = d.data().createdAt?.toDate ? d.data().createdAt.toDate() : new Date(d.data().createdAt);
+        return created.toISOString().split('T')[0] === today;
+      });
+
+      if (!alreadySentToday) {
+        await addDoc(notifCol, {
+          ...notif,
+          isRead: false,
+          createdAt: serverTimestamp()
+        });
+      }
+    } catch (e) {
+      console.error("Failed to create notification", e);
+    }
+  }, []);
+
   useEffect(() => {
     let profileUnsub: (() => void) | undefined;
 
@@ -147,15 +173,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (authUser) {
         const userDocRef = doc(firestore, 'users', authUser.uid);
         
-        // Listen to profile changes in real-time
         profileUnsub = onSnapshot(userDocRef, (snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.data() as ProfileData;
             const profileData = { ...data, uid: authUser.uid };
-            
             setProfile(profileData);
             
-            // Perform background sync logic only once per login session
             if (!syncPerformed.current) {
               syncPerformed.current = true;
               const currentWeekKey = getUTCMondayKey();
@@ -181,6 +204,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (needsSync) {
                 updateDoc(userDocRef, updatePayload).catch(e => console.warn("Background sync deferred", e));
               }
+
+              // 1. Daily Practice Check
+              if (profileData.role === 'student' && !isToday(parseISO(profileData.lastPracticeDate || '1970-01-01'))) {
+                createNotification(authUser.uid, {
+                  title: "Daily Motivation",
+                  message: `Don't break your ${profileData.currentStreak || 0} day streak! Your mental abacus is waiting for you.`,
+                  type: 'practice_reminder'
+                });
+              }
+
+              // 2. Exam Alerts
+              onSnapshot(doc(firestore, "stats", "examSchedule"), (examSnap) => {
+                if (examSnap.exists()) {
+                  const exam = examSnap.data();
+                  if (exam.isActive && exam.date) {
+                    const examDate = parseISO(exam.date);
+                    const daysToExam = differenceInDays(examDate, new Date());
+                    if (daysToExam > 0 && daysToExam <= 3) {
+                      createNotification(authUser.uid, {
+                        title: "Exam Priority Alert",
+                        message: `The Grand Final is in ${daysToExam} days! Finalize your Group ${profileData.grade || ''} formulas now.`,
+                        type: 'exam_alert'
+                      });
+                    }
+                  }
+                }
+              });
             }
           } else {
             setProfile(null);
@@ -205,7 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsubscribe();
       if (profileUnsub) profileUnsub();
     };
-  }, []);
+  }, [createNotification]);
 
   useEffect(() => {
     if (!isLoading && profile) {
@@ -569,8 +619,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user, profile, login, signup, loginWithGoogle, logout, isLoading, upgradeToPro, 
     sendPasswordReset, sendVerificationEmail, updateUserProfile, toggleUserSuspension, deleteUserAccount, markUserAsRead, getAllUsers, getApprovedTeachers, 
     getUserTestHistory, getUserTestHistoryByDateRange, getUserTestHistoryByPeriod, getUserTestHistoryBySession, getUserTestHistoryByPaper, getUserProfile, approveTeacher, getCompletedGameLevels, 
-    saveCompletedGameLevel, setLastLevelAttended, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, isTrialActive, trialDaysRemaining
-  }), [user, profile, isLoading, isTrialActive, trialDaysRemaining]);
+    saveCompletedGameLevel, setLastLevelAttended, fetchProfile, recordDailyPractice, addPoints, getStudentTitle, createNotification, isTrialActive, trialDaysRemaining
+  }), [user, profile, isLoading, isTrialActive, trialDaysRemaining, createNotification]);
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }

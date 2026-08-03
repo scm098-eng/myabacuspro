@@ -1,3 +1,4 @@
+
 export type TestType =
   | 'addition-subtraction'
   | 'multiplication'
@@ -135,6 +136,15 @@ export interface ExamApplication {
   appliedAt: any;
   age: number;
   timeLimit: number;
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'practice_reminder' | 'leaderboard_alert' | 'exam_alert' | 'rank_up';
+  isRead: boolean;
+  createdAt: any;
 }
 
 export interface ExamResult {

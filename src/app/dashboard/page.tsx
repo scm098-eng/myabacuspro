@@ -40,7 +40,7 @@ function getUTCMonthKey() {
 
 export default function StudentDashboardPage() {
   usePageBackground('');
-  const { profile, user, isLoading, getStudentTitle, isTrialActive, trialDaysRemaining } = useAuth();
+  const { profile, user, isLoading, getStudentTitle, isTrialActive, trialDaysRemaining, createNotification } = useAuth();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -79,10 +79,16 @@ export default function StudentDashboardPage() {
       });
       setShowCertificate(true);
       localStorage.setItem('last_seen_rank', profile.lastAwardedRank);
+
+      createNotification(profile.uid, {
+        title: "Achievement Unlocked!",
+        message: `Congratulations! You have achieved the prestigious rank of ${profile.lastAwardedRank}.`,
+        type: 'rank_up'
+      });
     } else if (!lastSeenRank) {
       localStorage.setItem('last_seen_rank', profile.lastAwardedRank);
     }
-  }, [profile]);
+  }, [profile, createNotification]);
 
   // Leaderboard Stats Listener
   useEffect(() => {
@@ -101,9 +107,9 @@ export default function StudentDashboardPage() {
     );
   }, [mounted]);
 
-  // Leaderboard List Listener
+  // Leaderboard List Listener & Competition Alerts
   useEffect(() => {
-    if (!mounted || !user) return;
+    if (!mounted || !user || !profile) return;
     const db = getFirestore(firebaseApp);
     let q;
     if (leaderboardTab === 'weeklyPoints') q = query(collection(db, "users"), where("role", "==", "student"), where("lastWeeklyReset", "==", currentWeekKey), orderBy("weeklyPoints", "desc"), limit(20));
@@ -114,14 +120,29 @@ export default function StudentDashboardPage() {
         const data = snapshot.docs.map(doc => {
             const ud = doc.data() as ProfileData;
             const pts = (ud as any)[leaderboardTab] || 0;
-            return { uid: doc.id, email: ud.email?.toLowerCase(), name: `${ud.firstName} ${ud.surname}`, photo: ud.profilePhoto, points: pts, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
+            return { uid: doc.id, email: ud.email?.toLowerCase(), name: `${ud.firstName} ${ud.surname}`, points: pts, title: getStudentTitle(ud.totalDaysPracticed || 0, ud.totalPoints || 0) };
           }).filter(s => s.points > 0 && !ADMIN_EMAILS.includes(s.email)).slice(0, 10);
+        
         setLeaderboard(data);
+
+        // Competition Logic: Notify if someone is catching up
+        const myRank = data.findIndex(s => s.uid === user.uid);
+        if (myRank !== -1 && myRank < data.length - 1) {
+          const personBelow = data[myRank + 1];
+          const gap = (data[myRank].points) - personBelow.points;
+          if (gap < 500 && gap > 0) {
+            createNotification(user.uid, {
+              title: "Leaderboard Warning",
+              message: `${personBelow.name} is only ${gap} points behind you in the ${leaderboardTab === 'weeklyPoints' ? 'Weekly' : 'Monthly'} Race! Practice now to stay ahead.`,
+              type: 'leaderboard_alert'
+            });
+          }
+        }
       }, async (err) => { 
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'users', operation: 'list' })); 
       }
     );
-  }, [mounted, user?.uid, getStudentTitle, leaderboardTab, currentWeekKey, currentMonthKey]);
+  }, [mounted, user, profile, getStudentTitle, leaderboardTab, currentWeekKey, currentMonthKey, createNotification]);
 
   const handleDownloadRankCert = () => {
     if (!profile) return;

@@ -22,6 +22,7 @@ import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
 import { Logo } from './Logo';
 import { useToast } from '@/hooks/use-toast';
+import NotificationCenter from '../NotificationCenter';
 
 export function Header() {
   const { user, profile, logout, isLoading } = useAuth();
@@ -82,68 +83,71 @@ export function Header() {
   }
 
   const userActions = (
-    <>
+    <div className="flex items-center gap-3">
       {user ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-              <Avatar className="h-10 w-10 border-2 border-primary/50">
-                <AvatarImage src={profile?.profilePhoto || user.photoURL || ''} />
-                <AvatarFallback>{displayInitial}</AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{displayName}</p>
-                <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-                  {(profile?.subscriptionStatus === 'pro' || profile?.role === 'admin' || profile?.role === 'teacher') && (
-                  <Badge variant="secondary" className="w-fit mt-2 bg-yellow-400 text-yellow-900">
-                    <Crown className="mr-1 h-3 w-3" />
-                    {profile?.role === 'admin' ? 'Admin' : profile?.role === 'teacher' ? 'Teacher' : 'Pro'}
-                  </Badge>
-                )}
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {canSeeDashboard && (
-              <DropdownMenuItem onClick={() => router.push('/admin')}>
-                {profile?.role === 'teacher' ? 'Teacher Dashboard' : 'Admin Dashboard'}
-              </DropdownMenuItem>
-            )}
-            {profile?.role === 'admin' && (
-               <DropdownMenuItem onClick={() => router.push('/admin/exams')}>
-                Manage Exams
-              </DropdownMenuItem>
-            )}
-            {profile?.role === 'student' && (
-              <DropdownMenuItem onClick={() => router.push('/dashboard')}>
-                My Dashboard
-              </DropdownMenuItem>
-            )}
-            {profile?.subscriptionStatus === 'pro' && (
-               <DropdownMenuItem onClick={() => router.push('/exams')} className="text-indigo-600 font-bold">
-                 <FileCheck className="w-4 h-4 mr-2" /> Official Exams
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onClick={() => router.push('/profile')}>
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push('/progress')}>
-              Progress Report
-            </DropdownMenuItem>
-             {profile?.subscriptionStatus !== 'pro' && profile?.role === 'student' && (
-                <DropdownMenuItem onClick={() => router.push('/pricing')} className="text-primary focus:text-primary">
-                    Upgrade to Pro
+        <>
+          <NotificationCenter />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Avatar className="h-10 w-10 border-2 border-primary/50">
+                  <AvatarImage src={profile?.profilePhoto || user.photoURL || ''} />
+                  <AvatarFallback>{displayInitial}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{displayName}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                    {(profile?.subscriptionStatus === 'pro' || profile?.role === 'admin' || profile?.role === 'teacher') && (
+                    <Badge variant="secondary" className="w-fit mt-2 bg-yellow-400 text-yellow-900">
+                      <Crown className="mr-1 h-3 w-3" />
+                      {profile?.role === 'admin' ? 'Admin' : profile?.role === 'teacher' ? 'Teacher' : 'Pro'}
+                    </Badge>
+                  )}
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {canSeeDashboard && (
+                <DropdownMenuItem onClick={() => router.push('/admin')}>
+                  {profile?.role === 'teacher' ? 'Teacher Dashboard' : 'Admin Dashboard'}
                 </DropdownMenuItem>
-            )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              Log out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              )}
+              {profile?.role === 'admin' && (
+                 <DropdownMenuItem onClick={() => router.push('/admin/exams')}>
+                  Manage Exams
+                </DropdownMenuItem>
+              )}
+              {profile?.role === 'student' && (
+                <DropdownMenuItem onClick={() => router.push('/dashboard')}>
+                  My Dashboard
+                </DropdownMenuItem>
+              )}
+              {profile?.subscriptionStatus === 'pro' && (
+                 <DropdownMenuItem onClick={() => router.push('/exams')} className="text-indigo-600 font-bold">
+                   <FileCheck className="w-4 h-4 mr-2" /> Official Exams
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => router.push('/profile')}>
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/progress')}>
+                Progress Report
+              </DropdownMenuItem>
+               {profile?.subscriptionStatus !== 'pro' && profile?.role === 'student' && (
+                  <DropdownMenuItem onClick={() => router.push('/pricing')} className="text-primary focus:text-primary">
+                      Upgrade to Pro
+                  </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
       ) : (
           <div className="flex items-center gap-2">
               <Button asChild variant="ghost">
@@ -154,7 +158,7 @@ export function Header() {
               </Button>
           </div>
       )}
-    </>
+    </div>
   );
 
   return (
@@ -185,6 +189,7 @@ export function Header() {
           </div>
 
           <div className="md:hidden flex items-center">
+            {user && <div className="mr-2"><NotificationCenter /></div>}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
                     <Button variant="ghost" size="icon">

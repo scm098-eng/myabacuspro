@@ -22,6 +22,19 @@
       },
       "required": ["uid", "email", "role"]
     },
+    "Notification": {
+      "title": "Notification",
+      "description": "In-app motivational or informational alert for students.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["practice_reminder", "leaderboard_alert", "exam_alert", "rank_up"] },
+        "isRead": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
     "PublicAchievement": {
       "title": "PublicAchievement",
       "description": "Public announcement of a student reaching a new rank.",
@@ -137,6 +150,10 @@
     "/users/{userId}": {
       "schema": "#/backend/entities/UserProfile",
       "description": "User profiles and statistics."
+    },
+    "/users/{userId}/notifications/{notifId}": {
+      "schema": "#/backend/entities/Notification",
+      "description": "Personal notifications for user engagement."
     },
     "/publicAchievements/{id}": {
       "schema": "#/backend/entities/PublicAchievement",
