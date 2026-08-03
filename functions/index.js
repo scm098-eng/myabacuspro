@@ -616,6 +616,7 @@ exports.applyToExam = onCall(async (request) => {
 
 /**
  * Redeems a gift coupon for Pro access.
+ * ADDITIVE LOGIC: Appends duration to existing expiry if user is already Pro.
  */
 exports.redeemCoupon = onCall(async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', "Login is required.");
@@ -639,8 +640,21 @@ exports.redeemCoupon = onCall(async (request) => {
             if (new Date() > expiry) throw new HttpsError('failed-precondition', "This code has expired.");
         }
 
+        const userData = userSnap.data();
         const durationDays = coupon.durationDays || 30;
-        const expiryDate = new Date();
+        
+        // --- ADDITIVE SUBSCRIPTION LOGIC ---
+        // If the user is currently Pro and has a future expiry, we append to it.
+        // Otherwise, we start from today.
+        let baseDate = new Date();
+        if (userData?.subscriptionStatus === 'pro' && userData?.subscriptionExpiry) {
+            const currentExpiry = userData.subscriptionExpiry.toDate ? userData.subscriptionExpiry.toDate() : new Date(userData.subscriptionExpiry);
+            if (currentExpiry > baseDate) {
+                baseDate = currentExpiry;
+            }
+        }
+
+        const expiryDate = new Date(baseDate);
         expiryDate.setDate(expiryDate.getDate() + durationDays);
 
         // Update User
@@ -658,7 +672,12 @@ exports.redeemCoupon = onCall(async (request) => {
             usedAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
-        return { status: "success", durationDays, expiryDate: expiryDate.toISOString() };
+        return { 
+          status: "success", 
+          durationDays, 
+          expiryDate: expiryDate.toISOString(),
+          isAdditive: baseDate > new Date()
+        };
     });
 });
 

@@ -1,9 +1,4 @@
-/**
- * Firebase Messaging Service Worker
- * Handles background notifications for My Abacus Pro.
- */
 
-// Import and configure the Firebase SDK
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
@@ -13,21 +8,17 @@ firebase.initializeApp({
   projectId: "abacusace-mmnqw",
   storageBucket: "abacusace-mmnqw.firebasestorage.app",
   messagingSenderId: "937539932258",
-  appId: "1:937539932258:web:55fe45cb88a03298e1013b"
+  appId: "1:937539932258:web:55fe45cb88a03298e1013b",
 });
 
 const messaging = firebase.messaging();
 
-// Handle background messages
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: '/icon.png',
-    badge: '/icon.png',
-    data: payload.data
+    icon: '/logo_icon.png'
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);

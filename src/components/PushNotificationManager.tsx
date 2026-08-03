@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -44,7 +45,6 @@ export default function PushNotificationManager() {
           // Get registration token
           const currentToken = await getToken(messaging, { 
             vapidKey: VAPID_KEY,
-            // Ensure service worker is ready before getting token
           });
           
           if (currentToken) {
@@ -66,8 +66,8 @@ export default function PushNotificationManager() {
         onMessage(messaging, (payload) => {
           console.log('Foreground notification received:', payload);
           toast({
-            title: payload.notification?.title || "New Message",
-            description: payload.notification?.body || "Check your activity hub for details.",
+            title: payload.notification?.title || "New Activity",
+            description: payload.notification?.body || "Check your training alerts for details.",
           });
         });
 
