@@ -7,6 +7,7 @@ import FirebaseErrorListener from '@/components/FirebaseErrorListener';
 import BirthdayWish from '@/components/BirthdayWish';
 import OnboardingTour from '@/components/OnboardingTour';
 import UpdateHighlights from '@/components/UpdateHighlights';
+import PushNotificationManager from '@/components/PushNotificationManager';
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -38,6 +39,7 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
       <BirthdayWish />
       <OnboardingTour />
       <UpdateHighlights />
+      <PushNotificationManager />
       {children}
     </AuthProvider>
   );
