@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -24,6 +25,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn } from '@/lib/utils';
 import { CURRENCY_MAP } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format, parseISO } from 'date-fns';
 
 const INDIA_PLANS = [
     {
@@ -216,7 +218,7 @@ export default function PricingPage() {
     const [isMounted, setIsMounted] = useState(false);
     const [couponCode, setCouponCode] = useState('');
     const [isRedeeming, setIsRedeeming] = useState(false);
-    const [redemptionSuccess, setRedemptionSuccess] = useState<{ days: number } | null>(null);
+    const [redemptionSuccess, setRedemptionSuccess] = useState<{ days: number, isAdditive?: boolean, expiryDate?: string } | null>(null);
 
     useEffect(() => { setIsMounted(true); }, []);
 
@@ -239,7 +241,11 @@ export default function PricingPage() {
             const redeemFn = httpsCallable<{ code: string }, any>(getFunctions(firebaseApp), 'redeemCoupon');
             const result = await redeemFn({ code: couponCode });
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-            setRedemptionSuccess({ days: result.data.durationDays });
+            setRedemptionSuccess({ 
+              days: result.data.durationDays,
+              isAdditive: result.data.isAdditive,
+              expiryDate: result.data.expiryDate
+            });
             setCouponCode('');
         } catch (error: any) {
             toast({ title: "Redemption Failed", description: error.message, variant: "destructive" });
@@ -403,10 +409,13 @@ export default function PricingPage() {
                         <DialogTitle className="text-3xl font-black uppercase tracking-tight">Code Activated!</DialogTitle>
                     </div>
                     <div className="p-10 text-center space-y-6">
-                        <DialogDescription className="text-xl font-bold text-slate-700">
-                            Congratulations! Your account has been upgraded to **Pro** for the next **{redemptionSuccess?.days} days**.
+                        <DialogDescription className="text-xl font-bold text-slate-700 leading-relaxed">
+                            {redemptionSuccess?.isAdditive 
+                              ? <>Success! **{redemptionSuccess?.days} days** have been added to your current membership. Your new expiry is **{redemptionSuccess?.expiryDate ? format(parseISO(redemptionSuccess.expiryDate), 'PPP') : 'extended'}**.</>
+                              : <>Congratulations! Your account has been upgraded to **Pro** for the next **{redemptionSuccess?.days} days**.</>
+                            }
                         </DialogDescription>
-                        <Button onClick={() => router.push('/dashboard')} className="w-full h-14 text-lg font-black uppercase rounded-xl">
+                        <Button onClick={() => router.push('/dashboard')} className="w-full h-14 text-lg font-black uppercase rounded-xl shadow-xl">
                             Go to My Dashboard
                         </Button>
                     </div>
