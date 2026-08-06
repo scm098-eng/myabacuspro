@@ -199,9 +199,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 updatePayload.emailVerified = authUser.emailVerified;
                 needsSync = true;
               }
+
+              // --- Subscription Expiry Guard ---
+              if (data.subscriptionStatus === 'pro' && data.subscriptionExpiry) {
+                let expiryDate: Date | null = null;
+                const expiry = data.subscriptionExpiry;
+                
+                if (expiry?.toDate && typeof expiry.toDate === 'function') expiryDate = expiry.toDate();
+                else if (expiry instanceof Date) expiryDate = expiry;
+                else if (typeof expiry === 'string') expiryDate = new Date(expiry);
+                else if (expiry?._seconds) expiryDate = new Date(expiry._seconds * 1000);
+
+                if (expiryDate && expiryDate < new Date()) {
+                  updatePayload.subscriptionStatus = 'free';
+                  updatePayload.subscriptionType = 'none';
+                  needsSync = true;
+                }
+              }
               
               if (needsSync) {
-                updateDoc(userDocRef, updatePayload).catch(e => console.warn("Background sync deferred", e));
+                updatePayload.updatedAt = serverTimestamp();
+                updateDoc(userDocRef, updatePayload).catch(async (serverError: any) => {
+                  if (serverError.code === 'permission-denied') {
+                    const permissionError = new FirestorePermissionError({
+                      path: userDocRef.path,
+                      operation: 'update',
+                      requestResourceData: updatePayload,
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                  }
+                });
               }
 
               // 1. Daily Practice Check
