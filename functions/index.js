@@ -10,8 +10,8 @@ const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const logger = require("firebase-functions/logger");
 const nodemailer = require('nodemailer');
 const Razorpay = require('razorpay');
-// Use nodeCrypto to avoid collision with global Web Crypto API in Node 22+
-const nodeCrypto = require('crypto');
+// Use node: prefix and unique variable name to avoid collision with global Web Crypto API in Node 22+
+const nodeCryptoSvc = require('node:crypto');
 
 const admin = require('firebase-admin');
 
@@ -868,7 +868,7 @@ exports.razorpaywebhook = onRequest({
         const signature = req.headers["x-razorpay-signature"];
 
         // 1. Validate Webhook Signature
-        const expectedSignature = nodeCrypto
+        const expectedSignature = nodeCryptoSvc
             .createHmac("sha256", webhookSecret)
             .update(JSON.stringify(req.body))
             .digest("hex");

@@ -178,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const profileData = { ...data, uid: authUser.uid };
             setProfile(profileData);
             
-            // --- Subscription Auto-Expiration Guard ---
+            // --- Subscription Auto-Expiration Guard (Precision Engine) ---
             if (data.subscriptionStatus === 'pro' && data.subscriptionExpiry) {
               let expiryTime = 0;
               const expiry = data.subscriptionExpiry;
