@@ -6,11 +6,12 @@
 
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onCall, HttpsError, onRequest } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const logger = require("firebase-functions/logger");
 const nodemailer = require('nodemailer');
 const Razorpay = require('razorpay');
+const crypto = require('crypto');
 
 const admin = require('firebase-admin');
 
@@ -342,6 +343,44 @@ exports.resetWeeklyPoints = onSchedule({ schedule: "0 0 * * 1", secrets: ["GMAIL
 
 exports.resetMonthlyPoints = onSchedule({ schedule: "0 0 1 * *", secrets: ["GMAIL_APP_PASSWORD"] }, async (event) => {
     try { await performMonthlyReset(); } catch (err) { logger.error("Monthly reset failed", err); }
+});
+
+/**
+ * Scheduled cleanup for expired subscriptions.
+ * Runs every 4 hours.
+ */
+exports.cleanupExpiredSubscriptions = onSchedule({ schedule: "every 4 hours" }, async (event) => {
+    const now = admin.firestore.Timestamp.now();
+    const expiredUsersSnap = await db.collection('users')
+        .where('subscriptionStatus', '==', 'pro')
+        .where('subscriptionExpiry', '<', now)
+        .get();
+
+    if (expiredUsersSnap.empty) {
+        logger.info("No expired subscriptions found in background cleanup.");
+        return;
+    }
+
+    let batch = db.batch();
+    let count = 0;
+
+    for (const doc of expiredUsersSnap.docs) {
+        batch.update(doc.ref, {
+            subscriptionStatus: 'free',
+            subscriptionType: 'none',
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        count++;
+
+        if (count >= 400) {
+            await batch.commit();
+            batch = db.batch();
+            count = 0;
+        }
+    }
+
+    if (count > 0) await batch.commit();
+    logger.info(`Background cleanup: Downgraded ${expiredUsersSnap.size} expired users.`);
 });
 
 exports.dailyBirthdayWish = onSchedule({ schedule: "0 9 * * *", secrets: ["GMAIL_APP_PASSWORD"] }, async (event) => {
@@ -820,6 +859,58 @@ exports.createOneTimeOrder = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY
 /**
  * Razorpay Webhook
  */
-exports.razorpayWebhook = onCall({ secrets: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] }, async (request) => {
-    return { status: "ready" };
+exports.razorpaywebhook = onRequest({ 
+    secrets: ["RAZORPAY_KEY_SECRET"],
+    memory: "512MiB"
+}, async (req, res) => {
+    try {
+        const webhookSecret = process.env.RAZORPAY_KEY_SECRET;
+        const signature = req.headers["x-razorpay-signature"];
+
+        // 1. Validate Webhook Signature
+        const expectedSignature = crypto
+            .createHmac("sha256", webhookSecret)
+            .update(JSON.stringify(req.body))
+            .digest("hex");
+
+        if (expectedSignature !== signature) {
+            logger.error("Invalid Razorpay Webhook Signature");
+            return res.status(400).send("Invalid signature");
+        }
+
+        const event = req.body.event;
+        const payload = req.body.payload;
+
+        // 2. Handle Subscription Charges or One-Time Payments
+        if (event === "subscription.charged" || event === "payment.captured") {
+            const paymentEntity = payload.payment?.entity;
+            const subscriptionEntity = payload.subscription?.entity;
+            
+            // Extract user ID passed in checkout notes
+            const userId = paymentEntity?.notes?.user_id || subscriptionEntity?.notes?.user_id;
+
+            if (userId) {
+                // Set expiry date to 30 days from now
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + 30);
+
+                // Update Firestore document via Admin SDK
+                await admin.firestore().collection("users").doc(userId).update({
+                    subscriptionStatus: "pro",
+                    subscriptionType: "paid",
+                    subscriptionExpiry: admin.firestore.Timestamp.fromDate(expiryDate),
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+
+                logger.info(`Successfully converted user ${userId} to Pro subscription.`);
+            } else {
+                logger.warn("Webhook received without user_id in notes.");
+            }
+        }
+
+        return res.status(200).json({ status: "success" });
+    } catch (err) {
+        logger.error("Error processing Razorpay Webhook", err);
+        return res.status(500).send("Internal Server Error");
+    }
 });

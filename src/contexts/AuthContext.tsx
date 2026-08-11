@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -52,6 +53,7 @@ interface AuthContextType {
   getUserTestHistoryByDateRange: (userId: string, start: Date, end: Date) => Promise<TestResult[]>;
   getUserTestHistoryByPeriod: (userId: string, type: 'weekly' | 'monthly') => Promise<TestResult[]>;
   getUserTestHistoryBySession: (userId: string) => Promise<TestResult[]>;
+  getUserTestHistoryByPaper: (userId: string, paperId: string) => Promise<TestResult[]>;
   getUserTestHistoryByPaper: (userId: string, paperId: string) => Promise<TestResult[]>;
   getUserProfile: (userId: string) => Promise<ProfileData | null>;
   approveTeacher: (teacherId: string, callback?: () => void) => Promise<void>;
@@ -178,6 +180,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const profileData = { ...data, uid: authUser.uid };
             setProfile(profileData);
             
+            // --- Subscription Auto-Expiration Guard ---
+            if (data.subscriptionStatus === 'pro' && data.subscriptionExpiry) {
+              let expiryTime = 0;
+              const expiry = data.subscriptionExpiry;
+              
+              if (expiry?.toDate && typeof expiry.toDate === 'function') expiryTime = expiry.toDate().getTime();
+              else if (expiry instanceof Date) expiryTime = expiry.getTime();
+              else if (typeof expiry === 'string') expiryTime = new Date(expiry).getTime();
+              else if (expiry?._seconds) expiryTime = expiry._seconds * 1000;
+
+              if (expiryTime > 0 && new Date().getTime() > expiryTime) {
+                const downgradePayload = {
+                  subscriptionStatus: 'free',
+                  subscriptionType: 'none',
+                  updatedAt: serverTimestamp()
+                };
+                
+                updateDoc(userDocRef, downgradePayload).catch(async (serverError: any) => {
+                  if (serverError.code === 'permission-denied') {
+                    const permissionError = new FirestorePermissionError({
+                      path: userDocRef.path,
+                      operation: 'update',
+                      requestResourceData: downgradePayload,
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                  }
+                });
+              }
+            }
+
             if (!syncPerformed.current) {
               syncPerformed.current = true;
               const currentWeekKey = getUTCMondayKey();
@@ -198,23 +230,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (data.emailVerified !== authUser.emailVerified) {
                 updatePayload.emailVerified = authUser.emailVerified;
                 needsSync = true;
-              }
-
-              // --- Subscription Expiry Guard ---
-              if (data.subscriptionStatus === 'pro' && data.subscriptionExpiry) {
-                let expiryDate: Date | null = null;
-                const expiry = data.subscriptionExpiry;
-                
-                if (expiry?.toDate && typeof expiry.toDate === 'function') expiryDate = expiry.toDate();
-                else if (expiry instanceof Date) expiryDate = expiry;
-                else if (typeof expiry === 'string') expiryDate = new Date(expiry);
-                else if (expiry?._seconds) expiryDate = new Date(expiry._seconds * 1000);
-
-                if (expiryDate && expiryDate < new Date()) {
-                  updatePayload.subscriptionStatus = 'free';
-                  updatePayload.subscriptionType = 'none';
-                  needsSync = true;
-                }
               }
               
               if (needsSync) {

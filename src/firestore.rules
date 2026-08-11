@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -30,6 +31,7 @@ service cloud.firestore {
       allow update: if isAdmin() || (isOwner(userId) && 
         (
           // Path 1: Automated Downgrade & Status Cleanup (Allowed even if suspended)
+          // Specifically allows transitioning subscriptionStatus to 'free'
           (
             request.resource.data.get('subscriptionStatus', 'free') == 'free' &&
             !request.resource.data.diff(resource.data).affectedKeys()
