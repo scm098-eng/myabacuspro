@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -53,7 +52,6 @@ interface AuthContextType {
   getUserTestHistoryByDateRange: (userId: string, start: Date, end: Date) => Promise<TestResult[]>;
   getUserTestHistoryByPeriod: (userId: string, type: 'weekly' | 'monthly') => Promise<TestResult[]>;
   getUserTestHistoryBySession: (userId: string) => Promise<TestResult[]>;
-  getUserTestHistoryByPaper: (userId: string, paperId: string) => Promise<TestResult[]>;
   getUserTestHistoryByPaper: (userId: string, paperId: string) => Promise<TestResult[]>;
   getUserProfile: (userId: string) => Promise<ProfileData | null>;
   approveTeacher: (teacherId: string, callback?: () => void) => Promise<void>;
@@ -191,18 +189,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               else if (expiry?._seconds) expiryTime = expiry._seconds * 1000;
 
               if (expiryTime > 0 && new Date().getTime() > expiryTime) {
-                const downgradePayload = {
+                const updatePayload = {
                   subscriptionStatus: 'free',
                   subscriptionType: 'none',
                   updatedAt: serverTimestamp()
                 };
                 
-                updateDoc(userDocRef, downgradePayload).catch(async (serverError: any) => {
+                updateDoc(userDocRef, updatePayload).catch(async (serverError: any) => {
                   if (serverError.code === 'permission-denied') {
                     const permissionError = new FirestorePermissionError({
                       path: userDocRef.path,
                       operation: 'update',
-                      requestResourceData: downgradePayload,
+                      requestResourceData: updatePayload,
                     });
                     errorEmitter.emit('permission-error', permissionError);
                   }

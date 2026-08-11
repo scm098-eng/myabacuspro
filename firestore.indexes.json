@@ -1,6 +1,19 @@
-
 {
   "indexes": [
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "subscriptionStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "subscriptionExpiry",
+          "order": "ASCENDING"
+        }
+      ]
+    },
     {
       "collectionGroup": "duels",
       "queryScope": "COLLECTION",
