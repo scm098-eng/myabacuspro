@@ -18,6 +18,7 @@ export type TestType =
   | 'beads-set'
   | 'basic-add-sub-l1'
   | 'basic-add-sub-l2'
+  | 'basic-add-sub-l3'
   | 'basic-addition-plus-4'
   | 'basic-addition-plus-40'
   | 'basic-addition-plus-3'

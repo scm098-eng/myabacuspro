@@ -246,9 +246,10 @@ export default function ExamArenaPage() {
                <CardTitle className="text-xl font-black uppercase">{paperId === 'final' ? 'Official Final Exam' : `Practice #${paperId.split('-')[1]}`}</CardTitle>
                <CardDescription className="text-indigo-300 font-bold">Group {application?.group} Arena</CardDescription>
              </div>
-             <div className={cn("flex items-center gap-2 text-2xl font-black bg-white/10 px-4 py-2 rounded-2xl", timeLeft < 60 && "text-red-400 animate-pulse")}>
-               <Timer className="w-6 h-6" /> {Math.floor(timeLeft/60)}:{(timeLeft%60).toString().padStart(2,'0')}
-             </div>
+             <div className={cn("flex items-center justify-center gap-2 text-xl font-black bg-white/10 px-4 py-2 rounded-2xl min-w-[110px] tabular-nums", timeLeft < 60 && "text-red-400 animate-pulse")}>
+  <Timer className="w-5 h-5 shrink-0" />
+  <span>{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
+</div>
           </div>
           <ScrollArea className="w-full whitespace-nowrap mt-6 bg-white/5 p-2 rounded-xl border border-white/10">
             <div className="flex w-max space-x-2">

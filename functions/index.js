@@ -864,13 +864,14 @@ exports.razorpaywebhook = onRequest({
     memory: "512MiB"
 }, async (req, res) => {
     try {
-        const webhookSecret = process.env.RAZORPAY_KEY_SECRET;
+        const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
         const signature = req.headers["x-razorpay-signature"];
 
         // 1. Validate Webhook Signature
+        
         const expectedSignature = nodeCryptoSvc
             .createHmac("sha256", webhookSecret)
-            .update(JSON.stringify(req.body))
+            .update(req.rawBody)
             .digest("hex");
 
         if (expectedSignature !== signature) {
@@ -882,7 +883,7 @@ exports.razorpaywebhook = onRequest({
         const payload = req.body.payload;
 
         // 2. Handle Subscription Charges or One-Time Payments
-        if (event === "subscription.charged" || event === "payment.captured") {
+        if (event === "subscription.charged" || event === "payment.captured" || event === "order.paid") {
             const paymentEntity = payload.payment?.entity;
             const subscriptionEntity = payload.subscription?.entity;
             

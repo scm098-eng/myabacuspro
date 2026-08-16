@@ -192,6 +192,9 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
   'basic-add-sub-l2': {
     easy: { numQuestions: 30, timeLimit: 0, title: 'Basic Add/Sub: Level 2 (Direct)', icon: 'brain-circuit' },
   },
+  'basic-add-sub-l3': {
+    easy: { numQuestions: 30, timeLimit: 0, title: 'Basic Add/Sub: Level 3 (Direct)', icon: 'brain-circuit' },
+  },
   'addition-subtraction': {
     easy: { numQuestions: 50, timeLimit: 300, title: 'Addition & Subtraction (Easy)', icon: 'brain-circuit' },
     medium: { numQuestions: 100, timeLimit: 600, title: 'Addition & Subtraction (Medium)', icon: 'brain-circuit' },
@@ -440,23 +443,50 @@ export function generateTest(testId: TestType, difficulty: Difficulty, customSet
     }
     return deDuplicateQuestions(questions);
   }
-  if (testId === 'basic-add-sub-l1' || testId === 'basic-add-sub-l2') {
-    const max = testId === 'basic-add-sub-l1' ? 9 : 99;
+  if (testId === 'basic-add-sub-l1' || testId === 'basic-add-sub-l2' || testId === 'basic-add-sub-l3') {
+    const max = testId === 'basic-add-sub-l1' ? 9 : testId === 'basic-add-sub-l2' ? 99 : 999;
+    const minVal = testId === 'basic-add-sub-l1' ? 1 : testId === 'basic-add-sub-l2' ? 10 : 100;
     const questions: Question[] = [];
-    const isDirectDigitAdd = (d1: number, d2: number) => { const h1 = d1>=5?1:0, e1 = d1%5, h2 = d2>=5?1:0, e2 = d2%5; return h1+h2<=1 && e1+e2<=4; };
-    const isDirectDigitSub = (d1: number, d2: number) => { const h1 = d1>=5?1:0, e1 = d1%5, h2 = d2>=5?1:0, e2 = d2%5; return h2<=h1 && e2<=e1; };
+    
+    const isDirectDigitAdd = (d1: number, d2: number) => { 
+      const h1 = d1 >= 5 ? 1 : 0, e1 = d1 % 5, h2 = d2 >= 5 ? 1 : 0, e2 = d2 % 5; 
+      return h1 + h2 <= 1 && e1 + e2 <= 4; 
+    };
+    
+    const isDirectDigitSub = (d1: number, d2: number) => { 
+      const h1 = d1 >= 5 ? 1 : 0, e1 = d1 % 5, h2 = d2 >= 5 ? 1 : 0, e2 = d2 % 5; 
+      return h2 <= h1 && e2 <= e1; 
+    };
+    
     const isDirectFull = (v: number, d: number, op: string) => {
-        const v1 = v.toString().padStart(3,'0').split('').map(Number), v2 = d.toString().padStart(3,'0').split('').map(Number);
-        for(let i=0; i<3; i++) if(op==='+') { if(!isDirectDigitAdd(v1[i],v2[i])) return false; } else if(!isDirectDigitSub(v1[i],v2[i])) return false;
+        const v1 = v.toString().padStart(3, '0').split('').map(Number);
+        const v2 = d.toString().padStart(3, '0').split('').map(Number);
+        for (let i = 0; i < 3; i++) {
+          if (op === '+') { 
+            if (!isDirectDigitAdd(v1[i], v2[i])) return false; 
+          } else if (!isDirectDigitSub(v1[i], v2[i])) {
+            return false;
+          }
+        }
         return true;
     };
+    
     for (let i = 0; i < (settings?.numQuestions || 30); i++) {
-        let currentVal = getRandomInt(max === 9 ? 1 : 10, max), numbers: (number | string)[] = [currentVal];
+        let currentVal = getRandomInt(minVal, max);
+        const numbers: (number | string)[] = [currentVal];
         for (let j = 0; j < 3; j++) {
             let att = 0;
-            while(att < 50) {
-                const op = Math.random() > 0.5 ? '+' : '-', d = getRandomInt(1, max > 9 ? 40 : max), res = op === '+' ? currentVal+d : currentVal-d;
-                if(res >= 0 && res <= max && isDirectFull(currentVal, d, op)) { currentVal = res; numbers.push(op); numbers.push(d); break; }
+            while (att < 50) {
+                const op = Math.random() > 0.5 ? '+' : '-';
+                const stepMax = max > 99 ? 400 : max > 9 ? 40 : max;
+                const d = getRandomInt(1, stepMax);
+                const res = op === '+' ? currentVal + d : currentVal - d;
+                if (res >= 0 && res <= max && isDirectFull(currentVal, d, op)) { 
+                  currentVal = res; 
+                  numbers.push(op); 
+                  numbers.push(d); 
+                  break; 
+                }
                 att++;
             }
         }
