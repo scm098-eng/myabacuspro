@@ -187,13 +187,13 @@ const TEST_CONFIG: Record<string, Partial<Record<Difficulty, TestSettings>>> = {
     easy: { numQuestions: 20, timeLimit: 0, title: 'Set Beads Value', icon: 'puzzle' },
   },
   'basic-add-sub-l1': {
-    easy: { numQuestions: 30, timeLimit: 0, title: 'Basic Add/Sub: Level 1 (Direct)', icon: 'brain-circuit' },
+    easy: { numQuestions: 60, timeLimit: 0, title: 'Basic Add/Sub: Level 1 (Direct)', icon: 'brain-circuit' },
   },
   'basic-add-sub-l2': {
-    easy: { numQuestions: 30, timeLimit: 0, title: 'Basic Add/Sub: Level 2 (Direct)', icon: 'brain-circuit' },
+    easy: { numQuestions: 60, timeLimit: 0, title: 'Basic Add/Sub: Level 2 (Direct)', icon: 'brain-circuit' },
   },
   'basic-add-sub-l3': {
-    easy: { numQuestions: 30, timeLimit: 0, title: 'Basic Add/Sub: Level 3 (Direct)', icon: 'brain-circuit' },
+    easy: { numQuestions: 60, timeLimit: 0, title: 'Basic Add/Sub: Level 3 (Direct)', icon: 'brain-circuit' },
   },
   'addition-subtraction': {
     easy: { numQuestions: 50, timeLimit: 300, title: 'Addition & Subtraction (Easy)', icon: 'brain-circuit' },

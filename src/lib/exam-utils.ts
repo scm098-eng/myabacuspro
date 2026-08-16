@@ -75,19 +75,17 @@ export function generateExamQuestions(group: ExamGroup, seed?: string): Question
   switch (group) {
     case 'A':
       finalPool = [
-        ...sampleQuestions(generateTest('beads-identify', 'level-2'), 30, prng),
-        ...sampleQuestions(generateTest('beads-identify', 'level-4'), 30, prng),
-        ...sampleQuestions(generateTest('beads-identify', 'level-6'), 30, prng),
-        ...sampleQuestions(generateTest('basic-add-sub-l1', 'easy'), 30, prng),
-        ...sampleQuestions(generateTest('basic-add-sub-l2', 'easy'), 30, prng)
+        ...sampleQuestions(generateTest('basic-add-sub-l1', 'easy'), 60, prng),
+        ...sampleQuestions(generateTest('basic-add-sub-l2', 'easy'), 60, prng),
+        ...sampleQuestions(generateTest('basic-add-sub-l3', 'easy'), 60, prng)
       ];
       break;
     case 'B':
       finalPool = [
-        ...sampleQuestions(generateTest('basic-addition-plus-4', 'easy'), 37, prng),
-        ...sampleQuestions(generateTest('big-brother-addition-plus-9', 'easy'), 37, prng),
-        ...sampleQuestions(generateTest('combination-plus-6', 'easy'), 38, prng),
-        ...sampleQuestions(generateTest('addition-subtraction', 'medium'), 38, prng)
+        ...sampleQuestions(generateTest('basic-addition-plus-4', 'easy'), 70, prng),
+        ...sampleQuestions(generateTest('big-brother-addition-plus-9', 'easy'), 70, prng),
+        ...sampleQuestions(generateTest('combination-plus-6', 'easy'), 70, prng),
+        ...sampleQuestions(generateTest('addition-subtraction', 'medium'), 70, prng)
       ];
       break;
     case 'C':

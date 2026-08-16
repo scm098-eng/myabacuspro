@@ -147,7 +147,7 @@ export default function WinnerMarquee() {
       </div>
       <style jsx global>{`
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        .animate-marquee { animation: marquee 60s linear infinite; }
+        .animate-marquee { animation: marquee 150s linear infinite; }
       `}</style>
     </div>
   );
