@@ -23,5 +23,10 @@ messaging.onBackgroundMessage((payload) => {
     icon: '/logo_icon.png'
   };
 
+  const badgeCount = parseInt(payload.data?.unreadCount || 1, 10);
+  if ('setAppBadge' in navigator) {
+    navigator.setAppBadge(badgeCount).catch((err) => console.error('Badge error:', err));
+  }
+
   self.registration.showNotification(notificationTitle, notificationOptions);
 });

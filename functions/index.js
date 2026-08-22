@@ -19,6 +19,44 @@ if (admin.apps.length === 0) {
     admin.initializeApp();
 }
 
+/**
+ * Helper to send FCM Push Notification with home screen badge counter
+ */
+async function sendNotificationWithBadge(fcmToken, title, body, unreadCount = 1) {
+    if (!fcmToken) return;
+
+    const message = {
+        token: fcmToken,
+        notification: {
+            title: title,
+            body: body,
+        },
+        data: {
+            unreadCount: String(unreadCount),
+        },
+        android: {
+            notification: {
+                notificationCount: unreadCount,
+                icon: 'logo_icon',
+            },
+        },
+        apns: {
+            payload: {
+                aps: {
+                    badge: unreadCount,
+                },
+            },
+        },
+    };
+
+    try {
+        await admin.messaging().send(message);
+        logger.info(`Push notification sent successfully to token: ${fcmToken}`);
+    } catch (error) {
+        logger.error(`Error sending push notification:`, error);
+    }
+}
+
 // Set global defaults for all functions in this file
 setGlobalOptions({ maxInstances: 10, timeoutSeconds: 540, memory: '1GiB', region: 'us-central1' });
 const db = admin.firestore();
@@ -422,9 +460,21 @@ exports.dailyBirthdayWish = onSchedule({ schedule: "0 9 * * *", secrets: ["GMAIL
                     logger.error(`Birthday email failed for ${data.email}`, e);
                 }
             }
+
+            // Send Push Notification with Badge Counter
+            if (data.fcmToken) {
+                const newUnreadCount = (data.unreadNotifications || 0) + 1;
+                await sendNotificationWithBadge(
+                    data.fcmToken,
+                    `Happy Birthday, ${data.firstName || 'Student'}! 🎂`,
+                    "We credited +100 Mastery Points to your account!",
+                    newUnreadCount
+                );
+            }
             
             await doc.ref.update({
                 totalPoints: admin.firestore.FieldValue.increment(100),
+                unreadNotifications: admin.firestore.FieldValue.increment(1),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
             count++;

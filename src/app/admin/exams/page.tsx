@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, writeBatch, getDocs, serverTimestamp, where, increment } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from '@/lib/firebase';
 import type { ExamApplication, ExamResult, ExamGroup } from '@/types';
@@ -26,6 +26,40 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, parseISO, isValid } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+
+async function sendExamNotificationToStudents(db: any, examDate: string, startTime: string, endTime: string) {
+  const studentsQuery = query(collection(db, 'users'), where('role', '==', 'student'));
+  const studentsSnap = await getDocs(studentsQuery);
+
+  if (studentsSnap.empty) return;
+
+  const docs = studentsSnap.docs;
+  const chunkSize = 200;
+
+  for (let i = 0; i < docs.length; i += chunkSize) {
+    const chunk = docs.slice(i, i + chunkSize);
+    const batch = writeBatch(db);
+
+    chunk.forEach((studentDoc) => {
+      const notifRef = doc(collection(db, 'users', studentDoc.id, 'notifications'));
+      
+      batch.set(notifRef, {
+        title: 'New Exam Schedule Published! 📅',
+        message: `The next official exam is scheduled for ${examDate} (${startTime} to ${endTime}). Log in to apply!`,
+        type: 'exam_alert',
+        isRead: false,
+        createdAt: serverTimestamp()
+      });
+
+      const userRef = doc(db, 'users', studentDoc.id);
+      batch.update(userRef, {
+        unreadNotifications: increment(1)
+      });
+    });
+
+    await batch.commit();
+  }
+}
 
 export default function AdminExamsPage() {
   usePageBackground('https://firebasestorage.googleapis.com/v0/b/abacusace-mmnqw.appspot.com/o/admin_bg.jpg?alt=media');
@@ -157,7 +191,7 @@ export default function AdminExamsPage() {
     } finally { setIsSavingSchedule(false); }
   };
 
-  const handleUpdateOnly = () => {
+  const handleUpdateOnly = async () => {
     if (!examDate) { toast({ title: "Configuration Missing", variant: "destructive" }); return; }
     setIsUpdatingOnly(true);
     const db = getFirestore(firebaseApp);
@@ -170,10 +204,15 @@ export default function AdminExamsPage() {
       isActive: true,
       updatedAt: serverTimestamp()
     };
-    setDoc(docRef, payload, { merge: true })
-      .then(() => toast({ title: "Schedule Updated" }))
-      .catch(async (err: any) => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: payload })))
-      .finally(() => setIsUpdatingOnly(false));
+    try {
+      await setDoc(docRef, payload, { merge: true });
+      await sendExamNotificationToStudents(db, examDate, `${startH}:${startM}`, `${endH}:${endM}`);
+      toast({ title: "Schedule Updated & Students Notified" });
+    } catch (err: any) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: payload }));
+    } finally {
+      setIsUpdatingOnly(false);
+    }
   };
 
   const handleCancelExam = () => {
@@ -201,7 +240,10 @@ export default function AdminExamsPage() {
       const schedulePayload = { date: examDate, startTime: `${startH}:${startM}`, endTime: `${endH}:${endM}`, lastApplyDate, isActive: true, resultsDeclared: false, updatedAt: serverTimestamp() };
       batch.set(scheduleRef, schedulePayload, { merge: true });
       await batch.commit();
-      toast({ title: "Cycle Reset & Published" });
+
+      await sendExamNotificationToStudents(db, examDate, `${startH}:${startM}`, `${endH}:${endM}`);
+
+      toast({ title: "Cycle Reset, Published & Students Notified" });
     } catch (e: any) { toast({ title: "Reset Failed", variant: "destructive" }); }
     finally { setIsSavingSchedule(false); }
   };

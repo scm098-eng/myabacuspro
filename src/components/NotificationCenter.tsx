@@ -38,10 +38,24 @@ export default function NotificationCenter() {
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
+  // Function to clear the home screen app icon badge
+  const clearAppIconBadge = async () => {
+    if ('clearAppBadge' in navigator) {
+      try {
+        await navigator.clearAppBadge();
+      } catch (error) {
+        console.error('Error clearing app icon badge:', error);
+      }
+    }
+  };
+
   const markAsRead = async (id: string) => {
     if (!user) return;
     const db = getFirestore(firebaseApp);
     await updateDoc(doc(db, 'users', user.uid, 'notifications', id), { isRead: true });
+
+    // Clear home screen icon badge
+    await clearAppIconBadge();
   };
 
   const deleteNotif = async (id: string) => {
@@ -63,7 +77,7 @@ export default function NotificationCenter() {
   if (profile?.role === 'admin' || profile?.role === 'teacher') return null;
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={(open) => {setIsOpen(open);if (open) {clearAppIconBadge();}}}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full hover:bg-primary/10">
           <Bell className={cn("h-5 w-5", unreadCount > 0 ? "text-primary animate-swing" : "text-muted-foreground")} />
