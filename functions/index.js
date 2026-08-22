@@ -705,6 +705,7 @@ exports.redeemCoupon = onCall(async (request) => {
         t.update(userRef, {
             subscriptionStatus: 'pro',
             subscriptionType: 'gift',
+            subscriptionStartDate: admin.firestore.FieldValue.serverTimestamp(),
             subscriptionExpiry: admin.firestore.Timestamp.fromDate(finalExpiry),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
@@ -899,6 +900,7 @@ exports.razorpaywebhook = onRequest({
                 await admin.firestore().collection("users").doc(userId).update({
                     subscriptionStatus: "pro",
                     subscriptionType: "paid",
+                    subscriptionStartDate: admin.firestore.FieldValue.serverTimestamp(),
                     subscriptionExpiry: admin.firestore.Timestamp.fromDate(expiryDate),
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 });

@@ -391,7 +391,7 @@ function ResultsComponent() {
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
 
-          <div className="shrink-0 p-4 sm:p-6 bg-muted/30 border-t flex justify-between items-center bg-background/95 backdrop-blur-sm mt-auto">
+          <div className="shrink-0 p-4 sm:p-6 border-t flex justify-between items-center bg-background/95 backdrop-blur-sm mt-auto">
               <Button 
                   onClick={() => setCurrentStepIndex(prev => Math.max(0, prev - 1))}
                   disabled={currentStepIndex === 0}

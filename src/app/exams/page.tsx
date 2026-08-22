@@ -159,20 +159,11 @@ export default function ExamDashboardPage() {
   }, [schedule]);
 
   const uniqueResults = useMemo(() => {
-    const paperMap: Record<string, ExamResult> = {};
-    const sorted = [...results].sort((a, b) => {
-        const aRank = (a.rank !== undefined && a.rank > 0);
-        const bRank = (b.rank !== undefined && b.rank > 0);
-        if (aRank && !bRank) return -1;
-        if (!aRank && bRank) return 1;
-        if (aRank && bRank && a.rank !== b.rank) return (a.rank || 0) - (b.rank || 0);
-        if (a.score !== b.score) return b.score - a.score;
-        const timeA = a.submittedAt?.toMillis?.() || 0;
-        const timeB = b.submittedAt?.toMillis?.() || 0;
-        return timeB - timeA;
+    return [...results].sort((a, b) => {
+      const timeA = a.submittedAt?.toMillis?.() || 0;
+      const timeB = b.submittedAt?.toMillis?.() || 0;
+      return timeB - timeA; // Newest first
     });
-    sorted.forEach(res => { if (!paperMap[res.paperId]) paperMap[res.paperId] = res; });
-    return Object.values(paperMap).sort((a, b) => (b.submittedAt?.toMillis?.() || 0) - (a.submittedAt?.toMillis?.() || 0));
   }, [results]);
 
   const finalAttempt = useMemo(() => uniqueResults.find(r => r.paperId === 'final') || null, [uniqueResults]);
@@ -459,41 +450,75 @@ export default function ExamDashboardPage() {
           </div>
 
           <div className="space-y-8">
-             <Card className="rounded-[2rem] shadow-lg border-none">
-                <CardHeader><CardTitle className="text-xl font-black uppercase tracking-tight">My Performance</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  {uniqueResults.length > 0 ? uniqueResults.map(r => {
-                    const hideResult = r.paperId === 'final' && !schedule?.resultsDeclared;
-                    return (
-                      <div key={r.id} className="flex flex-col gap-3 p-4 bg-muted/50 rounded-2xl border border-muted group transition-all hover:bg-muted">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              {r.paperId === 'final' ? <ShieldAlert className="w-3 h-3 text-orange-500" /> : <FileEdit className="w-3 h-3 text-slate-400" />}
-                              <p className="text-xs font-black uppercase tracking-tight truncate">{r.paperId === 'final' ? 'FINAL EXAM' : `Practice ${r.paperId.split('-')[1]}`}</p>
-                            </div>
-                            <p className="text-[10px] text-indigo-600 font-black uppercase flex items-center gap-1.5 tracking-wider">
-                              <Timer className="w-3 h-3" />
-                              Time Left: {formatTime(r.timeLeft)}
-                            </p>
-                          </div>
-                          <div className="text-right shrink-0">
-                            {hideResult ? (
-                              <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-200 font-black text-[9px]">AWAITING RESULT</Badge>
-                            ) : (
-                              <>
-                                <p className="text-2xl font-black text-primary leading-none">{r.score}/{r.totalQuestions}</p>
-                                <p className="text-[8px] font-black uppercase text-muted-foreground mt-1 tracking-widest">Acc: {r.accuracy.toFixed(1)}%</p>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }) : <div className="text-center py-10 opacity-30 italic font-bold uppercase text-xs">No attempts recorded</div>}
-                </CardContent>
-             </Card>
-          </div>
+  <Card className="rounded-[2rem] shadow-lg border-none">
+    <CardHeader>
+      <CardTitle className="text-xl font-black uppercase tracking-tight">
+        My Performance
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+      {uniqueResults.length > 0 ? (
+        uniqueResults.map((r) => {
+          const hideResult = r.paperId === 'final' && !schedule?.resultsDeclared;
+          return (
+            <div
+              key={r.id}
+              className="flex flex-col gap-3 p-4 bg-muted/50 rounded-2xl border border-muted group transition-all hover:bg-muted"
+            >
+              <div className="flex justify-between items-start">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    {r.paperId === 'final' ? (
+                      <ShieldAlert className="w-3 h-3 text-orange-500" />
+                    ) : (
+                      <FileEdit className="w-3 h-3 text-slate-400" />
+                    )}
+                    <p className="text-xs font-black uppercase tracking-tight truncate">
+                      {r.paperId === 'final'
+                        ? 'FINAL EXAM'
+                        : `Practice ${
+                            r.paperId && r.paperId.includes('-')
+                              ? r.paperId.split('-')[1]
+                              : r.paperId
+                          }`}
+                    </p>
+                  </div>
+                  <p className="text-[10px] text-indigo-600 font-black uppercase flex items-center gap-1.5 tracking-wider">
+                    <Timer className="w-3 h-3" />
+                    Time Left: {formatTime(r.timeLeft)}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  {hideResult ? (
+                    <Badge
+                      variant="secondary"
+                      className="bg-orange-100 text-orange-700 border-orange-200 font-black text-[9px]"
+                    >
+                      AWAITING RESULT
+                    </Badge>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-black text-primary leading-none">
+                        {r.score}/{r.totalQuestions}
+                      </p>
+                      <p className="text-[8px] font-black uppercase text-muted-foreground mt-1 tracking-widest">
+                        Acc: {r.accuracy ? r.accuracy.toFixed(1) : 0}%
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })
+      ) : (
+        <div className="text-center py-10 opacity-30 italic font-bold uppercase text-xs">
+          No attempts recorded
+        </div>
+      )}
+    </CardContent>
+  </Card>
+</div>
         </div>
       )}
     </div>
